@@ -90,7 +90,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.m_Palette = PaletteUtils.GetEgaPalette();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, imgWidth, imgHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
-            
+
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)

@@ -35,9 +35,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.trbAlpha)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numAlpha)).BeginInit();
             this.SuspendLayout();
-            // 
+            //
             // trbAlpha
-            // 
+            //
             this.trbAlpha.LargeChange = 10;
             this.trbAlpha.Location = new System.Drawing.Point(12, 12);
             this.trbAlpha.Maximum = 255;
@@ -46,9 +46,9 @@
             this.trbAlpha.TabIndex = 0;
             this.trbAlpha.TickStyle = System.Windows.Forms.TickStyle.None;
             this.trbAlpha.ValueChanged += new System.EventHandler(this.TrbAlpha_ValueChanged);
-            // 
+            //
             // numAlpha
-            // 
+            //
             this.numAlpha.EnteredValue = new decimal(new int[] {
             0,
             0,
@@ -65,9 +65,9 @@
             this.numAlpha.TabIndex = 1;
             this.numAlpha.ValueEntered += new System.EventHandler<Nyerguds.Util.UI.ValueEnteredEventArgs>(this.NumAlpha_ValueEntered);
             this.numAlpha.ValueChanged += new System.EventHandler(this.NumAlpha_ValueChanged);
-            // 
+            //
             // btnCancel
-            // 
+            //
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.Location = new System.Drawing.Point(280, 62);
@@ -76,9 +76,9 @@
             this.btnCancel.TabIndex = 2;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
-            // 
+            //
             // btnOk
-            // 
+            //
             this.btnOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnOk.Location = new System.Drawing.Point(199, 62);
@@ -88,9 +88,9 @@
             this.btnOk.Text = "OK";
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
-            // 
+            //
             // FrmSetAlpha
-            // 
+            //
             this.AcceptButton = this.btnOk;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;

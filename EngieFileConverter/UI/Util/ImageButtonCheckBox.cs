@@ -114,7 +114,7 @@ namespace Nyerguds.Util.UI
             base.TabStop = m_TabStop;
             this.ImageAlign = ContentAlignment.MiddleCenter;
         }
-        
+
         protected override void OnEnter(EventArgs e)
         {
             this.Invalidate();
@@ -179,7 +179,7 @@ namespace Nyerguds.Util.UI
             this.PerformLayout();
             base.OnKeyUp(e);
         }
-                
+
         protected override void OnPaint(PaintEventArgs pe)
         {
             base.OnPaint(pe);

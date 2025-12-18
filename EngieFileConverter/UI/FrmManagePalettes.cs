@@ -43,7 +43,7 @@ namespace Nyerguds.Util.UI
             this.InitializeComponent();
             this.bpp = bpp;
             this.nrOfColorsPerPal = 1 << bpp;
-            this.nrOfSubPalettes = 256 / this.nrOfColorsPerPal;            
+            this.nrOfSubPalettes = 256 / this.nrOfColorsPerPal;
             this.lbSubPalettes.Items.Clear();
             this.removedPalettes = new List<String>();
             this.Opacity = 0;
@@ -291,7 +291,7 @@ namespace Nyerguds.Util.UI
             List<PaletteDropDownInfo> subList;
             if (!this.subPalettes.TryGetValue(selectedPal, out subList))
                 return;
-            
+
             DialogResult dr = DialogResult.No;
             String newPaletteName;
             do
@@ -391,23 +391,26 @@ namespace Nyerguds.Util.UI
             if (this.paletteToSave != null)
             {
                 String selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
-                if (!this.subPalettes.Keys.Contains(selectedPal))
-                {
-                    if (this.immediateSave)
-                        this.Close();
-                    return;
-                }
                 PaletteDropDownInfo currentPal = this.lbSubPalettes.SelectedItem as PaletteDropDownInfo;
-                if (currentPal == null || !currentPal.SourceFile.Equals(selectedPal))
+                Boolean hasValidSelection = this.cmbPalettes.SelectedIndex > -1 && currentPal != null && selectedPal.Length > 0;
+                if (!hasValidSelection || !currentPal.SourceFile.Equals(selectedPal))
                 {
                     if (this.immediateSave)
+                    {
+                        this.DialogResult = DialogResult.OK;
                         this.Close();
+                    }
+                    MessageBox.Show("Please use the dropdown menu at the top to select a palette to overwrite, or select \"" + CREATENEW + "\" at the bottom to add a new palette.", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    this.DialogResult = DialogResult.None;
                     return;
                 }
                 String palette = currentPal.SourceFile;
                 Int32 entry = currentPal.Entry;
                 if (palette == null || entry < 0 || entry >= this.nrOfSubPalettes)
+                {
+                    this.DialogResult = DialogResult.None;
                     return;
+                }
                 FileInfo palfile = new FileInfo(Path.Combine(this.appPath, palette));
                 if (palfile.Exists && palfile.Length == 0x300 && !currentPal.Colors.All(c => c.IsEmpty))
                 {
@@ -429,6 +432,7 @@ namespace Nyerguds.Util.UI
                         // Only case in which "immediateSave" gets disabled.
                         if (this.immediateSave)
                             this.immediateSave = false;
+                        this.DialogResult = DialogResult.None;
                         return;
                     }
                 }
@@ -484,7 +488,7 @@ namespace Nyerguds.Util.UI
                             inifile.SetStringValue(INISECTION, i.ToString(), subPal.Name);
                     }
                     inifile.WriteIni();
-                }   
+                }
             }
             foreach (String pal in this.removedPalettes)
             {
@@ -525,9 +529,9 @@ namespace Nyerguds.Util.UI
                 }
                 else
                 {
-                    // Save a generated palette
+                    // Save a generated palette or a palette from a file
                     this.Opacity = 1;
-                    this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count - this.addedIndex > 0 ? 0 : -1;
+                    this.cmbPalettes.SelectedIndex = -1; //this.cmbPalettes.Items.Count - this.addedIndex > 0 ? 0 : -1;
                 }
                 PalettePanel.InitPaletteControl(this.bpp, this.palReplaceBy, this.paletteToSave.Colors, 74);
             }

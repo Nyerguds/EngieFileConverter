@@ -10,7 +10,7 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmFramesCutter : Form
     {
-        
+
         public Int32 FrameWidth { get; private set; }
         public Int32 FrameHeight { get; private set; }
         public Int32 Frames { get; private set; }
@@ -230,7 +230,7 @@ namespace EngieFileConverter.UI
                 return;
             UpdateUiInfo(false);
         }
-        
+
         private void BtnCancelClick(Object sender, EventArgs e)
         {
             this.Close();

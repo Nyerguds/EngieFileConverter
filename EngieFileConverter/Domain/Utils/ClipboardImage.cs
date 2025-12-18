@@ -115,7 +115,7 @@ namespace Nyerguds.Util
             if (ms == null)
                 return null;
             return ms.ToArray();
-        }       
+        }
 
     }
 }

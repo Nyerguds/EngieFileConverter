@@ -146,7 +146,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave);
             // Save options
             Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);            
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
 
             // Extract frames + frame-specific checks
             Int32 nrOfFrames = fileToSave.Frames.Length;

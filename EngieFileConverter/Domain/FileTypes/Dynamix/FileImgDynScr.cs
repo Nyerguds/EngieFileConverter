@@ -35,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>
         /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames.
         /// Types with frames where this is set to false wil not get an index -1 in the frames list.
-        /// Dynamix SCR is one of the rare cases where the frames visualisation is completely extra. 
+        /// Dynamix SCR is one of the rare cases where the frames visualisation is completely extra.
         /// </summary>
         public override Boolean IsFramesContainer { get { return false; } }
         public Boolean IsMa8 { get; private set; }
@@ -67,7 +67,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
             this.LoadFile(fileData, filename, false);
         }
-        
+
         public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2)
         {
             if (fileData.Length < 0x10)

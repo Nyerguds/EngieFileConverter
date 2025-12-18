@@ -234,7 +234,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 info.Height = inifile.GetIntValue("Map", "Height", 64);
                 info.X = inifile.GetIntValue("Map", "X", 0);
                 info.Y = inifile.GetIntValue("Map", "Y", 0);
-                info.File = inipath;                
+                info.File = inipath;
             }
             catch { return null; }
             return info;

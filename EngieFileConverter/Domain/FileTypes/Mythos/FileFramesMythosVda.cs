@@ -15,6 +15,8 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
+
+        public override String IdCode { get { return "MythVda"; } }
         public override String ShortTypeName { get { return "Mythos Visage Animation"; } }
         public override String ShortTypeDescription { get { return "Mythos Visage Animation file"; } }
         public override String[] FileExtensions { get { return new String[] { "vda", "vdx" }; } }
@@ -34,13 +36,13 @@ namespace EngieFileConverter.Domain.FileTypes
         private Boolean _isChained;
         /// <summary>Indicates that a frames definition file is found, and the frames are constructed.</summary>
         private Boolean _isFramed;
-        
+
         public override List<String> GetFilesToLoadMissingData(String originalPath)
         {
             // No missing data.
             if (!this._noFirstFrame)
                 return null;
-            
+
             // Wrong file. Switch to the VDA one.
             if (originalPath.EndsWith(".VDX", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -235,7 +237,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
                         pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
                         lastFrameData = this.Get320x200FrameData(pngFile);
-                        
+
                         if (lastFrameData != null)
                             lastFrameInfo = pngFile.ExtraInfo;
                     }
@@ -511,7 +513,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Checks if the given bytes contain valid VDX data. The actual check is to see if the length 
+        /// Checks if the given bytes contain valid VDX data. The actual check is to see if the length
         /// is divisible by 2, and the data ends on the "frame end" and "animation end" markers.
         /// </summary>
         /// <param name="fileData"></param>
@@ -527,7 +529,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return true;
             return false;
         }
-        
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Color[] palette;
@@ -541,7 +543,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 compression = 0;
             FileFramesMythosVda fileVda = fileToSave as FileFramesMythosVda;
             if (fileVda != null)
+            {
+                if (fileVda._noFirstFrame && !fileVda._isChained)
+                    throw new ArgumentException("A " + ShortTypeDescription + " without initial frame cannot be re-saved correctly. Reload it with the missing start added (either as vda or as png) before saving it.");
                 noFirstFrame = fileVda._noFirstFrame;
+            }
             return new SaveOption[]
             {
                 new SaveOption("OPT", SaveOptionType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks", "1"),
@@ -777,13 +783,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     VideoChunk chunk = finalChunks[i];
                     Byte[] compressedBytes = null;
-                    MythosCompression mc = new MythosCompression();
                     try
                     {
                         if (compressionType == 1)
-                            compressedBytes = mc.FlagRleEncode(chunk.ImageData, 0xFE, chunk.ImageRect.Width, 8);
+                            compressedBytes = MythosCompression.FlagRleEncode(chunk.ImageData, 0xFE, chunk.ImageRect.Width, 8);
                         else if (compressionType == 2)
-                            compressedBytes = mc.CollapsedTransparencyEncode(chunk.ImageData, TransparentIndex, chunk.ImageRect.Width, 8);
+                            compressedBytes = MythosCompression.CollapsedTransparencyEncode(chunk.ImageData, TransparentIndex, chunk.ImageRect.Width, 8);
                     }
                     catch (OverflowException ex)
                     {

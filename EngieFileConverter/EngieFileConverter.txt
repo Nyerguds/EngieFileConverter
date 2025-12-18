@@ -42,8 +42,8 @@ http://www.goldeneyevault.com/viewfile.php?id=213
 The PC C&C formats were deciphered using documentation written by Vladan Bato.
 
 The compression code used for handling the CPS and LCW formats was gracefully provided by the
-people of the Chronosphere (formerly RA++) project. OmniBlade has been particularly helpful.
-https://redalertpp.org/
+people of the Chronoshift (formerly RA++) project. OmniBlade has been particularly helpful.
+https://github.com/TheAssemblyArmada/Chronoshift
 
 The Dynamix LZW decompression code was converted from the C++ code of VOGONS.org user tikalat's
 Midi Tools. It contains no license but I assume the fact he included the code implies that he
@@ -84,6 +84,14 @@ Engie File Converter.
 
 
 Engie File Converter versions:
+
+v1.5.2: (29/06/2020 15:25)
+-Added support for Mythos LBV, the raw 8-bit 320x200 image with palette from Serrated Scalpel.
+-Fixed bug: KORT image saving accidentally checked on 320x200 instead of 320x240.
+-Fixed bug: Cancelling the confirm dialog in "Save Palette" still closed the palettes window.
+-Any sequence of 8-bit 24x24 frames can now be saved as C&C tileset file.
+-"Paste on frames" now works on sequences with empty frames. Empty frames will be ignored.
+-Added option on Dune II SHP to save specific frame ranges without compression.
 
 v1.5.1: (28/02/2020 12:11)
 -Fixed an error in the save logic for Mythos VDA that made it add an extra frame at the start.

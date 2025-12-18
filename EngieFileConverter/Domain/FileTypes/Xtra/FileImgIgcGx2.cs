@@ -22,7 +22,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Interactive Girls GX2 image file"; } }
         public override Int32 BitsPerPixel { get { return this.m_BitPerPixel; } }
         protected Int32 m_BitPerPixel;
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);

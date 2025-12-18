@@ -9,7 +9,7 @@ using System.Drawing.Imaging;
 namespace Nyerguds.ImageManipulation
 {
     /// <summary>
-    /// Blob detection class. Originally written for StackOverflow question https://stackoverflow.com/q/50277978/395685 but never posted there since it's a homework question.
+    /// Blob detection class. Originally written for StackOverflow question https://stackoverflow.com/q/50277978/395685 but not posted there since it's a homework question.
     /// Answer link is https://stackoverflow.com/a/50282882/395685
     /// </summary>
     public static class BlobDetection
@@ -23,11 +23,10 @@ namespace Nyerguds.ImageManipulation
         /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
         /// <param name="brightnessThreshold">Brightness threshold needed to see a pixel as "bright".</param>
         /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
-        /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
         /// <returns>A list of points indicating the centers of all found spots.</returns>
-        public static List<Point> FindPoints(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold, Boolean getEdgesOnly)
+        public static List<Point> FindPoints(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold)
         {
-            List<List<Point>> blobs = FindBlobs(image, detectDark, brightnessThreshold, mergeThreshold, getEdgesOnly);
+            List<List<Point>> blobs = FindBlobs(image, detectDark, brightnessThreshold, mergeThreshold, true);
             return blobs.Select(GetBlobCenter).ToList();
         }
 
@@ -86,7 +85,7 @@ namespace Nyerguds.ImageManipulation
                 return Point.Empty;
             Rectangle bounds = GetBlobBounds(blob);
             return new Point(bounds.X + (bounds.Width - 1) / 2, bounds.Y + (bounds.Height - 1) / 2);
-        }        
+        }
 #endif
 
         /// <summary>
@@ -297,7 +296,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// If the current point clears the threshold, and is not already in the current blobs, builds a list of all points adjacent to the current point. 
+        /// If the current point clears the threshold, and is not already in the current blobs, builds a list of all points adjacent to the current point.
         /// Loop this over every pixel of an image to detect all blobs.
         /// </summary>
         /// <typeparam name="T">Type of the list to detect equal neighbours in. This system allows any kind of data to be taken as input.</typeparam>

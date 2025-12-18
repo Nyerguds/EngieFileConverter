@@ -23,7 +23,7 @@ namespace Nyerguds.Util
             const Int32 range = 0x4F1A0;
             return (Int32)((degrees + 180.0) / 360.0 * range) + bottom;
         }
-        
+
         public static List<Int32> ExtractInts(String filePath)
         {
             String input = File.ReadAllText(filePath);

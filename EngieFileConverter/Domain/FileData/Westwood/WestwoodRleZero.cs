@@ -96,7 +96,7 @@ namespace Nyerguds.FileData.Westwood
                 return ms.ToArray();
             }
         }
-        
+
         public static Byte[] DecompressRleZeroD2(Byte[] fileData, ref Int32 offset, Int32 frameWidth, Int32 frameHeight)
         {
             Int32 fullLength = frameWidth * frameHeight;

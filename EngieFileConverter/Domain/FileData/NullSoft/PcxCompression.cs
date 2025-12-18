@@ -10,14 +10,14 @@ namespace Nyerguds.FileData.NullSoft
     /// But keep in mind. If I have a lot of single values (not a series of identical values), then
     /// this type of compression would double the size of my file. So rather than use RLE on a series
     /// of non identical values, just store the values with no count value before it.
-    /// 
+    ///
     /// This makes a problem though. How do you tell if a value is a part of a 2 byte 'count-value'
     /// value, or is that value a direct individual (no count) value to by displayed? The solution
     /// is to make each value that is a count value (a value that you will take the next value and
     /// repeat it) have bits 6 and 7 set. If bits 6 and 7 are set, then clear them, and take the
     /// returned value as the count value. Then take the next value and repeat it count times. Note:
     /// Once you have the count value, the pixel value can have a value of 0-255 (bits 6 and 7 can be set).
-    /// 
+    ///
     /// This makes another problem. How to display a single value of 192 or higher. First, you must
     /// make a count value of 1 (11000001b) then the display value of 192 (or higher) (makes a 2 byte
     /// entry).
@@ -104,7 +104,7 @@ namespace Nyerguds.FileData.NullSoft
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="buffer">Image data buffer.</param>
         /// <param name="height">Height of the image.</param>

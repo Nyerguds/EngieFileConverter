@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -39,16 +37,18 @@ namespace Nyerguds.Util
         }
 
         /// <summary>
-        /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is 1
+        /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is a non-zero number.
         /// </summary>
-        /// <param name="value">String to parse.</param>
-        /// <param name="defaultVal">Default value to return in case parse fails.</param>
-        /// <returns>True if the string's first letter matches J, Y, O, 1 or T.</returns>
+        /// <param name="value">String to parse</param>
+        /// <param name="defaultVal">Default value to return in case parse fails</param>
+        /// <returns>True if the string's first letter matches J, Y, O, 1 or T</returns>
         public static Boolean IsTrueValue(String value, Boolean defaultVal)
         {
             if (String.IsNullOrEmpty(value))
                 return defaultVal;
-            return Regex.IsMatch(value, "^(([TJYO].*)|(0*1))$", RegexOptions.IgnoreCase);
+            // Either it starts with the start letter of "True", "Ja", "Yes", "Oui", or the whole thing is a non-zero number.
+            // Number is checked as: any amount of leading zeroes, then one non-zero number, then any amount of trailing numbers.
+            return Regex.IsMatch(value, "^\\s*(([TJYO].*)|(0*[1-9]\\d*))\\s*$", RegexOptions.IgnoreCase);
         }
 
         public static Boolean IsHexadecimal(String str)

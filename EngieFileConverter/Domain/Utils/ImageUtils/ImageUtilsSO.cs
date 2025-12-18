@@ -37,13 +37,13 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 x = 0; x < width; ++x)
                 {
                     // UInt32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
-                    UInt32 val = (UInt32)data[x, y];
+                    UInt32 val = (UInt32) data[x, y];
                     // This code clears out everything but a specific part of the value
                     // and then shifts the remaining piece down to the lowest byte
-                    dataBytes[byteIndex + 0] = (Byte)(val & 0x000000FF); // B
-                    dataBytes[byteIndex + 1] = (Byte)((val & 0x0000FF00) >> 08); // G
-                    dataBytes[byteIndex + 2] = (Byte)((val & 0x00FF0000) >> 16); // R
-                    dataBytes[byteIndex + 3] = (Byte)((val & 0xFF000000) >> 24); // A
+                    dataBytes[byteIndex + 0] = (Byte) (val & 0x000000FF); // B
+                    dataBytes[byteIndex + 1] = (Byte) ((val & 0x0000FF00) >> 08); // G
+                    dataBytes[byteIndex + 2] = (Byte) ((val & 0x00FF0000) >> 16); // R
+                    dataBytes[byteIndex + 3] = (Byte) ((val & 0xFF000000) >> 24); // A
                     // More efficient than multiplying
                     byteIndex += 4;
                 }
@@ -70,7 +70,7 @@ namespace Nyerguds.ImageManipulation
                 {
                     // Int32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
                     // This uses the lowest byte, which is the blue component.
-                    dataBytes[byteIndex] = (Byte)((UInt32)data[x, y] & 0xFF);
+                    dataBytes[byteIndex] = (Byte) ((UInt32) data[x, y] & 0xFF);
                     // More efficient than multiplying
                     byteIndex++;
                 }
@@ -91,7 +91,7 @@ namespace Nyerguds.ImageManipulation
         public static Boolean HasTransparency(Bitmap bitmap)
         {
             // Not an alpha-capable color format. Note that GDI+ indexed images are alpha-capable on the palette.
-            if (((ImageFlags)bitmap.Flags & ImageFlags.HasAlpha) == 0)
+            if (((ImageFlags) bitmap.Flags & ImageFlags.HasAlpha) == 0)
                 return false;
             // Indexed format, and no alpha colours in the images palette: immediate pass.
             if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.A == 255))
@@ -226,7 +226,7 @@ namespace Nyerguds.ImageManipulation
                     Int32 val;
                     // Don't know if Trim is needed here. Depends on the file.
                     if (Int32.TryParse(yValues[x].Trim(), out val))
-                        imageArray[offset] = (Byte)Math.Max(0, Math.Min(val, maxValue));
+                        imageArray[offset] = (Byte) Math.Max(0, Math.Min(val, maxValue));
                     offset++;
                 }
             }
@@ -236,7 +236,7 @@ namespace Nyerguds.ImageManipulation
             for (Int32 i = 0; i <= maxValue; ++i)
             {
                 // Away from zero rounding: 2.4 => 2 ; 2.5 => 3
-                Byte v = (Byte)Math.Round(i * mulFactor, MidpointRounding.AwayFromZero);
+                Byte v = (Byte) Math.Round(i * mulFactor, MidpointRounding.AwayFromZero);
                 palette[i] = Color.FromArgb(v, v, v);
             }
             return ImageUtils.BuildImage(imageArray, width, height, width, PixelFormat.Format8bppIndexed, palette, Color.White);
@@ -299,7 +299,7 @@ namespace Nyerguds.ImageManipulation
             Double grnFactor = 0.7152d * Math.Pow(green, 2.2d);
             Double bluFactor = 0.0722d * Math.Pow(blue, 2.2d);
             Double grey = Math.Pow(redFactor + grnFactor + bluFactor, 1d / 2.2);
-            return (Byte)Math.Max(0, Math.Min(255, Math.Round(grey, MidpointRounding.AwayFromZero)));
+            return (Byte) Math.Max(0, Math.Min(255, Math.Round(grey, MidpointRounding.AwayFromZero)));
         }
 
 
@@ -341,7 +341,7 @@ namespace Nyerguds.ImageManipulation
                     // Blue
                     result[resPtr + 0] = blueCol;
                     // Green
-                    result[resPtr + 1] = (Byte)((greenCol1 + greenCol2) / 2);
+                    result[resPtr + 1] = (Byte) ((greenCol1 + greenCol2) / 2);
                     // Red
                     result[resPtr + 2] = redCol;
                     curPtr++;
@@ -403,10 +403,10 @@ namespace Nyerguds.ImageManipulation
                     Byte? tpCol2 = null;
                     Byte? tpCol3 = null;
                     Byte? lfCol = null;
-                    Byte? rtCol = x == lastCol ? (Byte?)null : arr[curPtr + 1];
+                    Byte? rtCol = x == lastCol ? (Byte?) null : arr[curPtr + 1];
                     Byte? btCol1 = null;
-                    Byte? btCol2 = y == lastRow ? (Byte?)null : arr[curPtr + stride];
-                    Byte? btCol3 = y == lastRow || x == lastCol ? (Byte?)null : arr[curPtr + stride + 1];
+                    Byte? btCol2 = y == lastRow ? (Byte?) null : arr[curPtr + stride];
+                    Byte? btCol3 = y == lastRow || x == lastCol ? (Byte?) null : arr[curPtr + stride + 1];
 
                     if (isGreen)
                     {
@@ -466,14 +466,14 @@ namespace Nyerguds.ImageManipulation
                     Byte valBlue;
 
                     Byte cntrCol = arr[curPtr];
-                    Byte? tplfCol = y == 0 || x == 0 ? (Byte?)null : arr[curPtr - stride - 1];
-                    Byte? tpcnCol = y == 0 ? (Byte?)null : arr[curPtr - stride];
-                    Byte? tprtCol = y == 0 || x == lastCol ? (Byte?)null : arr[curPtr - stride + 1];
-                    Byte? cnlfCol = x == 0 ? (Byte?)null : arr[curPtr - 1];
-                    Byte? cnrtCol = x == lastCol ? (Byte?)null : arr[curPtr + 1];
-                    Byte? btlfCol = y == lastRow || x == 0 ? (Byte?)null : arr[curPtr + stride - 1];
-                    Byte? btcnCol = y == lastRow ? (Byte?)null : arr[curPtr + stride];
-                    Byte? btrtCol = y == lastRow || x == lastCol ? (Byte?)null : arr[curPtr + stride + 1];
+                    Byte? tplfCol = y == 0 || x == 0 ? (Byte?) null : arr[curPtr - stride - 1];
+                    Byte? tpcnCol = y == 0 ? (Byte?) null : arr[curPtr - stride];
+                    Byte? tprtCol = y == 0 || x == lastCol ? (Byte?) null : arr[curPtr - stride + 1];
+                    Byte? cnlfCol = x == 0 ? (Byte?) null : arr[curPtr - 1];
+                    Byte? cnrtCol = x == lastCol ? (Byte?) null : arr[curPtr + 1];
+                    Byte? btlfCol = y == lastRow || x == 0 ? (Byte?) null : arr[curPtr + stride - 1];
+                    Byte? btcnCol = y == lastRow ? (Byte?) null : arr[curPtr + stride];
+                    Byte? btrtCol = y == lastRow || x == lastCol ? (Byte?) null : arr[curPtr + stride + 1];
 
                     if (isGreen)
                     {
@@ -515,7 +515,7 @@ namespace Nyerguds.ImageManipulation
             Int32 avgVal = 0;
             for (Int32 i = 0; i < colsLength; ++i)
                 avgVal += cols[i].GetValueOrDefault();
-            return colsCount == 0 ? (Byte)0x80 : (Byte)(avgVal / colsCount);
+            return colsCount == 0 ? (Byte) 0x80 : (Byte) (avgVal / colsCount);
         }
 
         /// <summary>
@@ -524,16 +524,16 @@ namespace Nyerguds.ImageManipulation
         /// https://stackoverflow.com/a/50077006/395685
         /// </summary>
         /// <param name="image">Input image.</param>
-        /// <param name="channelNr">0 = B, 1 = G, 2 = R.</param>
+        /// <param name="channelNr">0 = B, 1 = G, 2 = R, 3 = A.</param>
         /// <returns>The requested channel, as two-dimensional Int32 array.</returns>
         public static Byte[] GetChannelBytes(Bitmap image, Int32 channelNr)
         {
-            if (channelNr >= 3 || channelNr < 0)
+            if (channelNr >= 4 || channelNr < 0)
                 throw new IndexOutOfRangeException();
             Int32 width = image.Width;
             Int32 height = image.Height;
             Int32 stride;
-            Byte[] dataBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format24bppRgb);
+            Byte[] dataBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format32bppArgb);
             Byte[] channel = new Byte[height * width];
             Int32 readLineOffs = 0;
             Int32 writeLineOffs = 0;
@@ -544,11 +544,12 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 x = 0; x < width; ++x)
                 {
                     channel[writeOffs] = dataBytes[readOffs + channelNr];
-                    readOffs += 3;
+                    readOffs += 4;
                     writeOffs++;
                 }
                 readLineOffs += stride;
-                writeLineOffs += width;;
+                writeLineOffs += width;
+                ;
 
             }
             return channel;
@@ -641,9 +642,9 @@ namespace Nyerguds.ImageManipulation
                 Int32 offset = y * stride;
                 for (Int32 x = 0; x < width; ++x)
                 {
-                    PixelValues[offset + 0] = (Byte)blueChannel[y, x];
-                    PixelValues[offset + 1] = (Byte)greenChannel[y, x];
-                    PixelValues[offset + 2] = (Byte)redChannel[y, x];
+                    PixelValues[offset + 0] = (Byte) blueChannel[y, x];
+                    PixelValues[offset + 1] = (Byte) greenChannel[y, x];
+                    PixelValues[offset + 2] = (Byte) redChannel[y, x];
                     offset += 3;
                 }
             }
@@ -701,7 +702,7 @@ namespace Nyerguds.ImageManipulation
             source.UnlockBits(sourceData);
             return dest;
         }
-        
+
         /// <summary>
         /// From https://stackoverflow.com/q/52900883/395685
         /// </summary>
@@ -732,7 +733,7 @@ namespace Nyerguds.ImageManipulation
                 data[tp.Y * width + tp.X] = 1;
                 p = tp;
             }
-            return ImageUtils.BuildImage(data, width, height, width, PixelFormat.Format8bppIndexed, new[] { Color.Black, Color.White }, Color.Black);
+            return ImageUtils.BuildImage(data, width, height, width, PixelFormat.Format8bppIndexed, new[] {Color.Black, Color.White}, Color.Black);
         }
 
         public static Byte GetIndexedPixel(Bitmap b, Int32 x, Int32 y)
@@ -750,15 +751,22 @@ namespace Nyerguds.ImageManipulation
             }
             finally
             {
-                try { if (data != null) b.UnlockBits(data); } catch (Exception) { /* Ignorz */ }
+                try
+                {
+                    if (data != null) b.UnlockBits(data);
+                }
+                catch (Exception)
+                {
+                    /* Ignorz */
+                }
             }
         }
-        
+
         public static Bitmap IntFffToBitmap(Int32[] array, Int32 width, Int32 height)
         {
             Int32 len = width * height;
-            if(len < array.Length)
-                throw new ArgumentException("Array is not long enough for the given width and height!","array");
+            if (len < array.Length)
+                throw new ArgumentException("Array is not long enough for the given width and height!", "array");
             Byte[] pixels = new Byte[len * 4];
             Int32 bytePtr = 0;
             for (int i = 0; i < len; ++i)
@@ -766,9 +774,9 @@ namespace Nyerguds.ImageManipulation
                 Int32 val = array[i];
                 // "ARGB" is big-endian, meaning the bytes are in order [B, G, R, A].
                 // I'm just assuming they are in the int in the same order.
-                pixels[bytePtr++] = /*B*/ (Byte)((val | 0x00F) << 8); // 000-00F range: shift up to 0-240
-                pixels[bytePtr++] = /*G*/ (Byte)((val | 0x0F0));      // 000-0F0 range: OK for byte range
-                pixels[bytePtr++] = /*R*/ (Byte)((val | 0xF00) >> 8); // 000-F00 range: shift down to 0-240
+                pixels[bytePtr++] = /*B*/ (Byte) ((val | 0x00F) << 8); // 000-00F range: shift up to 0-240
+                pixels[bytePtr++] = /*G*/ (Byte) ((val | 0x0F0)); // 000-0F0 range: OK for byte range
+                pixels[bytePtr++] = /*R*/ (Byte) ((val | 0xF00) >> 8); // 000-F00 range: shift down to 0-240
                 pixels[bytePtr++] = /*A*/ 0xFF;
             }
             Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
@@ -803,11 +811,11 @@ namespace Nyerguds.ImageManipulation
             {
                 Byte[][] frameBytes = new Byte[imgCount][];
                 // 0-1 reserved, 0
-                iconWriter.Write((Int16)0);
+                iconWriter.Write((Int16) 0);
                 // 2-3 image type, 1 = icon, 2 = cursor
-                iconWriter.Write((Int16)1);
+                iconWriter.Write((Int16) 1);
                 // 4-5 number of images
-                iconWriter.Write((Int16)imgCount);
+                iconWriter.Write((Int16) imgCount);
                 Int32 offset = 6 + (16 * imgCount);
                 for (Int32 i = 0; i < imgCount; ++i)
                 {
@@ -817,9 +825,9 @@ namespace Nyerguds.ImageManipulation
                         throw new ArgumentException("Image too large!", "images");
                     // for these three, 0 is interpreted as 256,
                     // so the cast reducing 256 to 0 is no problem.
-                    Byte width = (Byte)curFrame.Width;
-                    Byte height = (Byte)curFrame.Height;
-                    Byte colors = (Byte)curFrame.Palette.Entries.Length;
+                    Byte width = (Byte) curFrame.Width;
+                    Byte height = (Byte) curFrame.Height;
+                    Byte colors = (Byte) curFrame.Palette.Entries.Length;
                     Int32 bpp;
                     Byte[] frameData;
                     using (MemoryStream pngMs = new MemoryStream())
@@ -835,25 +843,31 @@ namespace Nyerguds.ImageManipulation
                     // I think .Net saving only supports 2, 3 and 6 anyway.
                     switch (colType)
                     {
-                        case 2: bpp = 3 * colDepth; break; // RGB
-                        case 6: bpp = 4 * colDepth; break; // ARGB
-                        default: bpp = colDepth; break; // Indexed & greyscale
+                        case 2:
+                            bpp = 3 * colDepth;
+                            break; // RGB
+                        case 6:
+                            bpp = 4 * colDepth;
+                            break; // ARGB
+                        default:
+                            bpp = colDepth;
+                            break; // Indexed & greyscale
                     }
                     frameBytes[i] = frameData;
                     Int32 imageLen = frameData.Length;
                     // Write image entry
-                    // 0 image width. 
+                    // 0 image width.
                     iconWriter.Write(width);
                     // 1 image height.
                     iconWriter.Write(height);
                     // 2 number of colors.
                     iconWriter.Write(colors);
                     // 3 reserved
-                    iconWriter.Write((Byte)0);
+                    iconWriter.Write((Byte) 0);
                     // 4-5 color planes
-                    iconWriter.Write((Int16)0);
+                    iconWriter.Write((Int16) 0);
                     // 6-7 bits per pixel
-                    iconWriter.Write((Int16)bpp);
+                    iconWriter.Write((Int16) bpp);
                     // 8-11 size of image data
                     iconWriter.Write(imageLen);
                     // 12-15 offset of image data
@@ -876,7 +890,7 @@ namespace Nyerguds.ImageManipulation
         public static Int32 GetLastClearLine(Byte[] sourceData, Int32 stride, Int32 width, Int32 height, Color checkColor)
         {
             // Get color as UInt32 in advance.
-            UInt32 checkColVal = (UInt32)checkColor.ToArgb();
+            UInt32 checkColVal = (UInt32) checkColor.ToArgb();
             // Use MemoryStream with BinaryReader since it can read UInt32 from a byte array directly.
             using (MemoryStream ms = new MemoryStream(sourceData))
             using (BinaryReader sr = new BinaryReader(ms))
@@ -900,6 +914,166 @@ namespace Nyerguds.ImageManipulation
             return -1;
         }
 
+        public static void TilePatterns(String materialsFolder, Int32 width, Int32 height, String resultFolder)
+        {
+            //For every material image, calls the fusion method below.
+            foreach (String materialImagePath in Directory.GetFiles(materialsFolder))
+            {
+                try
+                {
+                    using (Bitmap materialImage = new Bitmap(materialImagePath))
+                    using (Bitmap result = TilePattern(materialImage, width, height, Color.Black))
+                        result.Save(Path.Combine(resultFolder, Path.GetFileNameWithoutExtension(materialImagePath) + ".png"), ImageFormat.Png);
+                }
+                catch
+                {
+                    // Ignore
+                }
+            }
+        }
+
+        public static Bitmap TilePattern(Bitmap pattern, Int32 width, Int32 height, Color fillColor)
+        {
+            Int32 patternWidth = pattern.Width;
+            Int32 patternHeight = pattern.Height;
+            // No transparency allowed on the background image
+            Bitmap result = new Bitmap(width, height, PixelFormat.Format24bppRgb);
+            result.SetResolution(pattern.HorizontalResolution, pattern.VerticalResolution);
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                if ((fillColor.ToArgb() & 0xFFFFFF) != 0)
+                {
+                    using (Brush b = new SolidBrush(Color.FromArgb(0xFF, fillColor)))
+                        g.FillRectangle(b, 0, 0, width, height);
+                }
+                for (Int32 y = 0; y < height; y += patternHeight)
+                {
+                    for (Int32 x = 0; x < width; x += patternWidth)
+                    {
+                        g.DrawImage(pattern, new Point(x, y));
+                    }
+                }
+            }
+            return result;
+        }
+
+    public static void BakeImages(String whiteFilePath, String materialsFolder, String resultFolder)
+    {
+        Int32 width;
+        Int32 height;
+        Int32 stride;
+        // extract bytes of shape & alpha image
+        Byte[] shapeImageBytes;
+        using (Bitmap shapeImage = new Bitmap(whiteFilePath))
+        {
+            width = shapeImage.Width;
+            height = shapeImage.Height;
+            // extract bytes of shape & alpha image
+            shapeImageBytes = GetImageData(shapeImage, out stride, PixelFormat.Format32bppArgb);
+        }
+        using (Bitmap blackImage = ExtractBlackImage(shapeImageBytes, width, height, stride))
+        {
+            //For every material image, calls the fusion method below.
+            foreach (String materialImagePath in Directory.GetFiles(materialsFolder))
+            {
+                using (Bitmap patternImage = new Bitmap(materialImagePath))
+                //using (Bitmap result = ApplyAlphaToImage(shapeImageBytes, width, height, stride, patternImage))
+                using (Bitmap materialImage = TilePattern(patternImage, width, height, Color.Black))
+                using (Bitmap result = ApplyAlphaToImage(shapeImageBytes, width, height, stride, materialImage))
+                {
+                    if (result == null)
+                        continue;
+                    // paint black lines image onto alpha-adjusted pattern image.
+                    using (Graphics g = Graphics.FromImage(result))
+                        g.DrawImage(blackImage, 0, 0);
+                    result.Save(Path.Combine(resultFolder, Path.GetFileNameWithoutExtension(materialImagePath) + ".png"), ImageFormat.Png);
+                }
+            }
+        }
+    }
+
+    public static Bitmap ExtractBlackImage(Byte[] shapeImageBytes, Int32 width, Int32 height, Int32 stride)
+    {
+        // Create black lines image.
+        Byte[] imageBytesBlack = new Byte[shapeImageBytes.Length];
+        // Line start offset is set to 3 to immediately get the alpha component.
+        Int32 lineOffsImg = 3;
+        for (Int32 y = 0; y < height; y++)
+        {
+            Int32 curOffs = lineOffsImg;
+            for (Int32 x = 0; x < width; x++)
+            {
+                // copy either alpha or inverted brightness (whichever is lowest)
+                // from the shape image onto black lines image as alpha, effectively
+                // only retaining the visible black lines from the shape image.
+                // I use curOffs - 1 (red) because it's the simplest operation.
+                Byte alpha = shapeImageBytes[curOffs];
+                Byte invBri = (Byte) (255 - shapeImageBytes[curOffs - 1]);
+                imageBytesBlack[curOffs] = Math.Min(alpha, invBri);
+                // Adjust offset to next pixel.
+                curOffs += 4;
+            }
+            // Adjust line offset to next line.
+            lineOffsImg += stride;
+        }
+        // Make the black lines images out of the byte array.
+        return BuildImage(imageBytesBlack, width, height, stride, PixelFormat.Format32bppArgb);
+    }
+
+    public static Bitmap ApplyAlphaToImage(Byte[] alphaImageBytes, Int32 width, Int32 height, Int32 stride, Bitmap texture)
+    {
+        Byte[] imageBytesPattern;
+        if (texture.Width != width || texture.Height != height)
+            return null;
+        // extract bytes of pattern image. Stride should be the same.
+        Int32 patternStride;
+        imageBytesPattern = ImageUtils.GetImageData(texture, out patternStride, PixelFormat.Format32bppArgb);
+        if (patternStride != stride)
+            return null;
+        // Line start offset is set to 3 to immediately get the alpha component.
+        Int32 lineOffsImg = 3;
+        for (Int32 y = 0; y < height; y++)
+        {
+            Int32 curOffs = lineOffsImg;
+            for (Int32 x = 0; x < width; x++)
+            {
+                // copy alpha from shape image onto pattern image.
+                imageBytesPattern[curOffs] = alphaImageBytes[curOffs];
+                // Adjust offset to next pixel.
+                curOffs += 4;
+            }
+            // Adjust line offset to next line.
+            lineOffsImg += stride;
+        }
+        // Make a image out of the byte array, and return it.
+        return BuildImage(imageBytesPattern, width, height, stride, PixelFormat.Format32bppArgb);
+    }
+
+        public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat)
+        {
+            Int32 width = sourceImage.Width;
+            Int32 height = sourceImage.Height;
+            BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, desiredPixelFormat);
+            stride = sourceData.Stride;
+            Byte[] data = new Byte[stride * height];
+            Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
+            sourceImage.UnlockBits(sourceData);
+            return data;
+        }
+
+        public static Bitmap BuildImage(Byte[] sourceData, Int32 width, Int32 height, Int32 stride, PixelFormat pixelFormat)
+        {
+            Bitmap newImage = new Bitmap(width, height, pixelFormat);
+            BitmapData targetData = newImage.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, newImage.PixelFormat);
+            Int32 newDataWidth = ((Image.GetPixelFormatSize(pixelFormat) * width) + 7) / 8;
+            Int32 targetStride = targetData.Stride;
+            Int64 scan0 = targetData.Scan0.ToInt64();
+            for (Int32 y = 0; y < height; ++y)
+                Marshal.Copy(sourceData, y * stride, new IntPtr(scan0 + y * targetStride), newDataWidth);
+            newImage.UnlockBits(targetData);
+            return newImage;
+        }
+
 
 #if UNSAFE
         public static unsafe Byte GetIndexedPixelUnsafe(Bitmap b, Int32 x, Int32 y)
@@ -920,4 +1094,5 @@ namespace Nyerguds.ImageManipulation
 #endif
     }
 }
+
 #endif

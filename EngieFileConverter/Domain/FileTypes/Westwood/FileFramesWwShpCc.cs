@@ -470,7 +470,7 @@ namespace EngieFileConverter.Domain.FileTypes
             public CcShpFrameFormat DataFormat { get; set; }
             public Int32 ReferenceOffset { get; set; }
             public CcShpFrameFormat ReferenceFormat { get; set; }
- 
+
             public OffsetInfo(Int32 dataOffset, CcShpFrameFormat dataFormat, Int32 referenceOffset, CcShpFrameFormat referenceFormat)
             {
                 this.DataOffset = dataOffset;

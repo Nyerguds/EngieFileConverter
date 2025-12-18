@@ -18,7 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Int32 Width { get { return this.m_LoadedImage == null ? this.CheckCommonWidth() : this.m_LoadedImage.Width; } }
         public override Int32 Height { get { return this.m_LoadedImage == null ? this.CheckCommonHeight() : this.m_LoadedImage.Height; } }
-        
+
         public override String ShortTypeName { get { return "Frames"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return (this.BaseType == null ? String.Empty : this.BaseType + " ") + "Frames"; } }
@@ -56,6 +56,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Boolean m_CommonPalette;
         protected Boolean m_NeedsPalette;
+        protected FileClass m_InputFileClass = FileClass.None;
         protected Int32 m_BitsPerPixel;
         protected Boolean[] m_TransparencyMask;
 
@@ -133,6 +134,22 @@ namespace EngieFileConverter.Domain.FileTypes
         public void SetTransparencyMask(Boolean[] transparencyMask)
         {
             this.m_TransparencyMask = transparencyMask;
+        }
+
+        public void SetFrameInputClass(FileClass supportedFrameTypes)
+        {
+            this.m_InputFileClass = supportedFrameTypes;
+        }
+
+        public void SetFrameInputClassFromBpp(Int32 bpp)
+        {
+            switch (bpp)
+            {
+                case 1: this.m_InputFileClass = FileClass.Image1Bit; break;
+                case 4: this.m_InputFileClass = FileClass.Image4Bit; break;
+                case 8: this.m_InputFileClass = FileClass.Image8Bit; break;
+                default: this.m_InputFileClass = FileClass.ImageHiCol; break;
+            }
         }
 
         public static String[] GetFrameFilesRange(String path, out String baseName)
@@ -238,6 +255,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color[] pal = currentType.GetColors();
             // 'common palette' logic is started by setting it to True when there is a palette.
             Boolean commonPalette = pal != null && !currentType.NeedsPalette;
+            FileClass frameTypes = FileClass.None;
             Boolean nullPalette = currentType.NeedsPalette || pal == null;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
@@ -264,6 +282,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         commonPalette = frameFile.GetColors() != null && !frameFile.NeedsPalette && pal.SequenceEqual(frameFile.GetColors());
                     if (nullPalette)
                         nullPalette = frameFile.NeedsPalette;
+                    frameTypes |= currentType.FileClass;
                 }
                 catch (FileTypeLoadException)
                 {
@@ -271,7 +290,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     return null;
                 }
             }
+
             framesContainer.SetCommonPalette(commonPalette || nullPalette);
+            framesContainer.SetFrameInputClass(frameTypes);
             if (framesContainer.FramesHaveCommonPalette)
             {
                 framesContainer.SetBitsPerPixel(currentType.BitsPerPixel);
@@ -285,7 +306,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         /// <summary>
         /// Pastes an image on a range of frames. Supports all pixel format combinations.
-        /// If both the image to paste and the frame are indexed, and the bpp of the frame is at 
+        /// If both the image to paste and the frame are indexed, and the bpp of the frame is at
         /// least as high as that of the paste image, then no palette matching will be performed.
         /// </summary>
         /// <param name="framesContainer">SupportedFileType object containing frames.</param>
@@ -383,13 +404,16 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null)
+                {
+                    newfile.AddFrame(null);
                     continue;
+                }
                 Bitmap frBm = frame.GetBitmap();
-                Int32 curFrameBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
                 Bitmap newBm;
                 // List is sorted. This is more efficient than "contains" every time.
-                if (nextPasteFrameIndex < framesToHandle && i == framesRange[nextPasteFrameIndex])
+                if (nextPasteFrameIndex < framesToHandle && i == framesRange[nextPasteFrameIndex] && frBm != null)
                 {
+                    Int32 curFrameBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
                     nextPasteFrameIndex++;
                     Int32 frWidth = frBm.Width;
                     Int32 frHeight = frBm.Height;
@@ -481,8 +505,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    newBm = ImageUtils.CloneImage(frBm);
+                    newBm = frBm == null ? null : ImageUtils.CloneImage(frBm);
                 }
+                // single image.
                 if (newfile == null)
                 {
                     FileImagePng result = new FileImagePng();
@@ -530,6 +555,7 @@ namespace EngieFileConverter.Domain.FileTypes
             newfile.SetCommonPalette(indexed);
             newfile.SetNeedsPalette(indexed && needsPalette);
             newfile.SetBitsPerPixel(bpp);
+            newfile.SetFrameInputClassFromBpp(bpp);
             newfile.SetPalette(imPalette);
             newfile.SetTransparencyMask(null);
             for (Int32 i = 0; i < framesArr.Length; ++i)

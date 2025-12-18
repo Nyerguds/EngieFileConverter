@@ -32,9 +32,9 @@
             this.btnOk = new System.Windows.Forms.Button();
             this.palettePanel = new Nyerguds.Util.UI.PalettePanel();
             this.SuspendLayout();
-            // 
+            //
             // btnClose
-            // 
+            //
             this.btnClose.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClose.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnClose.Location = new System.Drawing.Point(216, 349);
@@ -44,9 +44,9 @@
             this.btnClose.TabIndex = 3;
             this.btnClose.Text = "Cancel";
             this.btnClose.UseVisualStyleBackColor = true;
-            // 
+            //
             // btnOk
-            // 
+            //
             this.btnOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnOk.Location = new System.Drawing.Point(20, 349);
             this.btnOk.Margin = new System.Windows.Forms.Padding(0);
@@ -55,9 +55,9 @@
             this.btnOk.TabIndex = 2;
             this.btnOk.Text = "OK";
             this.btnOk.UseVisualStyleBackColor = true;
-            // 
+            //
             // palettePanel
-            // 
+            //
             this.palettePanel.AutoSize = true;
             this.palettePanel.ColorSelectMode = Nyerguds.Util.UI.ColorSelMode.None;
             this.palettePanel.Location = new System.Drawing.Point(18, 12);
@@ -70,9 +70,9 @@
             this.palettePanel.TabIndex = 0;
             this.palettePanel.TransItemBackColor = System.Drawing.Color.Empty;
             this.palettePanel.ColorLabelMouseDoubleClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalettePanel_LabelMouseDoubleClick);
-            // 
+            //
             // FrmPalette
-            // 
+            //
             this.AcceptButton = this.btnOk;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;

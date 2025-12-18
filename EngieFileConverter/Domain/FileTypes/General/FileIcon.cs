@@ -420,7 +420,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     // png data must contain the whole png data file
                     iconWriter.Write(frameBytes[i]);
                 }
-                iconWriter.Flush();    
+                iconWriter.Flush();
             }
         }
 

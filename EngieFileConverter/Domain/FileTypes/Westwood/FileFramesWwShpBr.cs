@@ -87,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.SetExtraInfo("Data: " + frSize + " bytes @ 0x" + readOffset.ToString("X"));
                 this.m_FramesList[i] = framePic;
                 readOffset += frSize;
-            }            
+            }
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)

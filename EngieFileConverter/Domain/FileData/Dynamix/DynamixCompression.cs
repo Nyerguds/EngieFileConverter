@@ -146,7 +146,7 @@ namespace Nyerguds.FileData.Dynamix
             //LzssHuffDecoder enc = new LzssHuffDecoder();
             //return null; // enc.Encode(buffer, null, null);
         }
-        
+
         /// <summary>
         /// Applies LZW Encoding to the given data.
         /// </summary>

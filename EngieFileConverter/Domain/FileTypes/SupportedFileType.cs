@@ -88,9 +88,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual String ExtraInfo { get; set; }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.</summary>
         public virtual Boolean[] TransparencyMask { get { return null; } }
-        
+
         /// <summary>
-        /// Load a file from byte array. Note that the use of this function is discouraged, since many file types refer 
+        /// Load a file from byte array. Note that the use of this function is discouraged, since many file types refer
         /// to accompanying files, like colour palettes, to complete the loaded data, and these cannot be detected without
         /// a file path.
         /// </summary>
@@ -240,7 +240,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetColors(palette, this);
             }
         }
-        
+
         public virtual void ResetColors()
         {
             // Should already be applied.
@@ -328,7 +328,9 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesFntD2k),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
+#if DEBUG
             typeof(FileImgWwMhwanh), // Experimental
+#endif
             typeof(FileMapWwCc1Pc),
             typeof(FileMapWwCc1N64),
             typeof(FileMapWwCc1PcFromIni),
@@ -348,13 +350,16 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVgs),
             typeof(FileFramesMythosVda),
             typeof(FileImgKotB),
+            typeof(FileImgMythosLbv),
             typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
             typeof(FilePaletteWwCc1N64Pa8),
             typeof(FilePaletteWwCc1N64Pa4),
             typeof(FileTblWwPal),
             typeof(FilePaletteWwAmiga),
+#if DEBUG
             typeof(FilePaletteWwPsx), // Experimental
+#endif
             typeof(FileFramesDfPic),
             typeof(FileFramesIgcSlb),
             typeof(FileFramesLadyGl),
@@ -365,7 +370,10 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImgStris),
             typeof(FileImgBif),
             typeof(FileImgJmx),
-            typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.            
+#if DEBUG
+            typeof(FileImgMythosRmm), // Do not enable; too much chance on false positive.
+#endif
+            typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
         };
 
         private static Type[] m_supportedOpenTypes =

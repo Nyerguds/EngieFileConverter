@@ -33,7 +33,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);

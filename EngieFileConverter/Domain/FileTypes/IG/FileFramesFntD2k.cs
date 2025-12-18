@@ -158,7 +158,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_FramesList[currentSymbol] = framePic;
             return framePic;
         }
-        
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 maxUsedHeight;

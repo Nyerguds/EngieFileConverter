@@ -85,7 +85,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             Boolean usesRLE = encoding == 1;
-            Int32 bitsPerPlane = fileData[3]; // Number of bits to represent a pixel (per Plane) - 1, 2, 4, or 8 
+            Int32 bitsPerPlane = fileData[3]; // Number of bits to represent a pixel (per Plane) - 1, 2, 4, or 8
             UInt16 windowXmin = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
             UInt16 windowYmin = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
             UInt16 windowXmax = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
@@ -95,10 +95,10 @@ namespace EngieFileConverter.Domain.FileTypes
             //UInt16 hDpi = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 12); // Horizontal Resolution of image in DPI
             //UInt16 vDpi = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 14); // Vertical Resolution of image in DPI
             Byte numPlanes = fileData[65]; // Number of color planes
-            UInt16 bytesPerLine = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 66); // Number of bytes to allocate for a scanline plane.  MUST be an EVEN number.  Do NOT calculate from Xmax-Xmin. 
-            UInt16 paletteInfo = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 68); // How to interpret palette- 1 = Color/BW, 2 = Grayscale (ignored in PB IV/ IV +) 
-            //UInt16 hscreenSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 70); // Horizontal screen size in pixels. New field found only in PB IV/IV Plus 
-            //UInt16 vscreenSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 72); // Vertical screen size in pixels. New field found only in PB IV/IV Plus 
+            UInt16 bytesPerLine = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 66); // Number of bytes to allocate for a scanline plane.  MUST be an EVEN number.  Do NOT calculate from Xmax-Xmin.
+            UInt16 paletteInfo = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 68); // How to interpret palette- 1 = Color/BW, 2 = Grayscale (ignored in PB IV/ IV +)
+            //UInt16 hscreenSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 70); // Horizontal screen size in pixels. New field found only in PB IV/IV Plus
+            //UInt16 vscreenSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 72); // Vertical screen size in pixels. New field found only in PB IV/IV Plus
 
             Int32 width = windowXmax - windowXmin + 1;
             Int32 height = windowYmax - windowYmin + 1;
@@ -308,7 +308,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return new SaveOption[] { new SaveOption("PLN", SaveOptionType.Boolean, "Save data as linear, not planar.", "1") };
 
             SaveOption version = new SaveOption("VER", SaveOptionType.ChoicesList, "PCX version:", "0: Paintbrush v2.5 (pure EGA colors only),2: Paintbrush v2.8 (with palette),3: Paintbrush v2.8 (no palette),4: Paintbrush for Windows,5: Paintbrush v3.0+", "4");
-            
+
             if (colors == 2 || colors == 4)
             {
                 Byte backgroundColor;

@@ -43,7 +43,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return this.m_IsMatrixImage; } }
         public Boolean IsMa8 { get; private set; }
-        
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Boolean is4bpp = fileToSave.BitsPerPixel == 4;
@@ -58,7 +58,7 @@ namespace EngieFileConverter.Domain.FileTypes
             opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
         }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null, false);
@@ -252,7 +252,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.ExtraInfo += "\nMatrix size: " + matrixWidth + " x " + matrixHeight
                              + "\nBlock size: " + blockWidth + " x " + blockHeight
                              + "\nMatrix ratio: " + frames + " / " + matrixLen + " = " + (frames * 100 / matrixLen) + "%";
-                this.ExtraInfo = this.ExtraInfo.Trim('\n');                             
+                this.ExtraInfo = this.ExtraInfo.Trim('\n');
             }
         }
 
@@ -283,7 +283,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
                 throw new ArgumentException(String.Format(ERR_UNKN_COMPR, compressionType), "compressionType");
-            
+
             // write save logic for frames
             PixelFormat pf = PixelFormat.Undefined;
             Int32 bpp = 0;
@@ -339,7 +339,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (isMa8) // MA8 seems to have indices 0 and FF switched
                     DynamixCompression.SwitchBackground(binData);
                 UInt32 dataLenBin = (UInt32)binData.Length;
-                if (compressionType != 0) 
+                if (compressionType != 0)
                 {
                     // TODO find and implement the other types... eventually.
                     Byte[] dataCompr = DynamixCompression.RleEncode(binData);

@@ -32,7 +32,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos Visage"; } }
         public override String[] FileExtensions { get { return new String[] { "vgs", "lbv", "all" }; } }
-        public override String ShortTypeDescription { get { return "Mythos Visage frames file"; } }
+        public override String ShortTypeDescription { get { return "Mythos Visage Frames file"; } }
         public override Boolean NeedsPalette { get { return !this.m_PaletteSet; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public Int32 CompressionType { get; set; }
@@ -149,8 +149,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     UInt32 endOffset = (UInt32)(offset + skipLen);
                     try
                     {
-                        MythosCompression mc = new MythosCompression();
-                        imageData = mc.FlagRleDecode(fileData, (UInt32)offset, endOffset, dataLen, true);
+                        imageData = MythosCompression.FlagRleDecode(fileData, (UInt32)offset, endOffset, dataLen, true);
                         if (imageData != null)
                         {
                             frameCompression = 1;
@@ -159,7 +158,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         }
                         else
                         {
-                            imageData = mc.CollapsedTransparencyDecode(fileData, (UInt32)offset, endOffset, dataLen, frameWidth, TransparentIndex, true);
+                            imageData = MythosCompression.CollapsedTransparencyDecode(fileData, (UInt32)offset, endOffset, dataLen, frameWidth, TransparentIndex, true);
                             if (imageData != null)
                             {
                                 frameCompression = 2;
@@ -265,7 +264,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     if (this.m_Palette == null)
                         this.m_Palette = PaletteUtils.GenerateGrayPalette(8, transMask, false);
-                    
+
                 }
                 Bitmap curImage = ImageUtils.BuildImage(imageData, frameWidth, frameHeight, frameWidth, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
@@ -299,7 +298,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.ExtraInfo += Environment.NewLine + "Treated as single full-screen image.";
             }
         }
-        
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 compression = 0;
@@ -413,13 +412,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] compressedBytes = null;
                 if (compressionType > 0)
                 {
-                    MythosCompression mc = new MythosCompression();
                     try
                     {
                         if (compressionType == 1)
-                            compressedBytes = mc.FlagRleEncode(frameBytes, 0xFE, width, 8);
+                            compressedBytes = MythosCompression.FlagRleEncode(frameBytes, 0xFE, width, 8);
                         else if (compressionType == 2)
-                            compressedBytes = mc.CollapsedTransparencyEncode(frameBytes, TransparentIndex, width, 8);
+                            compressedBytes = MythosCompression.CollapsedTransparencyEncode(frameBytes, TransparentIndex, width, 8);
                     }
                     catch (OverflowException ex)
                     {

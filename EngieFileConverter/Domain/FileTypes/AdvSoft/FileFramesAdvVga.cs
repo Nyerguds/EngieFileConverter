@@ -35,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             return false;
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             Int32 dataLen = fileData.Length;
@@ -152,7 +152,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = "Non-empty frames: " + (frames - emptyFrames) + "\n"
                              + "Empty frames: " + emptyFrames;
         }
-        
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             return new SaveOption[] { new SaveOption("NOCMP", SaveOptionType.Boolean, "Don't use compression", null) };
@@ -230,6 +230,6 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             return finalFile;
         }
-        
+
     }
 }

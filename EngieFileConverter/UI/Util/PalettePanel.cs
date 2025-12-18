@@ -15,7 +15,7 @@ namespace Nyerguds.Util.UI
     {
         protected static Padding DefaultLabelPadding = new Padding(2);
 
-        protected Label[] m_ColorLabels;
+        protected LabelNoCopyOnDblClick[] m_ColorLabels;
 
         protected Size m_LabelSize = new Size(16, 16);
         protected Point m_PadBetween = new Point(4, 4);
@@ -57,15 +57,15 @@ namespace Nyerguds.Util.UI
             Boolean disable = bitsPerPixel <= 0 || bitsPerPixel > 8;
             Int32 colors = disable ? 1 : 1 << bitsPerPixel;
             palPanel.MaxColors = disable ? 0 : colors;
-            Int32 squaresPerRow = (Int32) Math.Sqrt(colors);
+            Int32 squaresPerRow = (Int32)Math.Sqrt(colors);
             Int32 squaresPerCol = colors == 0 ? 0 : colors / squaresPerRow + ((colors % squaresPerRow) > 0 ? 1 : 0);
             squaresPerRow = Math.Max(squaresPerRow, squaresPerCol);
-            Int32 sqrWidth = (Int32) Math.Ceiling(maxDimension * 7.5 / 8.5 / squaresPerRow);
-            Int32 padding = (Int32) Math.Max(1, Math.Round(sqrWidth / 8.5));
+            Int32 sqrWidth = (Int32)Math.Ceiling(maxDimension * 7.5 / 8.5 / squaresPerRow);
+            Int32 padding = (Int32)Math.Max(1, Math.Round(sqrWidth / 8.5));
             while (maxDimension < squaresPerRow * sqrWidth + (squaresPerRow - 1) * padding)
             {
                 sqrWidth--;
-                padding = (Int32) Math.Max(1, Math.Ceiling(sqrWidth / 8.5));
+                padding = (Int32)Math.Max(1, Math.Ceiling(sqrWidth / 8.5));
             }
             palPanel.ColorTableWidth = squaresPerRow;
             palPanel.LabelSize = new Size(sqrWidth, sqrWidth);
@@ -315,7 +315,7 @@ namespace Nyerguds.Util.UI
                 this.Invalidate();
             }
         }
-        
+
         [Description("Character put on labels to indicate entries that are translucent on the palette. Not drawn if set to \0 or space."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue('A')]
@@ -485,7 +485,7 @@ namespace Nyerguds.Util.UI
             this.DrawPalette();
             this.Paint += this.PalettePanel_Paint;
         }
-        
+
         protected void PalettePanel_Paint(Object sender, PaintEventArgs e)
         {
             this.SuspendLayout();
@@ -522,18 +522,18 @@ namespace Nyerguds.Util.UI
             Boolean newPalette = this.m_ColorLabels == null;
             Int32 rows = this.m_MaxColors / this.m_ColorTableWidth + ((this.m_MaxColors % this.m_ColorTableWidth > 0) ? 1 : 0);
             if (newPalette)
-                this.m_ColorLabels = new Label[this.m_MaxColors];
+                this.m_ColorLabels = new LabelNoCopyOnDblClick[this.m_MaxColors];
             else
             {
                 Int32 nrOfLabels = this.m_ColorLabels.Length;
                 for (Int32 i = this.m_MaxColors; i < nrOfLabels; ++i)
                 {
-                    Label colorLabel = this.m_ColorLabels[i];
+                    LabelNoCopyOnDblClick colorLabel = this.m_ColorLabels[i];
                     this.Controls.Remove(colorLabel);
                     colorLabel.Dispose();
                     this.m_ColorLabels[i] = null;
                 }
-                Label[] newLabels = new Label[this.m_MaxColors];
+                LabelNoCopyOnDblClick[] newLabels = new LabelNoCopyOnDblClick[this.m_MaxColors];
                 Array.Copy(this.m_ColorLabels, newLabels, Math.Min(this.m_ColorLabels.Length, this.m_MaxColors));
                 this.m_ColorLabels = newLabels;
             }
@@ -576,7 +576,7 @@ namespace Nyerguds.Util.UI
                     if (this.m_ShowColorToolTips)
                         this.SetColorToolTip(index, isEmptyCol, alpha);
                 }
-            }                
+            }
             Int32 sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
             Int32 sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);
@@ -598,7 +598,7 @@ namespace Nyerguds.Util.UI
 
         protected virtual void SetColorToolTip(Int32 index, Boolean isEmpty, Int32 alpha)
         {
-            Label lbl = this.m_ColorLabels[index];
+            LabelNoCopyOnDblClick lbl = this.m_ColorLabels[index];
             String tooltipString;
             if (isEmpty)
             {
@@ -622,9 +622,9 @@ namespace Nyerguds.Util.UI
             this.toolTipColor.SetToolTip(lbl, tooltipString);
         }
 
-        protected virtual Label GenerateLabel(Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean addBorder)
+        protected virtual LabelNoCopyOnDblClick GenerateLabel(Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean addBorder)
         {
-            Label lbl = new LabelNoCopyOnDblClick();
+            LabelNoCopyOnDblClick lbl = new LabelNoCopyOnDblClick();
             this.SetLabelProperties(lbl, x, y, color, isEmpty, addBorder);
             lbl.MouseClick += this.ColorLblMouseClick;
             lbl.MouseDoubleClick += this.ColorLblMouseDoubleClick;
@@ -633,7 +633,7 @@ namespace Nyerguds.Util.UI
             return lbl;
         }
 
-        protected virtual void SetLabelProperties(Label lbl, Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean addBorder)
+        protected virtual void SetLabelProperties(LabelNoCopyOnDblClick lbl, Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean addBorder)
         {
             Int32 index = y * this.m_ColorTableWidth + x;
             Int32 alpha = color.A;
@@ -672,7 +672,7 @@ namespace Nyerguds.Util.UI
             lbl.Margin = new Padding(0);
             lbl.Padding = new Padding(0);
             // Reduce font size to fit label size if needed. Don't bother if the text is empty anyway.
-            if (!String.IsNullOrEmpty(lbl.Text))
+            if (!String.IsNullOrEmpty(lbl.GetTextInternal()))
             {
                 Single maxHeight = (Single)(this.m_LabelSize.Height * 6.0 / 8.0);
                 Single currentFontSize;
@@ -690,13 +690,13 @@ namespace Nyerguds.Util.UI
 
         protected virtual void lblColor_Paint(Object sender, PaintEventArgs e)
         {
-            Label lbl = sender as Label;
+            LabelNoCopyOnDblClick lbl = sender as LabelNoCopyOnDblClick;
             if (lbl == null || !(lbl.Tag is Int32) || lbl.BorderStyle != BorderStyle.FixedSingle)
                 return;
             ButtonBorderStyle bs = ButtonBorderStyle.Solid;
             if (this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
             {
-                Int32 index = (Int32) lbl.Tag;
+                Int32 index = (Int32)lbl.Tag;
                 if (this.m_SelectedIndicesArr[0] == index)
                     bs = ButtonBorderStyle.Outset;
                 else if (this.m_SelectedIndicesArr[1] == index)
@@ -707,7 +707,7 @@ namespace Nyerguds.Util.UI
 
         protected virtual void ColorLblMouseClick(Object sender, MouseEventArgs e)
         {
-            Label lbl = (Label) sender;
+            LabelNoCopyOnDblClick lbl = (LabelNoCopyOnDblClick)sender;
             if (lbl == null || !(lbl.Tag is Int32))
                 return;
             Int32 index = (Int32)lbl.Tag;
@@ -776,7 +776,7 @@ namespace Nyerguds.Util.UI
 
         protected virtual void ColorLblMouseDoubleClick(Object sender, MouseEventArgs e)
         {
-            Label lbl = sender as Label;
+            LabelNoCopyOnDblClick lbl = sender as LabelNoCopyOnDblClick;
             if (this.ColorLabelMouseDoubleClick == null || lbl == null || !(lbl.Tag is Int32))
                 return;
             Int32 index = (Int32)lbl.Tag;
@@ -806,29 +806,48 @@ namespace Nyerguds.Util.UI
             if (color.GetSaturation() < .16)
                 return bri < .5 ? Color.White : Color.Black;
             // Take inverted color.
-            return Color.FromArgb((Int32) (0x00FFFFFFu ^ (UInt32) color.ToArgb()));
+            return Color.FromArgb((Int32)(0x00FFFFFFu ^ (UInt32)color.ToArgb()));
         }
 
         /// <summary>
-        /// Disables the "feature" that double-clicking a label copies its text. Since said copy apparently happens
-        /// on the internal text variable in the Label class, an override fixes this problem.
+        /// Disables the "feature" that double-clicking a label copies its text.
         /// </summary>
         protected class LabelNoCopyOnDblClick : Label
         {
-            private String text;
+            private String _text;
+            private Boolean _allowTextFetch;
+
+            public String GetTextInternal()
+            {
+                return this._text;
+            }
 
             public override String Text
             {
-                get { return this.text; }
+                get { return this._allowTextFetch ? this._text : null; }
                 set
                 {
                     if (value == null)
                         value = String.Empty;
-                    if (this.text == value)
+                    if (this._text == value)
                         return;
-                    this.text = value;
+                    this._text = value;
                     this.Refresh();
                     this.OnTextChanged(EventArgs.Empty);
+                }
+            }
+
+            protected override void OnPaint(PaintEventArgs pe)
+            {
+                try
+                {
+                    // Only allow the use of the .Text property while performing OnPaint.
+                    this._allowTextFetch = true;
+                    base.OnPaint(pe);
+                }
+                finally
+                {
+                    this._allowTextFetch = false;
                 }
             }
         }

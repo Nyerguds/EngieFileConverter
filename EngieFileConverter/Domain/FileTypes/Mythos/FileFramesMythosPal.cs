@@ -15,8 +15,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.None; } }
 
+        public override String IdCode { get { return "MythPal"; } }
         public override String ShortTypeName { get { return "Mythos Visage palette"; } }
-        public override String ShortTypeDescription { get { return "Mythos Visage palette file"; } }
+        public override String ShortTypeDescription { get { return "Mythos Visage Palette file"; } }
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>

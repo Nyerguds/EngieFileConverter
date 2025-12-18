@@ -71,7 +71,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.numValue.Minimum = minVal;
             this.numValue.Maximum = maxVal;
         }
-        
+
         public override void FocusValue()
         {
             this.numValue.Select();

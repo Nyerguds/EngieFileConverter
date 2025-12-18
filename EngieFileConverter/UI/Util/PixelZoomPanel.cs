@@ -26,7 +26,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Occurs when the user changes the background fill color"), Category("Action")]
         public event EventHandler BackgroundFillColorChanged;
-        
+
         protected virtual void OnBackgroundFillColorChanged(EventArgs e)
         {
             EventHandler handler = this.BackgroundFillColorChanged;
@@ -59,7 +59,7 @@ namespace Nyerguds.Util.UI
             get { return (Int32)this.numZoom.Minimum; }
             set { this.numZoom.Minimum = value; }
         }
-        
+
         public Boolean ImageVisible
         {
             get { return this.picImage.Visible; }
@@ -225,7 +225,7 @@ namespace Nyerguds.Util.UI
         {
             this.pnlImageScroll.Focus();
         }
-        
+
 
         private void LblTransparentColorValKeyPress(Object sender, KeyPressEventArgs e)
         {
@@ -267,7 +267,7 @@ namespace Nyerguds.Util.UI
                 {
                     this.numZoom.EnteredValue = this.numZoom.Constrain(value);
                     numZoom_ValueUpDown(this.numZoom, new UpDownEventArgs(diff > 0 ? UpDownAction.Up : UpDownAction.Down, diff, true));
-                }                
+                }
                 HandledMouseEventArgs args = e as HandledMouseEventArgs;
                 if (args != null)
                     args.Handled = true;

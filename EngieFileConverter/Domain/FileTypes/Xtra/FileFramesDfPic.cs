@@ -46,7 +46,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             const Int32 palSize = 0x300;

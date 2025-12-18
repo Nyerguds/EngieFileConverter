@@ -45,7 +45,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return FileClass.None;
             }
         }
-        
+
         public override Int32 BitsPerPixel
         {
             get
@@ -63,7 +63,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
         }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData);

@@ -24,7 +24,7 @@ namespace EngieFileConverter.UI
         public Boolean KeepIndices { get; private set; }
 
         private Bitmap m_Image;
-        private Int32 m_Frames; 
+        private Int32 m_Frames;
         private Int32 m_FramesBpp;
         private String labelText;
 
@@ -165,7 +165,7 @@ namespace EngieFileConverter.UI
             {
                 if (!failSilently)
                     MessageBox.Show(this, "Could not load clipboard data:\n\n" + ex.Message, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;                
+                return false;
             }
             finally
             {

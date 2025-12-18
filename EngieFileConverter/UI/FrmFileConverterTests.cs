@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Nyerguds.FileData.EmotionalPictures;
 
@@ -19,7 +20,7 @@ namespace EngieFileConverter.UI
     /// <summary>
     /// To anyone who sees this, hello, and welcome to Nyerguds's random experiments and test code! This code onbnly compiles in Debug mode,
     /// and is linked to the [Edit] -> [Test bed] menu item (tsmiTestBed) through the TsmiTestBedClick function. Typically, only one of the
-    /// below functions is called. I keep them all here because they often contain interesting code, but I don't want to pollute the main 
+    /// below functions is called. I keep them all here because they often contain interesting code, but I don't want to pollute the main
     /// source file of FrmFileConverter with them.
     /// Note that some code that is referenced here might be from the Domain\Utils\UtilsSO.cs or Domain\Utils\ImageUtils\ImageUtilsSO.cs
     /// class, which, like this one, do not compile in Release mode.
@@ -29,7 +30,7 @@ namespace EngieFileConverter.UI
         private void ExecuteTestCode()
         {
             // any test code can be linked in here.
-            this.ViewInt33MouseCursors();
+            //this.ViewInt33MouseCursors();
             //this.MatrixImage();
             //this.LoadByteArrayImage();
             //this.CombineHue();
@@ -51,6 +52,11 @@ namespace EngieFileConverter.UI
             //this.TestSplit();
             //this.BuildBayer();
             //this.Reduce12Bit();
+            //this.CombineImages();
+            //this.MakePatterns();
+            //this.ExtractBlack();
+            //this.MakeTrans();
+            //CombineVertical();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -172,7 +178,7 @@ namespace EngieFileConverter.UI
                 Int32 strideFinal = 16;
                 for (Int32 j = 0; j < 256; ++j)
                 {
-                    imageFinal[j] = (Byte)((curImage2[j] << 1) | curImage1[j]);
+                    imageFinal[j] = (Byte) ((curImage2[j] << 1) | curImage1[j]);
                 }
                 StringBuilder sb = new StringBuilder();
                 using (MemoryStream ms = new MemoryStream(int33MouseCursor))
@@ -206,8 +212,8 @@ namespace EngieFileConverter.UI
             Bitmap composite;
             if (x4)
             {
-                Int32 fullWidth4 = fullWidth *4;
-                Int32 fullHeight4 = fullHeight*4;
+                Int32 fullWidth4 = fullWidth * 4;
+                Int32 fullHeight4 = fullHeight * 4;
                 Int32 fullStride4 = fullStride * 4;
                 Byte[] fullImage4 = new Byte[fullStride4 * fullHeight4];
                 for (Int32 y = 0; y < fullHeight4; y++)
@@ -238,20 +244,22 @@ namespace EngieFileConverter.UI
 
         private void LoadByteArrayImage()
         {
-            Byte[] imageBytes = {
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80 };
+            Byte[] imageBytes =
+            {
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80
+            };
             Color[] palette = new Color[0x100];
             for (Int32 i = 0; i < 0x100; ++i)
                 palette[i] = Color.FromArgb(i, i, i);
@@ -282,7 +290,7 @@ namespace EngieFileConverter.UI
                 ColorHSL curPix = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(imageData, i));
                 ColorHSL curCol = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(colorData, i));
                 ColorHSL newCol = new ColorHSL(curCol.Hue, curCol.Saturation, curPix.Luminosity);
-                UInt32 val = (UInt32)((Color)newCol).ToArgb();
+                UInt32 val = (UInt32) ((Color) newCol).ToArgb();
                 ArrayUtils.WriteInt32ToByteArrayLe(imageData, i, val);
             }
             using (Bitmap img = ImageUtils.BuildImage(imageData, im.Width, im.Height, iStride, PixelFormat.Format32bppArgb, null, null))
@@ -327,7 +335,7 @@ namespace EngieFileConverter.UI
             while (readPtr + 4 <= compressedMap.Length)
             {
                 UInt32 uLength = ArrayUtils.ReadUInt32FromByteArrayLe(compressedMap, readPtr);
-                Int32 length = (Int32)(uLength & 0xDFFFFFFF);
+                Int32 length = (Int32) (uLength & 0xDFFFFFFF);
                 readPtr += 4;
                 Byte[] dest = new Byte[8192];
                 Int32 readPtr2 = readPtr;
@@ -395,7 +403,7 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null)
                 return;
             String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String[] files = { "ENGLISH", "FRENCH", "GERMAN", "ITALIAN", "SCROLL" };
+            String[] files = {"ENGLISH", "FRENCH", "GERMAN", "ITALIAN", "SCROLL"};
             foreach (String filename in files)
             {
                 String fullPath = Path.Combine(path, filename + ".PPP");
@@ -427,7 +435,7 @@ namespace EngieFileConverter.UI
                     Byte[] strBuffer = new Byte[strLen];
                     Array.Copy(buffDec, ptr, strBuffer, 0, Math.Min(strLen, len - ptr));
                     for (Int32 c = 0; c < strLen; ++c)
-                        strBuffer[c] = (Byte)((strBuffer[c] << 1) | (strBuffer[c] >> 7));
+                        strBuffer[c] = (Byte) ((strBuffer[c] << 1) | (strBuffer[c] >> 7));
                     String curLine = dosenc.GetString(strBuffer);
                     stringsFile.Add(curLine);
                     ptr += strLen;
@@ -504,7 +512,7 @@ namespace EngieFileConverter.UI
                     Color[] cols = mappic.Palette.Entries;
                     if (cols.Length < 256)
                     {
-                        colIndex = (Byte)cols.Length;
+                        colIndex = (Byte) cols.Length;
                         colors = new Color[colIndex + 1];
                         Array.Copy(cols, colors, colIndex);
                     }
@@ -575,7 +583,7 @@ namespace EngieFileConverter.UI
             String folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
             String[] files = Directory.GetFiles(folder, "*.png");
             foreach (String file in files)
-                this.FixPngAspectRatio(file);    
+                this.FixPngAspectRatio(file);
         }
 
         private void FixPngAspectRatio(String path)
@@ -583,8 +591,14 @@ namespace EngieFileConverter.UI
             const String physChunkId = "pHYs";
             // Read bytes
             Byte[] pngBytes;
-            try { pngBytes = File.ReadAllBytes(path); }
-            catch { return; /* Not dealing with this. Just abort. */ }
+            try
+            {
+                pngBytes = File.ReadAllBytes(path);
+            }
+            catch
+            {
+                return; /* Not dealing with this. Just abort. */
+            }
             // Checks
             if (!PngHandler.IsPng(pngBytes))
                 return;
@@ -611,7 +625,7 @@ namespace EngieFileConverter.UI
                 Directory.CreateDirectory(origFolder);
             String backup = Path.Combine(origFolder, Path.GetFileName(path));
             File.Copy(path, backup);
-            
+
             // Save changes
             File.WriteAllBytes(path, pngBytes);
         }
@@ -624,7 +638,7 @@ namespace EngieFileConverter.UI
             Int32 stride = size;
             Byte[] pixels = new Byte[size * stride];
 
-            Color[] palette = new Color[]{ Color.Pink, Color.Green };
+            Color[] palette = new Color[] {Color.Pink, Color.Green};
 
             Byte paintIndex = 1;
             borderSize = Math.Min(borderSize, size);
@@ -677,11 +691,11 @@ namespace EngieFileConverter.UI
                 Point center = BlobDetection.GetBlobCenter(blob);
                 foreach (Point p in blob)
                     bm2.SetPixel(p.X, p.Y, Color.Blue);
-                bm2.SetPixel(center.X-1, center.Y, Color.Red);
+                bm2.SetPixel(center.X - 1, center.Y, Color.Red);
                 bm2.SetPixel(center.X, center.Y, Color.Red);
-                bm2.SetPixel(center.X+1, center.Y, Color.Red);
-                bm2.SetPixel(center.X, center.Y-1, Color.Red);
-                bm2.SetPixel(center.X, center.Y+1, Color.Red);
+                bm2.SetPixel(center.X + 1, center.Y, Color.Red);
+                bm2.SetPixel(center.X, center.Y - 1, Color.Red);
+                bm2.SetPixel(center.X, center.Y + 1, Color.Red);
             }
             this.LoadTestFile(bm2, m_LoadedFile.LoadedFile, "Detected blobs: " + blobs.Count);
         }
@@ -770,7 +784,7 @@ namespace EngieFileConverter.UI
             Int32 lineOffset = 0;
             for (Int32 y = 0; y < height; ++y)
             {
-                Int32 offsetQuad = lineOffset-4;
+                Int32 offsetQuad = lineOffset - 4;
                 for (Int32 x = 0; x < width; ++x)
                 {
                     offsetQuad += 4;
@@ -791,14 +805,14 @@ namespace EngieFileConverter.UI
                     imageData[offsetQuad + 0] = grayVal;
                     imageData[offsetQuad + 1] = grayVal;
                     imageData[offsetQuad + 2] = grayVal;
-                    imageData[offsetQuad + 3] = (Byte)Math.Min(((180 - hueDiff) * 255 / 360), 255);
+                    imageData[offsetQuad + 3] = (Byte) Math.Min(((180 - hueDiff) * 255 / 360), 255);
                 }
                 lineOffset += stride;
             }
             lineOffset = 0;
             for (Int32 y = 0; y < height; ++y)
             {
-                Int32 offsetQuad = lineOffset-4;
+                Int32 offsetQuad = lineOffset - 4;
                 for (Int32 x = 0; x < width; ++x)
                 {
                     offsetQuad += 4;
@@ -845,8 +859,8 @@ namespace EngieFileConverter.UI
             imageAttr.SetColorKey(low_color, high_color);
 
             // Make the result image.
-            int width = bm.Width;
-            int height = bm.Height;
+            Int32 width = bm.Width;
+            Int32 height = bm.Height;
             Bitmap bmNew = new Bitmap(width, height);
 
             // Process the image.
@@ -879,7 +893,7 @@ namespace EngieFileConverter.UI
             image.UnlockBits(sourceData);
 
             Int32 lastWhiteLine = ImageUtilsSO.GetLastClearLine(data, stride, width, height, Color.White);
-            if (lastWhiteLine == height-1)
+            if (lastWhiteLine == height - 1)
                 MessageBox.Show(this, "Nothing touching the bottom edge!");
             else
                 MessageBox.Show(this, "Last full white line is " + lastWhiteLine);
@@ -917,9 +931,9 @@ namespace EngieFileConverter.UI
             {
                 Int32 readOffs = readLineOffs;
                 Int32 readOffsEnd = readLineOffs + width * 2;
-                for (; readOffs < readOffsEnd; readOffs+=2)
+                for (; readOffs < readOffsEnd; readOffs += 2)
                 {
-                    Int32 value = ((imgData1[readOffs+1] << 8) + imgData1[readOffs]) >> 4;
+                    Int32 value = ((imgData1[readOffs + 1] << 8) + imgData1[readOffs]) >> 4;
                     imgData2[writeLineOffs] = (Byte) value;
                     writeLineOffs++;
                 }
@@ -927,6 +941,154 @@ namespace EngieFileConverter.UI
             }
             Bitmap bm2 = ImageUtils.BuildImage(imgData2, width, height, width, PixelFormat.Format8bppIndexed, PaletteUtils.GenerateGrayPalette(8, null, false), null);
             this.LoadTestFile(bm2);
+        }
+
+        private void CombineImages()
+        {
+            Bitmap picFootshape;
+            Bitmap materialImage;
+            Int32 width;
+            Int32 height;
+            SupportedFileType current = this.m_LoadedFile;
+            if (current == null || !current.IsFramesContainer || current.Frames.Length < 2
+                || current.Frames[0] == null || (picFootshape = current.Frames[0].GetBitmap()) == null
+                || current.Frames[1] == null || (materialImage = current.Frames[1].GetBitmap()) == null
+                || (width = picFootshape.Width) != materialImage.Width || (height = picFootshape.Height) != materialImage.Height)
+                return;
+            Int32 stride;
+            // extract bytes of shape & alpha image
+            Byte[] shapeImageBytes = ImageUtils.GetImageData(picFootshape, out stride, PixelFormat.Format32bppArgb);
+            // combine
+            using (Bitmap blackImage = ImageUtilsSO.ExtractBlackImage(shapeImageBytes, width, height, stride))
+            {
+                Bitmap result = ImageUtilsSO.ApplyAlphaToImage(shapeImageBytes, width, height, stride, materialImage);
+                // paint black lines image onto alpha-adjusted pattern image.
+                using (Graphics g = Graphics.FromImage(result))
+                    g.DrawImage(blackImage, 0, 0);
+                this.LoadTestFile(result);
+            }
+        }
+
+        private void MakePatterns()
+        {
+            SupportedFileType shownFile = this.GetShownFile();
+            Bitmap image;
+            if (shownFile == null || (image = shownFile.GetBitmap()) == null || image.PixelFormat != PixelFormat.Format32bppArgb)
+                return;
+            String testFilesPath = Path.GetFullPath(Path.Combine(GeneralUtils.GetApplicationPath(), "..\\..\\..\\..\\1_testdata"));
+            String patternsFolder = Path.Combine(testFilesPath, "feet_patterns");
+            //String materialsFolder = Path.Combine(testFilesPath, "feet_material");
+            //foreach (String materialImagePath in Directory.GetFiles(materialsFolder))
+            //    File.Delete(materialImagePath);
+            String finalFolder = Path.Combine(testFilesPath, "feet_final");
+            foreach (String finalFile in Directory.GetFiles(finalFolder))
+                File.Delete(finalFile);
+            //ImageUtilsSO.TilePatterns(patternsFolder, image.Width, image.Height, materialsFolder);
+            ImageUtilsSO.BakeImages(shownFile.LoadedFile, patternsFolder, finalFolder);
+        }
+
+        private void ExtractBlack()
+        {
+            SupportedFileType shownFile = this.GetShownFile();
+            Bitmap image;
+            if (shownFile == null || (image = shownFile.GetBitmap()) == null)
+                return;
+            Int32 width = image.Width;
+            Int32 height = image.Height;
+            Int32 stride;
+            Byte[] shapeImageBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format32bppArgb);
+            Bitmap blackImage = ImageUtilsSO.ExtractBlackImage(shapeImageBytes, width, height, stride);
+            this.LoadTestFile(blackImage);
+        }
+
+        private void MakeTrans()
+        {
+            const Byte bgRedR = 0x96;
+            const Byte bgRedG = 0x0b;
+            const Byte bgRedB = 0x08;
+
+            Bitmap img1Red;
+            Bitmap img2Black;
+            Int32 width;
+            Int32 height;
+            SupportedFileType current = this.m_LoadedFile;
+            if (current == null || !current.IsFramesContainer || current.Frames.Length < 2
+                || current.Frames[0] == null || (img1Red = current.Frames[0].GetBitmap()) == null
+                || current.Frames[1] == null || (img2Black = current.Frames[1].GetBitmap()) == null
+                || (width = img1Red.Width) != img2Black.Width || (height = img1Red.Height) != img2Black.Height)
+                return;
+            Int32 stride = ImageUtils.GetClassicStride(width, 32);
+            Byte[] img1RedBytes = ImageUtils.GetImageData(img1Red, PixelFormat.Format32bppArgb);
+            Byte[] img2BlackBytes = ImageUtils.GetImageData(img2Black, PixelFormat.Format32bppArgb);
+            Int32 lineOffset = 0;
+            const Int32 threshold = 160;
+            const Int32 thresholdBlack = 5;
+            for (Int32 y = 0; y < height; y++)
+            {
+                Int32 offset = lineOffset;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    Byte b1r = img1RedBytes[offset];
+                    Byte b2b = img2BlackBytes[offset];
+                    Byte g1r = img1RedBytes[offset + 1];
+                    Byte g2b = img2BlackBytes[offset + 1];
+                    Byte r1r = img1RedBytes[offset + 2];
+                    Byte r2b = img2BlackBytes[offset + 2];
+                    Int32 diffB = Math.Abs(b1r - b2b);
+                    Int32 diffG = Math.Abs(g1r - g2b);
+                    Int32 diffR = Math.Abs(r1r - r2b);
+                    if (b2b < thresholdBlack && g2b < thresholdBlack && r2b < thresholdBlack)
+                        //if (diffR > threshold || diffG > threshold || diffB > threshold)
+                        //if (diffR > threshold || diffG > threshold || diffB > threshold || (b2b < thresholdBlack && g2b < thresholdBlack && r2b < thresholdBlack))
+                    {
+                        //Int32 diffB1Red = Math.Abs(b1 - bgRedB);
+                        //Int32 diffG1Red = Math.Abs(g1 - bgRedG);
+                        Int32 diffR1Red = Math.Abs(r1r - bgRedR);
+                        //img1RedBytes[offset + 0] = r1r;
+                        //img1RedBytes[offset + 1] = r1r;
+                        //img1RedBytes[offset + 2] = r1;
+                        img1RedBytes[offset + 3] = (Byte) diffR1Red;
+                    }
+                    offset += 4;
+                }
+                lineOffset += stride;
+            }
+            Bitmap bm2 = ImageUtils.BuildImage(img1RedBytes, width, height, stride, PixelFormat.Format32bppArgb, null, null);
+            this.LoadTestFile(bm2);
+        }
+
+        private void CombineVertical()
+        {
+            String testFilesPath = Path.GetFullPath(Path.Combine(GeneralUtils.GetApplicationPath(), "..\\..\\..\\..\\1_testdata"));
+            String patternsFolder = Path.Combine(testFilesPath, "feet_patterns");
+            List<Bitmap> images = new List<Bitmap>();
+            String[] files = Directory.GetFiles(patternsFolder);
+            foreach (String imagePath in files)
+                images.Add(new Bitmap(imagePath));
+            Int32 width = images.First().Width; //all images in list have the same width so i take the first
+            Int32 height = 0;
+            for (Int32 i = 0; i < images.Count; i++) //the list has 300 images. I have to get 36 that contains the captcha separated into pieces
+            {
+                height += images[i].Height;
+            }
+            Bitmap bitmap2 = new Bitmap(width, height);
+            bitmap2.SetResolution(72, 72);
+            using (Graphics g = Graphics.FromImage(bitmap2))
+            {
+
+                height = 0;
+                for (Int32 i = 0; i < images.Count; i++)
+                {
+                    Bitmap image = images[i];
+                    image.SetResolution(72, 72);
+                    g.DrawImage(image, 0, height);
+                    height += image.Height;
+                }
+            }
+            foreach (Bitmap image in images)
+                image.Dispose();
+            //bitmap2.Save(Path.Combine(testFilesPath, "testCombine.png"), ImageFormat.Png);            
+            this.LoadTestFile(bitmap2);
         }
 
     }

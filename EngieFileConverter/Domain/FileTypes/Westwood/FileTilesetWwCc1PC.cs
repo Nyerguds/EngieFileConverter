@@ -15,7 +15,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "WwTmp"; } }
         public override FileClass FileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         // maybe add FrameSet input later... not supported for now though.
-        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
 
         public override String[] FileExtensions { get { return new String[] { "icn", "tem", "win", "des", "sno" }; } }
         public override String ShortTypeName { get { return "C&C Tileset"; } }
@@ -43,7 +43,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte[][] m_Tiles;
         protected Boolean[] m_TileUseList;
         protected Int32 m_CompositeFrameTilesWidth = 1;
-        
+
         public Byte[][] GetRawTiles()
         {
             Byte[][] tiles = new Byte[this.m_Tiles.Length][];
@@ -143,7 +143,7 @@ namespace EngieFileConverter.Domain.FileTypes
             String[] extraInfo = Enumerable.Range(0, imagesList.Length).Where(i => imagesList[i] != 0xFF && imagesIndex[imagesList[i]] != 0).Select(x => x.ToString()).ToArray();
             if (extraInfo.Length > 0)
                 this.ExtraInfo = "Extra image info on cell " + String.Join(", ", extraInfo);
-            
+
             Int32 xDim = -1;
             if (sourceFileName != null)
             {
@@ -204,46 +204,74 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileToSave.BitsPerPixel != 8)
                 throw new ArgumentException("Can only save 8 BPP images as this type.", "fileToSave");
-            Bitmap bitmap = fileToSave.GetBitmap();
-            if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
-                throw new ArgumentException("The file dimensions are not a multiple of 24×24!", "fileToSave");
-            Int32 nrOfFramesX = bitmap.Width / 24;
-            Int32 nrOfFramesY = bitmap.Height / 24;
-            Int32 nrOfFrames = nrOfFramesX * nrOfFramesY;
-            if (nrOfFrames > 255)
-                throw new ArgumentException("File dimensions are too large!", "fileToSave");
-            Int32 stride;
-            Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
+            Byte[][] framesData;
+            Int32 nrOfFrames;
+            if (!fileToSave.IsFramesContainer)
+            {
+                Bitmap bitmap = fileToSave.GetBitmap();
+                if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
+                    throw new ArgumentException("The file dimensions are not a multiple of 24×24!", "fileToSave");
+                Int32 nrOfFramesX = bitmap.Width / 24;
+                Int32 nrOfFramesY = bitmap.Height / 24;
+                nrOfFrames = nrOfFramesX * nrOfFramesY;
+                framesData = new Byte[nrOfFrames][];
+                if (nrOfFrames > 255)
+                    throw new ArgumentException("Too many tiles in file!", "fileToSave");
+                Int32 stride;
+                Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
+                for (Int32 y = 0; y < nrOfFramesY; ++y)
+                {
+                    for (Int32 x = 0; x < nrOfFramesX; ++x)
+                    {
+                        Int32 index = y * nrOfFramesX + x;
+                        framesData[index] = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
+                    }
+                }
+            }
+            else
+            {
+                SupportedFileType[] frames = fileToSave.Frames;
+                nrOfFrames = frames.Length;
+                if (nrOfFrames > 255)
+                    throw new ArgumentException("Too many tiles in file!", "fileToSave");
+                framesData = new Byte[nrOfFrames][];
+                for (Int32 i = 0; i < nrOfFrames; ++i)
+                {
+                    Bitmap bitmap;
+                    if (frames[i] == null || (bitmap = frames[i].GetBitmap()) == null)
+                        continue; // gonna allow this; this format has empty frames.
+                        //throw new ArgumentException("Cannot handle empty frames!", "fileToSave");
+                    if (bitmap.Width != 24 || bitmap.Height != 24)
+                        throw new ArgumentException("All frames must be 24×24!", "fileToSave");
+                    framesData[i] = ImageUtils.GetImageData(bitmap, true);
+                }
+            }
             Byte[][] tempFrames = new Byte[nrOfFrames][];
             Byte[] finalIndices = new Byte[nrOfFrames];
             Int32 actualFrames = 0;
-            for (Int32 y = 0; y < nrOfFramesY; ++y)
+            for (Int32 index = 0; index < nrOfFrames; ++index)
             {
-                for (Int32 x = 0; x < nrOfFramesX; ++x)
+                Byte[] frameData = framesData[index];
+                if (frameData == null || frameData.All(b => b == 0))
+                    finalIndices[index] = 0xFF;
+                else
                 {
-                    Int32 index = y * nrOfFramesX + x;
-                    Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
-                    if (frameData.All(b => b == 0))
-                        finalIndices[index] = 0xFF;
+                    Int32 foundIndex = -1;
+                    for (Int32 i = 0; i < actualFrames; ++i)
+                    {
+                        if (tempFrames[i].SequenceEqual(frameData))
+                        {
+                            foundIndex = i;
+                            break;
+                        }
+                    }
+                    if (foundIndex != -1)
+                        finalIndices[index] = (Byte)foundIndex;
                     else
                     {
-                        Int32 foundIndex = -1;
-                        for (Int32 i = 0; i < actualFrames; ++i)
-                        {
-                            if (tempFrames[i].SequenceEqual(frameData))
-                            {
-                                foundIndex = i;
-                                break;
-                            }
-                        }
-                        if (foundIndex != -1)
-                            finalIndices[index] = (Byte)foundIndex;
-                        else
-                        {
-                            finalIndices[index] = (Byte) actualFrames;
-                            tempFrames[actualFrames] = frameData;
-                            actualFrames++;
-                        }
+                        finalIndices[index] = (Byte) actualFrames;
+                        tempFrames[actualFrames] = frameData;
+                        actualFrames++;
                     }
                 }
             }

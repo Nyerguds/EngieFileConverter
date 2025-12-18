@@ -21,21 +21,21 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            SupportedFileType parType = fileToSave.FrameParent;
-            Boolean mainTypeIndexed = (fileToSave.FileClass & FileClass.ImageIndexed) != 0 || (fileToSave.IsFramesContainer && (fileToSave.FrameInputFileClass & FileClass.ImageIndexed) != 0);
-            Boolean parTypeIndexed = parType != null && ((parType.FileClass & FileClass.ImageIndexed) != 0 || (parType.FrameInputFileClass & FileClass.ImageIndexed) != 0);
+            SupportedFileType parentType = fileToSave.FrameParent;
+            Boolean mainTypeIndexed = (fileToSave.FileClass & FileClass.ImageIndexed) != 0 || (fileToSave.IsFramesContainer && fileToSave.Frames.Any(f => f != null && (f.FileClass & FileClass.ImageIndexed) != 0));
+            Boolean parTypeIndexed = parentType != null && ((parentType.FileClass & FileClass.ImageIndexed) != 0 || (parentType.Frames.Any(f => f != null && (f.FileClass & FileClass.ImageIndexed) != 0)));
             // Does not support indexed graphics; don't show the option at all.
             if (!mainTypeIndexed && !parTypeIndexed)
-                return new SaveOption[0];            
+                return new SaveOption[0];
             Boolean mainTypeHasMask = fileToSave.TransparencyMask != null && fileToSave.TransparencyMask.Any(b => b);
-            Boolean parTypeHasMask = parType != null && parType.TransparencyMask != null && parType.TransparencyMask.Any(b => b);
+            Boolean parentTypeHasMask = parentType != null && parentType.TransparencyMask != null && parentType.TransparencyMask.Any(b => b);
             Color[] pal = fileToSave.GetColors();
-            if (!mainTypeHasMask && !parTypeHasMask && pal != null && pal.All(c => c.A == 255))
+            if (!mainTypeHasMask && !parentTypeHasMask && pal != null && pal.All(c => c.A == 255))
                 return new SaveOption[0];
             // Default to true if the type has a specific forced transparent index; this kind of transparency is usually best removed for editing.
             return new SaveOption[]
             {
-                new SaveOption("NTP", SaveOptionType.Boolean, "Save indexed graphics without transparency (advised for editing)", mainTypeHasMask || parTypeHasMask ? "1" : "0")
+                new SaveOption("NTP", SaveOptionType.Boolean, "Save indexed graphics without transparency (advised for editing)", mainTypeHasMask || parentTypeHasMask ? "1" : "0")
             };
         }
 

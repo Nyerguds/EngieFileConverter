@@ -42,10 +42,10 @@
             this.label3 = new System.Windows.Forms.Label();
             this.lblSelectedSubPal = new System.Windows.Forms.Label();
             this.SuspendLayout();
-            // 
+            //
             // cmbPalettes
-            // 
-            this.cmbPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.cmbPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.cmbPalettes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbPalettes.FormattingEnabled = true;
@@ -54,11 +54,11 @@
             this.cmbPalettes.Size = new System.Drawing.Size(175, 21);
             this.cmbPalettes.TabIndex = 0;
             this.cmbPalettes.SelectedIndexChanged += new System.EventHandler(this.CmbPalettes_SelectedIndexChanged);
-            // 
+            //
             // lbSubPalettes
-            // 
-            this.lbSubPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.lbSubPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lbSubPalettes.FormattingEnabled = true;
             this.lbSubPalettes.Items.AddRange(new object[] {
@@ -83,9 +83,9 @@
             this.lbSubPalettes.Size = new System.Drawing.Size(237, 212);
             this.lbSubPalettes.TabIndex = 1;
             this.lbSubPalettes.SelectedIndexChanged += new System.EventHandler(this.LbSubPalettes_SelectedIndexChanged);
-            // 
+            //
             // btnRename
-            // 
+            //
             this.btnRename.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnRename.Location = new System.Drawing.Point(12, 277);
             this.btnRename.Name = "btnRename";
@@ -94,9 +94,9 @@
             this.btnRename.Text = "Rename";
             this.btnRename.UseVisualStyleBackColor = true;
             this.btnRename.Click += new System.EventHandler(this.BtnRename_Click);
-            // 
+            //
             // btnRemove
-            // 
+            //
             this.btnRemove.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnRemove.Location = new System.Drawing.Point(174, 277);
             this.btnRemove.Name = "btnRemove";
@@ -105,9 +105,9 @@
             this.btnRemove.Text = "Remove";
             this.btnRemove.UseVisualStyleBackColor = true;
             this.btnRemove.Click += new System.EventHandler(this.BtnRemove_Click);
-            // 
+            //
             // btnAdd
-            // 
+            //
             this.btnAdd.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.btnAdd.Location = new System.Drawing.Point(93, 277);
             this.btnAdd.Name = "btnAdd";
@@ -116,9 +116,9 @@
             this.btnAdd.Text = "Add";
             this.btnAdd.UseVisualStyleBackColor = true;
             this.btnAdd.Click += new System.EventHandler(this.BtnAdd_Click);
-            // 
+            //
             // btnOk
-            // 
+            //
             this.btnOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnOk.Location = new System.Drawing.Point(174, 348);
@@ -128,9 +128,9 @@
             this.btnOk.Text = "OK";
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.BtnOk_Click);
-            // 
+            //
             // btnCancel
-            // 
+            //
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.Location = new System.Drawing.Point(174, 377);
@@ -140,9 +140,9 @@
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.BtnCancel_Click);
-            // 
+            //
             // palSelectedSubPal
-            // 
+            //
             this.palSelectedSubPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.palSelectedSubPal.AutoSize = true;
             this.palSelectedSubPal.ColorSelectMode = Nyerguds.Util.UI.ColorSelMode.None;
@@ -157,9 +157,9 @@
             this.palSelectedSubPal.Size = new System.Drawing.Size(74, 74);
             this.palSelectedSubPal.TabIndex = 5;
             this.palSelectedSubPal.TransItemBackColor = System.Drawing.Color.Empty;
-            // 
+            //
             // palReplaceBy
-            // 
+            //
             this.palReplaceBy.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.palReplaceBy.AutoSize = true;
             this.palReplaceBy.ColorSelectMode = Nyerguds.Util.UI.ColorSelMode.None;
@@ -174,9 +174,9 @@
             this.palReplaceBy.Size = new System.Drawing.Size(74, 74);
             this.palReplaceBy.TabIndex = 6;
             this.palReplaceBy.TransItemBackColor = System.Drawing.Color.Empty;
-            // 
+            //
             // lblReplaceBy
-            // 
+            //
             this.lblReplaceBy.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblReplaceBy.AutoSize = true;
             this.lblReplaceBy.Location = new System.Drawing.Point(95, 310);
@@ -184,27 +184,27 @@
             this.lblReplaceBy.Size = new System.Drawing.Size(64, 13);
             this.lblReplaceBy.TabIndex = 9;
             this.lblReplaceBy.Text = "Replace by:";
-            // 
+            //
             // label2
-            // 
+            //
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(9, 9);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(59, 13);
             this.label2.TabIndex = 10;
             this.label2.Text = "Palette file:";
-            // 
+            //
             // label3
-            // 
+            //
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(9, 36);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(69, 13);
             this.label3.TabIndex = 11;
             this.label3.Text = "Palette entry:";
-            // 
+            //
             // lblSelectedSubPal
-            // 
+            //
             this.lblSelectedSubPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblSelectedSubPal.AutoSize = true;
             this.lblSelectedSubPal.Location = new System.Drawing.Point(13, 310);
@@ -212,9 +212,9 @@
             this.lblSelectedSubPal.Size = new System.Drawing.Size(78, 13);
             this.lblSelectedSubPal.TabIndex = 12;
             this.lblSelectedSubPal.Text = "Selected entry:";
-            // 
+            //
             // FrmManagePalettes
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;

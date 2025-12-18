@@ -33,7 +33,7 @@ namespace Nyerguds.Util.UI
         [DefaultValue(true)]
         [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
         public Boolean UpDownValidatesEnter { get { return this._UpDownValidatesEnter; } set { this._UpDownValidatesEnter = value; } }
-        
+
         /// <summary>
         /// Last validated entered value.
         /// </summary>
@@ -70,7 +70,7 @@ namespace Nyerguds.Util.UI
         }
 
         public TextBox TextBox { get { return this._TextBox; } }
-        
+
         protected override void OnTextChanged(EventArgs e)
         {
             Boolean allowminus = this.Minimum < 0;
@@ -248,7 +248,7 @@ namespace Nyerguds.Util.UI
                 FieldInfo valChanged = numUpDownType.GetField("currentValueChanged");
                 valChanged.SetValue(this, true);
                 UpdateEditText();
-            } 
+            }
         }
     }
 

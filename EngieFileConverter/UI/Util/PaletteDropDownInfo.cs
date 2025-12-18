@@ -21,7 +21,7 @@ namespace Nyerguds.Util.UI
         public Int32 Entry { get; set; }
         public Boolean PrefixIndex { get; set; }
         public Boolean SuffixSource { get; set; }
-        
+
         public PaletteDropDownInfo(String name, Int32 bpp, Color[] colors, String sourceFile, Int32 entry, Boolean prefixIndex, Boolean suffixSource)
         {
             this.Name = name;

@@ -56,6 +56,7 @@ namespace Nyerguds.Util.UI
         /// </summary>
         /// <typeparam name="T">The basic type of which subtypes populate the typesList. Needs to inherit from FileTypeBroadcaster.</typeparam>
         /// <param name="owner">Owner window for the dialog.</param>
+        /// <param name="title">Window title</param>
         /// <param name="selectType">Type to select in the dropdown as default.</param>
         /// <param name="typesList">List of class types that inherit from T.</param>
         /// <param name="defaultSaveType">Default type to save as if the type was not found in the types list.</param>
@@ -64,7 +65,7 @@ namespace Nyerguds.Util.UI
         /// <param name="currentPath">Path and filename to set as default in the save dialog.</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
         /// <returns>The chosen filename, or null if the user cancelled.</returns>
-        public static String ShowSaveFileFialog<T>(IWin32Window owner, Type selectType, Type[] typesList, Type defaultSaveType, Boolean skipOtherExtensions, Boolean joinExtensions, String currentPath, out T selectedItem) where T : IFileTypeBroadcaster
+        public static String ShowSaveFileFialog<T>(IWin32Window owner, String title, Type selectType, Type[] typesList, Type defaultSaveType, Boolean skipOtherExtensions, Boolean joinExtensions, String currentPath, out T selectedItem) where T : IFileTypeBroadcaster
         {
             selectedItem = default(T);
             SaveFileDialog sfd = new SaveFileDialog();
@@ -130,13 +131,14 @@ namespace Nyerguds.Util.UI
                 }
                 sfd.FileName = fn;
             }
+            sfd.Title = title;
             DialogResult res = sfd.ShowDialog(owner);
             if (res != DialogResult.OK)
                 return null;
             selectedItem = correspondingObjects[sfd.FilterIndex - 1];
             return sfd.FileName;
         }
-        
+
         private static T FindMoreSpecificItem<T>(Type[] moreSpecificTypesList, String currentPath, Type currentType, out Int32 indexInList) where T : IFileTypeBroadcaster
         {
             indexInList = 0;
@@ -318,7 +320,7 @@ namespace Nyerguds.Util.UI
             this.Extensions = item.FileExtensions;
             this.DescriptionsForExtensions = item.DescriptionsForExtensions;
         }
-        
+
         public FileDialogItem(T item)
         {
             if (item == null)

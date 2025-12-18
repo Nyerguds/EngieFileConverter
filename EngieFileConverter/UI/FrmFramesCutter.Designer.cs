@@ -44,9 +44,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.numHeight)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numWidth)).BeginInit();
             this.SuspendLayout();
-            // 
+            //
             // lblWidth
-            // 
+            //
             this.lblWidth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblWidth.AutoSize = true;
             this.lblWidth.Location = new System.Drawing.Point(350, 64);
@@ -54,9 +54,9 @@
             this.lblWidth.Size = new System.Drawing.Size(38, 13);
             this.lblWidth.TabIndex = 10;
             this.lblWidth.Text = "Width:";
-            // 
+            //
             // lblHeight
-            // 
+            //
             this.lblHeight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblHeight.AutoSize = true;
             this.lblHeight.Location = new System.Drawing.Point(350, 90);
@@ -64,9 +64,9 @@
             this.lblHeight.Size = new System.Drawing.Size(41, 13);
             this.lblHeight.TabIndex = 15;
             this.lblHeight.Text = "Height:";
-            // 
+            //
             // lblFramesOnImage
-            // 
+            //
             this.lblFramesOnImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblFramesOnImage.AutoSize = true;
             this.lblFramesOnImage.Location = new System.Drawing.Point(349, 116);
@@ -74,9 +74,9 @@
             this.lblFramesOnImage.Size = new System.Drawing.Size(90, 13);
             this.lblFramesOnImage.TabIndex = 20;
             this.lblFramesOnImage.Text = "Frames on image:";
-            // 
+            //
             // label5
-            // 
+            //
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label5.AutoSize = true;
             this.label5.Location = new System.Drawing.Point(350, 142);
@@ -84,9 +84,9 @@
             this.label5.Size = new System.Drawing.Size(65, 13);
             this.label5.TabIndex = 25;
             this.label5.Text = "Limit frames:";
-            // 
+            //
             // label3
-            // 
+            //
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(350, 38);
@@ -94,9 +94,9 @@
             this.label3.Size = new System.Drawing.Size(93, 13);
             this.label3.TabIndex = 5;
             this.label3.Text = "Frame information:";
-            // 
+            //
             // lblFramesOnImageVal
-            // 
+            //
             this.lblFramesOnImageVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblFramesOnImageVal.AutoSize = true;
             this.lblFramesOnImageVal.Location = new System.Drawing.Point(441, 116);
@@ -104,9 +104,9 @@
             this.lblFramesOnImageVal.Size = new System.Drawing.Size(40, 13);
             this.lblFramesOnImageVal.TabIndex = 21;
             this.lblFramesOnImageVal.Text = "1 (1×1)";
-            // 
+            //
             // btnCancel
-            // 
+            //
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.Location = new System.Drawing.Point(457, 337);
@@ -116,9 +116,9 @@
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.BtnCancelClick);
-            // 
+            //
             // btnConvert
-            // 
+            //
             this.btnConvert.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnConvert.Location = new System.Drawing.Point(376, 337);
             this.btnConvert.Name = "btnConvert";
@@ -127,9 +127,9 @@
             this.btnConvert.Text = "Convert";
             this.btnConvert.UseVisualStyleBackColor = true;
             this.btnConvert.Click += new System.EventHandler(this.BtnConvertClick);
-            // 
+            //
             // lblImageSizeVal
-            // 
+            //
             this.lblImageSizeVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblImageSizeVal.AutoSize = true;
             this.lblImageSizeVal.Location = new System.Drawing.Point(441, 12);
@@ -137,9 +137,9 @@
             this.lblImageSizeVal.Size = new System.Drawing.Size(25, 13);
             this.lblImageSizeVal.TabIndex = 2;
             this.lblImageSizeVal.Text = "1×1";
-            // 
+            //
             // lblImageSize
-            // 
+            //
             this.lblImageSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblImageSize.AutoSize = true;
             this.lblImageSize.Location = new System.Drawing.Point(350, 12);
@@ -147,9 +147,9 @@
             this.lblImageSize.Size = new System.Drawing.Size(60, 13);
             this.lblImageSize.TabIndex = 1;
             this.lblImageSize.Text = "Image size:";
-            // 
+            //
             // lblCurFrame
-            // 
+            //
             this.lblCurFrame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblCurFrame.AutoSize = true;
             this.lblCurFrame.Location = new System.Drawing.Point(349, 168);
@@ -158,9 +158,9 @@
             this.lblCurFrame.TabIndex = 30;
             this.lblCurFrame.Text = "Show frame:";
             this.lblCurFrame.Click += new System.EventHandler(this.lblCurFrame_Click);
-            // 
+            //
             // chkTrimColor
-            // 
+            //
             this.chkTrimColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkTrimColor.AutoSize = true;
             this.chkTrimColor.Location = new System.Drawing.Point(359, 219);
@@ -170,9 +170,9 @@
             this.chkTrimColor.Text = "Trim color:";
             this.chkTrimColor.UseVisualStyleBackColor = true;
             this.chkTrimColor.CheckedChanged += new System.EventHandler(this.ChkTrimColor_CheckedChanged);
-            // 
+            //
             // lblTrimColorVal
-            // 
+            //
             this.lblTrimColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTrimColorVal.AutoSize = true;
             this.lblTrimColorVal.Enabled = false;
@@ -181,9 +181,9 @@
             this.lblTrimColorVal.Size = new System.Drawing.Size(10, 13);
             this.lblTrimColorVal.TabIndex = 42;
             this.lblTrimColorVal.Text = "-";
-            // 
+            //
             // chkMatchPalette
-            // 
+            //
             this.chkMatchPalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkMatchPalette.AutoSize = true;
             this.chkMatchPalette.Location = new System.Drawing.Point(353, 245);
@@ -193,9 +193,9 @@
             this.chkMatchPalette.Text = "Match palette:";
             this.chkMatchPalette.UseVisualStyleBackColor = true;
             this.chkMatchPalette.CheckedChanged += new System.EventHandler(this.ChkMatchPaletteCheckedChanged);
-            // 
+            //
             // lblFrameSize
-            // 
+            //
             this.lblFrameSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblFrameSize.AutoSize = true;
             this.lblFrameSize.Location = new System.Drawing.Point(349, 194);
@@ -203,9 +203,9 @@
             this.lblFrameSize.Size = new System.Drawing.Size(60, 13);
             this.lblFrameSize.TabIndex = 35;
             this.lblFrameSize.Text = "Frame size:";
-            // 
+            //
             // lblFrameSizeVal
-            // 
+            //
             this.lblFrameSizeVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblFrameSizeVal.AutoSize = true;
             this.lblFrameSizeVal.Location = new System.Drawing.Point(441, 194);
@@ -213,9 +213,9 @@
             this.lblFrameSizeVal.Size = new System.Drawing.Size(25, 13);
             this.lblFrameSizeVal.TabIndex = 36;
             this.lblFrameSizeVal.Text = "1×1";
-            // 
+            //
             // cmbPalType
-            // 
+            //
             this.cmbPalType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cmbPalType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbPalType.Enabled = false;
@@ -225,9 +225,9 @@
             this.cmbPalType.Size = new System.Drawing.Size(88, 21);
             this.cmbPalType.TabIndex = 46;
             this.cmbPalType.SelectedIndexChanged += new System.EventHandler(this.CmbPalTypeSelectedIndexChanged);
-            // 
+            //
             // cmbPalettes
-            // 
+            //
             this.cmbPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cmbPalettes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbPalettes.Enabled = false;
@@ -237,9 +237,9 @@
             this.cmbPalettes.Size = new System.Drawing.Size(179, 21);
             this.cmbPalettes.TabIndex = 50;
             this.cmbPalettes.SelectedIndexChanged += new System.EventHandler(this.cmbPalettes_SelectedIndexChanged);
-            // 
+            //
             // lblTrimColor
-            // 
+            //
             this.lblTrimColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTrimColor.BackColor = System.Drawing.Color.Black;
             this.lblTrimColor.Checked = true;
@@ -254,9 +254,9 @@
             this.lblTrimColor.TrueBackColor = System.Drawing.Color.Black;
             this.lblTrimColor.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.lblTrimColor_KeyPress);
             this.lblTrimColor.MouseClick += new System.Windows.Forms.MouseEventHandler(this.lblTrimColor_MouseClick);
-            // 
+            //
             // numFrames
-            // 
+            //
             this.numFrames.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.numFrames.EnteredValue = new decimal(new int[] {
             1,
@@ -281,9 +281,9 @@
             0,
             0});
             this.numFrames.ValueChanged += new System.EventHandler(this.NumFramesValueChanged);
-            // 
+            //
             // numCurFrame
-            // 
+            //
             this.numCurFrame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.numCurFrame.EnteredValue = new decimal(new int[] {
             1,
@@ -303,9 +303,9 @@
             0,
             0});
             this.numCurFrame.ValueChanged += new System.EventHandler(this.FrameChanged);
-            // 
+            //
             // numHeight
-            // 
+            //
             this.numHeight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.numHeight.EnteredValue = new decimal(new int[] {
             1,
@@ -330,9 +330,9 @@
             0,
             0});
             this.numHeight.ValueChanged += new System.EventHandler(this.DimensionsChanged);
-            // 
+            //
             // numWidth
-            // 
+            //
             this.numWidth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.numWidth.EnteredValue = new decimal(new int[] {
             1,
@@ -357,11 +357,11 @@
             0,
             0});
             this.numWidth.ValueChanged += new System.EventHandler(this.DimensionsChanged);
-            // 
+            //
             // pzpFramePreview
-            // 
-            this.pzpFramePreview.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.pzpFramePreview.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pzpFramePreview.CustomColors = null;
             this.pzpFramePreview.Image = null;
@@ -372,9 +372,9 @@
             this.pzpFramePreview.TabIndex = 100;
             this.pzpFramePreview.ZoomFactor = 1;
             this.pzpFramePreview.ZoomFactorMinimum = -10;
-            // 
+            //
             // FrmFramesCutter
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;

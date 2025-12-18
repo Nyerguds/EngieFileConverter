@@ -47,7 +47,7 @@ namespace Nyerguds.FileData.Compression
     {
         #region overridables to tweak in subclasses
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
-        
+
         protected virtual UInt32 MaxRepeatValue { get { return 0x7F; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
         protected virtual UInt32 MaxCopyValue { get { return 0x7F; } }
@@ -198,7 +198,7 @@ namespace Nyerguds.FileData.Compression
         {
             UInt32 inPtr = startOffset ?? 0;
             UInt32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, (UInt32)buffer.Length) : (UInt32)buffer.Length;
-            
+
             UInt32 outPtr = 0;
             Boolean autoExpand = bufferOut == null;
             UInt32 bufLenOrig = inPtrEnd - inPtr;
@@ -292,7 +292,7 @@ namespace Nyerguds.FileData.Compression
             // This code does not do sanity checks, since some file formats can't disable their compression.
             UInt32 bufLen = CompressionWorstCase(len);
             Byte[] bufferOut = new Byte[bufLen];
-            
+
             while (inPtr < len)
             {
                 // Handle 2 cases: repeat was already detected, or a new repeat detect needs to be done.
@@ -405,6 +405,6 @@ namespace Nyerguds.FileData.Compression
         }
         #endregion
     }
-    
+
     #endregion
 }

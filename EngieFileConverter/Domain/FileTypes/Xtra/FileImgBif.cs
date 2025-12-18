@@ -34,7 +34,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             this.LoadFromFileData(fileData, filename);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             Int32 dataLength = fileData.Length;
@@ -76,7 +76,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = String.Join("\n", extraInfo.ToArray());
             this.SetFileNames(sourcePath);
         }
-        
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             // Preliminary checks

@@ -23,7 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return fullHeight; } }
         protected Int32 fullWidth = iconWidth;
         protected Int32 fullHeight = iconHeight;
-        
+
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
         public override String IdCode { get { return "AdvIco"; } }
@@ -94,7 +94,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.fullWidth = iconWidth;
             this.fullHeight = iconHeight * frames;
         }
-        
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             const Int32 framePixSize = iconWidth * iconHeight;
@@ -124,7 +124,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] imageData8 = ImageUtils.ConvertTo8Bit(imageData4, iconWidth, iconHeight, 0, 4, true, ref stride);
                 Array.Copy(imageData8, 0, imageDataFull8, framePixSize * i, framePixSize);
             }
-            
+
             // Create the 1-bit array with each frame split into four planes.
             Byte[] fileData8 = new Byte[imageDataFull8.Length * 4];
             for (Int32 i = 0; i < nrOfFrames; ++i)

@@ -243,7 +243,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     imageData[i] = ImageUtils.ConvertFrom8Bit(imgData8bit, imgWidth, imgHeight, bitsLength, false, ref stride);
                 else
                     imageData[i] = ArrayUtils.CloneArray(imgData8bit);
-                
+
                 //StringBuilder sb = new StringBuilder();
                 //for (int y = 0; y < imgHeight; y++)
                 //{
@@ -422,7 +422,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood Font v4"; } }
         public override String ShortTypeDescription { get { return "Westwood Font v4 (Tiberian Sun)"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null, true);

@@ -40,6 +40,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public Boolean IsVersion107 { get; set; }
         public Int32[] RemappedIndices { get; set; }
+        public Int32[] UncompressedIndices { get; set; }
         protected readonly String GAMENAME = "Dune II";
 
         public override void LoadFile(Byte[] fileData)
@@ -57,7 +58,8 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Boolean isVersion107;
             Int32[] remapFrames;
-            this.m_FramesList = LoadFromFileData(fileData, sourcePath, this, gameOverride, out isVersion107, out remapFrames);
+            Int32[] notCompressedFrames;
+            this.m_FramesList = LoadFromFileData(fileData, sourcePath, this, gameOverride, out isVersion107, out remapFrames, out notCompressedFrames);
             SupportedFileType frame0 = this.m_FramesList.FirstOrDefault();
             if (frame0 != null)
             {
@@ -67,6 +69,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.IsVersion107 = isVersion107;
             this.RemappedIndices = remapFrames;
+            this.UncompressedIndices = notCompressedFrames;
             StringBuilder extraInfoGlobal = new StringBuilder();
             extraInfoGlobal.Append("Game version: ").Append(isVersion107 ? "v1.07" : "v1.00");
             extraInfoGlobal.Append("\nRemapped indices: ");
@@ -77,7 +80,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = extraInfoGlobal.ToString();
         }
 
-        public static SupportedFileType[] LoadFromFileData(Byte[] fileData, String sourcePath, SupportedFileType target, String gameOverride, out Boolean isVersion107, out Int32[] remapFrames)
+        public static SupportedFileType[] LoadFromFileData(Byte[] fileData, String sourcePath, SupportedFileType target, String gameOverride, out Boolean isVersion107, out Int32[] remapFrames, out Int32[] notCompressedFrames)
         {
             // OffsetInfo / ShapeFileHeader
             if (fileData.Length < 6)
@@ -104,6 +107,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             SupportedFileType[] framesList = new SupportedFileType[hdrFrames];
             Boolean[] remapped = new Boolean[hdrFrames];
+            Boolean[] notCompressed = new Boolean[hdrFrames];
             // Frames
             Int32 curOffs = 2;
             Int32 readLen = isVersion107 ? 4 : 2;
@@ -143,10 +147,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 // Bit 3: Has custom remap palette size.
                 Boolean hasRemap = (frameFlags & Dune2ShpFrameFlags.HasRemapTable) != 0;
                 Boolean noLcw = (frameFlags & Dune2ShpFrameFlags.NoLcw) != 0;
+                notCompressed[i] = noLcw;
                 Boolean customRemap = (frameFlags & Dune2ShpFrameFlags.CustomSizeRemap) != 0;
                 remapped[i] = hasRemap;
                 Int32 curEndOffset = readOffset + frmDataSize;
-                if (curEndOffset > endoffset) // curEndOffset > nextOFfset 
+                if (curEndOffset > endoffset) // curEndOffset > nextOFfset
                     throw new FileTypeLoadException("Illegal address in frame indices.");
                 // I assume this is illegal...?
                 if (frmWidth == 0 || frmHeight == 0)
@@ -249,6 +254,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 framesList[i] = framePic;
             }
             remapFrames = Enumerable.Range(0, hdrFrames).Where(i => remapped[i]).ToArray();
+            notCompressedFrames = Enumerable.Range(0, hdrFrames).Where(i => notCompressed[i]).ToArray();
             return framesList;
         }
 
@@ -259,6 +265,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean isdune100shape = d2File != null && !d2File.IsVersion107;
             Boolean hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
             String remapped = hasRemap ? GeneralUtils.GroupNumbers(d2File.RemappedIndices) : String.Empty;
+            Boolean hasUncompressed = d2File != null && d2File.UncompressedIndices != null && d2File.UncompressedIndices.Length > 0;
+            String uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(d2File.UncompressedIndices) : String.Empty;
 
             return new SaveOption[]
             {
@@ -267,6 +275,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
                 new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
                 new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, new SaveEnableFilter("RMA", true, "1")),
+                new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "1"),
+                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCA", false, "0"))
             };
         }
 
@@ -285,7 +295,9 @@ namespace EngieFileConverter.Domain.FileTypes
             String remapSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
             Boolean remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
             Int32[] remappedFrames = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
-
+            Boolean specificCompression = !GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NCA"));
+            String uncomprSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "NCS");
+            Int32[] uncompFrames = specificCompression ? GeneralUtils.GetRangedNumbers(uncomprSpecificStr) : null;
             Int32 nrOfFrames = frames.Length;
             Boolean[] remapFrame = new Boolean[nrOfFrames];
             if (addRemap)
@@ -304,6 +316,18 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (remappedFrameIndex >= 0 && remappedFrameIndex < nrOfFrames)
                             remapFrame[remappedFrameIndex] = true;
                     }
+                }
+            }
+            Boolean[] dontCompress = new Boolean[nrOfFrames];
+            if (specificCompression)
+            {
+
+                Int32 noCompLen = uncompFrames.Length;
+                for (Int32 i = 0; i < noCompLen; ++i)
+                {
+                    Int32 noCompFrameIndex = uncompFrames[i];
+                    if (noCompFrameIndex >= 0 && noCompFrameIndex < nrOfFrames)
+                        dontCompress[noCompFrameIndex] = true;
                 }
             }
             Int32 addressSize = isVersion107 ? 4 : 2;
@@ -388,8 +412,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 imageData = WestwoodRleZero.CompressRleZeroD2(imageData, frmWidth, frmHeight);
                 Int32 zeroDataLen = imageData.Length;
-                Byte[] lcwData = noLcw ? null : WWCompression.LcwCompress(imageData);
-                Boolean isCompressed = !noLcw && lcwData.Length < imageData.Length;
+                Byte[] lcwData = noLcw || dontCompress[i] ? null : WWCompression.LcwCompress(imageData);
+                Boolean isCompressed = lcwData != null && lcwData.Length < imageData.Length;
                 if (isCompressed)
                     imageData = lcwData;
                 // Write header. Remap table will be considered part of the header to avoid extra copies to add it to the image data.
@@ -476,7 +500,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             return frames;
         }
-        
+
         [Flags]
         private enum Dune2ShpFrameFlags
         {

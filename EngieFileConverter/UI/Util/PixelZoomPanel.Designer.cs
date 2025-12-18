@@ -2,12 +2,12 @@
 {
     partial class PixelZoomPanel
     {
-        /// <summary> 
+        /// <summary>
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary> 
+        /// <summary>
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
@@ -22,8 +22,8 @@
 
         #region Component Designer generated code
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
+        /// <summary>
+        /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -38,9 +38,9 @@
             this.pnlImageScroll.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picImage)).BeginInit();
             this.SuspendLayout();
-            // 
+            //
             // lblTransparentColor
-            // 
+            //
             this.lblTransparentColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTransparentColor.Location = new System.Drawing.Point(77, 207);
             this.lblTransparentColor.Name = "lblTransparentColor";
@@ -48,9 +48,9 @@
             this.lblTransparentColor.TabIndex = 1;
             this.lblTransparentColor.Text = "Background:";
             this.lblTransparentColor.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
+            //
             // lblZoom
-            // 
+            //
             this.lblZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblZoom.Location = new System.Drawing.Point(173, 207);
             this.lblZoom.Name = "lblZoom";
@@ -58,9 +58,9 @@
             this.lblZoom.TabIndex = 3;
             this.lblZoom.Text = "Zoom factor:";
             this.lblZoom.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
+            //
             // lblTransparentColorVal
-            // 
+            //
             this.lblTransparentColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTransparentColorVal.BackColor = System.Drawing.Color.Fuchsia;
             this.lblTransparentColorVal.Checked = true;
@@ -72,9 +72,9 @@
             this.lblTransparentColorVal.TrueBackColor = System.Drawing.Color.Fuchsia;
             this.lblTransparentColorVal.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.LblTransparentColorValKeyPress);
             this.lblTransparentColorVal.MouseClick += new System.Windows.Forms.MouseEventHandler(this.lblTransparentColorVal_MouseClick);
-            // 
+            //
             // numZoom
-            // 
+            //
             this.numZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.numZoom.EnteredValue = new decimal(new int[] {
             1,
@@ -100,11 +100,11 @@
             0});
             this.numZoom.ValueUpDown += new System.EventHandler<Nyerguds.Util.UI.UpDownEventArgs>(this.numZoom_ValueUpDown);
             this.numZoom.ValueEntered += new System.EventHandler<Nyerguds.Util.UI.ValueEnteredEventArgs>(this.NumZoomValueEntered);
-            // 
+            //
             // pnlImageScroll
-            // 
-            this.pnlImageScroll.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.pnlImageScroll.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pnlImageScroll.AutoScroll = true;
             this.pnlImageScroll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
@@ -117,9 +117,9 @@
             this.pnlImageScroll.TabIndex = 0;
             this.pnlImageScroll.TabStop = true;
             this.pnlImageScroll.MouseScroll += new System.Windows.Forms.MouseEventHandler(this.PnlImageScrollMouseScroll);
-            // 
+            //
             // picImage
-            // 
+            //
             this.picImage.BackColor = System.Drawing.Color.Fuchsia;
             this.picImage.Location = new System.Drawing.Point(0, 0);
             this.picImage.Margin = new System.Windows.Forms.Padding(0);
@@ -130,9 +130,9 @@
             this.picImage.TabStop = false;
             this.picImage.Visible = false;
             this.picImage.Click += new System.EventHandler(this.PicImageClick);
-            // 
+            //
             // PixelZoomPanel
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.lblTransparentColorVal);

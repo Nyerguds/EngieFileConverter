@@ -64,6 +64,8 @@
     <Compile Include="Domain\FileData\EmotionalPictures\PppCompression.cs" />
     <Compile Include="Domain\FileData\IGC\IgcBitMaskCompression.cs" />
     <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
+    <Compile Include="Domain\FileTypes\Mythos\FileImgMythosRmm.cs" />
+    <Compile Include="Domain\FileTypes\Mythos\FileImgMythosLbv.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpBr.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgJmx.cs" />
@@ -364,9 +366,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Util\InputBox.resx">
       <DependentUpon>InputBox.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="UI\Util\PalettePanel.resx">
-      <DependentUpon>PalettePanel.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

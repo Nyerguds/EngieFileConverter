@@ -96,7 +96,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }
-        
+
         private void SaveOptionChoices_Resize(Object sender, EventArgs e)
         {
             // What a mess just to make the center size...

@@ -4,7 +4,7 @@ namespace Nyerguds.FileData.IGC
 {
     /// <summary>
     /// Encodes and decodes the bit-mask based compression of the Interactive Girls Club images.
-    /// 
+    ///
     /// The compression removes vertical repeats in image data and marks the remaining bytes in a
     /// bit mask. It seems to be designed as preprocessing step for RLE compression; in repeating
     /// dithering patterns of 8, 4 or 2 pixels wide, both the remaining bytes and the packed masks

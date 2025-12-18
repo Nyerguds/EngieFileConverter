@@ -5,12 +5,12 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     partial class SaveOptionNumber
     {
-        /// <summary> 
+        /// <summary>
         /// Required designer variable.
         /// </summary>
         private IContainer components = null;
 
-        /// <summary> 
+        /// <summary>
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
@@ -25,8 +25,8 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         #region Component Designer generated code
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
+        /// <summary>
+        /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -35,10 +35,10 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.numValue = new Nyerguds.Util.UI.EnhNumericUpDown();
             ((System.ComponentModel.ISupportInitialize)(this.numValue)).BeginInit();
             this.SuspendLayout();
-            // 
+            //
             // lblName
-            // 
-            this.lblName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.lblName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblName.Location = new System.Drawing.Point(6, 3);
             this.lblName.Name = "lblName";
@@ -47,9 +47,9 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.lblName.Text = "OPTION";
             this.lblName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.lblName.Resize += new System.EventHandler(this.lblName_Resize);
-            // 
+            //
             // numValue
-            // 
+            //
             this.numValue.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.numValue.EnteredValue = new decimal(new int[] {
             0,
@@ -74,9 +74,9 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.numValue.Size = new System.Drawing.Size(96, 20);
             this.numValue.TabIndex = 2;
             this.numValue.ValueChanged += new System.EventHandler(this.numValue_ValueChanged);
-            // 
+            //
             // SaveOptionNumber
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.numValue);

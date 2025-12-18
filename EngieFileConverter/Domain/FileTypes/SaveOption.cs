@@ -34,6 +34,12 @@ namespace Nyerguds.Util
 
         public static String GetSaveOptionValue(SaveOption[] list, String code)
         {
+            SaveOption option = GetSaveOption(list, code);
+            return option == null ? null : option.SaveData;
+        }
+
+        public static SaveOption GetSaveOption(SaveOption[] list, String code)
+        {
             Int32 listLength = list.Length;
             for (Int32 i = 0; i < listLength; ++i)
             {
@@ -41,7 +47,7 @@ namespace Nyerguds.Util
                 if (option == null)
                     continue;
                 if (String.Equals(option.Code, code, StringComparison.InvariantCultureIgnoreCase))
-                    return option.SaveData;
+                    return option;
             }
             return null;
         }

@@ -12,7 +12,7 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmFramesToPal : Form
     {
-        
+
         public Int32 MatchBpp  { get; private set; }
         public Color[] MatchPalette { get; private set; }
 
@@ -55,7 +55,7 @@ namespace EngieFileConverter.UI
             {
                 this.m_Loading = true;
                 SupportedFileType curFrame = m_File.IsFramesContainer ? m_File.Frames[(Int32)numCurFrame.Value] : m_File;
-                
+
                 PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
                 if(pdd == null)
                     return;
@@ -141,7 +141,7 @@ namespace EngieFileConverter.UI
                 return;
             this.UpdateUiInfo();
         }
-        
+
         private void BtnCancelClick(Object sender, EventArgs e)
         {
             this.Close();

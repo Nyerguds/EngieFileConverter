@@ -21,7 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
         public override String ShortTypeDescription { get { return "Blade Runner LCW image"; } }
         public override Int32 BitsPerPixel { get{ return 16; } }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData);

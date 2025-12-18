@@ -230,13 +230,13 @@ namespace Nyerguds.ImageManipulation
             this.bitMasks[ColR] = MakeMask(redBits, redShift);
             this.maxChan[ColR] = MakeMaxVal(redBits);
             this.defaultsChan[ColR] = 0;
-            
+
             this.bitsAmounts[ColG] = greenBits;
             this.multipliers[ColG] = greenMultiplier >= 0 ? greenMultiplier : MakeMultiplier(greenBits);
             this.bitMasks[ColG] = MakeMask(greenBits, greenShift);
             this.maxChan[ColG] = MakeMaxVal(greenBits);
             this.defaultsChan[ColG] = 0;
-            
+
             this.bitsAmounts[ColB] = blueBits;
             this.multipliers[ColB] = blueMultiplier >= 0 ? blueMultiplier : MakeMultiplier(blueBits);
             this.bitMasks[ColB] = MakeMask(blueBits, blueShift);
@@ -482,7 +482,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         #region ArrayUtils import
-        
+
         private static UInt64 ReadIntFromByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian)
         {
             Int32 lastByte = bytes - 1;
@@ -590,7 +590,7 @@ namespace Nyerguds.ImageManipulation
             Int32 newStride = stepOut * width;
             Int32 newSize = newStride * height;
             Byte[] newData = new Byte[newSize];
-            
+
             // Converter multiplier. Example:
             // in:  3 bits => 111    => max  7 => multfactor = 255 /  7 = 36,428571
             // out: 6 bits => 111111 => max 63 => multfactor = 255 / 63 =  4,047619

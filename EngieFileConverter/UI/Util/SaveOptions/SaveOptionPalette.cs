@@ -32,7 +32,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.InitResize();
             this.Init(info, controller);
         }
-        
+
         private void InitResize()
         {
             Int32 initialPosTxt = this.pnlColor.Location.X;

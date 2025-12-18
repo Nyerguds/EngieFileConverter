@@ -150,7 +150,7 @@ namespace Nyerguds.ImageManipulation
             }
             return bp;
         }
-        
+
         public static Byte[] Convert32bToGray(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, ref Int32 stride)
         {
             if (stride < width * 4)
@@ -314,7 +314,7 @@ namespace Nyerguds.ImageManipulation
             if (bpp < 8)
                 newImageData = ConvertFrom8Bit(newImageData, width, height, bpp, bigEndianBits, ref stride);
             return newImageData;
-        }        
+        }
 
         /// <summary>
         /// Gets the raw bytes from an image in its original pixel format. This automatically
@@ -327,7 +327,7 @@ namespace Nyerguds.ImageManipulation
             Int32 stride;
             return GetImageData(sourceImage, out stride, sourceImage.PixelFormat, true);
         }
-        
+
         /// <summary>
         /// Gets the raw bytes from an image in its original pixel format, with its original in-memory stride.
         /// </summary>
@@ -426,9 +426,9 @@ namespace Nyerguds.ImageManipulation
             BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, desiredPixelFormat);
             stride = sourceData.Stride;
             Byte[] data;
-            if (collapseStride)
+            Int32 actualDataWidth;
+            if (collapseStride && (actualDataWidth = ((Image.GetPixelFormatSize(desiredPixelFormat) * width) + 7) / 8) != stride)
             {
-                Int32 actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * width) + 7) / 8;
                 Int64 sourcePos = sourceData.Scan0.ToInt64();
                 Int32 destPos = 0;
                 data = new Byte[actualDataWidth * height];
@@ -532,7 +532,7 @@ namespace Nyerguds.ImageManipulation
             }
             return newImage;
         }
-        
+
         /// <summary>
         /// Checks if a given image contains transparency.
         /// </summary>
@@ -941,7 +941,7 @@ namespace Nyerguds.ImageManipulation
             Int32 stride = GetMinimumStride(width, bitsLength);
             return ConvertTo8Bit(imageData, width, height, start, bitsLength, bigEndian, ref stride);
         }
-        
+
         /// <summary>
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
         /// The new stride at the end of the operation will always equal the width.
@@ -1010,7 +1010,7 @@ namespace Nyerguds.ImageManipulation
             Int32 stride = width;
             return ConvertFrom8Bit(data8bit, width, height, bitsLength, bigEndian, ref stride);
         }
-        
+
         /// <summary>
         /// Converts given raw image data for a paletted 8-bit image to lower amount of bits per pixel.
         /// </summary>
@@ -1100,7 +1100,7 @@ namespace Nyerguds.ImageManipulation
                 pixelImage = ConvertFrom8Bit(pixelImage, width, height, outputBpp, true, ref stride);
             return pixelImage;
         }
-        
+
         /// <summary>
         /// Converts RGB or ARGB data from planar to linear.
         /// </summary>
@@ -1556,7 +1556,7 @@ namespace Nyerguds.ImageManipulation
             // Get the first colour that matches that maximum.
             return colorFreq.FirstOrDefault(x => x.Value == max).Key;
         }
-        
+
         /// <summary>
         /// Detects the bounds to crop an image. This treats the image as 32bppARGB.
         /// </summary>
@@ -1818,7 +1818,7 @@ namespace Nyerguds.ImageManipulation
             }
             return bmp;
         }
-        
+
         public static Bitmap BuildImageFromFrames(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Int32 framesPerLine, Byte backFillPalIndex, Color backFillColor)
         {
             PixelFormat highestPf = PixelFormat.Undefined;
@@ -2037,7 +2037,7 @@ namespace Nyerguds.ImageManipulation
                         if (alpha == 255)
                             continue;
                         Color col = pal.Entries[i];
-                        pal.Entries[i] = Color.FromArgb(alpha, col.R, col.G, col.B);
+                        pal.Entries[i] = Color.FromArgb((Int32)(((UInt32)alpha << 24) | ((UInt32)col.ToArgb() & 0xFFFFFF)));
                     }
                     imageFromStream.Palette = pal;
                 }

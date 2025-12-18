@@ -44,7 +44,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             Int32 fileDataLength = fileData.Length;

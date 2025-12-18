@@ -48,7 +48,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
             this.txtValue.Text = this.Info.SaveData;
         }
-        
+
         public override void FocusValue()
         {
             this.txtValue.Select();
@@ -96,7 +96,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 textbox.Text = new String(text).Replace("\0", String.Empty);
                 Int32 len2 = textbox.Text.Length;
                 textbox.SelectionStart = Math.Min(caret - (len1 - len2), textbox.Text.Length);
-                    
+
                 // Update controller
                 if (this.Info == null)
                     return;

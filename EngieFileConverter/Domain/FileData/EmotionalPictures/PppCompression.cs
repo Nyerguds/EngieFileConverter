@@ -55,7 +55,7 @@ namespace Nyerguds.FileData.EmotionalPictures
             Array.Copy(bufferOut, 0, newBuf, 0, bufferOut.Length);
             return newBuf;
         }
-        
+
         public static Byte[] CompressPppRle(Byte[] data)
         {
             Int32 len = data.Length;

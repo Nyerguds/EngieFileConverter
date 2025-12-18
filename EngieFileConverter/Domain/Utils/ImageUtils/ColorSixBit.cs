@@ -73,6 +73,13 @@ namespace Nyerguds.ImageManipulation
 
         public Color GetAsColor()
         {
+            //Byte red = (Byte)(m_Red << 2);
+            //red |= (Byte)(red >> 6);
+            //Byte green = (Byte)(m_Green << 2);
+            //green |= (Byte)(green >> 6);
+            //Byte blue = (Byte)(m_Blue << 2);
+            //blue |= (Byte)(blue >> 6);
+            //return Color.FromArgb(red, green, blue);
             return Color.FromArgb(ConvertToEightBit[this.m_Red], ConvertToEightBit[this.m_Green], ConvertToEightBit[this.m_Blue]);
         }
 
@@ -87,7 +94,7 @@ namespace Nyerguds.ImageManipulation
             array[offset + 1] = this.m_Green;
             array[offset + 2] = this.m_Blue;
         }
-        
+
         public static implicit operator Color(ColorSixBit color)
         {
             return color.GetAsColor();

@@ -308,7 +308,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x02, yOffset); //frmY
                 ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x04, newWidth); //frmWidth
                 ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x06, newHeight); //frmHeight
-                ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x08, flags); //frmFlags     
+                ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x08, flags); //frmFlags
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x0C, 3, false, (UInt32)col.ToArgb()); //frmColor
                 //ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x10, 00);  //frmReserved
                 ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x14, dataOffset); //frmDataOffset

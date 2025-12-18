@@ -31,7 +31,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Boolean m_PaletteLoaded;
         protected SupportedFileType[] m_Frames;
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -41,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             this.LoadFromFileData(fileData, filename);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             if (fileData.Length < 5)

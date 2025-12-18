@@ -5,12 +5,12 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     partial class SaveOptionBoolean
     {
-        /// <summary> 
+        /// <summary>
         /// Required designer variable.
         /// </summary>
         private IContainer components = null;
 
-        /// <summary> 
+        /// <summary>
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
@@ -25,19 +25,19 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         #region Component Designer generated code
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
+        /// <summary>
+        /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
         {
             this.chkOption = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
-            // 
+            //
             // chkOption
-            // 
-            this.chkOption.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.chkOption.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.chkOption.Location = new System.Drawing.Point(6, 3);
             this.chkOption.Name = "chkOption";
@@ -46,9 +46,9 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.chkOption.Text = "OPTION";
             this.chkOption.UseVisualStyleBackColor = true;
             this.chkOption.CheckedChanged += new System.EventHandler(this.chkOption_CheckedChanged);
-            // 
+            //
             // SaveOptionBoolean
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.chkOption);

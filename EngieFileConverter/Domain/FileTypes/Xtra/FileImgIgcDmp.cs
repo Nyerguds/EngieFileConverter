@@ -38,7 +38,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             this.LoadFromFileData(fileData, filename);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             String filename = sourcePath;

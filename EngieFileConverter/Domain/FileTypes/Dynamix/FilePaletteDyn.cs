@@ -56,7 +56,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Palette = palette;
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
-        
+
         public override Boolean ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made

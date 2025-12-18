@@ -21,7 +21,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.chkOption.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
             this.chkOption.Checked = GeneralUtils.IsTrueValue(this.Info.SaveData);
         }
-        
+
         public override void FocusValue()
         {
             this.chkOption.Select();

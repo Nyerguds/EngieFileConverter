@@ -35,13 +35,13 @@ namespace EngieFileConverter.Domain.FileTypes
                         0x31, 0x3F, 0x10, 0x20, 0x33, 0x00, 0x1D, 0x2D, 0x00, 0x18, 0x27, 0x00,
                         0x34, 0x20, 0x14, 0x2D, 0x1C, 0x11, 0x28, 0x19, 0x0F, 0x24, 0x17, 0x0D,
                         0x00, 0x00, 0x00, 0x26, 0x26, 0x26, 0x36, 0x36, 0x36, 0x3F, 0x3F, 0x3F };
-        
-        protected readonly Byte[] m_EndSequence = new Byte[] { 
+
+        protected readonly Byte[] m_EndSequence = new Byte[] {
             0xE9, 0xEF, 0xDE, 0x33, 0xC9, 0x8E, 0x06, 0xBF,
             0x64, 0xBE, 0x20, 0x63, 0x8B, 0xFE, 0xAC, 0x3C,
             0x22, 0x75, 0x04, 0xFE, 0xC5, 0xEB, 0xF7, 0x3C,
             0x0D, 0x75, 0xF3, 0x51, 0x8B, 0xF7 };
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             this.LoadFromFileData(fileData, filename);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             // Basic format for the 224x200 images. There are also 320x200 ones, without the palette or padding zeroes.
@@ -64,7 +64,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //0308   Byte         (if #2 is 0x90) Padding zero
             //0309   Byte[]       Image data
             //       Byte[]       (if #2 is 0x90) fixed footer?
-            
+
             if (fileData.Length < 0x309)
                 throw new FileTypeLoadException("Too short to be an " + this.ShortTypeName + ".");
             Int32 magic01 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
@@ -118,7 +118,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             this.SetFileNames(sourcePath);
         }
-        
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             // Basic format for the 224x200 images. There are also 320x200 ones, without the palette or padding zeroes.

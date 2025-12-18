@@ -83,7 +83,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         {
             this.lblColor.Select();
         }
-                
+
         private void SaveOptionChoices_Resize(Object sender, EventArgs e)
         {
             // What a mess just to make the center size...

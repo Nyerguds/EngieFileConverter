@@ -2,7 +2,7 @@
 
 namespace Nyerguds.FileData.Mythos
 {
-    public class MythosCompression
+    public static class MythosCompression
     {
         /// <summary>
         /// Decodes the Mythos Software flag-based RLE compression.
@@ -13,7 +13,7 @@ namespace Nyerguds.FileData.Mythos
         /// <param name="decompressedSize">Decompressed size. If given, the initial output buffer will be initialised to this.</param>
         /// <param name="abortOnError">Abort and return null whenever an error occurs. If a decompressedSize was given, it will also abort when exceeding it.</param>
         /// <returns>The decoded data, or null if decoding failed.</returns>
-        public Byte[] FlagRleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
+        public static Byte[] FlagRleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
             UInt32 offset = startOffset ?? 0;
             UInt32 end = (UInt32) buffer.LongLength;
@@ -46,7 +46,7 @@ namespace Nyerguds.FileData.Mythos
                     {
                         if (abortOnError && decompressedSize != 0)
                             return null;
-                        output = this.ExpandBuffer(output, Math.Max(origOutLength, repeatNum));
+                        output = ExpandBuffer(output, Math.Max(origOutLength, repeatNum));
                         outLength = (UInt32) output.LongLength;
                     }
                     for (; repeatNum > 0; repeatNum--)
@@ -58,7 +58,7 @@ namespace Nyerguds.FileData.Mythos
                     {
                         if (abortOnError && decompressedSize != 0)
                             return null;
-                        output = this.ExpandBuffer(output, origOutLength);
+                        output = ExpandBuffer(output, origOutLength);
                         outLength = (UInt32) output.LongLength;
                     }
                     output[writeOffset++] = val;
@@ -83,7 +83,7 @@ namespace Nyerguds.FileData.Mythos
         /// <param name="lineWidth">Line width. If not zero, the compression will be aligned to fit into separate rows.</param>
         /// <param name="headerSize">Header size, to correctly put the full block length at the start.</param>
         /// <returns>The encoded data.</returns>
-        public Byte[] FlagRleEncode(Byte[] buffer, Byte flag, Int32 lineWidth, Int32 headerSize)
+        public static Byte[] FlagRleEncode(Byte[] buffer, Byte flag, Int32 lineWidth, Int32 headerSize)
         {
             if (headerSize + 3 >= 0x10000)
                 throw new OverflowException("Header too big!");
@@ -135,7 +135,7 @@ namespace Nyerguds.FileData.Mythos
             outPtr += 3 + (UInt32) headerSize;
             if (outPtr > UInt16.MaxValue)
                 throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
-            // Store size in first two bytes.            
+            // Store size in first two bytes.
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);
             // Store flag value in third byte.
@@ -154,7 +154,7 @@ namespace Nyerguds.FileData.Mythos
         /// <param name="transparentIndex">Transparency value to collapse.</param>
         /// <param name="abortOnError">Abort and return null whenever an error occurs. If a decompressedSize was given, it will also abort when exceeding it.</param>
         /// <returns>The decoded data, or null if decoding failed.</returns>
-        public Byte[] CollapsedTransparencyDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Int32 lineWidth, Byte transparentIndex, Boolean abortOnError)
+        public static Byte[] CollapsedTransparencyDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Int32 lineWidth, Byte transparentIndex, Boolean abortOnError)
         {
             UInt32 offset = startOffset ?? 0;
             UInt32 end = (UInt32)buffer.LongLength;
@@ -175,7 +175,7 @@ namespace Nyerguds.FileData.Mythos
                 {
                     if (abortOnError && decompressedSize != 0)
                         return null;
-                    output = this.ExpandBuffer(output, origOutLength);
+                    output = ExpandBuffer(output, origOutLength);
                     outLength = (UInt32) output.LongLength;
                 }
                 for (; fillSize > 0; fillSize--)
@@ -202,7 +202,7 @@ namespace Nyerguds.FileData.Mythos
                 {
                     if (abortOnError && decompressedSize != 0)
                         return null;
-                    output = this.ExpandBuffer(output, origOutLength);
+                    output = ExpandBuffer(output, origOutLength);
                     outLength = (UInt32) output.LongLength;
                 }
                 Array.Copy(buffer, offset, output, writeOffset, copySize);
@@ -235,7 +235,7 @@ namespace Nyerguds.FileData.Mythos
         /// <param name="lineWidth">Line width.</param>
         /// <param name="headerSize">Header size, to correctly put the full block length at the start. Should normally be '8'.</param>
         /// <returns>The encoded data.</returns>
-        public Byte[] CollapsedTransparencyEncode(Byte[] buffer, Byte transparentIndex, Int32 lineWidth, Int32 headerSize)
+        public static Byte[] CollapsedTransparencyEncode(Byte[] buffer, Byte transparentIndex, Int32 lineWidth, Int32 headerSize)
         {
             if (headerSize + 3 >= 0x10000)
                 throw new OverflowException("Header too big!");
@@ -322,7 +322,7 @@ namespace Nyerguds.FileData.Mythos
         /// <param name="ptr">The current read offset inside the buffer.</param>
         /// <param name="minAmount">Minimum amount of repeating bytes to search for.</param>
         /// <returns>The amount of detected repeating bytes.</returns>
-        protected static UInt32 RepeatingAhead(Byte[] buffer, UInt32 max, UInt32 ptr, UInt32 minAmount)
+        private static UInt32 RepeatingAhead(Byte[] buffer, UInt32 max, UInt32 ptr, UInt32 minAmount)
         {
             Byte cur = buffer[ptr];
             for (UInt32 i = 1; i < minAmount; ++i)
@@ -337,7 +337,7 @@ namespace Nyerguds.FileData.Mythos
         /// <param name="buffer">Buffer to expand.</param>
         /// <param name="expandSize">amount of bytes to add to the buffer.</param>
         /// <returns>The expanded buffer.</returns>
-        private Byte[] ExpandBuffer(Byte[] buffer, UInt32 expandSize)
+        private static Byte[] ExpandBuffer(Byte[] buffer, UInt32 expandSize)
         {
             Byte[] newBuf = new Byte[buffer.Length + expandSize];
             Array.Copy(buffer, 0, newBuf, 0, buffer.Length);

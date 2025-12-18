@@ -6,12 +6,12 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     partial class SaveOptionPalette
     {
-        /// <summary> 
+        /// <summary>
         /// Required designer variable.
         /// </summary>
         private IContainer components = null;
 
-        /// <summary> 
+        /// <summary>
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
@@ -26,8 +26,8 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         #region Component Designer generated code
 
-        /// <summary> 
-        /// Required method for Designer support - do not modify 
+        /// <summary>
+        /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent()
@@ -38,36 +38,36 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.lblColor = new Nyerguds.Util.UI.ImageButtonCheckBox();
             this.pnlColor.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
             // lblDescription
-            // 
+            //
             this.lblDescription.Location = new System.Drawing.Point(6, 3);
             this.lblDescription.Name = "lblDescription";
             this.lblDescription.Size = new System.Drawing.Size(179, 30);
             this.lblDescription.TabIndex = 2;
             this.lblDescription.Text = "DESCRIPTION";
             this.lblDescription.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
+            //
             // pnlColor
-            // 
+            //
             this.pnlColor.Controls.Add(this.lblColorVal);
             this.pnlColor.Controls.Add(this.lblColor);
             this.pnlColor.Location = new System.Drawing.Point(191, 0);
             this.pnlColor.Name = "pnlColor";
             this.pnlColor.Size = new System.Drawing.Size(179, 36);
             this.pnlColor.TabIndex = 127;
-            // 
+            //
             // lblColorVal
-            // 
+            //
             this.lblColorVal.AutoSize = true;
             this.lblColorVal.Location = new System.Drawing.Point(31, 12);
             this.lblColorVal.Name = "lblColorVal";
             this.lblColorVal.Size = new System.Drawing.Size(35, 13);
             this.lblColorVal.TabIndex = 128;
             this.lblColorVal.Text = "label1";
-            // 
+            //
             // lblColor
-            // 
+            //
             this.lblColor.BackColor = System.Drawing.Color.Fuchsia;
             this.lblColor.Checked = true;
             this.lblColor.DisabledBackColor = System.Drawing.Color.DarkGray;
@@ -80,9 +80,9 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.lblColor.TrueBackColor = System.Drawing.Color.Fuchsia;
             this.lblColor.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.LblColor_KeyPress);
             this.lblColor.MouseClick += new System.Windows.Forms.MouseEventHandler(this.LblColor_MouseClick);
-            // 
+            //
             // SaveOptionPalette
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.pnlColor);

@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public void SetBitsPerColor(Int32 bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
         public void SetFileClass(FileClass? fileClass) { this.m_FileClass = fileClass; }
-        
+
         public void SetNeedsPalette(Boolean needsPalette) { this.m_NeedsPalette = needsPalette; }
         //public void SetTransparencyMask(Boolean[] transparencyMask) { this.m_transparencyMask = transparencyMask; }
 
@@ -34,7 +34,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected String m_BaseType;
         protected String m_Description;
         protected FileClass? m_FileClass;
-        
+
         public void SetFrameFileName(String frameName)
         {
             this.frameName = frameName;

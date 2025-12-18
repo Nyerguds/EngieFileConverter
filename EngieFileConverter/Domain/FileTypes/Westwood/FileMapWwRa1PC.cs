@@ -30,7 +30,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Int32 width;
         protected Int32 height;
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             String fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
@@ -57,7 +57,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] mapOverlay = this.ExpandRAMap(mapini, "OverlayPack");
             this.SetFileNames(path);
         }
-        
+
         private Byte[] ExpandRAMap(IniFile mapIniFile, String section)
         {
             Dictionary<String, String> sectionValues = mapIniFile.GetSectionContent(section);

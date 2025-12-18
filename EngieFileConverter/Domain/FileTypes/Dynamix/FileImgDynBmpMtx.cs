@@ -175,7 +175,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             for (Int32 i = 0; i < nrOfFrames; ++i)
                 ArrayUtils.WriteInt16ToByteArrayLe(frameMatrixFinal, 4 + i * 2, frameMatrix[i] + 0);
-            
+
             // Make FileImageFrames object filled with frames
             FileFrames frs = new FileFrames();
             for (Int32 i = 0; i < currentActual; ++i)

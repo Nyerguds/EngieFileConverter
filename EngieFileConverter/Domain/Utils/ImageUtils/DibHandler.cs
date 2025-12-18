@@ -208,7 +208,7 @@ namespace Nyerguds.ImageManipulation
             Int32 width = header.biWidth;
             Int32 height = header.biHeight;
             Int32 stride = ImageUtils.GetClassicStride(width, header.biBitCount);
-            
+
             Bitmap bitmap = null;
             // Icon handling
             Boolean isIcon = bitMask != null && bitMask.Length > 0;

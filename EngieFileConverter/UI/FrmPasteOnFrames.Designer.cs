@@ -47,18 +47,18 @@
             ((System.ComponentModel.ISupportInitialize)(this.numCoordsY)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numCoordsX)).BeginInit();
             this.SuspendLayout();
-            // 
+            //
             // lblFramesRange
-            // 
+            //
             this.lblFramesRange.AutoSize = true;
             this.lblFramesRange.Location = new System.Drawing.Point(13, 86);
             this.lblFramesRange.Name = "lblFramesRange";
             this.lblFramesRange.Size = new System.Drawing.Size(261, 13);
             this.lblFramesRange.TabIndex = 20;
             this.lblFramesRange.Text = "Frames: (comma-separated. Allows ranges like \"5-10\")";
-            // 
+            //
             // lblCoordinatesY
-            // 
+            //
             this.lblCoordinatesY.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblCoordinatesY.AutoSize = true;
             this.lblCoordinatesY.Location = new System.Drawing.Point(209, 60);
@@ -66,18 +66,18 @@
             this.lblCoordinatesY.Size = new System.Drawing.Size(17, 13);
             this.lblCoordinatesY.TabIndex = 13;
             this.lblCoordinatesY.Text = "Y:";
-            // 
+            //
             // lblCoordinates
-            // 
+            //
             this.lblCoordinates.AutoSize = true;
             this.lblCoordinates.Location = new System.Drawing.Point(13, 60);
             this.lblCoordinates.Name = "lblCoordinates";
             this.lblCoordinates.Size = new System.Drawing.Size(95, 13);
             this.lblCoordinates.TabIndex = 10;
             this.lblCoordinates.Text = "Paste coordinates:";
-            // 
+            //
             // lblCoordinatesX
-            // 
+            //
             this.lblCoordinatesX.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblCoordinatesX.AutoSize = true;
             this.lblCoordinatesX.Location = new System.Drawing.Point(114, 60);
@@ -85,9 +85,9 @@
             this.lblCoordinatesX.Size = new System.Drawing.Size(17, 13);
             this.lblCoordinatesX.TabIndex = 11;
             this.lblCoordinatesX.Text = "X:";
-            // 
+            //
             // btnOK
-            // 
+            //
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOK.Enabled = false;
             this.btnOK.Location = new System.Drawing.Point(136, 226);
@@ -97,9 +97,9 @@
             this.btnOK.Text = "OK";
             this.btnOK.UseVisualStyleBackColor = true;
             this.btnOK.Click += new System.EventHandler(this.BtnOkClick);
-            // 
+            //
             // btnCancel
-            // 
+            //
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnCancel.Location = new System.Drawing.Point(217, 226);
@@ -108,19 +108,19 @@
             this.btnCancel.TabIndex = 51;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
-            // 
+            //
             // lblImage
-            // 
+            //
             this.lblImage.AutoSize = true;
             this.lblImage.Location = new System.Drawing.Point(13, 9);
             this.lblImage.Name = "lblImage";
             this.lblImage.Size = new System.Drawing.Size(39, 13);
             this.lblImage.TabIndex = 10;
             this.lblImage.Text = "Image:";
-            // 
+            //
             // txtImage
-            // 
-            this.txtImage.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            //
+            this.txtImage.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.txtImage.BackColor = System.Drawing.SystemColors.Control;
             this.txtImage.Location = new System.Drawing.Point(12, 28);
@@ -128,9 +128,9 @@
             this.txtImage.ReadOnly = true;
             this.txtImage.Size = new System.Drawing.Size(213, 20);
             this.txtImage.TabIndex = 100;
-            // 
+            //
             // btnSelectImage
-            // 
+            //
             this.btnSelectImage.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnSelectImage.Location = new System.Drawing.Point(231, 25);
             this.btnSelectImage.Name = "btnSelectImage";
@@ -139,18 +139,18 @@
             this.btnSelectImage.Text = "...";
             this.btnSelectImage.UseVisualStyleBackColor = true;
             this.btnSelectImage.Click += new System.EventHandler(this.BtnSelectImageClick);
-            // 
+            //
             // lblPaletteHandling
-            // 
+            //
             this.lblPaletteHandling.AutoSize = true;
             this.lblPaletteHandling.Location = new System.Drawing.Point(13, 166);
             this.lblPaletteHandling.Name = "lblPaletteHandling";
             this.lblPaletteHandling.Size = new System.Drawing.Size(86, 13);
             this.lblPaletteHandling.TabIndex = 40;
             this.lblPaletteHandling.Text = "Palette handling:";
-            // 
+            //
             // rbtMatchPalette
-            // 
+            //
             this.rbtMatchPalette.AutoSize = true;
             this.rbtMatchPalette.Enabled = false;
             this.rbtMatchPalette.Location = new System.Drawing.Point(121, 164);
@@ -160,9 +160,9 @@
             this.rbtMatchPalette.TabStop = true;
             this.rbtMatchPalette.Text = "Match palette";
             this.rbtMatchPalette.UseVisualStyleBackColor = true;
-            // 
+            //
             // rbtKeepIndices
-            // 
+            //
             this.rbtKeepIndices.AutoSize = true;
             this.rbtKeepIndices.Enabled = false;
             this.rbtKeepIndices.Location = new System.Drawing.Point(121, 187);
@@ -172,9 +172,9 @@
             this.rbtKeepIndices.TabStop = true;
             this.rbtKeepIndices.Text = "Keep indices";
             this.rbtKeepIndices.UseVisualStyleBackColor = true;
-            // 
+            //
             // txtFrames
-            // 
+            //
             this.txtFrames.Location = new System.Drawing.Point(12, 103);
             this.txtFrames.Multiline = true;
             this.txtFrames.Name = "txtFrames";
@@ -182,9 +182,9 @@
             this.txtFrames.Size = new System.Drawing.Size(280, 55);
             this.txtFrames.TabIndex = 30;
             this.txtFrames.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextBoxShortcuts);
-            // 
+            //
             // btnClipboard
-            // 
+            //
             this.btnClipboard.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClipboard.Image = global::EngieFileConverter.Properties.Resources.clipboard_image;
             this.btnClipboard.Location = new System.Drawing.Point(268, 25);
@@ -194,9 +194,9 @@
             this.btnClipboard.Text = "...";
             this.btnClipboard.UseVisualStyleBackColor = true;
             this.btnClipboard.Click += new System.EventHandler(this.btnClipboard_Click);
-            // 
+            //
             // numCoordsY
-            // 
+            //
             this.numCoordsY.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.numCoordsY.EnteredValue = new decimal(new int[] {
             0,
@@ -210,9 +210,9 @@
             this.numCoordsY.SelectionStart = 0;
             this.numCoordsY.Size = new System.Drawing.Size(60, 20);
             this.numCoordsY.TabIndex = 14;
-            // 
+            //
             // numCoordsX
-            // 
+            //
             this.numCoordsX.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.numCoordsX.EnteredValue = new decimal(new int[] {
             0,
@@ -226,9 +226,9 @@
             this.numCoordsX.SelectionStart = 0;
             this.numCoordsX.Size = new System.Drawing.Size(60, 20);
             this.numCoordsX.TabIndex = 12;
-            // 
+            //
             // FrmPasteOnFrames
-            // 
+            //
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;

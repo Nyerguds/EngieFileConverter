@@ -497,7 +497,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Version = loadVersion;
             this.ExtraInfo = extraInfo;
         }
-        
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             // Preliminary checks
@@ -618,7 +618,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if ((minYTrimStart != Int32.MaxValue && maxYTrimEnd != 0 && minXTrimStart != Int32.MaxValue && maxXTrimEnd != 0)
                     && (minXTrimStart != 0 || maxXTrimEnd != width || minYTrimStart != 0 || maxYTrimEnd != height))
-                {                    
+                {
                     xOffset = minXTrimStart;
                     yOffset = minYTrimStart;
                     Int32 newWidth = maxXTrimEnd - xOffset;

@@ -132,7 +132,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected static Byte[] GetImageData(Byte[] fileData, Int32 start, String sourcePath, Boolean asAmigaFourFrame, Boolean asToonstruck, out Int32 compression, out Color[] palette, out CpsVersion cpsVersion)
         {
             Int32 dataLen = fileData.Length - start;
-            if (dataLen < (asToonstruck ? 12 : 10)) 
+            if (dataLen < (asToonstruck ? 12 : 10))
                 throw new FileTypeLoadException("File is not long enough to be a valid CPS file.");
             Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 0, asToonstruck ? 4 : 2, true);
             // compensate for 4-byte file size.
@@ -292,7 +292,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {            
+        {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException("File to save is empty!", "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
@@ -317,7 +317,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Bitmap image = fileToSave.GetBitmap();
             if (image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
                 throw new ArgumentException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!", "fileToSave");
-            
+
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 version;
             if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version))

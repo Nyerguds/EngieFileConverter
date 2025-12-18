@@ -87,6 +87,11 @@ namespace Nyerguds.ImageManipulation
             File.WriteAllBytes(palfilename, pal);
         }
 
+        public static Byte[] GetSixBitPaletteData(Color[] palette)
+        {
+            return GetSixBitPaletteData(GetSixBitColorPalette(palette));
+        }
+
         public static Byte[] GetSixBitPaletteData(ColorSixBit[] palette)
         {
             Byte[] pal = new Byte[768];
@@ -170,7 +175,7 @@ namespace Nyerguds.ImageManipulation
                 throw new ArgumentException(invalid, e);
             }
         }
-        
+
         public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData)
         {
             return ReadSixBitPaletteAsEightBit(paletteData, 0, 0x100);
