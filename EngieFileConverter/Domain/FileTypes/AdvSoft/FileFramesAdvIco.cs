@@ -7,7 +7,9 @@ using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-
+    /// <summary>
+    /// AdventureSoft / HorrorSoft ICO forma; a very simple 4bpp planar image. Used by the AGOS engine.
+    /// </summary>
     public class FileFramesAdvIco : SupportedFileType
     {
         protected const Int32 iconWidth = 24;
@@ -66,6 +68,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 frameSize = iconWidth * iconHeight;
             for (Int32 i = 0; i < frames; ++i)
             {
+                // Should probably convert this to use the planattolinear function...
                 Int32 offset = i * iconDataSize;
                 Byte[] frameData = new Byte[iconDataSize];
                 Array.Copy(fileData, offset, frameData, 0, iconDataSize);
@@ -111,7 +114,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             const Int32 framePixSize = iconWidth * iconHeight;
-            Int32 frames;
+            Int32 nrOfFrames;
             Byte[] imageDataFull8;
             Int32 stride;
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null || fileToSave.Frames.Length == 0)
@@ -124,15 +127,16 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
                 if (image.Width != iconWidth || inputFullHeight % iconHeight != 0)
                     throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked " + iconWidth + "×" + iconHeight + " pixel frames.");
-                frames = inputFullHeight / iconHeight;
+                nrOfFrames = inputFullHeight / iconHeight;
                 Byte[] imageData4 = ImageUtils.GetImageData(image, out stride);
                 imageDataFull8 = ImageUtils.ConvertTo8Bit(imageData4, iconWidth, inputFullHeight, 0, 4, true, ref stride);
             }
             else
             {
-                frames = fileToSave.Frames.Length;
-                imageDataFull8 = new Byte[frames * framePixSize];
-                for (Int32 i = 0; i < fileToSave.Frames.Length; ++i)
+                SupportedFileType[] frames = fileToSave.Frames;
+                nrOfFrames = frames.Length;
+                imageDataFull8 = new Byte[nrOfFrames * framePixSize];
+                for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
                     SupportedFileType frame = fileToSave.Frames[i];
                     Bitmap frameImage = frame.GetBitmap();
@@ -147,7 +151,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             // Create the 1-bit array with each frame split into four planes.
             Byte[] fileData8 = new Byte[imageDataFull8.Length * 4];
-            for (Int32 i = 0; i < frames; ++i)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 Int32 frameAddr = framePixSize * i;
                 Int32 frameAddr4 = frameAddr * 4;
@@ -162,7 +166,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             stride = iconWidth;
             // Convert the array as if it is one long 1-bit image.
-            return ImageUtils.ConvertFrom8Bit(fileData8, iconWidth, frames * iconHeight * 4, 1, true, ref stride);
+            return ImageUtils.ConvertFrom8Bit(fileData8, iconWidth, nrOfFrames * iconHeight * 4, 1, true, ref stride);
         }
     }
 }

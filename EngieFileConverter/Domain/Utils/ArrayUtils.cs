@@ -42,7 +42,7 @@ namespace Nyerguds.Util
                     return false;
             return true;
         }
-        
+
         /// <summary>
         /// Creates and returns a new array, containing the contents of all the given arrays, in the given order.
         /// </summary>
@@ -72,16 +72,12 @@ namespace Nyerguds.Util
             return result;
         }
 
-        public static void WriteIntToByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian, UInt64 value)
+        public static T[] CloneArray<T>(T[] array)
         {
-            Int32 lastByte = bytes - 1;
-            if (data.Length < startIndex + bytes)
-                throw new ArgumentOutOfRangeException("startIndex", "Data array is too small to write a " + bytes + "-byte value at offset " + startIndex + ".");
-            for (Int32 index = 0; index < bytes; ++index)
-            {
-                Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                data[offs] = (Byte) (value >> (8 * index) & 0xFF);
-            }
+            Int32 len = array.Length;
+            T[] copy = new T[len];
+            Array.Copy(array, copy, len);
+            return copy;
         }
 
         public static UInt64 ReadIntFromByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian)
@@ -96,6 +92,18 @@ namespace Nyerguds.Util
                 value += (UInt64) (data[offs] << (8 * index));
             }
             return value;
+        }
+
+        public static void WriteIntToByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian, UInt64 value)
+        {
+            Int32 lastByte = bytes - 1;
+            if (data.Length < startIndex + bytes)
+                throw new ArgumentOutOfRangeException("startIndex", "Data array is too small to write a " + bytes + "-byte value at offset " + startIndex + ".");
+            for (Int32 index = 0; index < bytes; ++index)
+            {
+                Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
+                data[offs] = (Byte) (value >> (8 * index) & 0xFF);
+            }
         }
 
         public static Int32 ReadBitsFromByteArray(Byte[] dataArr, ref Int32 bitIndex, Int32 codeLen, Int32 bufferInEnd)
@@ -141,33 +149,62 @@ namespace Nyerguds.Util
 
         public static T CloneStruct<T>(T obj) where T : struct
         {
-            return StructFromByteArray<T>(StructToByteArray(obj));
+            Endianness e = BitConverter.IsLittleEndian ? Endianness.LittleEndian : Endianness.BigEndian;
+            return ReadStructFromByteArray<T>(StructToByteArray(obj, e), 0, e);
         }
 
-        public static T StructFromByteArray<T>(Byte[] bytes) where T : struct
+        private static void AdjustEndianness(Type type, Byte[] data, Endianness endianness, Int32 startOffset)
         {
-            return ReadStructFromByteArray<T>(bytes, 0);
+            // nothing to change => return
+            if (BitConverter.IsLittleEndian == (endianness == Endianness.LittleEndian))
+                return;
+            FieldInfo[] fields = type.GetFields();
+            Int32 fieldsLen = fields.Length;
+            for (Int32 i = 0; i < fieldsLen; ++i)
+            {
+                FieldInfo field = fields[i];
+                Type fieldType = field.FieldType;
+                if (field.IsStatic)
+                    // don't process static fields
+                    continue;
+                if (fieldType == typeof (String))
+                    // don't swap bytes for strings
+                    continue;
+                Int32 offset = Marshal.OffsetOf(type, field.Name).ToInt32();
+                // handle enums
+                if (fieldType.IsEnum)
+                    fieldType = Enum.GetUnderlyingType(fieldType);
+                // check for sub-fields to recurse if necessary
+                FieldInfo[] subFields = fieldType.GetFields().Where(subField => subField.IsStatic == false).ToArray();
+                Int32 effectiveOffset = startOffset + offset;
+                if (subFields.Length == 0)
+                    Array.Reverse(data, effectiveOffset, Marshal.SizeOf(fieldType));
+                else // recurse
+                    AdjustEndianness(fieldType, data, endianness, effectiveOffset);
+            }
         }
 
-        public static Byte[] StructToByteArray<T>(T obj) where T : struct
+        public static T StructFromByteArray<T>(Byte[] rawData, Endianness endianness) where T : struct
         {
-            Int32 size = Marshal.SizeOf(typeof (T));
-            Byte[] target = new Byte[size];
-            WriteStructToByteArray(obj, target, 0);
-            return target;
+            return ReadStructFromByteArray<T>(rawData, 0, endianness);
         }
 
-        public static T ReadStructFromByteArray<T>(Byte[] bytes, Int32 offset) where T : struct
+        public static T ReadStructFromByteArray<T>(Byte[] rawData, Int32 offset, Endianness endianness) where T : struct
         {
-            Int32 size = Marshal.SizeOf(typeof (T));
-            if (size + offset > bytes.Length)
+            Type tType = typeof (T);
+            Int32 size = Marshal.SizeOf(tType);
+            if (size + offset > rawData.Length)
                 throw new IndexOutOfRangeException("Array is too small to get the requested struct!");
             IntPtr ptr = IntPtr.Zero;
             try
             {
                 ptr = Marshal.AllocHGlobal(size);
-                Marshal.Copy(bytes, offset, ptr, size);
-                Object obj = Marshal.PtrToStructure(ptr, typeof (T));
+                // Adjust array to preferred endianness
+                AdjustEndianness(tType, rawData, endianness, offset);
+                Marshal.Copy(rawData, offset, ptr, size);
+                // Revert array to original data order
+                AdjustEndianness(tType, rawData, endianness, offset);
+                Object obj = Marshal.PtrToStructure(ptr, tType);
                 return (T) obj;
             }
             finally
@@ -177,22 +214,25 @@ namespace Nyerguds.Util
             }
         }
 
-        public static void WriteStructToByteArray<T>(T obj, Byte[] target, Int32 index) where T : struct
+        public static Byte[] StructToByteArray<T>(T obj, Endianness endianness) where T : struct
+        {
+            Int32 size = Marshal.SizeOf(typeof (T));
+            Byte[] target = new Byte[size];
+            WriteStructToByteArray(obj, target, 0, endianness);
+            return target;
+        }
+
+        public static void WriteStructToByteArray<T>(T obj, Byte[] target, Int32 index, Endianness endianness) where T : struct
         {
             Type tType = typeof (T);
             Int32 size = Marshal.SizeOf(tType);
-            if (!BitConverter.IsLittleEndian)
-            {
-                Byte[] arr = GetStructBytes(obj, true);
-                Array.Copy(arr, 0, target, index, arr.Length);
-
-            }
             IntPtr ptr = IntPtr.Zero;
             try
             {
                 ptr = Marshal.AllocHGlobal(size);
                 Marshal.StructureToPtr(obj, ptr, true);
                 Marshal.Copy(ptr, target, index, size);
+                AdjustEndianness(typeof (T), target, endianness, 0);
             }
             finally
             {
@@ -200,89 +240,11 @@ namespace Nyerguds.Util
                     Marshal.FreeHGlobal(ptr);
             }
         }
+    }
 
-        private static Byte[] GetStructBytes<T>(T obj, Boolean littleEndian)
-        {
-            Type tType = typeof (T);
-            if (!tType.IsValueType)
-                return new Byte[0];
-            if (tType.IsPrimitive)
-                return GetValueTypeBytes((IConvertible) obj, littleEndian);
-
-            PropertyInfo[] pi = tType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic).OrderBy(f => f.MetadataToken).ToArray();
-            Dictionary<Int32, Byte[]> allValuesDict = new Dictionary<Int32, Byte[]>();
-            Int32 nrOfProps = pi.Length;
-            for (Int32 i = 0; i < nrOfProps; ++i)
-            {
-                PropertyInfo info = pi[i];
-                Byte[] b = null;
-                Type propertyType = info.PropertyType;
-                if (tType.IsPrimitive)
-                    b = GetValueTypeBytes((IConvertible) info.GetValue(obj, null), littleEndian);
-                else if (propertyType.IsValueType)
-                    b = GetStructBytes(info.GetValue(obj, null), littleEndian);
-                allValuesDict.Add(info.MetadataToken, b);
-            }
-            FieldInfo[] fi = tType.GetFields(BindingFlags.Public | BindingFlags.NonPublic).OrderBy(f => f.MetadataToken).ToArray();
-            Int32 nrOfFields = fi.Length;
-            for (Int32 i = 0; i < nrOfFields; ++i)
-            {
-                FieldInfo info = fi[i];
-                Byte[] b = null;
-                Type propertyType = info.FieldType;
-                if (tType.IsPrimitive)
-                    b = GetValueTypeBytes((IConvertible) info.GetValue(obj), littleEndian);
-                else if (propertyType.IsValueType)
-                    b = GetStructBytes(info.GetValue(obj), littleEndian);
-                allValuesDict.Add(info.MetadataToken, b);
-            }
-            Byte[][] allValues = new Byte[allValuesDict.Count][];
-            for (Int32 i = 0; i < nrOfFields; ++i)
-            {
-                FieldInfo info = fi[i];
-                Type fieldType = info.FieldType;
-                if (fieldType.IsValueType)
-                    allValues[i] = GetValueTypeBytes((IConvertible) info.GetValue(obj), littleEndian);
-                else
-                    allValues[i] = GetStructBytes(info.GetValue(obj), littleEndian);
-            }
-            return MergeArrays(allValues);
-        }
-
-        private static Byte[] GetValueTypeBytes<T>(T obj, Boolean littleEndian) where T : IConvertible
-        {
-            Type tType = typeof (T);
-            if (tType == typeof (SByte)
-                || tType == typeof (UInt16)
-                || tType == typeof (Int16)
-                || tType == typeof (UInt32)
-                || tType == typeof (Int32)
-                || tType == typeof (UInt64)
-                || tType == typeof (Int64))
-            {
-                Int32 len = Marshal.SizeOf(tType);
-                Byte[] ret = new Byte[len];
-                WriteIntToByteArray(ret, 0, len, littleEndian, ((IConvertible) obj).ToUInt64(null));
-                return ret;
-            }
-            Boolean le = BitConverter.IsLittleEndian;
-            if (tType == typeof (Single))
-            {
-                Byte[] sBytes = BitConverter.GetBytes(((IConvertible) obj).ToSingle(null));
-                if (!le && littleEndian || !littleEndian)
-                    Array.Reverse(sBytes);
-                return sBytes;
-            }
-            if (tType == typeof (Double))
-            {
-                Byte[] dBytes = BitConverter.GetBytes(((IConvertible) obj).ToDouble(null));
-                if (!le && littleEndian || !littleEndian)
-                    Array.Reverse(dBytes);
-                return dBytes;
-            }
-            if (tType == typeof (Boolean))
-                return new Byte[] {(Byte) ((obj as Boolean?).GetValueOrDefault(false) ? 1 : 0)};
-            return new Byte[0];
-        }
+    public enum Endianness
+    {
+        BigEndian,
+        LittleEndian
     }
 }

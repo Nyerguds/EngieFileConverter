@@ -23,7 +23,7 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/49057879/395685
         /// </summary>
-        /// <param name="data">Two-dimensional Int32 array containing colours.</param>
+        /// <param name="data">Two-dimensional Int32 array containing colors.</param>
         /// <returns>Image.</returns>
         public static Bitmap FromTwoDimIntArray(Int32[,] data)
         {
@@ -55,7 +55,7 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/49057879/395685
         /// </summary>
-        /// <param name="data">Two-dimensional Int32 array containing colour data of a greyscale image.</param>
+        /// <param name="data">Two-dimensional Int32 array containing color data of a greyscale image.</param>
         /// <returns>Image.</returns>
         public static Bitmap FromTwoDimIntArrayGray(Int32[,] data)
         {
@@ -577,7 +577,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Creates an image from colour channels.
+        /// Creates an image from color channels.
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/50077006/395685
         /// </summary>
@@ -701,19 +701,47 @@ namespace Nyerguds.ImageManipulation
             if ((b.PixelFormat & PixelFormat.Indexed) == 0) throw new ArgumentException("Image does not have an indexed format!");
             if (x < 0 || x >= b.Width) throw new ArgumentOutOfRangeException("x", String.Format("x should be in 0-{0}", b.Width));
             if (y < 0 || y >= b.Height) throw new ArgumentOutOfRangeException("y", String.Format("y should be in 0-{0}", b.Height));
-            BitmapData data = b.LockBits(new Rectangle(x, y, 1, 1), ImageLockMode.ReadOnly, b.PixelFormat);
+            BitmapData data = null;
             try
             {
+                data = b.LockBits(new Rectangle(x, y, 1, 1), ImageLockMode.ReadOnly, b.PixelFormat);
                 Byte[] pixel = new Byte[1];
                 Marshal.Copy(data.Scan0, pixel, 0, 1);
                 return pixel[0];
             }
             finally
             {
-                if (data != null) b.UnlockBits(data);
+                try { if (data != null) b.UnlockBits(data); } catch (Exception) { /* Ignorz */ }
             }
         }
-        /*/
+        
+        public static Bitmap IntFFFToBitmap(Int32[] array, Int32 width, Int32 height)
+        {
+            Int32 len = width * height;
+            if(len < array.Length)
+                throw new ArgumentException("Array is not long enough for the given width and height!","array");
+            Byte[] pixels = new Byte[len * 4];
+            Int32 bytePtr = 0;
+            for (int i = 0; i < len; ++i)
+            {
+                Int32 val = array[i];
+                // "ARGB" is big-endian, meaning the bytes are in order [B, G, R, A].
+                // I'm just assuming they are in the int in the same order.
+                pixels[bytePtr++] = /*B*/ (Byte)((val | 0x00F) << 8); // 000-00F range: shift up to 0-240
+                pixels[bytePtr++] = /*G*/ (Byte)((val | 0x0F0));      // 000-0F0 range: OK for byte range
+                pixels[bytePtr++] = /*R*/ (Byte)((val | 0xF00) >> 8); // 000-F00 range: shift down to 0-240
+                pixels[bytePtr++] = /*A*/ 0xFF;
+            }
+            Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+            BitmapData targetData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
+            // 32 bpp means it aligns perfectly to the internal stride of
+            // multiples of 4 bytes, so this can be done in one copy operation.
+            Marshal.Copy(pixels, 0, targetData.Scan0, len);
+            bitmap.UnlockBits(targetData);
+            return bitmap;
+        }
+
+#if UNSAFE
         public static unsafe Byte GetIndexedPixelUnsafe(Bitmap b, Int32 x, Int32 y)
         {
             if (x < 0 || x >= b.Width) throw new ArgumentOutOfRangeException("x", string.Format("x should be in 0-{0}", b.Width));
@@ -729,7 +757,7 @@ namespace Nyerguds.ImageManipulation
                 if (data != null) b.UnlockBits(data);
             }
         }
-        //*/
+#endif
     }
 }
 #endif

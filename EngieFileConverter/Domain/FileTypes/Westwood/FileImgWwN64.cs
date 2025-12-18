@@ -10,6 +10,35 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileImgWwN64 : SupportedFileType
     {
 
+        public override FileClass InputFileClass { get { return FileClass.Image; } }
+
+        //bytes 84 21 ==> 8421 (BE) ==bin==> 1000 0100 0010 0001 ==split==> R=10000 G=10000 B=10000 A=1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
+        private static readonly PixelFormatter Format16BitRgba5551Be = new PixelFormatter(2, 0x0001, 0xF800, 0x07C0, 0x003E, false);
+
+        /// <summary>0 = 4bpp, 1=8bpp, 2 = 16bpp</summary>
+        protected Byte hdrColorFormat;
+        protected Int32 hdrColorsInPalette;
+
+        /// <summary>Very short code name for this type.</summary>
+        public override String ShortTypeName { get { return "C&C64 IMG"; } }
+        public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
+        public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
+
+        public override Int32 ColorsInPalette { get { return this.hdrColorsInPalette; } }
+
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            // If it is a hi-colour image, return empty
+            if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
+                return new SaveOption[0];
+            // If it is a non-image format which does contain colours, offer to save with palette
+            Boolean hasColors = (fileToSave is FileImage || fileToSave.ColorsInPalette != 0);
+            return new SaveOption[]
+            {
+                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
+            };
+        }
+
         public override FileClass FileClass
         {
             get
@@ -28,47 +57,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return FileClass.None;
             }
         }
-        public override FileClass InputFileClass { get { return FileClass.Image; } }
-
-        //bytes 84 21 ==> 8421 (BE) ==bin==> 1000 0100 0010 0001 ==split==> R=10000 G=10000 B=10000 A=1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
-        private static readonly PixelFormatter Format16BitRgba5551Be = new PixelFormatter(2, 0x0001, 0xF800, 0x07C0, 0x003E, false);
-        public override Int32 Width { get { return this.hdrWidth; } }
-        public override Int32 Height { get { return this.hdrHeight; } }
-
-        protected Int32 hdrDataOffset;
-        protected Int32 hdrPaletteOffset;
-        protected Int16 hdrWidth;
-        protected Int16 hdrHeight;
-
-        /// <summary>Bytes per color on the palette. 0 for no palette. Is 4 on grayscale images for some reason.</summary>
-        protected Byte hdrBytesPerColor;
-        /// <summary>Original 'Bytes per color' value in the header. Can be 0 for grayscale, but in that case hdrBytesPerColor will be replaced by the value for the generated palette.</summary>
-        protected Byte hdrReadBytesPerColor;
-        /// <summary>0 = 4bpp, 1=8bpp, 2 = 16bpp</summary>
-        protected Byte hdrColorFormat;
-        protected Int32 hdrColorsInPalette;
-
-        /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 IMG"; } }
-        public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
-
-        public override Int32 ColorsInPalette { get { return this.hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
-
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {
-            // If it is a hi-colour image, return empty
-            if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
-                return new SaveOption[0];
-            // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = (fileToSave is FileImage || fileToSave.ColorsInPalette != 0);
-            return new SaveOption[]
-            {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
-            };
-        }
-
-
+        
         public override Int32 BitsPerPixel
         {
             get
@@ -80,15 +69,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     case 1:
                         return 8;
                     case 2:
-                        return 16; // odd format; big-endian
+                        return 16;
                     default:
                         return -1;
                 }
             }
         }
-
-        public FileImgWwN64() { }
-
+        
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData);
@@ -120,52 +107,47 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileData.Length < 16)
                 throw new FileTypeLoadException("File is not long enough to be a valid N64 IMG file.");
-            try
-            {
-                this.ReadHeader(fileData);
-            }
-            catch (Exception e)
-            {
-                throw new FileTypeLoadException("Error loading header data: " + e.Message);
-            }
-            if (this.hdrDataOffset != 16)
+            Int32 hdrDataOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, false);
+            Int32 hdrPaletteOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 4, 4, false);
+            Int16 hdrWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, false);
+            Int16 hdrHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, 2, false);
+            Byte hdrReadBytesPerColor = fileData[0x0C];
+            Byte hdrBytesPerColor = hdrReadBytesPerColor;
+            this.hdrColorFormat = fileData[0x0D];
+            this.hdrColorsInPalette = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0E, 2, false);
+            //if (hdrColorFormat == 2 || hdrPaletteOffset == 0)
+            //    hdrColorsInPalette = 0;
+            if (hdrDataOffset != 16)
                 throw new FileTypeLoadException("File does not have a valid IMG header.");
-            // This doesn't support 4bpp with odd width at the moment. Should add code from the font editor to fix that.
             if (this.BitsPerPixel == -1)
                 throw new FileTypeLoadException("File does not have a valid color depth in the header.");
-
-            // WARNING! The hi-colour format is 16 BPP, but the image data is converted to 32 bpp for creating the actual image!
-            Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerPixel);
-            Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerPixel) * this.Height;
+            Int32 stride = ImageUtils.GetMinimumStride(hdrWidth, this.BitsPerPixel);
+            Int32 imageDataSize = stride * hdrHeight;
             Byte[] imageData;
-            Int32 expectedSize = this.hdrDataOffset + imageDataSize;
-            if ((this.hdrColorFormat == 0 || this.hdrColorFormat == 1) && this.hdrPaletteOffset != 0)
-                expectedSize = Math.Max(expectedSize, this.hdrPaletteOffset + this.hdrBytesPerColor * this.hdrColorsInPalette);
+            Int32 expectedSize = hdrDataOffset + imageDataSize;
+            if ((this.hdrColorFormat == 0 || this.hdrColorFormat == 1) && hdrPaletteOffset != 0)
+                expectedSize = Math.Max(expectedSize, hdrPaletteOffset + hdrBytesPerColor * this.hdrColorsInPalette);
             if (fileData.Length < expectedSize)
                 throw new FileTypeLoadException(String.Format("File data is too short. Got {0} bytes, expected {1} bytes.", fileData.Length, expectedSize));
             try
             {
-                // Fill image data array. For 16-bit colour, convert to 32 bit. For 8 or lower, just copy.                
+                // Fill image data array. For 16-bit colour, reorder to existing Argb1555 format. For 8 or lower, just copy.
                 imageData = new Byte[imageDataSize];
-                Array.Copy(fileData, this.hdrDataOffset, imageData, 0, Math.Min(fileData.Length - this.hdrDataOffset, imageDataSize));
+                Array.Copy(fileData, hdrDataOffset, imageData, 0, Math.Min(fileData.Length - hdrDataOffset, imageDataSize));
                 if (this.hdrColorFormat == 2)
-                    ImageUtils.ReorderBits(imageData, this.Width, this.Height, stride, Format16BitRgba5551Be, PixelFormatter.Format16BitArgb1555);
-                //imageData = Convert16bTo32b(fileData, this.hdrDataOffset, this.Width, this.Height, ref stride);
-                if (this.hdrPaletteOffset != 0)
+                    PixelFormatter.ReorderBits(imageData, hdrWidth, hdrHeight, stride, Format16BitRgba5551Be, PixelFormatter.Format16BitArgb1555);
+                if (hdrPaletteOffset != 0)
                 {
-                    Int32 palSize = this.hdrBytesPerColor * this.hdrColorsInPalette;
+                    Int32 palSize = hdrBytesPerColor * this.hdrColorsInPalette;
                     Byte[] paletteData = new Byte[palSize];
-                    Array.Copy(fileData, this.hdrPaletteOffset, paletteData, 0, palSize);
+                    Array.Copy(fileData, hdrPaletteOffset, paletteData, 0, palSize);
                     this.m_Palette = this.Get16BitColors(paletteData, this.hdrColorsInPalette, false);
                 }
                 else if (this.hdrColorFormat != 2)
                 {
                     // No palette in file, but paletted color format. Generate grayscale palette.
                     Int32 bpp = this.BitsPerPixel;
-                    
                     this.m_Palette = PaletteUtils.GenerateGrayPalette(bpp, null, false);
-                    // Ignore original value here.
-                    this.hdrBytesPerColor = 4;
                 }
                 else
                 {
@@ -178,11 +160,11 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             try
             {
-                PixelFormat pf = this.GetPixelFormat();
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, pf, this.m_Palette, null);
-
+                PixelFormat pf = this.GetPixelFormat(hdrColorFormat);
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, hdrWidth, hdrHeight, stride, pf, this.m_Palette, null);
+                // Corrects the number of colours in the palette.
                 if (this.m_Palette != null)
-                    this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
+                    this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
             }
             catch (IndexOutOfRangeException)
             {
@@ -225,7 +207,7 @@ namespace EngieFileConverter.Domain.FileTypes
             else
                 imageData = ImageUtils.GetImageData(image, out stride, true);
             if (colorFormat == 2)
-                ImageUtils.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555, Format16BitRgba5551Be);
+                PixelFormatter.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555, Format16BitRgba5551Be);
             Byte[] paletteData;
             Int32 paletteColors;
             if (colorFormat == 2 || !savePalette)
@@ -272,8 +254,6 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public void LoadGrayImage(Bitmap img, String displayFileName, String fullFilePath)
         {
-            this.hdrBytesPerColor = 4;
-            this.hdrReadBytesPerColor = 4;
             this.hdrColorFormat = 1;
             this.hdrColorsInPalette = 0;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
@@ -286,10 +266,10 @@ namespace EngieFileConverter.Domain.FileTypes
         /// Returns the pixel format corresponding to the N64 IMG header value.
         /// </summary>
         /// <returns>The pixel format.</returns>
-        protected PixelFormat GetPixelFormat()
+        protected PixelFormat GetPixelFormat(Int32 hdrColorFormat)
         {
             PixelFormat pf;
-            switch (this.hdrColorFormat)
+            switch (hdrColorFormat)
             {
                 case 0:
                     pf = PixelFormat.Format4bppIndexed;
@@ -325,18 +305,5 @@ namespace EngieFileConverter.Domain.FileTypes
             return entries;
         }
 
-        protected void ReadHeader(Byte[] headerBytes)
-        {
-            if (headerBytes.Length < 10)
-                return;
-            this.hdrDataOffset = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0, 4, false);
-            this.hdrPaletteOffset = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 4, 4, false);
-            this.hdrWidth = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 8, 2, false);
-            this.hdrHeight = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x0A, 2, false);
-            this.hdrReadBytesPerColor = headerBytes[0x0C];
-            this.hdrBytesPerColor = this.hdrReadBytesPerColor;
-            this.hdrColorFormat = headerBytes[0x0D];
-            this.hdrColorsInPalette = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x0E, 2, false);
-        }
     }
 }

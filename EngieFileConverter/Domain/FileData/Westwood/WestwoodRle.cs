@@ -11,8 +11,8 @@ namespace Nyerguds.FileData.Westwood
     /// </summary>
     public class WestwoodRle : RleImplementation<WestwoodRle>
     {
-        public override UInt32 MaxRepeatValue { get { return UInt16.MaxValue; } }
-        public override UInt32 MaxCopyValue { get { return 0x7F; } }
+        protected override UInt32 MaxRepeatValue { get { return UInt16.MaxValue; } }
+        protected override UInt32 MaxCopyValue { get { return 0x7F; } }
 
         protected Boolean m_SwapWords;
 

@@ -6,8 +6,8 @@ using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.Linq;
 using System.Text;
-using EngieFileConverter.UI.SaveOptions;
-using Nyerguds.FileData.Compression.NullSoft;
+using Nyerguds.Util.UI.SaveOptions;
+using Nyerguds.FileData.NullSoft;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -169,7 +169,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             else if (paletteInfo != 2 && m_ColorsInPalette > 16)
-                throw new FileTypeLoadException("No palette found for indexed image with more than 16 colours!");
+                throw new FileTypeLoadException("No palette found for indexed image with more than 16 colors!");
             if (numPlanes == 1)
             {
                 switch (bitsPerPlane)
@@ -249,7 +249,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //if (hDpi != 0 && vDpi != 0 && !(hDpi == width && vDpi == height))
             //    m_LoadedImage.SetResolution(hDpi, vDpi);
             if (nrOfcolors < 0x100 && nrOfcolors != (1 << Image.GetPixelFormatSize(pf)))
-                m_LoadedImage.Palette = BitmapHandler.GetPalette(m_Palette, m_ColorsInPalette);
+                m_LoadedImage.Palette = ImageUtils.GetPalette(m_Palette, m_ColorsInPalette);
             this.ExtraInfo = extraInfo.ToString();
         }
 
@@ -300,7 +300,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (colors == 0)
                 return new SaveOption[] { new SaveOption("PLN", SaveOptionType.Boolean, "Save data as linear, not planar.", "1") };
 
-            SaveOption version = new SaveOption("VER", SaveOptionType.ChoicesList, "PCX version:", "0: Paintbrush v2.5 (pure EGA colours only),2: Paintbrush v2.8 (with palette),3: Paintbrush v2.8 (no palette),4: Paintbrush for Windows,5: Paintbrush v3.0+", "4");
+            SaveOption version = new SaveOption("VER", SaveOptionType.ChoicesList, "PCX version:", "0: Paintbrush v2.5 (pure EGA colors only),2: Paintbrush v2.8 (with palette),3: Paintbrush v2.8 (no palette),4: Paintbrush for Windows,5: Paintbrush v3.0+", "4");
             
             if (colors == 2 || colors == 4)
             {

@@ -1,10 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using Nyerguds.FileData.Compression;
 
 namespace Nyerguds.FileData.Agos
 {
-    // Finally managed to convert this to an RleImplementation class.
+
+    /// <summary>
+    /// AdventureSoft / HorrorSoft VGA format compression; a vertical RLE. Used by the AGOS engine.
+    /// </summary>
+    ///<remarks>Finally managed to convert this to an RleImplementation class.</remarks>
     public class AgosCompression: RleImplementation<AgosCompression>
     {
 
@@ -43,9 +46,9 @@ namespace Nyerguds.FileData.Agos
 
         #region tweaked overrides
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
-        public override UInt32 MaxRepeatValue { get { return 0x80; } }
+        protected override UInt32 MaxRepeatValue { get { return 0x80; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
-        public override UInt32 MaxCopyValue { get { return 0x7F; } }
+        protected override UInt32 MaxCopyValue { get { return 0x7F; } }
 
         /// <summary>
         /// Reads a code, determines the repeat / skip command and the amount of bytes to repeat/skip,

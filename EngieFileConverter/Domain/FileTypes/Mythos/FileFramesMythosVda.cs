@@ -605,7 +605,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             if (palFile == null)
-                throw new NotSupportedException("This format needs a colour palette.");
+                throw new NotSupportedException("This format needs a color palette.");
             Boolean useChunks = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "OPT")) == 1;
             Boolean chunkDiag = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CH8"));
             Boolean chunkRects = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CHR"));
@@ -647,7 +647,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (imageData[curFrameOffs] == TransparentIndex)
                         {
                             if (previousImageNonTransIndex[curPrevOffs])
-                                throw new NotSupportedException("adding pixels of colour #255 on new locations after frame 0 is not supported!");
+                                throw new NotSupportedException("adding pixels of color #255 on new locations after frame 0 is not supported!");
                         }
                         if (imageData[curFrameOffs] == previousImageData[curPrevOffs])
                             imageDataOpt[curFrameOffs] = TransparentIndex;

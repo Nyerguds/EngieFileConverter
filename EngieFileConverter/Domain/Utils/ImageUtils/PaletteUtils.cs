@@ -58,13 +58,13 @@ namespace Nyerguds.ImageManipulation
 
         public static Color[] GetEgaPalette(Int32 bitsPerPixel)
         {
-            Int32 colours = 1 << bitsPerPixel;
-            if (colours > 16)
-                throw new NotSupportedException("EGA palette can not contain more than 16 colours!");
-            if (colours == 16)
+            Int32 colors = 1 << bitsPerPixel;
+            if (colors > 16)
+                throw new NotSupportedException("EGA palette can not contain more than 16 colors!");
+            if (colors == 16)
                 return EgaPalette.ToArray();
-            Color[] pal = new Color[colours];
-            Array.Copy(EgaPalette, 0, pal, 0, colours);
+            Color[] pal = new Color[colors];
+            Array.Copy(EgaPalette, 0, pal, 0, colors);
             return pal;
         }
 
@@ -195,9 +195,9 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
+        /// Creates a new palette with the full amount of color for the given bits per pixel value, and pours the given colors into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="sourcePalette">Source colors.</param>
         /// <param name="pixelFormat">Pixel format for which to generate the new palette.</param>
         /// <param name="palTransparencyMask">Array of booleans specifying which indices to make transparent.</param>
         /// <returns>The new palette.</returns>
@@ -207,12 +207,12 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
+        /// Creates a new palette with the full amount of color for the given bits per pixel value, and pours the given colors into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="sourcePalette">Source colors.</param>
         /// <param name="pixelFormat">Pixel format for which to generate the new palette.</param>
         /// <param name="palTransparencyMask">Array of booleans specifying which indices to make transparent.</param>
-        /// <param name="defaultColor">Default colour if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty.</param>
+        /// <param name="defaultColor">Default color if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty.</param>
         /// <returns>The new palette.</returns>
         public static Color[] MakePalette(Color[] sourcePalette, PixelFormat pixelFormat, Boolean[] palTransparencyMask, Color? defaultColor)
         {
@@ -221,9 +221,9 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
+        /// Creates a new palette with the full amount of color for the given bits per pixel value, and pours the given colors into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="sourcePalette">Source colors.</param>
         /// <param name="bpp">Bits per pixel for which to generate the new palette.</param>
         /// <param name="palTransparencyMask">Array of booleans specifying which indices to make transparent.</param>
         /// <returns>The new palette.</returns>
@@ -233,12 +233,12 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
+        /// Creates a new palette with the full amount of color for the given bits per pixel value, and pours the given colors into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="sourcePalette">Source colors.</param>
         /// <param name="bpp">Bits per pixel for which to generate the new palette.</param>
         /// <param name="palTransparencyMask">Array of booleans specifying which indices to make transparent.</param>
-        /// <param name="defaultColor">Default colour if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty.</param>
+        /// <param name="defaultColor">Default color if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty.</param>
         /// <returns>The new palette.</returns>
         public static Color[] MakePalette(Color[] sourcePalette, Int32 bpp, Boolean[] palTransparencyMask, Color? defaultColor)
         {
@@ -312,7 +312,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Generates a colour palette of the given bits per pixel containing a hue rotation of the given range.
+        /// Generates a color palette of the given bits per pixel containing a hue rotation of the given range.
         /// </summary>
         /// <param name="bpp">Bits per pixel of the image the palette is for.</param>
         /// <param name="blackIndex">Index on the palette to replace with black.</param>
@@ -320,7 +320,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="reverseGenerated">Reverse the generated range. This happens after the generating, and before the operations on the first index/.</param>
         /// <param name="startHue">Start hue range. Value from 0 to 240.</param>
         /// <param name="endHue">End hue range. Value from 0 to 240. Must be higher then startHue.</param>
-        /// <param name="inclusiveEnd">True to include the end hue in the palette. If you generate a full hue range, this can be set to False to avoid getting a duplicate red colour on it.</param>
+        /// <param name="inclusiveEnd">True to include the end hue in the palette. If you generate a full hue range, this can be set to False to avoid getting a duplicate red color on it.</param>
         /// <returns>The generated palette, as array of System.Drawing.Color objects.</returns>
         public static Color[] GenerateRainbowPalette(Int32 bpp, Int32 blackIndex, Boolean[] palTransparencyMask, Boolean reverseGenerated, Int32 startHue, Int32 endHue, Boolean inclusiveEnd)
         {

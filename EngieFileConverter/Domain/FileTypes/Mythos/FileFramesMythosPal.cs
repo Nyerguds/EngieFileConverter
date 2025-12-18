@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {

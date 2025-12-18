@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -46,7 +47,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 opt = 0;
             if (!is4bpp)
             {
-                Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
+                FileImgDynScr toSaveScr = fileToSave as FileImgDynScr;
+                Int32 saveType = toSaveScr != null && toSaveScr.IsMa8 ? 1 : 0;
                 opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", saveType.ToString());
             }
             opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), 1.ToString());
@@ -59,10 +61,14 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void SetColors(Color[] palette, SupportedFileType updateSource)
         {
-            if (palette.Length == 16)
-                return; // Don't propagate reduced palette to lower level.
-            if (this.BitsPerPixel == 4)
-                palette = this.Make4BitPalette(palette);
+            if (updateSource != null)
+            {
+                // System to use a vertical slice of the 8-bit palette as 4-bit palette.
+                if (this.BitsPerPixel == 4 && updateSource.BitsPerPixel == 8)
+                    palette = this.Make4BitPalette(palette);
+                else if (this.BitsPerPixel == 8 && updateSource.BitsPerPixel == 4)
+                    palette = this.Set4BitPalette(this.m_Palette, palette);
+            }
             base.SetColors(palette, updateSource);
         }
 
@@ -243,6 +249,15 @@ namespace EngieFileConverter.Domain.FileTypes
             for (Int32 i = 0; i < 16; ++i)
                 fourbitpal[i] = col[i * 16 + 3];
             return fourbitpal;
+        }
+
+        protected Color[] Set4BitPalette(Color[] fullPal, Color[] fourbitpal)
+        {
+            if (fullPal.Length < 256 || fourbitpal.Length != 16)
+                return fullPal.ToArray();
+            for (Int32 i = 0; i < 16; ++i)
+                fullPal[i * 16 + 3] = fourbitpal[i];
+            return fullPal;
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

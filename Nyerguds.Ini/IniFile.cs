@@ -1008,7 +1008,7 @@ namespace Nyerguds.Ini
         {
             IniSection iniSection = null;
             Int32 nrOfSections = this.m_IniSections.Count;
-            for (Int32 i = 0; i < nrOfSections; i++)
+            for (Int32 i = 0; i < nrOfSections; ++i)
             {
                 IniSection testsec = this.m_IniSections[i];
                 if (!testsec.GetName().Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))

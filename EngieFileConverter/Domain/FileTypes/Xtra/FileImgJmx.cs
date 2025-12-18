@@ -16,9 +16,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "JMX image"; } }
+        public override String ShortTypeName { get { return "ImageLine JMX image"; } }
         public override String[] FileExtensions { get { return new String[] { "jmx" }; } }
-        public override String ShortTypeDescription { get { return "JMX image file"; } }
+        public override String ShortTypeDescription { get { return "ImageLine JMX image file"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)

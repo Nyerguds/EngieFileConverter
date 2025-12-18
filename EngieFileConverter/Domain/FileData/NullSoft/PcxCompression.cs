@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Nyerguds.FileData.Compression.NullSoft
+namespace Nyerguds.FileData.NullSoft
 {
     /// <summary>
     /// Run Length Encoding (RLE)

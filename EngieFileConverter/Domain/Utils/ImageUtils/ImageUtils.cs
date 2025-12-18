@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -43,6 +44,11 @@ namespace Nyerguds.ImageManipulation
                 saveFormat = ImageFormat.Jpeg;
             else if (!".png".Equals(ext, StringComparison.InvariantCultureIgnoreCase))
                 filename += ".png";
+            return GetSavedImageData(image, saveFormat);
+        }
+
+        public static Byte[] GetSavedImageData(Bitmap image, ImageFormat saveFormat)
+        {
             using (image = CloneImage(image))
             using (MemoryStream ms = new MemoryStream())
             {
@@ -64,7 +70,7 @@ namespace Nyerguds.ImageManipulation
                         img2.Save(ms, saveFormat);
                 }
                 else if (saveFormat.Equals(ImageFormat.Png))
-                    BitmapHandler.GetPngImageData(image, 0, false);
+                    ImageUtils.GetPngImageData(image, 0, false);
                 else
                     image.Save(ms, saveFormat);
                 return ms.ToArray();
@@ -235,8 +241,8 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="originalImage">Original image.</param>
         /// <param name="bpp">Desired bits per pixel for the paletted image (should be less than or equal to 8).</param>
-        /// <param name="palette">The colour palette.</param>
-        /// <returns>A bitmap of the desired colour depth matched to the given palette.</returns>
+        /// <param name="palette">The color palette.</param>
+        /// <returns>A bitmap of the desired color depth matched to the given palette.</returns>
         public static Bitmap ConvertToPalette(Bitmap originalImage, Int32 bpp, Color[] palette)
         {
             PixelFormat pf = GetIndexedPixelFormat(bpp);
@@ -254,14 +260,14 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Converts 32 bit per pixel image data to match a given colour palette, and returns it as array in the desired pixel format.
+        /// Converts 32 bit per pixel image data to match a given color palette, and returns it as array in the desired pixel format.
         /// </summary>
         /// <param name="imageData">Image data.</param>
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
         /// <param name="bpp">Bits per pixel.</param>
         /// <param name="bigEndianBits">True to use big endian ordered data in the indexed array if <paramref name="bpp "/> is less than 8.</param>
-        /// <param name="palette">Colour palette to match to.</param>
+        /// <param name="palette">Color palette to match to.</param>
         /// <param name="stride">Stride. Will be adjusted by the function.</param>
         /// <returns>The converted indexed data.</returns>
         public static Byte[] Convert32BitToPaletted(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, Color[] palette, ref Int32 stride)
@@ -307,6 +313,18 @@ namespace Nyerguds.ImageManipulation
             if (bpp < 8)
                 newImageData = ConvertFrom8Bit(newImageData, width, height, bpp, bigEndianBits, ref stride);
             return newImageData;
+        }        
+
+        /// <summary>
+        /// Gets the raw bytes from an image in its original pixel format.
+        /// </summary>
+        /// <param name="sourceImage">The image to get the bytes from.</param>
+        /// <param name="stride">Stride of the retrieved image data.</param>
+        /// <returns>The raw bytes of the image.</returns>
+        public static Byte[] GetImageData(Bitmap sourceImage)
+        {
+            Int32 stride;
+            return GetImageData(sourceImage, out stride, sourceImage.PixelFormat, true);
         }
         
         /// <summary>
@@ -321,6 +339,18 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
+        /// Gets the raw bytes from an image in its original pixel format. This automatically
+        /// collapses the stride, and returns the data using the minimum stride.
+        /// </summary>
+        /// <param name="sourceImage">The image to get the bytes from.</param>
+        /// <param name="desiredPixelFormat">PixelFormat in which the data needs to be retrieved. Use <paramref name="sourceImage"/>.PixelFormat for no conversion.</param>
+        /// <returns>The raw bytes of the image.</returns>
+        public static Byte[] GetImageData(Bitmap sourceImage, PixelFormat desiredPixelFormat)
+        {
+            Int32 stride;
+            return GetImageData(sourceImage, out stride, desiredPixelFormat, true);
+        }
+        /// <summary>
         /// Gets the raw bytes from an image, in the given pixel format.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
@@ -330,13 +360,12 @@ namespace Nyerguds.ImageManipulation
         /// <remarks>
         ///   Note that <paramref name="desiredPixelFormat"/> has limitations when it comes to indexed formats:
         ///   giving an indexed pixel format if the sourceImage is an indexed image with a lower bpp will throw an exception, since GDI+ does not support that,
-        ///   and if you give an indexed pixel format and the source is non-indexed, the colours will be matched to the standard Windows palette for that format.
+        ///   and if you give an indexed pixel format and the source is non-indexed, the colors will be matched to the standard Windows palette for that format.
         /// </remarks>
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat)
         {
             return GetImageData(sourceImage, out stride, desiredPixelFormat, false);
         }
-
         /// <summary>
         /// Gets the raw bytes from an image in its original pixel format.
         /// </summary>
@@ -360,7 +389,7 @@ namespace Nyerguds.ImageManipulation
         /// <remarks>
         ///   Note that <paramref name="desiredPixelFormat"/> has limitations when it comes to indexed formats:
         ///   giving an indexed pixel format if the sourceImage is an indexed image with a lower bpp will throw an exception, since GDI+ does not support that,
-        ///   and if you give an indexed pixel format and the source is non-indexed, the colours will be matched to the standard Windows palette for that format.
+        ///   and if you give an indexed pixel format and the source is non-indexed, the colors will be matched to the standard Windows palette for that format.
         /// </remarks>
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat, Boolean collapseStride)
         {
@@ -475,7 +504,7 @@ namespace Nyerguds.ImageManipulation
 		    // Not an alpha-capable color format. Note that GDI+ indexed images are alpha-capable on the palette.
 		    if (((ImageFlags)bitmap.Flags & ImageFlags.HasAlpha) == 0)
 		        return false;
-		    // Indexed format, and no alpha colours in the images palette: immediate pass.
+		    // Indexed format, and no alpha colors in the images palette: immediate pass.
 		    if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.A == 255))
 		        return false;
 		    // Get the byte data 'as 32-bit ARGB'. This offers a converted version of the image data without modifying the original image.
@@ -735,7 +764,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="pasteHeight">Height of the image to paste.</param>
         /// <param name="pasteStride">Stride of the image to paste.</param>
         /// <param name="targetPos">Position at which to paste the image.</param>
-        /// <param name="palTransparencyMask">Boolean array determining which offsets on the colour palette will be treated as transparent. Use null for no transparency.</param>
+        /// <param name="palTransparencyMask">Boolean array determining which offsets on the color palette will be treated as transparent. Use null for no transparency.</param>
         /// <param name="modifyOrig">True to modify the original array rather than returning a copy.</param>
         /// <returns>A new Byte array with the combined data, and the same stride as the source image.</returns>
         public static Byte[] PasteOn8bpp(Byte[] destData, Int32 destWidth, Int32 destHeight, Int32 destStride,
@@ -757,7 +786,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="pasteHeight">Height of the image to paste.</param>
         /// <param name="pasteStride">Stride of the image to paste.</param>
         /// <param name="targetPos">Position at which to paste the image.</param>
-        /// <param name="palTransparencyMask">Boolean array determining which offsets on the colour palette will be treated as transparent. Use null for no transparency.</param>
+        /// <param name="palTransparencyMask">Boolean array determining which offsets on the color palette will be treated as transparent. Use null for no transparency.</param>
         /// <param name="modifyOrig">True to modify the original array rather than returning a copy.</param>
         /// <param name="transparencyMask">For image-based transparency masking rather than palette based. Values in the array set to true are treated as transparent.
         /// If given, should have a size of exactly <see cref="pasteWidth"/> * <see cref="pasteHeight"/>.</param>
@@ -1440,10 +1469,10 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Find the most common colour in an image.
+        /// Find the most common color in an image.
         /// </summary>
         /// <param name="image">Input image.</param>
-        /// <returns>The most common colour found in the image. If there are multiple with the same frequency, the first one that was encountered is returned.</returns>
+        /// <returns>The most common color found in the image. If there are multiple with the same frequency, the first one that was encountered is returned.</returns>
         public static Color FindMostCommonColor(Image image)
         {
             // Avoid unnecessary getter calls
@@ -1605,59 +1634,13 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Reorders the bits inside a byte array to a new pixel format of equal length. Both formats are specified by a PixelFormatter object.
-        /// </summary>
-        /// <param name="imageData">Image data.</param>
-        /// <param name="width">Image width.</param>
-        /// <param name="height">Image height.</param>
-        /// <param name="stride">Image data stride.</param>
-        /// <param name="inputFormat">Input pixel formatter.</param>
-        /// <param name="outputFormat">Output pixel formatter.</param>
-        public static void ReorderBits(Byte[] imageData, Int32 width, Int32 height, Int32 stride, PixelFormatter inputFormat, PixelFormatter outputFormat)
-        {
-            if (inputFormat.BytesPerPixel != outputFormat.BytesPerPixel || !inputFormat.BitsAmounts.SequenceEqual(outputFormat.BitsAmounts))
-                throw new ArgumentException("Output format's bytes per pixel do not match input format!", "outputFormat");
-            // This code relies on the fact that both formats have the same amount of bits per pixel,
-            // meaning they can be written back to the same space.
-            Int32 step = outputFormat.BytesPerPixel;
-            if (inputFormat.BitsAmounts.SequenceEqual(outputFormat.BitsAmounts))
-            {
-                // Actually has same bit amounts : simply reorder the raw data.
-                for (Int32 y = 0; y < height; ++y)
-                {
-                    Int32 offset = y * stride;
-                    for (Int32 x = 0; x < width; ++x)
-                    {
-                        UInt32[] argbValues = inputFormat.GetRawComponents(imageData, offset);
-                        outputFormat.WriteRawComponents(imageData, offset, argbValues);
-                        offset += step;
-                    }
-                }
-            }
-            else
-            {
-                // Bits differ: convert through Color.
-                for (Int32 y = 0; y < height; ++y)
-                {
-                    Int32 offset = y * stride;
-                    for (Int32 x = 0; x < width; ++x)
-                    {
-                        Color col = inputFormat.GetColor(imageData, offset);
-                        outputFormat.WriteColor(imageData, offset, col);
-                        offset += step;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Cuts an image into frames and returns it as an array of <see cref="Bitmap"/> objects.
         /// </summary>
         /// <param name="image">Source image.</param>
         /// <param name="frameWidth">Width of the cut out frames.</param>
         /// <param name="frameHeight">Height of the cut out frames.</param>
-        /// <param name="cropColor">Colour to trim away for cropping frames, if the source is high-colour.</param>
-        /// <param name="cropIndex">Colour index to trim away for cropping frames, if the source is indexed.</param>
+        /// <param name="cropColor">Color to trim away for cropping frames, if the source is high-color.</param>
+        /// <param name="cropIndex">Color index to trim away for cropping frames, if the source is indexed.</param>
         /// <param name="matchBpp">Bits per pixel for the palette to match. 0 for no palette matching.</param>
         /// <param name="matchPalette">Palette to match. Only used if <see cref="matchBpp"/> is not 0.</param>
         /// <param name="framesRangeMin">Index of the first frame to retrieve.</param>
@@ -1945,6 +1928,262 @@ namespace Nyerguds.ImageManipulation
                 }
             }
             return destImage;
+        }
+
+        /// <summary>
+        /// Loads an image, checks if it is a PNG containing palette transparency, and if so, ensures it loads correctly.
+        /// The theory can be found at http://www.libpng.org/pub/png/book/chapter08.html
+        /// </summary>
+        /// <param name="filename">Filename to load.</param>
+        /// <returns>The loaded image.</returns>
+        public static Bitmap LoadBitmap(String filename)
+        {
+            Byte[] data = File.ReadAllBytes(filename);
+            return LoadBitmap(data);
+        }
+
+        /// <summary>
+        /// Loads an image, checks if it is a PNG containing palette transparency, and if so, ensures it loads correctly.
+        /// The theory on the png internals can be found at http://www.libpng.org/pub/png/book/chapter08.html
+        /// </summary>
+        /// <param name="data">File data to load.</param>
+        /// <returns>The loaded image.</returns>
+        public static Bitmap LoadBitmap(Byte[] data)
+        {
+            Byte[] transparencyData = null;
+            Int32 trnsOffset = FindPngTransparencyChunk(data);
+            Int32 trnsLength = -1;
+            if (trnsOffset != -1)
+            {
+                // Get chunk
+                trnsLength = PngHandler.GetPngChunkDataLength(data, trnsOffset);
+                transparencyData = PngHandler.GetPngChunkData(data, trnsOffset, trnsLength);
+                // filter out the palette alpha chunk, make new data array
+                Byte[] data2 = new Byte[data.Length - (trnsLength + 12)];
+                Array.Copy(data, 0, data2, 0, trnsOffset);
+                Int32 trnsEnd = trnsOffset + trnsLength + 12;
+                Array.Copy(data, trnsEnd, data2, trnsOffset, data.Length - trnsEnd);
+                data = data2;
+            }
+            using (MemoryStream ms = new MemoryStream(data))
+            using (Bitmap imageFromStream = new Bitmap(ms))
+            {
+                if (imageFromStream.Palette.Entries.Length != 0 && transparencyData != null)
+                {
+                    ColorPalette pal = imageFromStream.Palette;
+                    Int32 palLength = pal.Entries.Length;
+                    for (Int32 i = 0; i < palLength && i < trnsLength; ++i)
+                    {
+                        Byte alpha = transparencyData[i];
+                        if (alpha == 255)
+                            continue;
+                        Color col = pal.Entries[i];
+                        pal.Entries[i] = Color.FromArgb(alpha, col.R, col.G, col.B);
+                    }
+                    imageFromStream.Palette = pal;
+                }
+                return ImageUtils.CloneImage(imageFromStream);
+            }
+        }
+
+        private static Int32 FindPngTransparencyChunk(Byte[] data)
+        {
+            Byte[] pngStart = PngHandler.GetPngIdentifier();
+            Int32 pngStartLen = pngStart.Length;
+            if (data.Length <= pngStartLen)
+                return -1;
+            // Check if the image is a PNG.
+            Byte[] compareData = new Byte[pngStartLen];
+            Array.Copy(data, compareData, pngStartLen);
+            if (!pngStart.SequenceEqual(compareData))
+                return -1;
+            Int32 hdrOffset = PngHandler.FindPngChunk(data, "IHDR");
+            if (hdrOffset == -1)
+                return -1;
+            Byte[] header = PngHandler.GetPngChunkData(data, hdrOffset);
+            // Check if type is paletted ('3')
+            if (header.Length < 13 || header[9] != 3)
+                return -1;
+            // Check if it really contains a palette.
+            Int32 plteOffset = PngHandler.FindPngChunk(data, "PLTE");
+            if (plteOffset == -1)
+                return -1;
+            // Check if it contains a palette transparency chunk.
+            return PngHandler.FindPngChunk(data, "tRNS");
+        }
+
+        /// <summary>
+        /// Saves as png, reducing the palette to the given length.
+        /// </summary>
+        /// <param name="image">Image to save.</param>
+        /// <param name="filename">Target filename.</param>
+        /// <param name="paletteLength">Actual length of the palette.</param>
+        public static void SaveAsPng(Bitmap image, String filename, Int32 paletteLength)
+        {
+            Byte[] data = GetPngImageData(image, paletteLength, false);
+            File.WriteAllBytes(filename, data);
+        }
+
+        /// <summary>
+        /// Saves as png, reducing the palette to the given length.
+        /// </summary>
+        /// <param name="image">Image to save.</param>
+        /// <param name="paletteLength">Actual length of the palette. Use 0 to ignore.</param>
+        /// <param name="noPalTrans">Remove all palette transparency.</param>
+        public static Byte[] GetPngImageData(Bitmap image, Int32 paletteLength, Boolean noPalTrans)
+        {
+            Boolean isPaletted = (image.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed;
+            Int32 maxPalSize = 1 << Image.GetPixelFormatSize(image.PixelFormat);
+            if (paletteLength == 0 && isPaletted)
+                paletteLength = maxPalSize;
+            else
+                paletteLength = Math.Min(paletteLength, maxPalSize);
+            Byte[] data;
+            Color[] palette = null;
+            ColorPalette changedPal = null;
+            Byte[] transparencyData = new Byte[noPalTrans ? 0 : paletteLength];
+            if ((image.PixelFormat & PixelFormat.Indexed) != 0 && image.Palette.Entries.Length > 0)
+            {
+                changedPal = image.Palette;
+                palette = image.Palette.Entries;
+                for (Int32 i = 0; i < palette.Length; ++i)
+                    changedPal.Entries[i] = Color.FromArgb(0xFF, palette[i]);
+                if (!noPalTrans)
+                    for (Int32 i = 0; i < paletteLength; ++i)
+                        transparencyData[i] = palette[i].A;
+            }
+            using (MemoryStream ms = new MemoryStream())
+            {
+                Bitmap saveImage = changedPal == null ? image : ImageUtils.CloneImage(image);
+                if (changedPal != null)
+                    saveImage.Palette = changedPal;
+                saveImage.Save(ms, ImageFormat.Png);
+                data = ms.ToArray();
+                if (changedPal != null)
+                    saveImage.Dispose();
+            }
+            if (palette == null)
+                return data;
+            Int32 paletteDataLength = paletteLength * 3;
+            Int32 plteOffset = PngHandler.FindPngChunk(data, "PLTE");
+            if (plteOffset == -1)
+                return data;
+            Int32 plteLength = PngHandler.GetPngChunkDataLength(data, plteOffset) + 12;
+            Byte[] paletteData = new Byte[paletteDataLength];
+            Array.Copy(data, plteOffset + 8, paletteData, 0, paletteDataLength);
+            paletteDataLength += 12;
+
+            Int32 actualTrnsDataLength = Enumerable.Range(1, transparencyData.Length).LastOrDefault(i => transparencyData[i - 1] != 255);
+            if (actualTrnsDataLength < transparencyData.Length)
+            {
+                Byte[] transData = new Byte[actualTrnsDataLength];
+                Array.Copy(transparencyData, transData, actualTrnsDataLength);
+                transparencyData = transData;
+            }
+            if (actualTrnsDataLength != 0)
+                actualTrnsDataLength += 12;
+            Int32 oldTrnsDataLength = 0;
+
+            // Check if it contains a palette transparency chunk. Don't think it ever will though.
+            Int32 trnsOffset = PngHandler.FindPngChunk(data, "tRNS");
+            if (trnsOffset != -1)
+            {
+                oldTrnsDataLength = PngHandler.GetPngChunkDataLength(data, trnsOffset);
+                oldTrnsDataLength += 12;
+            }
+            Int32 newSize = data.Length - (plteLength - paletteDataLength) - (oldTrnsDataLength - actualTrnsDataLength);
+            Byte[] newData = new Byte[newSize];
+            Int32 currentPosTrg = 0;
+            Int32 currentPosSrc = 0;
+            Int32 writeLength;
+            Array.Copy(data, currentPosSrc, newData, currentPosTrg, writeLength = plteOffset);
+            currentPosSrc += plteOffset;
+            currentPosTrg += writeLength;
+            currentPosTrg = PngHandler.WritePngChunk(newData, currentPosTrg, "PLTE", paletteData);
+            currentPosSrc += plteLength;
+            if (actualTrnsDataLength > 0)
+            {
+                Int32 inbetweenData = trnsOffset - currentPosSrc;
+                if (inbetweenData > 0)
+                {
+                    Array.Copy(data, currentPosSrc, newData, currentPosTrg, writeLength = inbetweenData);
+                    currentPosSrc += writeLength;
+                    currentPosTrg += writeLength;
+                }
+                currentPosTrg = PngHandler.WritePngChunk(newData, currentPosTrg, "tRNS", transparencyData);
+                currentPosSrc += oldTrnsDataLength;
+            }
+            Array.Copy(data, currentPosSrc, newData, currentPosTrg, data.Length - currentPosSrc);
+            data = newData;
+            return data;
+        }
+
+        public static ColorPalette AdjustPalette(ColorPalette colors, Int32 size)
+        {
+            Color[] oldpal = colors.Entries;
+            Color[] newPal = new Color[size];
+            Array.Copy(oldpal, newPal, Math.Min(oldpal.Length, size));
+            return GetPalette(newPal);
+        }
+
+        /// <summary>
+        /// Creates a custom-sized color palette by creating an empty png with a limited palette and extracting its palette.
+        /// </summary>
+        /// <param name="colors">The colors to convert into a palette.</param>
+        /// <returns>A color palette containing the given colors.</returns>
+        public static ColorPalette GetPalette(Color[] colors)
+        {
+            return GetPalette(colors, colors.Length);
+        }
+
+        /// <summary>
+        /// Creates a custom-sized color palette by creating an empty png with a limited palette and extracting its palette.
+        /// </summary>
+        /// <param name="colors">The colors to convert into a palette.</param>
+        /// <param name="amount">Amount of colors in the new palette.</param>
+        /// <returns>A color palette containing the given colors.</returns>
+        public static ColorPalette GetPalette(Color[] colors, Int32 amount)
+        {
+            // Silliest idea ever, but it works.
+            const Int32 chunkExtraLen = 0x0C;
+            Byte[] pngStart = PngHandler.GetPngIdentifier();
+            Int32 pngStartLen = pngStart.Length;
+            const Int32 lenHdr = 0x0D;
+            Int32 lenPal = Math.Min(amount, 0x100) * 3;
+            Byte[] blankPngIdat = PngHandler.GetBlankPngIdatContents();
+            Int32 idatLen = blankPngIdat.Length;
+            Int32 fullLen = pngStartLen + lenHdr + chunkExtraLen + lenPal + chunkExtraLen + idatLen + chunkExtraLen + chunkExtraLen;
+            Int32 offset = 0;
+            Byte[] emptyPng = new Byte[fullLen];
+            Array.Copy(pngStart, 0, emptyPng, 0, pngStartLen);
+            offset += pngStartLen;
+            Byte[] header = new Byte[lenHdr];
+            // UInt32 Width: 1
+            header[3] = 1; // Big-endian, so last of the four bytes.
+            // UInt32 Heigth: 1
+            header[7] = 1; // Big-endian, so last of the four bytes.
+            // Byte Color depth: 8
+            header[8] = 8;
+            // Byte Color type: paletted
+            header[9] = 3;
+            PngHandler.WritePngChunk(emptyPng, offset, "IHDR", header);
+            offset += lenHdr + chunkExtraLen;
+            // Don't even need to fill this in. We just need the size.
+            // Easier to fill it in later and preserve alpha.
+            Byte[] palette = new Byte[lenPal];
+            PngHandler.WritePngChunk(emptyPng, offset, "PLTE", palette);
+            offset += lenPal + chunkExtraLen;
+            PngHandler.WritePngChunk(emptyPng, offset, "IDAT", blankPngIdat);
+            offset += idatLen + chunkExtraLen;
+            PngHandler.WritePngChunk(emptyPng, offset, "IEND", new Byte[0]);
+            using (MemoryStream ms = new MemoryStream(emptyPng))
+            using (Bitmap loadedImage = new Bitmap(ms))
+            {
+                ColorPalette pal = loadedImage.Palette;
+                for (Int32 i = 0; i < pal.Entries.Length; ++i)
+                    pal.Entries[i] = colors[i];
+                return pal;
+            }
         }
 
     }

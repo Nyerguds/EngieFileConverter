@@ -76,7 +76,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_Height = cpsVersion == CpsVersion.Toonstruck ? 400 : 200;
                 this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 if (this.m_Palette.Length < 256)
-                    this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
+                    this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
             }
             catch (IndexOutOfRangeException e)
             {

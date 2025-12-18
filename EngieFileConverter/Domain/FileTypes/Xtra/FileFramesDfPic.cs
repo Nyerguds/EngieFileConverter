@@ -9,11 +9,12 @@ using Nyerguds.Util;
 namespace EngieFileConverter.Domain.FileTypes
 {
     /// <summary>
-    /// DaisyField pictures, from SeXoniX.
-    /// Interesting format in that it "encrypts" the image.
-    /// Thanks to CTPAX-X Team / -=CHE@TER=- for giving me the hint
-    /// that this was a simple XOR operation, and not a remapping.
+    /// DaisyField pictures, from the game SeXoniX.
     /// </summary>
+    /// <remarks>
+    /// A big thanks to CTPAX-X Team for giving me the hint that
+    /// this was a simple XOR operation, and not a remapping.
+    /// </remarks>
     public class FileFramesDfPic : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
@@ -60,7 +61,6 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 palReadIndex = readIndex;
                 Int32 imgReadIndex = readIndex + palSize;
-                //*/
                 Byte[] framePalData = new Byte[palSize];
                 Array.Copy(fileData, palReadIndex, framePalData, 0, palSize);
                 Byte[] frameData = new Byte[frameSize];

@@ -47,18 +47,26 @@
             this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiEdit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiCopy = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiColors = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiImageToPalette = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiExtractPal = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiExtract4BitPal = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiImageToPalette4Bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiImageToPalette8Bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiManagePalettes4Bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiManagePalettes8Bit = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiImageToFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiFramesToSingleImage = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiPasteOnFrames = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiShadowSplit = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiCombineShadows = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiSplitShadows = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiHeightMapTools = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiToHeightMap = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiToPlateaus = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiToHeightMapAdv = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiTo65x65HeightMap = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiShadowSplit = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiCombineShadows = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiSplitShadows = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiAnimation = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiPasteOnFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiTestBed = new System.Windows.Forms.ToolStripMenuItem();
             this.lblFrame = new System.Windows.Forms.Label();
             this.lblNrOfFrames = new System.Windows.Forms.Label();
@@ -195,7 +203,7 @@
             this.tsmiExit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
-            this.fileToolStripMenuItem.Text = "File";
+            this.fileToolStripMenuItem.Text = "&File";
             // 
             // tsmiOpen
             // 
@@ -226,30 +234,102 @@
             this.tsmiExit.Name = "tsmiExit";
             this.tsmiExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
             this.tsmiExit.Size = new System.Drawing.Size(200, 22);
-            this.tsmiExit.Text = "Exit";
+            this.tsmiExit.Text = "E&xit";
             this.tsmiExit.Click += new System.EventHandler(this.TsmiExit_Click);
             // 
             // tsmiEdit
             // 
             this.tsmiEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiCopy,
-            this.tsmiImageToFrames,
-            this.tsmiFramesToSingleImage,
-            this.tsmiHeightMapTools,
+            this.tsmiColors,
+            this.tsmiFrames,
             this.tsmiShadowSplit,
-            this.tsmiAnimation,
+            this.tsmiHeightMapTools,
             this.tsmiTestBed});
             this.tsmiEdit.Name = "tsmiEdit";
             this.tsmiEdit.Size = new System.Drawing.Size(39, 20);
-            this.tsmiEdit.Text = "Edit";
+            this.tsmiEdit.Text = "&Edit";
             // 
             // tsmiCopy
             // 
             this.tsmiCopy.Name = "tsmiCopy";
             this.tsmiCopy.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
-            this.tsmiCopy.Size = new System.Drawing.Size(246, 22);
-            this.tsmiCopy.Text = "Copy";
+            this.tsmiCopy.Size = new System.Drawing.Size(219, 22);
+            this.tsmiCopy.Text = "&Copy";
             this.tsmiCopy.Click += new System.EventHandler(this.tsmiCopy_Click);
+            // 
+            // tsmiColors
+            // 
+            this.tsmiColors.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiImageToPalette,
+            this.tsmiManagePalettes4Bit,
+            this.tsmiManagePalettes8Bit});
+            this.tsmiColors.Name = "tsmiColors";
+            this.tsmiColors.Size = new System.Drawing.Size(219, 22);
+            this.tsmiColors.Text = "Co&lors";
+            // 
+            // tsmiImageToPalette
+            // 
+            this.tsmiImageToPalette.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiExtractPal,
+            this.tsmiExtract4BitPal,
+            this.tsmiImageToPalette4Bit,
+            this.tsmiImageToPalette8Bit});
+            this.tsmiImageToPalette.Name = "tsmiImageToPalette";
+            this.tsmiImageToPalette.Size = new System.Drawing.Size(227, 22);
+            this.tsmiImageToPalette.Text = "&Convert";
+            // 
+            // tsmiExtractPal
+            // 
+            this.tsmiExtractPal.Name = "tsmiExtractPal";
+            this.tsmiExtractPal.Size = new System.Drawing.Size(243, 22);
+            this.tsmiExtractPal.Text = "Palette to &image";
+            this.tsmiExtractPal.Click += new System.EventHandler(this.tsmiExtractPal_Click);
+            // 
+            // tsmiExtract4BitPal
+            // 
+            this.tsmiExtract4BitPal.Name = "tsmiExtract4BitPal";
+            this.tsmiExtract4BitPal.Size = new System.Drawing.Size(243, 22);
+            this.tsmiExtract4BitPal.Text = "4-bit palette &from 8-bit palette...";
+            this.tsmiExtract4BitPal.Click += new System.EventHandler(this.tsmiExtract4BitPal_Click);
+            // 
+            // tsmiImageToPalette4Bit
+            // 
+            this.tsmiImageToPalette4Bit.Name = "tsmiImageToPalette4Bit";
+            this.tsmiImageToPalette4Bit.Size = new System.Drawing.Size(243, 22);
+            this.tsmiImageToPalette4Bit.Text = "Pixels to &4-bit palette...";
+            this.tsmiImageToPalette4Bit.Click += new System.EventHandler(this.tsmiImageToPalette4Bit_Click);
+            // 
+            // tsmiImageToPalette8Bit
+            // 
+            this.tsmiImageToPalette8Bit.Name = "tsmiImageToPalette8Bit";
+            this.tsmiImageToPalette8Bit.Size = new System.Drawing.Size(243, 22);
+            this.tsmiImageToPalette8Bit.Text = "Pixels to &8-bit palette...";
+            this.tsmiImageToPalette8Bit.Click += new System.EventHandler(this.tsmiImageToPalette8Bit_Click);
+            // 
+            // tsmiManagePalettes4Bit
+            // 
+            this.tsmiManagePalettes4Bit.Name = "tsmiManagePalettes4Bit";
+            this.tsmiManagePalettes4Bit.Size = new System.Drawing.Size(227, 22);
+            this.tsmiManagePalettes4Bit.Text = "Manage color palettes (&4-bit)";
+            this.tsmiManagePalettes4Bit.Click += new System.EventHandler(this.tsmiManagePalettes4Bit_Click);
+            // 
+            // tsmiManagePalettes8Bit
+            // 
+            this.tsmiManagePalettes8Bit.Name = "tsmiManagePalettes8Bit";
+            this.tsmiManagePalettes8Bit.Size = new System.Drawing.Size(227, 22);
+            this.tsmiManagePalettes8Bit.Text = "Manage color palettes (&8-bit)";
+            this.tsmiManagePalettes8Bit.Click += new System.EventHandler(this.tsmiManagePalettes8Bit_Click);
+            // 
+            // tsmiFrames
+            // 
+            this.tsmiFrames.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiImageToFrames,
+            this.tsmiFramesToSingleImage,
+            this.tsmiPasteOnFrames});
+            this.tsmiFrames.Name = "tsmiFrames";
+            this.tsmiFrames.Size = new System.Drawing.Size(219, 22);
+            this.tsmiFrames.Text = "&Frames";
             // 
             // tsmiImageToFrames
             // 
@@ -257,15 +337,48 @@
             this.tsmiImageToFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
             this.tsmiImageToFrames.Size = new System.Drawing.Size(246, 22);
             this.tsmiImageToFrames.Text = "&Image to frames...";
-            this.tsmiImageToFrames.Click += new System.EventHandler(this.TsmiImageToFramesClick);
+            this.tsmiImageToFrames.Click += new System.EventHandler(this.TsmiImageToFrames_Click);
             // 
             // tsmiFramesToSingleImage
             // 
             this.tsmiFramesToSingleImage.Name = "tsmiFramesToSingleImage";
             this.tsmiFramesToSingleImage.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
             this.tsmiFramesToSingleImage.Size = new System.Drawing.Size(246, 22);
-            this.tsmiFramesToSingleImage.Text = "F&rames to single image...";
+            this.tsmiFramesToSingleImage.Text = "&Frames to single image...";
             this.tsmiFramesToSingleImage.Click += new System.EventHandler(this.TsmiFramesToSingleImageClick);
+            // 
+            // tsmiPasteOnFrames
+            // 
+            this.tsmiPasteOnFrames.Name = "tsmiPasteOnFrames";
+            this.tsmiPasteOnFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
+            this.tsmiPasteOnFrames.Size = new System.Drawing.Size(246, 22);
+            this.tsmiPasteOnFrames.Text = "&Paste image on frames...";
+            this.tsmiPasteOnFrames.Click += new System.EventHandler(this.TsmiPasteOnFrames_Click);
+            // 
+            // tsmiShadowSplit
+            // 
+            this.tsmiShadowSplit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiCombineShadows,
+            this.tsmiSplitShadows});
+            this.tsmiShadowSplit.Name = "tsmiShadowSplit";
+            this.tsmiShadowSplit.Size = new System.Drawing.Size(219, 22);
+            this.tsmiShadowSplit.Text = "TS &shadow splitting";
+            // 
+            // tsmiCombineShadows
+            // 
+            this.tsmiCombineShadows.Name = "tsmiCombineShadows";
+            this.tsmiCombineShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
+            this.tsmiCombineShadows.Size = new System.Drawing.Size(226, 22);
+            this.tsmiCombineShadows.Text = "Co&mbine shadows...";
+            this.tsmiCombineShadows.Click += new System.EventHandler(this.TsmiCombineShadows_Click);
+            // 
+            // tsmiSplitShadows
+            // 
+            this.tsmiSplitShadows.Name = "tsmiSplitShadows";
+            this.tsmiSplitShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T)));
+            this.tsmiSplitShadows.Size = new System.Drawing.Size(226, 22);
+            this.tsmiSplitShadows.Text = "Spli&t shadows...";
+            this.tsmiSplitShadows.Click += new System.EventHandler(this.TsmiSplitShadows_Click);
             // 
             // tsmiHeightMapTools
             // 
@@ -275,8 +388,8 @@
             this.tsmiToHeightMapAdv,
             this.tsmiTo65x65HeightMap});
             this.tsmiHeightMapTools.Name = "tsmiHeightMapTools";
-            this.tsmiHeightMapTools.Size = new System.Drawing.Size(246, 22);
-            this.tsmiHeightMapTools.Text = "N64 height map generation";
+            this.tsmiHeightMapTools.Size = new System.Drawing.Size(219, 22);
+            this.tsmiHeightMapTools.Text = "N64 &height map generation";
             // 
             // tsmiToHeightMap
             // 
@@ -307,52 +420,11 @@
             this.tsmiTo65x65HeightMap.Text = "64×64 image to 65×65 height map &image";
             this.tsmiTo65x65HeightMap.Click += new System.EventHandler(this.TsmiTo65x65HeightMap_Click);
             // 
-            // tsmiShadowSplit
-            // 
-            this.tsmiShadowSplit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsmiCombineShadows,
-            this.tsmiSplitShadows});
-            this.tsmiShadowSplit.Name = "tsmiShadowSplit";
-            this.tsmiShadowSplit.Size = new System.Drawing.Size(246, 22);
-            this.tsmiShadowSplit.Text = "TS shadow splitting";
-            // 
-            // tsmiCombineShadows
-            // 
-            this.tsmiCombineShadows.Name = "tsmiCombineShadows";
-            this.tsmiCombineShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
-            this.tsmiCombineShadows.Size = new System.Drawing.Size(217, 22);
-            this.tsmiCombineShadows.Text = "Co&mbine shadows";
-            this.tsmiCombineShadows.Click += new System.EventHandler(this.TsmiCombineShadows_Click);
-            // 
-            // tsmiSplitShadows
-            // 
-            this.tsmiSplitShadows.Name = "tsmiSplitShadows";
-            this.tsmiSplitShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T)));
-            this.tsmiSplitShadows.Size = new System.Drawing.Size(217, 22);
-            this.tsmiSplitShadows.Text = "Spli&t shadows";
-            this.tsmiSplitShadows.Click += new System.EventHandler(this.TsmiSplitShadows_Click);
-            // 
-            // tsmiAnimation
-            // 
-            this.tsmiAnimation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsmiPasteOnFrames});
-            this.tsmiAnimation.Name = "tsmiAnimation";
-            this.tsmiAnimation.Size = new System.Drawing.Size(246, 22);
-            this.tsmiAnimation.Text = "Animation";
-            // 
-            // tsmiPasteOnFrames
-            // 
-            this.tsmiPasteOnFrames.Name = "tsmiPasteOnFrames";
-            this.tsmiPasteOnFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
-            this.tsmiPasteOnFrames.Size = new System.Drawing.Size(244, 22);
-            this.tsmiPasteOnFrames.Text = "&Paste image on frames...";
-            this.tsmiPasteOnFrames.Click += new System.EventHandler(this.TsmiPasteOnFrames_Click);
-            // 
             // tsmiTestBed
             // 
             this.tsmiTestBed.Name = "tsmiTestBed";
-            this.tsmiTestBed.Size = new System.Drawing.Size(246, 22);
-            this.tsmiTestBed.Text = "Test bed";
+            this.tsmiTestBed.Size = new System.Drawing.Size(219, 22);
+            this.tsmiTestBed.Text = "&Test bed";
             this.tsmiTestBed.Visible = false;
             this.tsmiTestBed.Click += new System.EventHandler(this.TsmiTestBed);
             // 
@@ -576,13 +648,21 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiShadowSplit;
         private System.Windows.Forms.ToolStripMenuItem tsmiCombineShadows;
         private System.Windows.Forms.ToolStripMenuItem tsmiSplitShadows;
-        private System.Windows.Forms.ToolStripMenuItem tsmiAnimation;
+        private System.Windows.Forms.ToolStripMenuItem tsmiFrames;
         private System.Windows.Forms.ToolStripMenuItem tsmiPasteOnFrames;
         private System.Windows.Forms.ToolStripMenuItem tsmiTestBed;
         private System.Windows.Forms.ToolStripMenuItem tsmiSaveFrames;
         private Nyerguds.Util.UI.PixelZoomPanel pzpImage;
+        private System.Windows.Forms.ToolStripMenuItem tsmiColors;
+        private System.Windows.Forms.ToolStripMenuItem tsmiManagePalettes4Bit;
+        private System.Windows.Forms.ToolStripMenuItem tsmiManagePalettes8Bit;
+        private System.Windows.Forms.ToolStripMenuItem tsmiImageToPalette;
+        private System.Windows.Forms.ToolStripMenuItem tsmiImageToPalette4Bit;
+        private System.Windows.Forms.ToolStripMenuItem tsmiImageToPalette8Bit;
+        private System.Windows.Forms.ToolStripMenuItem tsmiExtract4BitPal;
         private System.Windows.Forms.ToolStripMenuItem tsmiImageToFrames;
         private System.Windows.Forms.ToolStripMenuItem tsmiFramesToSingleImage;
+        private System.Windows.Forms.ToolStripMenuItem tsmiExtractPal;
     }
 }
 

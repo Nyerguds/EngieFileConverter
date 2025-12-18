@@ -41,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public String LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
         public String LoadedFileName { get; protected set; }
-        /// <summary>Colour depth of the file.</summary>
+        /// <summary>Color depth of the file.</summary>
         public virtual Int32 BitsPerPixel { get { return this.m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat); } }
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public virtual SupportedFileType[] Frames { get { return null; } }
@@ -168,7 +168,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     ColorPalette imagePal = this.m_LoadedImage.Palette;
                     if (imagePal.Entries.Length != pal.Length)
-                        imagePal = BitmapHandler.GetPalette(pal);
+                        imagePal = ImageUtils.GetPalette(pal);
                     Int32 entries = imagePal.Entries.Length;
                     for (Int32 i = 0; i < entries; ++i)
                     {
@@ -205,9 +205,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 bpc = this.BitsPerPixel;
             Color[] palette = this.GetColors();
-            Int32 exposedColours = this.ColorsInPalette;
+            Int32 exposedColors = this.ColorsInPalette;
             Int32 actualColors = palette == null ? 0 : palette.Length;
-            return bpc != 0 && bpc <= 8 && exposedColours != actualColors;
+            return bpc != 0 && bpc <= 8 && exposedColors != actualColors;
         }
 
         public virtual void ResetColors()
@@ -262,7 +262,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Int32 palLength;
             if (palEntries == null || (palLength = palEntries.Length) == 0)
-                throw new NotSupportedException("File to save has no colour palette!");
+                throw new NotSupportedException("File to save has no color palette!");
             // Relies on the current type's BPP setting.
             Int32 palSize = 1 << this.BitsPerPixel;
             if (palEntries.Length == palSize || (!expandToFullSize && palLength < palSize))
@@ -377,9 +377,9 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePaletteWwAmiga),
             typeof(FilePaletteWwPsx),
             typeof(FileFramesDfPic),
-            typeof(FileFramesIgcSlb), // Experimental
+            typeof(FileFramesIgcSlb),
             typeof(FileImgIgcGx2),
-            typeof(FileImgIgcDmp), // Fully done, but save isn't really plausible for the combined format.
+            typeof(FileImgIgcDmp),
             typeof(FileImgNova),
             typeof(FileImgStris),
             typeof(FileImgBif),
@@ -434,10 +434,10 @@ namespace EngieFileConverter.Domain.FileTypes
             //typeof(FilePaletteWwPsx),
             typeof(FileFramesDfPic),
             typeof(FileImgIgcDmp),
+            typeof(FileImgIgcGx2),
             typeof(FileImgNova),
             typeof(FileImgBif),
             typeof(FileImgJmx),
-            typeof(FileImgIgcGx2),
         };
 
 #if DEBUG

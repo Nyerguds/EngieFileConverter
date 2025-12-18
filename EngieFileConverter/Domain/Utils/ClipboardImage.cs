@@ -27,7 +27,7 @@ namespace Nyerguds.Util
                 Byte[] pngData = TryGetStreamDataFromClipboard(retrievedData, "PNG");
                 if (pngData != null)
                 {
-                    clipboardimage = BitmapHandler.LoadBitmap(pngData);
+                    clipboardimage = ImageUtils.LoadBitmap(pngData);
                     // LoadBitmap clones the object.
                     if (clipboardimage != null) built = true;
                 }
@@ -35,14 +35,14 @@ namespace Nyerguds.Util
             if (clipboardimage == null && formats.Contains("Format17"))
             {
                 Byte[] dibdata = TryGetStreamDataFromClipboard(retrievedData, "Format17");
-                clipboardimage = DibHandler.ImageFromDib5(dibdata, true);
+                clipboardimage = DibHandler.ImageFromDib5(dibdata, 0, true);
                 // ImageFromClipboardDib5 builds the image in local memory.
                 if (clipboardimage != null) built = true;
             }
             if (clipboardimage == null && formats.Contains(DataFormats.Dib))
             {
                 Byte[] dibdata = TryGetStreamDataFromClipboard(retrievedData, DataFormats.Dib);
-                clipboardimage = DibHandler.ImageFromDib(dibdata);
+                clipboardimage = DibHandler.ImageFromDib(dibdata, 0);
                 // ImageFromClipboardDib builds the image in local memory.
                 if (clipboardimage != null) built = true;
             }
@@ -88,7 +88,7 @@ namespace Nyerguds.Util
                 // As standard bitmap, without transparency support
                 data.SetData(DataFormats.Bitmap, true, imageNoTr);
                 // As PNG. Gimp will prefer this over the other two.
-                Byte[] pngData = BitmapHandler.GetPngImageData(image, 0, false);
+                Byte[] pngData = ImageUtils.GetPngImageData(image, 0, false);
                 pngMemStream.Write(pngData, 0, pngData.Length);
                 data.SetData("PNG", false, pngMemStream);
                 // As DIBv5. This supports transparency when using BITFIELDS.

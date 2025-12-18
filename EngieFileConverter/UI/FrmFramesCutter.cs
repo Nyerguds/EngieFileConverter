@@ -122,7 +122,7 @@ namespace EngieFileConverter.UI
                 Color? trimColor = null;
                 Int32 matchBpp = 0;
                 Color[] matchPalette = null;
-                if (chkTrimColour.Checked)
+                if (this.chkTrimColor.Checked)
                 {
                     if (m_OriginalBpp > 8)
                         trimColor = lblTrimColor.TrueBackColor;
@@ -158,9 +158,9 @@ namespace EngieFileConverter.UI
             this.numCurFrame.Maximum = this.numFrames.Value - 1;
         }
 
-        private void ChkTrimColourCheckedChanged(Object sender, EventArgs e)
+        private void ChkTrimColor_CheckedChanged(Object sender, EventArgs e)
         {
-            Boolean trimCol = chkTrimColour.Checked;
+            Boolean trimCol = this.chkTrimColor.Checked;
             lblTrimColor.Enabled = trimCol;
             lblTrimColorVal.Enabled = trimCol;
             UpdateUiInfo(false);
@@ -244,8 +244,8 @@ namespace EngieFileConverter.UI
             this.FrameWidth = (Int32)this.numWidth.Value;
             this.FrameHeight = (Int32)this.numHeight.Value;
             this.Frames = (Int32)this.numFrames.Value;
-            this.TrimColor = chkTrimColour.Checked ? (Color?)lblTrimColor.TrueBackColor : null;
-            this.TrimIndex = chkTrimColour.Checked && lblTrimColor.Tag is Int32 ? (Int32?)lblTrimColor.Tag : null;
+            this.TrimColor = this.chkTrimColor.Checked ? (Color?)lblTrimColor.TrueBackColor : null;
+            this.TrimIndex = this.chkTrimColor.Checked && lblTrimColor.Tag is Int32 ? (Int32?)lblTrimColor.Tag : null;
             PaletteDropDownInfo pdd = cmbPalettes.SelectedItem as PaletteDropDownInfo;
             this.MatchBpp = chkMatchPalette.Checked && pdd != null ? pdd.BitsPerPixel : 0;
             this.MatchPalette = chkMatchPalette.Checked && pdd != null ? pdd.Colors : null;

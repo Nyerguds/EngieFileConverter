@@ -137,7 +137,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 extraInfo.Append("\nData: ").Append(frameBytes).Append(" bytes @ 0x").Append(frmDataOffset.ToString("X"));
                 extraInfo.Append("\nStored image dimensions: ").Append(frmWidth).Append("x").Append(frmHeight);
                 extraInfo.Append("\nStored image position: [").Append(frmX).Append(", ").Append(frmY).Append("]");
-                extraInfo.Append("\nFrame colour: #").Append((frmColor.ToArgb() & 0xFFFFFF).ToString("X6"));
+                extraInfo.Append("\nFrame color: #").Append((frmColor.ToArgb() & 0xFFFFFF).ToString("X6"));
                 framePic.SetExtraInfo(extraInfo.ToString());
                 this.m_FramesList[i] = framePic;
             }
@@ -174,10 +174,10 @@ namespace EngieFileConverter.Domain.FileTypes
             opts[opt++] = new SaveOption("CMP", SaveOptionType.Boolean, "Enable transparency compression", "1");
             opts[opt++] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
             opts[opt++] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
-            //opts[opt++] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable when calculating average colour (ignores hue of remap pixels)", "0");
-            opts[opt++] = new SaveOption("TIB", SaveOptionType.Boolean, "Average colour calculation: treat remap as tiberium", null, "0"); // "(treats remap as green instead of ignoring hue)", new SaveEnableFilter("REM", false, "1"));
+            //opts[opt++] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable when calculating average color (ignores hue of remap pixels)", "0");
+            opts[opt++] = new SaveOption("TIB", SaveOptionType.Boolean, "Average color calculation: treat remap as tiberium", null, "0"); // "(treats remap as green instead of ignoring hue)", new SaveEnableFilter("REM", false, "1"));
             if (evenFrames)
-                opts[opt] = new SaveOption("SHD", SaveOptionType.Boolean, "Average colour calculation: Ignore shadow frames", null, hasShadow ? "1" : "0");
+                opts[opt] = new SaveOption("SHD", SaveOptionType.Boolean, "Average color calculation: Ignore shadow frames", null, hasShadow ? "1" : "0");
             return opts;
         }
 
@@ -464,9 +464,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new NotSupportedException("Non-paletted frames found!");
                 Int32 colors = bm.Palette.Entries.Length;
                 if (colors < sourceShadowIndex)
-                    throw new NotSupportedException("Not all frames have enough colours to contain the source shadow index!");
+                    throw new NotSupportedException("Not all frames have enough colors to contain the source shadow index!");
                 if (forCombine && colors < destShadowIndex)
-                    throw new NotSupportedException("Not all frames have enough colours to contain the destination shadow index!");
+                    throw new NotSupportedException("Not all frames have enough colors to contain the destination shadow index!");
             }
         }
 

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using Nyerguds.FileData.EmotionalPictures;
 
 namespace EngieFileConverter.UI
 {
@@ -34,8 +35,32 @@ namespace EngieFileConverter.UI
             //this.CreateSierpinskiImage();
             //this.ColorPsx();
             //this.ExpandRAMap();
-            //this.GetColourPixel();
+            //this.GetColorPixel();
             //this.ExtractInts();
+            //this.DecompressPppStringsFiles();
+            //this.PixelsToPalette();
+            this.ShowVids();
+        }
+
+        private void LoadTestFile(SupportedFileType loadImage)
+        {
+            this.ReloadWithDispose(loadImage, true, true);
+        }
+
+        private void LoadTestFile(Bitmap loadImage, String filename)
+        {
+            FileImage fileImage = new FileImagePng();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                loadImage.Save(ms, ImageFormat.Png);
+                fileImage.LoadFile(ms.ToArray(), filename);
+            }
+            this.LoadTestFile(fileImage);
+        }
+
+        private void LoadTestFile(Bitmap loadImage)
+        {
+            this.LoadTestFile(loadImage, ".\\image.png");
         }
 
         private void ViewKortExeIcons()
@@ -127,14 +152,13 @@ namespace EngieFileConverter.UI
             framesContainer.SetPalette(pal.Entries);
             framesContainer.SetColorsInPalette(4);
             framesContainer.SetCommonPalette(true);
-            LoadTestFile(framesContainer);
+            this.LoadTestFile(framesContainer);
         }
 
         private void CreateSierpinskiImage()
         {
-            // Replace this with something creating/loading a bitmap
             using (Bitmap sierpinskiImage = ImageUtilsSO.GetSierpinski(800, 800))
-                LoadTestFile(sierpinskiImage);
+                this.LoadTestFile(sierpinskiImage);
         }
 
         private void LoadByteArrayImage()
@@ -155,9 +179,8 @@ namespace EngieFileConverter.UI
             Color[] palette = new Color[0x100];
             for (Int32 i = 0; i < 0x100; ++i)
                 palette[i] = Color.FromArgb(i, i, i);
-            // Replace this with something creating/loading a bitmap
             using (Bitmap img = ImageUtils.BuildImage(imageBytes, 10, 20, 10, PixelFormat.Format8bppIndexed, palette, null))
-                LoadTestFile(img);
+                this.LoadTestFile(img);
         }
 
         private void CombineHue()
@@ -175,20 +198,19 @@ namespace EngieFileConverter.UI
             Int32 iStride;
             Byte[] imageData = ImageUtils.GetImageData(im, out iStride, PixelFormat.Format32bppArgb);
             Int32 cStride;
-            Byte[] colourData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
-            if (imageData.Length != colourData.Length || iStride != cStride)
+            Byte[] colorData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
+            if (imageData.Length != colorData.Length || iStride != cStride)
                 return;
             for (Int32 i = 0; i < imageData.Length; i += 4)
             {
                 ColorHSL curPix = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(imageData, i, 4, true));
-                ColorHSL curCol = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(colourData, i, 4, true));
+                ColorHSL curCol = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(colorData, i, 4, true));
                 ColorHSL newCol = new ColorHSL(curCol.Hue, curCol.Saturation, curPix.Luminosity);
                 UInt32 val = (UInt32)((Color)newCol).ToArgb();
                 ArrayUtils.WriteIntToByteArray(imageData, i, 4, true, val);
             }
-            // Replace this with something creating/loading a bitmap
             using (Bitmap img = ImageUtils.BuildImage(imageData, im.Width, im.Height, iStride, PixelFormat.Format32bppArgb, null, null))
-                LoadTestFile(img);
+                this.LoadTestFile(img);
         }
 
         private void ColorPsx()
@@ -199,7 +221,7 @@ namespace EngieFileConverter.UI
             Byte[] imageData = File.ReadAllBytes(filenameImage);
             Color[] palette = PaletteUtils.GenerateRainbowPalette(8, -1, null, true, 0, 160, true);
             using (Bitmap img = ImageUtils.BuildImage(imageData, 2048, 128, 2048, PixelFormat.Format8bppIndexed, palette, null))
-                LoadTestFile(img);
+                this.LoadTestFile(img);
         }
 
         private void ExpandRAMap()
@@ -232,7 +254,7 @@ namespace EngieFileConverter.UI
                 readPtr += length;
                 writePtr += decompressed;
             }
-            File.WriteAllBytes("SCA01EA.MAP", mapFile);
+            File.WriteAllBytes("SCA01EA.BIN", mapFile);
             Byte[] mapFile2 = new Byte[128 * 128 * 16];
             writePtr = 0;
             for (Int32 i = 0; i < mapFile.Length; i += 3)
@@ -243,7 +265,7 @@ namespace EngieFileConverter.UI
                 mapFile2[writePtr++] = mapFile[i + 2];
                 writePtr += 5;
             }
-            File.WriteAllBytes("SCA01EA_corrected.BIN", mapFile2);
+            File.WriteAllBytes("SCA01EA_expanded16.BIN", mapFile2);
         }
 
         private void MatrixImage()
@@ -260,44 +282,18 @@ namespace EngieFileConverter.UI
                 0x70, 0x72, 0x74, 0x76, 0x78, 0x7A, 0x7C, 0x7E,
             };
             using (Bitmap img = ImageUtils.BuildImage(matrix, 8, 8, 8, PixelFormat.Format8bppIndexed, PaletteUtils.GenerateGrayPalette(8, null, false), null))
-                LoadTestFile(img);
+                this.LoadTestFile(img);
         }
-        
-        private void LoadTestFile(Bitmap loadImage)
-        {
-            LoadTestFile(loadImage, ".\\image.png");
-        }
-
-        private void LoadTestFile(Bitmap loadImage, String filename)
-        {
-            FileImage fileImage = new FileImagePng();
-            using (MemoryStream ms = new MemoryStream())
-            {
-                loadImage.Save(ms, ImageFormat.Png);
-                fileImage.LoadFile(ms.ToArray(), filename);
-            }
-            LoadTestFile(fileImage);
-        }
-        
-        private void LoadTestFile(SupportedFileType loadImage)
-        {
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = loadImage;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            if (oldFile != null)
-                oldFile.Dispose();
-        }
-
-        private void GetColourPixel()
+                
+        private void GetColorPixel()
         {
             Bitmap bm;
-            if(m_LoadedFile == null || (bm = m_LoadedFile.GetBitmap()) == null || (bm.PixelFormat & PixelFormat.Indexed) == 0)
+            if(this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null || (bm.PixelFormat & PixelFormat.Indexed) == 0)
                 return;
             Int32 x = 120;
             Int32 y = 96;
             Byte pixel = ImageUtilsSO.GetIndexedPixel(bm, x, y);
-            MessageBox.Show(this, "The index of pixel [" + x + "," + y + "] is " + pixel + ".", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "The index of pixel [" + x + "," + y + "] is " + pixel + ".", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         
@@ -306,9 +302,115 @@ namespace EngieFileConverter.UI
             String s = "some text here = 5\nanother text line here = 4 with random garbage\n7\nfoo bar 9";
             List<Int32> nums = UtilsSO.ExtractInts(s);
             String ints = String.Join(", ", nums.Select(i => i.ToString()).ToArray());
-            MessageBox.Show(this, "The numbers are " + ints, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "The numbers are " + ints, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        private void DecompressPppStringsFiles()
+        {
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null)
+                return;
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String[] files = { "ENGLISH", "FRENCH", "GERMAN", "ITALIAN", "SCROLL" };
+            foreach (String filename in files)
+            {
+                String fullPath = Path.Combine(path, filename + ".PPP");
+                if (!File.Exists(fullPath))
+                    continue;
+                Byte[] buff = File.ReadAllBytes(fullPath);
+
+                Byte[] buffDec;
+                try
+                {
+                    buffDec = PppCompression.DecompressPppRle(buff);
+                }
+                catch (ArgumentException a)
+                {
+                    continue;
+                }
+                String uncPath = Path.Combine(path, filename + ".dat");
+                File.WriteAllBytes(uncPath, buffDec);
+
+                Int32 len = buffDec.Length;
+                Int32 ptr = 0;
+                List<String> stringsFile = new List<String>();
+                // DOS-865: Nordic
+                Encoding dosenc = Encoding.GetEncoding(865);
+                while (ptr < len)
+                {
+                    Int32 strLen = buffDec[ptr];
+                    ptr++;
+                    Byte[] strBuffer = new Byte[strLen];
+                    Array.Copy(buffDec, ptr, strBuffer, 0, Math.Min(strLen, len - ptr));
+                    for (Int32 c = 0; c < strLen; ++c)
+                        strBuffer[c] = (Byte)((strBuffer[c] << 1) | (strBuffer[c] >> 7));
+                    String curLine = dosenc.GetString(strBuffer);
+                    stringsFile.Add(curLine);
+                    ptr += strLen;
+                }
+                String fullFile = String.Join(Environment.NewLine, stringsFile.ToArray());
+
+                String fullPath2 = Path.Combine(path, filename + ".txt");
+                File.WriteAllText(fullPath2, fullFile, new UTF8Encoding(true) /* dosenc*/);
+            }
+        }
+
+        private void PixelsToPalette()
+        {
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.GetBitmap()) == null)
+                return;
+            String path = Path.GetDirectoryName(m_LoadedFile.LoadedFile);
+            String name = Path.GetFileNameWithoutExtension(m_LoadedFile.LoadedFile);
+            Byte[] imageData = ImageUtils.GetImageData(this.m_LoadedFile.GetBitmap(), PixelFormat.Format24bppRgb);
+            Int32 palLen = Math.Min(0x300, imageData.Length / 3 * 3);
+            for (Int32 i = 0; i < palLen; i += 3)
+            {
+                Byte b = imageData[i];
+                imageData[i] = imageData[i + 2];
+                imageData[i + 2] = b;
+            }
+            Byte[] paletteData = new Byte[0x300];
+            Array.Copy(imageData, paletteData, Math.Min(0x300, imageData.Length));
+            FilePalette8Bit pal = new FilePalette8Bit();
+            pal.LoadFile(paletteData, Path.Combine(path, name + ".pal"));
+            LoadTestFile(pal);
+        }
+        
+        private void ShowVids()
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.LoadedFile == null || !(this.m_LoadedFile is FileImgNova || this.m_LoadedFile is FileFrames))
+                return;
+            FileFrames framesFile = this.m_LoadedFile as FileFrames;
+            if (framesFile != null && !(framesFile.Frames.FirstOrDefault() is FileImgNova))
+                return;
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            Char[] trimRange = Enumerable.Range(0, 10).Select(n => (Char) (n + '0')).ToArray();
+            String filenameBase = Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile).TrimEnd(trimRange);
+            FileFrames frames = new FileFrames();
+            Color[] greyPal = PaletteUtils.GenerateGrayPalette(4, null, false);
+            Int32 index = 0;
+            for (Int32 i = 1; i <= 5; ++i)
+            {
+                for (Int32 j = 1; j <= 5; ++j)
+                {
+                    String filename = filenameBase + "." + i + "_" + j;
+                    String finalName = Path.Combine(path, filename);
+                    FileInfo info = new FileInfo(finalName);
+                    if (!info.Exists || info.Length != 10240)
+                        continue;
+                    Byte[] imageBytes = File.ReadAllBytes(finalName);
+                    Bitmap frameImg = ImageUtils.BuildImage(imageBytes, 160, 128, 80, PixelFormat.Format4bppIndexed, greyPal, null);
+                    //Headerless grayscale 160x128 4-bit images which show the striptease scenes.
+                    FileImageFrame framePic = new FileImageFrame();
+                    framePic.LoadFileFrame(frames, frames, frameImg, finalName, -1);
+                    framePic.SetBitsPerColor(4);
+                    framePic.SetFileClass(FileClass.Image4Bit);
+                    framePic.SetColorsInPalette(16);
+                    frames.AddFrame(framePic);
+                }
+            }
+            if (frames.Frames.Length > 0)
+                LoadTestFile(frames);
+        }
     }
 }
 #endif

@@ -19,10 +19,10 @@ https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=nyerguds@gmail.com
 Features:
 --------
 -Supports opening and saving all classic image types (png/gif/bmp/jpg), and a load of game formats.
--Gives a visual representation of the loaded file, with zoom and adjustable background colour.
--Can display and edit the file's colour palette, if it has one.
+-Gives a visual representation of the loaded file, with zoom and adjustable background color.
+-Can display and edit the file's color palette, if it has one.
 -Can save opened files as any supported format, though some conversions are obviously impossible;
- high-colour images can't be saved as palette, and only maps can be saved as maps.
+ high-color images can't be saved as palette, and only maps can be saved as maps.
 -Preserves the color palette when saving 4-bit and 8-bit paletted images.
 -Supports drag & drop for opening files.
 -Has utilities to help generate height maps for missions.
@@ -42,7 +42,7 @@ http://www.goldeneyevault.com/viewfile.php?id=213
 The PC C&C formats were deciphered using documentation written by Vladan Bato.
 
 The compression code used for handling the CPS and LCW formats was gracefully provided by the
-people of the RA++ project. OmniBlade has been particularly helpful.
+people of the Chronosphere (formerly RA++) project. OmniBlade has been particularly helpful.
 https://redalertpp.org/
 
 The Dynamix LZW decompression code was converted from the C++ code of VOGONS.org user tikalat's
@@ -82,6 +82,13 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.4.6: (14/07/2019 12:00)
+-Fixed more bugs in palette management tool
+-Added palette manager in menu, independent from palette saving.
+-Added an "Image to palette" tool to convert the pixels from an image to palette colors.
+-Added a "palette to image" tool to convert the palette of the current image to an image.
+-Added own loading logic for BMP format, to correctly identify 16-bit BMP files.
+
 v1.4.5: (18/06/2019 13:56)
 -Added support for the Interactive Girls GX2 format.
 -Added read-only support for the GX2 images in Interactive Girls .m3 / .slb archives.
@@ -111,7 +118,7 @@ v1.4.1: (16/10/2018 14:42)
 -Compacted the UI to allow showing more additional info.
 -Fixed the position of Lands of Lore SHP in the save types list.
 -Optimised Dune II and Lands of Lore SHP; they no longer store duplicate frames.
--Fixed image to frames splitting for indexed images of types lower than 256 colour.
+-Fixed image to frames splitting for indexed images of types lower than 256 color.
 -Splitting an indexed image into frames now also sets the palette on empty frames.
 -Added option to save Tiberian Sun SHP as uncompressed; required for the mouse cursor.
 
@@ -125,13 +132,13 @@ v1.4.0: (07/09/2018 13:00)
 
 v1.3.6: (04/09/2018 16:27)
 -Fixed the frame range interpreter used in "Paste image on frames" and in Dune II saving.
--Sped up conversion from high colour to palette by caching colour values in a lookup table.
+-Sped up conversion from high color to palette by caching color values in a lookup table.
 
 v1.3.5: (24/08/2018 07:40)
--Fixed a bug in the splitting logic for non-32bpp high colour images.
+-Fixed a bug in the splitting logic for non-32bpp high color images.
 
 v1.3.4: (23/08/2018 18:40)
--Improved the radar colour options for Tiberian Sun SHP files.
+-Improved the radar color options for Tiberian Sun SHP files.
 -Added support for Amiga CPS files. The multi-palette types are handled as frames.
 
 v1.3.3: (21/08/2018 12:20)
@@ -140,16 +147,16 @@ v1.3.3: (21/08/2018 12:20)
 -Added zoom levels below "1". Negative values are seen as fractions, so it skips 0 and -1.
 
 v1.3.2: (20/08/2018 14:15)
--Added a palette selector for the fill colour in the frames-to-image options list.
+-Added a palette selector for the fill color in the frames-to-image options list.
 -Fixed a crash when matching an indexed image to a palette in the image-to-frames window.
 
 v1.3.1: (18/08/2018 20:15)
--The background colour selector on the UI is now a control selectable with [Tab].
+-The background color selector on the UI is now a control selectable with [Tab].
 -Added support for C&C SHP files with a loop frame.
 -Added support for the Monopoly type to the WSA format.
 -Fixed palette handling so type-based transparency is only applied once, on file load.
--Enhanced frames-to-image with a background colour fill option.
--Enhanced image-to-frames with a background colour trim option.
+-Enhanced frames-to-image with a background color fill option.
+-Enhanced image-to-frames with a background color trim option.
 -Enhanced image-to-frames with a palette matching option.
 
 v1.3.0: (10/08/2018 23:05)
@@ -184,10 +191,10 @@ v1.2.17: (19/07/2018 19:21)
 
 v1.2.16: (16/07/2018 08:50)
 -Implemented Westwood C&C1/RA1 Shape (SHP) support.
--Fixed slow loading on VDA files due to bug in colour palette handling.
+-Fixed slow loading on VDA files due to bug in color palette handling.
 
 v1.2.15: (10/07/2018 18:35)
--Saving Mythos VDA no longer allows frames after 0 to have pixels of colour 255 on new locations.
+-Saving Mythos VDA no longer allows frames after 0 to have pixels of color 255 on new locations.
 -Disallowed saving frame types as palettes since some types don't have a global palette.
 -Fixed "File not found" error when trying to load a Mythos VDA file without VDX.
 -Added the ability to change the alpha value on palette indices. PNG supports such palette-alpha.
@@ -227,7 +234,7 @@ v1.2.11: (24/06/2018 17:00)
 v1.2.10: (23/06/2018 01:00)
 -Fixed transparency support in several supported types.
 -Added identical-tile optimising in C&C tileset saving.
--Fixed bug in PixelFormatter that corrupted colour writing by mixing up the channels order.
+-Fixed bug in PixelFormatter that corrupted color writing by mixing up the channels order.
 -Fixed bug in the Mythos RLE compression when saving flag bytes near the end of a line.
 -Implemented loading and saving of Mythos animation and palette files.
 
@@ -359,9 +366,9 @@ v1.0: (04/04/2017 22:33)
 -Can now open both PC and N64 format C&C maps, visualizing them as 64x64 image with terrain types,
  and allowing saving as the other type (or as image).
 -Added code to correctly open paletted png images that contain transparency.
--Added code to correctly open and save paletted png images with incomplete colour palettes.
+-Added code to correctly open and save paletted png images with incomplete color palettes.
 -Added theater detection for maps. If there's an ini, it'll read it from that.
--Added support for PC and N64 colour palettes.
+-Added support for PC and N64 color palettes.
 -Added support for saving N64 IMG format, and specifically paletteless greyscale IMG.
 -Added read support for terrain tiles; the're triplets of DA4/ND4/PA4 or DA8/ND8/PA8 files.
 
@@ -378,14 +385,14 @@ v1.2.1: (20/11/2016 16:00)
 -Fixed a bug in the viewer that made it shift the image slightly up.
 
 v1.2: (19/11/2016 17:21)
--Identified last unknown value in the header as part of the "number of colours" value.
+-Identified last unknown value in the header as part of the "number of colors" value.
 -Added palette viewer.
 -Added icon.
 
 v1.1: (19/11/2016 14:35)
 -Tool now shows the full header data and other file info.
 -Implemented zoom on the viewer.
--Transparency colour in the viewer can be customized.
+-Transparency color in the viewer can be customized.
 -Added classic Open / Save buttons with dialogs.
 
 v1.0: (19/11/2016 01:04)

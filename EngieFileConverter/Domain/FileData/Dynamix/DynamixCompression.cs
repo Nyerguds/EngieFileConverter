@@ -14,14 +14,15 @@ namespace Nyerguds.FileData.Dynamix
 
         public static Byte[] EnrichFourBit(Byte[] vgaData, Byte[] binData)
         {
-            Byte[] fullData = new Byte[vgaData.Length * 2];
+            Int32 len = vgaData.Length;
+            Byte[] fullData = new Byte[len * 2];
             // ENRICHED 4-BIT IMAGE LOGIC
             // Basic principle: The data in the VGA chunk is already perfectly viewable as 4-bit image. The colour palettes
             // are designed so each block of 16 colours consists of different tints of the same colour. The 16-colour palette
             // for the VGA chunk alone can be constructed by taking a palette slice where each colour is 16 entries apart.
 
             // This VGA data [AB] gets "ennobled" to 8-bit by adding detail data [ab] from the BIN chunk, to get bytes [Aa Bb].
-            for (Int32 i = 0; i < vgaData.Length; ++i)
+            for (Int32 i = 0; i < len; ++i)
             {
                 Int32 offs = i * 2;
                 // This can be written much simpler, but I expanded it to clearly show each step.
@@ -42,9 +43,10 @@ namespace Nyerguds.FileData.Dynamix
 
         public static void SplitEightBit(Byte[] imageData, out Byte[] vgaData, out Byte[] binData)
         {
-            vgaData = new Byte[(imageData.Length + 1) / 2];
-            binData = new Byte[(imageData.Length + 1) / 2];
-            for (Int32 i = 0; i < imageData.Length; ++i)
+            Int32 len = imageData.Length;
+            vgaData = new Byte[(len + 1) / 2];
+            binData = new Byte[(len + 1) / 2];
+            for (Int32 i = 0; i < len; ++i)
             {
                 Byte pixData = imageData[i];
                 Int32 pixHi = pixData & 0xF0;
@@ -173,7 +175,8 @@ namespace Nyerguds.FileData.Dynamix
         /// <param name="imageData">Image data to process.</param>
         public static void SwitchBackground(Byte[] imageData)
         {
-            for (Int32 i = 0; i < imageData.Length; ++i)
+            Int32 len = imageData.Length;
+            for (Int32 i = 0; i < len; ++i)
             {
                 if (imageData[i] == 0x00)
                     imageData[i] = 0xFF;

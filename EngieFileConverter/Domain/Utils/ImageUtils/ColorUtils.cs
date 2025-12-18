@@ -51,50 +51,6 @@ namespace Nyerguds.ImageManipulation
             return true;
         }
 
-        /// <summary>
-        /// Generates a table of best in-between values for all possible colour pairs on a 256-colour palette.
-        /// </summary>
-        /// <param name="colorPalette"></param>
-        /// <param name="exclIndSrc"></param>
-        /// <param name="dupOnExcluded"></param>
-        /// <param name="exclIndTrg"></param>
-        /// <returns></returns>
-        public static Byte[] GenerateInterlaceTable(Color[] colorPalette, List<Int32> exclIndSrc, Boolean dupOnExcluded, List<Int32> exclIndTrg)
-        {
-            if (colorPalette.Length > 0x100)
-                return null;
-            Color[] palette = new Color[0x100];
-            colorPalette.CopyTo(palette, 0);
-
-            Boolean[] excludedFrom = new Boolean[0x100];
-            for (Int32 i = 0; i < 0x100; ++i)
-            {
-                Int32 index = exclIndSrc[i];
-                if (index >= 0 && index < 0x100)
-                    excludedFrom[index] = true;
-            }
-            Byte[] interlaceTable = new Byte[0x10000];
-            for (Int32 y = 0; y < 0x100; ++y)
-            {
-                for (Int32 x = y; x < 0x100; ++x)
-                {
-                    Byte value;
-                    Boolean equal = y == x;
-                    Boolean exclX = excludedFrom[x];
-                    Boolean exclY = excludedFrom[y];
-                    if (equal)
-                        value = (Byte)y;
-                    else if (exclX || exclY)
-                        value = dupOnExcluded ? (exclX ? (Byte)x : (Byte)y) : (Byte)0;
-                    else
-                        value = (Byte)GetClosestPaletteIndexMatch(GetAverageColor(colorPalette[x], colorPalette[y]), palette, exclIndTrg);
-                    interlaceTable[y * 0x100 + x] = value;
-                    if (!equal)
-                        interlaceTable[x * 0x100 + y] = value;
-                }
-            }
-            return interlaceTable;
-        }
 
         public static Color GetAverageColor(Color col1, Color col2)
         {

@@ -258,8 +258,8 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 new SaveOption("VER", SaveOptionType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape? "0" : "1"),
                 // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
-                new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colours.", hasRemap ? "1" : "0"),
-                new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of colour indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
+                new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
+                new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
                 new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, new SaveEnableFilter("RMA", true, "1")),
             };
         }
@@ -325,7 +325,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     remapThis = false;
                     for (Int32 j = 0; j < imageDataLength; ++j)
                     {
-                        Byte b = imageData[i];
+                        Byte b = imageData[j];
                         if (b < 144 || b > 150)
                             continue;
                         remapThis = true;
@@ -350,9 +350,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     Boolean frameEquals = true;
                     for (Int32 k = 0; k < imageDataLength; ++k)
                     {
-                        if (prevFrameData[i] == imageData[i])
+                        if (prevFrameData[k] == imageData[k])
                             continue;
-                        frameEquals = true;
+                        frameEquals = false;
                         break;
                     }
                     if (!frameEquals)
@@ -370,7 +370,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 // Needs to be a duplicate; otherwise the remapping system messes up the reference array.
                 frameImage[i] = new Byte[imageDataLength];
-                Array.Copy(imageData, frameImage, imageDataLength);
+                Array.Copy(imageData, frameImage[i], imageDataLength);
                 Byte[] remapTable;
                 Boolean largeTable;
                 if (!remapThis)

@@ -82,7 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     imageData = imageData.Take(16 * remainingHeight).ToArray();
                 Bitmap paletteImage = ImageUtils.BuildImage(imageData, 16, Math.Min(remainingHeight, 16), stride, PixelFormat.Format8bppIndexed, palettes[i], Color.Empty);
                 if (remainingHeight < 16)
-                    paletteImage.Palette = BitmapHandler.GetPalette(palettes[i]);
+                    paletteImage.Palette = ImageUtils.GetPalette(palettes[i]);
                 // Make frame
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, paletteImage, sourcePath, i);
@@ -94,10 +94,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 remainingHeight -= 16;
             }
             Byte[] fileData2 = fileData.ToArray();
-            ImageUtils.ReorderBits(fileData2, 16, m_Height, 32, pf, PixelFormatter.Format16BitArgb1555);
+            PixelFormatter.ReorderBits(fileData2, 16, m_Height, 32, pf, PixelFormatter.Format16BitArgb1555);
             Bitmap fullImage = ImageUtils.BuildImage(fileData2, 16, m_Height, 32, PixelFormat.Format16bppArgb1555, null, null);
             this.m_LoadedImage = fullImage;
-            this.ExtraInfo = "Contains " + nrOfPalettes + " colour palette" + (nrOfPalettes != 1 ? "s" : String.Empty);
+            this.ExtraInfo = "Contains " + nrOfPalettes + " color palette" + (nrOfPalettes != 1 ? "s" : String.Empty);
             this.m_Palette = null;
         }
 
@@ -108,7 +108,7 @@ namespace EngieFileConverter.Domain.FileTypes
             /*/
             Color[] cols = this.CheckInputForColors(fileToSave, true);
             if (cols.Length % 256 != 0)
-                throw new NotSupportedException("PSX palettes must be 256 colours!");
+                throw new NotSupportedException("PSX palettes must be 256 colors!");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
             for (Int32 i = 0; i < cols.Length; ++i)

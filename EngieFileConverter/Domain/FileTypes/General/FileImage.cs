@@ -8,6 +8,8 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImage : SupportedFileType
     {
+        protected readonly String FILE_EMPTY = "File to save is empty!";
+
         public override FileClass FileClass
         {
             get
@@ -55,7 +57,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             try
             {
-                this.m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
+                this.m_LoadedImage = ImageUtils.LoadBitmap(fileData);
             }
             catch (Exception ex)
             {
@@ -68,7 +70,7 @@ namespace EngieFileConverter.Domain.FileTypes
             try
             {
                 this.CheckSpecificFileType(fileData, filename);
-                this.m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
+                this.m_LoadedImage = ImageUtils.LoadBitmap(fileData);
                 this.SetFileNames(filename);
             }
             catch (Exception ex)

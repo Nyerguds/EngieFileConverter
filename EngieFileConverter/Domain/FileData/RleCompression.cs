@@ -10,8 +10,6 @@ namespace Nyerguds.FileData.Compression
     /// </summary>
     public class RleCompressionHighBitRepeat : RleImplementation<RleCompressionHighBitRepeat> { }
 
-
-
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Copy code.
     /// The used run length is always (code & 0x7F).
@@ -36,7 +34,8 @@ namespace Nyerguds.FileData.Compression
     #region Main RLE class
 
     /// <summary>
-    /// Basic Run-Length Encoding algorithm. Written by Maarten Meuris, aka Nyerguds.
+    /// Basic code-based (or token-based) run-length encoding algorithm.
+    /// Written by Maarten Meuris, aka Nyerguds.
     /// This class allows easy overriding of the code to read and write codes, to
     /// allow flexibility in subclassing the system for different RLE implementations.
     /// </summary>
@@ -48,9 +47,18 @@ namespace Nyerguds.FileData.Compression
     {
         #region overridables to tweak in subclasses
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
-        public virtual UInt32 MaxRepeatValue { get { return 0x7F; } }
+        protected virtual UInt32 MaxRepeatValue { get { return 0x7F; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
-        public virtual UInt32 MaxCopyValue { get { return 0x7F; } }
+        protected virtual UInt32 MaxCopyValue { get { return 0x7F; } }
+
+        /// <summary>Worst case output buffer size for compressed content, calculated from input data size.</summary>
+        protected virtual UInt32 CompressionWorstCase(UInt32 inputSize)
+        {
+            // Worst-case for this function is probably alternating blocks of 1 non-repeating and 3 repeating,
+            // which would expand 4 bytes to 6; 3/2, or 150%. Just to be safe, the buffer is set to 7/4, or 175%.
+            // This technically depends on the WriteCode implementation, but in general this should be okay.
+            return inputSize * 7 / 4;
+        }
 
         /// <summary>
         /// Reads a code, determines the repeat / copy command and the amount of bytes to repeat / copy,
@@ -211,7 +219,7 @@ namespace Nyerguds.FileData.Compression
                 //End ptr after run
                 UInt32 runEnd = Math.Min(outPtr + run, maxOutLen);
                 if (autoExpand && runEnd > bufferOut.Length)
-                    bufferOut = this.ExpandBuffer(bufferOut, Math.Max(bufLenOrig, runEnd));
+                    bufferOut = ExpandBuffer(bufferOut, Math.Max(bufLenOrig, runEnd));
                 // Repeat run
                 if (repeat)
                 {
@@ -255,19 +263,22 @@ namespace Nyerguds.FileData.Compression
         }
 
         /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data. This particular function achieves especially good compression by only
-        /// switching from a Copy command to a Repeat command if more than two repeating bytes are found, or if the maximum copy amount
-        /// is reached. This avoids adding extra Copy command bytes after replacing two repeating bytes by a two-byte Repeat command.
+        /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
+        /// <remarks>
+        /// This function achieves better compression than other methods out there, because it only switches from a Copy
+        /// command to a Repeat command if more than two repeating bytes are found (or if the maximum copy amount is reached).
+        /// This avoids adding extra Copy command bytes after replacing two repeating bytes by a two-byte Repeat command.
+        /// Written by Maarten Meuris, aka Nyerguds.
+        /// </remarks>
         /// <param name="buffer">Input buffer.</param>
         /// <returns>The run-length encoded data.</returns>
         public Byte[] RleEncodeData(Byte[] buffer)
         {
+            UInt32 len = (UInt32)buffer.Length;
+            UInt32 detectedRepeat = 0;
             UInt32 inPtr = 0;
             UInt32 outPtr = 0;
-            // Ensure big enough buffer. Sanity check will be done afterwards.
-            UInt32 bufLen = (UInt32)((buffer.Length * 3) / 2);
-            Byte[] bufferOut = new Byte[bufLen];
 
             // Retrieve these in advance to avoid extra calls to getters.
             // These are made customizable because some implementations support larger codes. Technically
@@ -277,8 +288,10 @@ namespace Nyerguds.FileData.Compression
             UInt32 maxRepeat = this.MaxRepeatValue;
             UInt32 maxCopy = this.MaxCopyValue;
 
-            UInt32 len = (UInt32)buffer.Length;
-            UInt32 detectedRepeat = 0;
+            // This code does not do sanity checks, since some file formats can't disable their compression.
+            UInt32 bufLen = CompressionWorstCase(len);
+            Byte[] bufferOut = new Byte[bufLen];
+            
             while (inPtr < len)
             {
                 // Handle 2 cases: repeat was already detected, or a new repeat detect needs to be done.
@@ -293,6 +306,7 @@ namespace Nyerguds.FileData.Compression
                     // Increase inptr to the last repeated.
                     for (; inPtr < end && buffer[inPtr] == cur; ++inPtr) { }
                     // WriteCode is split off into a function to allow overriding it in specific implementations.
+                    // After the code is written, test if there is still a byte free to add the value to repeat. Shouldn't happen, but better be sure.
                     if (!this.WriteCode(bufferOut, ref outPtr, bufLen, true, (inPtr - start)) || outPtr + 1 >= bufLen)
                         break;
                     // Add value to repeat
@@ -340,11 +354,12 @@ namespace Nyerguds.FileData.Compression
                             abort = true;
                             break;
                         }
-                        // Need to reset this if the copy commands aborts for full size, so a last-detected repeat
-                        // value of 2 at the end of a copy range isn't propagated to a new repeat command.
+                        // Need to reset this if the copy commands aborts for full size, so a last-detected
+                        // repeat value of 2 at the end of a copy range isn't propagated to a new repeat command.
                         if (amount == maxCopy)
                             detectedRepeat = 0;
                         // WriteCode is split off into a function to allow overriding it in specific implementations.
+                        // After the code is written, test if there is still space to add the values to copy. Shouldn't happen, but better be sure.
                         abort = !this.WriteCode(bufferOut, ref outPtr, bufLen, false, amount) || outPtr + amount >= bufLen;
                         if (abort)
                             break;
@@ -364,7 +379,7 @@ namespace Nyerguds.FileData.Compression
 
         #region internal tools
 
-        private Byte[] ExpandBuffer(Byte[] bufferOut, UInt32 expandSize)
+        private static Byte[] ExpandBuffer(Byte[] bufferOut, UInt32 expandSize)
         {
             Byte[] newBuf = new Byte[bufferOut.Length + expandSize];
             Array.Copy(bufferOut, 0, newBuf, 0, bufferOut.Length);

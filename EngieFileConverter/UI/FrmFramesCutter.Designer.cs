@@ -26,7 +26,7 @@
             this.lblImageSizeVal = new System.Windows.Forms.Label();
             this.lblImageSize = new System.Windows.Forms.Label();
             this.lblCurFrame = new System.Windows.Forms.Label();
-            this.chkTrimColour = new System.Windows.Forms.CheckBox();
+            this.chkTrimColor = new System.Windows.Forms.CheckBox();
             this.lblTrimColorVal = new System.Windows.Forms.Label();
             this.chkMatchPalette = new System.Windows.Forms.CheckBox();
             this.lblFrameSize = new System.Windows.Forms.Label();
@@ -158,17 +158,17 @@
             this.lblCurFrame.TabIndex = 30;
             this.lblCurFrame.Text = "Show frame:";
             // 
-            // chkTrimColour
+            // chkTrimColor
             // 
-            this.chkTrimColour.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.chkTrimColour.AutoSize = true;
-            this.chkTrimColour.Location = new System.Drawing.Point(353, 219);
-            this.chkTrimColour.Name = "chkTrimColour";
-            this.chkTrimColour.Size = new System.Drawing.Size(81, 17);
-            this.chkTrimColour.TabIndex = 40;
-            this.chkTrimColour.Text = "Trim colour:";
-            this.chkTrimColour.UseVisualStyleBackColor = true;
-            this.chkTrimColour.CheckedChanged += new System.EventHandler(this.ChkTrimColourCheckedChanged);
+            this.chkTrimColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkTrimColor.AutoSize = true;
+            this.chkTrimColor.Location = new System.Drawing.Point(353, 219);
+            this.chkTrimColor.Name = "chkTrimColor";
+            this.chkTrimColor.Size = new System.Drawing.Size(81, 17);
+            this.chkTrimColor.TabIndex = 40;
+            this.chkTrimColor.Text = "Trim color:";
+            this.chkTrimColor.UseVisualStyleBackColor = true;
+            this.chkTrimColor.CheckedChanged += new System.EventHandler(this.ChkTrimColor_CheckedChanged);
             // 
             // lblTrimColorVal
             // 
@@ -401,7 +401,7 @@
             this.Controls.Add(this.numWidth);
             this.Controls.Add(this.pzpFramePreview);
             this.Controls.Add(this.lblCurFrame);
-            this.Controls.Add(this.chkTrimColour);
+            this.Controls.Add(this.chkTrimColor);
             this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
             this.MinimumSize = new System.Drawing.Size(560, 410);
             this.Name = "FrmFramesCutter";
@@ -434,7 +434,7 @@
         private System.Windows.Forms.Label lblImageSize;
         private Nyerguds.Util.UI.EnhNumericUpDown numFrames;
         private System.Windows.Forms.Label lblCurFrame;
-        private System.Windows.Forms.CheckBox chkTrimColour;
+        private System.Windows.Forms.CheckBox chkTrimColor;
         private Nyerguds.Util.UI.ImageButtonCheckBox lblTrimColor;
         private System.Windows.Forms.Label lblTrimColorVal;
         private System.Windows.Forms.CheckBox chkMatchPalette;

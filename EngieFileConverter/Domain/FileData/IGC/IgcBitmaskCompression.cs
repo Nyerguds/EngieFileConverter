@@ -10,6 +10,7 @@ namespace Nyerguds.FileData.IGC
     /// dithering patterns of 8, 4 or 2 pixels wide, both the remaining bytes and the packed masks
     /// often end up being repeating byte values, allowing better RLE compression.
     /// </summary>
+    /// <remarks>A big thanks to CTPAX-X Team for helping me figure out the format.</remarks>
     public static class IgcBitMaskCompression
     {
         /// <summary>

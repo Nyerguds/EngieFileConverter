@@ -34,19 +34,22 @@ namespace Nyerguds.FileData.Westwood
                     continue;
                 TileInfo info = new TileInfo();
                 info.TileName = sectionName;
-                info.Width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
-                info.Height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
+                Int32 width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
+                Int32 height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
+                info.Width = width;
+                info.Height = height;
                 info.PrimaryHeightType = GeneralUtils.TryParseEnum(tilesetsFile2.GetStringValue(sectionName, "PrimaryType", null), TerrainTypeEnh.Clear, true);
-                Char[] types = new Char[info.Width * info.Height];
-                for (Int32 y = 0; y < info.Height; ++y)
+                Int32 cells = width * height;
+                Char[] types = new Char[cells];
+                for (Int32 y = 0; y < height; ++y)
                 {
                     String typechars = tilesetsFile2.GetStringValue(sectionName, "Terrain" + y, String.Empty);
                     Int32 len = typechars.Length;
-                    for (Int32 x = 0; x < info.Width; ++x)
-                        types[y * info.Width + x] = x >= len ? '?' : typechars[x];
+                    for (Int32 x = 0; x < width; ++x)
+                        types[y * width + x] = x >= len ? '?' : typechars[x];
                 }
-                TerrainTypeEnh[] typedCells = new TerrainTypeEnh[types.Length];
-                for (Int32 i = 0; i < types.Length; ++i)
+                TerrainTypeEnh[] typedCells = new TerrainTypeEnh[cells];
+                for (Int32 i = 0; i < cells; ++i)
                 {
                     switch (types[i])
                     {

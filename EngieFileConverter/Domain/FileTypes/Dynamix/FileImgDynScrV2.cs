@@ -1,4 +1,5 @@
 ﻿using System;
+using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {

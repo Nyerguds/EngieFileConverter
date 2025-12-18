@@ -33,8 +33,6 @@ namespace Nyerguds.FileData.Dynamix
         {
             this.dictTableStr = new Byte[0x4000][];
             this.dictTableLen = new Byte[0x4000];
-            //for (Int32 i = 256; i < this.dictTableStr.Length; ++i)
-            //    dictTableStr[i] = new Byte[100];
             for (Int32 lcv = 0; lcv < 256; ++lcv)
             {
                 this.dictTableLen[lcv] = 1;

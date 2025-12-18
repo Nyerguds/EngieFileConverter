@@ -69,7 +69,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 usedFrHeight = offsetY == 0 || !expandBottomFrames ? frHeight : 104;
                 Byte[] frame = ImageUtils.CopyFrom8bpp(imageData, 320, 200, 320, new Rectangle(offsetX, offsetY, frWidth, usedFrHeight));
                 Bitmap curFrImg = ImageUtils.BuildImage(frame, frWidth, usedFrHeight, frWidth, PixelFormat.Format8bppIndexed, framePal, null);
-                curFrImg.Palette = BitmapHandler.GetPalette(framePal);
+                curFrImg.Palette = ImageUtils.GetPalette(framePal);
 
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, filename, i);
@@ -85,7 +85,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (equalPalettes)
                     this.m_Palette = firstFramePal;
                 this.m_LoadedImage = ImageUtils.BuildImage(combinedImageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
-                this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
+                this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
             }
             catch (IndexOutOfRangeException e)
             {

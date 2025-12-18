@@ -23,6 +23,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -60,6 +61,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Domain\FileData\EmotionalPictures\PppCompression.cs" />
     <Compile Include="Domain\FileData\IGC\IgcBitMaskCompression.cs" />
     <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
@@ -97,7 +99,7 @@
     <Compile Include="Domain\FileData\LzwCompression.cs" />
     <Compile Include="Domain\FileData\Mythos\MythosCompression.cs" />
     <Compile Include="Domain\FileData\RleCompression.cs" />
-    <Content Include="Domain\FileData\Westwood\Ra1TemplateTypeClass.cs" />
+    <Compile Include="Domain\FileData\Westwood\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\FileData\Westwood\WestwoodRleZero.cs" />
     <Compile Include="Domain\FileData\Westwood\WWCompression.cs" />
     <Compile Include="Domain\FileTypes\General\FileImageFrame.cs" />
@@ -124,19 +126,20 @@
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BlobDetection.cs" />
     <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionChoices.resx">
+    <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionChoices.resx">
       <DependentUpon>SaveOptionChoices.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionColor.resx">
+    <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionColor.resx">
       <DependentUpon>SaveOptionColor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\Tools\FrmPalette.resx">
+    <EmbeddedResource Include="UI\Util\FrmPalette.resx">
       <DependentUpon>FrmPalette.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\Tools\PixelZoomPanel.resx">
+    <EmbeddedResource Include="UI\Util\PixelZoomPanel.resx">
       <DependentUpon>PixelZoomPanel.cs</DependentUpon>
     </EmbeddedResource>
     <Compile Include="Domain\Utils\ImageUtils\ImageUtilsSO.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\PngHandler.cs" />
     <Compile Include="Domain\Utils\ImageUtils\WindowsGraphics2d.cs" />
     <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
     <Compile Include="Domain\Utils\UtilsSO.cs" />
@@ -164,7 +167,6 @@
     <Compile Include="Domain\Utils\ImageUtils\ImageUtils.cs" />
     <Compile Include="Domain\FileTypes\General\FileImage.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwN64.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\BitmapHandler.cs" />
     <Compile Include="Domain\FileData\Westwood\CnCMap.cs" />
     <Compile Include="Domain\FileData\Westwood\MapConversion.cs" />
     <Compile Include="Domain\FileData\Westwood\TileInfo.cs" />
@@ -172,11 +174,11 @@
     <Compile Include="Domain\Utils\ImageUtils\PixelFormatter.cs" />
     <Compile Include="Domain\Utils\KMeans.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="UI\FrmExtraOptions.cs">
+    <Compile Include="UI\Util\SaveOptions\FrmOptions.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\FrmExtraOptions.Designer.cs">
-      <DependentUpon>FrmExtraOptions.cs</DependentUpon>
+    <Compile Include="UI\Util\SaveOptions\FrmOptions.Designer.cs">
+      <DependentUpon>FrmOptions.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\FrmFramesCutter.cs">
       <SubType>Form</SubType>
@@ -202,87 +204,87 @@
     <Compile Include="UI\FrmSetAlpha.Designer.cs">
       <DependentUpon>FrmSetAlpha.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionChoices.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionChoices.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionChoices.Designer.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionChoices.Designer.cs">
       <DependentUpon>SaveOptionChoices.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionColor.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionColor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionColor.Designer.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionColor.Designer.cs">
       <DependentUpon>SaveOptionColor.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionPalette.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionPalette.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionPalette.Designer.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionPalette.Designer.cs">
       <DependentUpon>SaveOptionPalette.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionString.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionString.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionString.Designer.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionString.Designer.cs">
       <DependentUpon>SaveOptionString.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionBoolean.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionBoolean.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionBoolean.Designer.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionBoolean.Designer.cs">
       <DependentUpon>SaveOptionBoolean.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionControl.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionInfo.cs" />
-    <Compile Include="UI\SaveOptions\SaveOptionNumber.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionInfo.cs" />
+    <Compile Include="UI\Util\SaveOptions\SaveOptionNumber.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionNumber.Designer.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionNumber.Designer.cs">
       <DependentUpon>SaveOptionNumber.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionsList.cs">
+    <Compile Include="UI\Util\SaveOptions\SaveOptionsList.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Tools\ComboBoxSmartWidth.cs">
+    <Compile Include="UI\Util\ComboBoxSmartWidth.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="UI\Tools\ControlsList\ControlsList.cs">
+    <Compile Include="UI\Util\ControlsList\ControlsList.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Tools\ControlsList\ControlsList.designer.cs">
+    <Compile Include="UI\Util\ControlsList\ControlsList.designer.cs">
       <DependentUpon>ControlsList.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Tools\ControlsList\CustomControlInfo.cs" />
-    <Compile Include="UI\Tools\ControlsList\ListedControlController.cs" />
-    <Compile Include="UI\Tools\EnhNumericUpDown.cs">
+    <Compile Include="UI\Util\ControlsList\CustomControlInfo.cs" />
+    <Compile Include="UI\Util\ControlsList\ListedControlController.cs" />
+    <Compile Include="UI\Util\EnhNumericUpDown.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="UI\Tools\FileDialogGenerator.cs" />
-    <Compile Include="UI\Tools\FrmPalette.cs">
+    <Compile Include="UI\Util\FileDialogGenerator.cs" />
+    <Compile Include="UI\Util\FrmPalette.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\Tools\FrmPalette.designer.cs">
+    <Compile Include="UI\Util\FrmPalette.designer.cs">
       <DependentUpon>FrmPalette.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Tools\ImageButtonCheckBox.cs">
+    <Compile Include="UI\Util\ImageButtonCheckBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="UI\Tools\InputBox.cs">
+    <Compile Include="UI\Util\InputBox.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="UI\Tools\InputBox.designer.cs">
+    <Compile Include="UI\Util\InputBox.designer.cs">
       <DependentUpon>InputBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Tools\PaletteDropDownInfo.cs" />
-    <Compile Include="UI\Tools\PalettePanel.cs">
+    <Compile Include="UI\Util\PaletteDropDownInfo.cs" />
+    <Compile Include="UI\Util\PalettePanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Tools\PalettePanel.designer.cs">
+    <Compile Include="UI\Util\PalettePanel.designer.cs">
       <DependentUpon>PalettePanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Tools\PixelBox.cs">
+    <Compile Include="UI\Util\PixelBox.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\FrmFileConverter.cs">
@@ -296,13 +298,13 @@
     </Compile>
     <Compile Include="FileConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UI\Tools\PixelZoomPanel.cs">
+    <Compile Include="UI\Util\PixelZoomPanel.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Tools\PixelZoomPanel.Designer.cs">
+    <Compile Include="UI\Util\PixelZoomPanel.Designer.cs">
       <DependentUpon>PixelZoomPanel.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Tools\SelectablePanel.cs">
+    <Compile Include="UI\Util\SelectablePanel.cs">
       <SubType>Component</SubType>
     </Compile>
     <EmbeddedResource Include="UI\FrmFileConverter.resx">
@@ -318,8 +320,8 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="UI\FrmExtraOptions.resx">
-      <DependentUpon>FrmExtraOptions.cs</DependentUpon>
+    <EmbeddedResource Include="UI\Util\SaveOptions\FrmOptions.resx">
+      <DependentUpon>FrmOptions.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\FrmFramesCutter.resx">
       <DependentUpon>FrmFramesCutter.cs</DependentUpon>
@@ -333,25 +335,25 @@
     <EmbeddedResource Include="UI\FrmSetAlpha.resx">
       <DependentUpon>FrmSetAlpha.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionPalette.resx">
+    <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionPalette.resx">
       <DependentUpon>SaveOptionPalette.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionString.resx">
+    <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionString.resx">
       <DependentUpon>SaveOptionString.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionBoolean.resx">
+    <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionBoolean.resx">
       <DependentUpon>SaveOptionBoolean.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionNumber.resx">
+    <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionNumber.resx">
       <DependentUpon>SaveOptionNumber.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\Tools\ControlsList\ControlsList.resx">
+    <EmbeddedResource Include="UI\Util\ControlsList\ControlsList.resx">
       <DependentUpon>ControlsList.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\Tools\InputBox.resx">
+    <EmbeddedResource Include="UI\Util\InputBox.resx">
       <DependentUpon>InputBox.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\Tools\PalettePanel.resx">
+    <EmbeddedResource Include="UI\Util\PalettePanel.resx">
       <DependentUpon>PalettePanel.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">

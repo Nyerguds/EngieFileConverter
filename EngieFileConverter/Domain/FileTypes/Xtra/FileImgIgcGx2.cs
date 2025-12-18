@@ -16,9 +16,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "IGC GX2 file"; } }
+        public override String ShortTypeName { get { return "Interactive Girls GX2 file"; } }
         public override String[] FileExtensions { get { return new String[] { "gx2" }; } }
-        public override String ShortTypeDescription { get { return "IGC GX2 image file"; } }
+        public override String ShortTypeDescription { get { return "Interactive Girls GX2 image file"; } }
         public override Int32 BitsPerPixel { get { return this.m_BitPerPixel; } }
         protected Int32 m_BitPerPixel;
         
@@ -57,13 +57,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Not an " + this.ShortTypeDescription + "!");
             Int32 palSize = bpp > 8 ? 0 : (1 << bpp) * 3;
             this.m_BitPerPixel = bpp;
-            if (fileData.Length < 0x1B + palSize)
+            if (dataLen < 0x1B + palSize)
                 throw new FileTypeLoadException("Too short to be an " + this.ShortTypeDescription + "!");
             Byte[] pal = new Byte[palSize];
             Array.Copy(fileData, 0x1B, pal, 0, palSize);
             this.m_Palette = ColorUtils.ReadEightBitPalette(pal, false);
             Int32 dataOffs = 0x1B + palSize;
             Byte[] frameDataUncompr = RleCompressionHighBitRepeat.RleDecode(fileData, (UInt32)dataOffs, null, true);
+            if (frameDataUncompr == null)
+                throw new FileTypeLoadException("RLE decompression failed!");
             Byte[] frameData;
             try
             {
@@ -71,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException e)
             {
-                throw new FileTypeLoadException(e.Message, e);
+                throw new FileTypeLoadException("Bit mask decompression failed: " + e.Message, e);
             }
             this.m_LoadedImage = ImageUtils.BuildImage(frameData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
         }
@@ -86,27 +88,27 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave.Width > 320 || fileToSave.Height > 200)
                 throw new NotSupportedException("The given image is too large.");
 
-            Int32 width = fileToSave.Width;
-            Int32 height = fileToSave.Height;
+            UInt16 width = (UInt16)fileToSave.Width;
+            UInt16 height = (UInt16)fileToSave.Height;
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] palette = ColorUtils.GetEightBitPaletteData(fileToSave.GetColors(), true);
             imageData = IgcBitMaskCompression.BitMaskCompress(imageData, stride, height);
             imageData = RleCompressionHighBitRepeat.RleEncode(imageData);
             Byte[] data = new Byte[imageData.Length + palette.Length + 0x1B];
-            ArrayUtils.WriteIntToByteArray(data, 0x00, 4, true, (UInt32)0x01325847); // magic
-            ArrayUtils.WriteIntToByteArray(data, 0x04, 2, true, (UInt16)0x19); // headsize
-            ArrayUtils.WriteIntToByteArray(data, 0x06, 1, true, (Byte)0x08); // BPP
-            ArrayUtils.WriteIntToByteArray(data, 0x07, 2, true, (UInt16)width); // width
-            ArrayUtils.WriteIntToByteArray(data, 0x09, 2, true, (UInt16)height); // height
-            ArrayUtils.WriteIntToByteArray(data, 0x0B, 2, true, (UInt16)0x04); // xaspect
-            ArrayUtils.WriteIntToByteArray(data, 0x0D, 2, true, (UInt16)0x03); // yaspect
-            ArrayUtils.WriteIntToByteArray(data, 0x0F, 1, true, (Byte)0x00); // unknown1
-            ArrayUtils.WriteIntToByteArray(data, 0x10, 2, true, (UInt16)0x09); // subhsize
-            ArrayUtils.WriteIntToByteArray(data, 0x12, 4, true, (UInt32)0x58465053); // shmagic
-            ArrayUtils.WriteIntToByteArray(data, 0x16, 2, true, (UInt16)0x0F); // unknown2
-            ArrayUtils.WriteIntToByteArray(data, 0x18, 1, true, (Byte)0x00); // unknown3
-            ArrayUtils.WriteIntToByteArray(data, 0x19, 2, true, (UInt16)0x02); // unknown4
+            ArrayUtils.WriteIntToByteArray(data, 0x00, 4, true, 0x01325847); // magic
+            ArrayUtils.WriteIntToByteArray(data, 0x04, 2, true, 0x19); // headsize
+            ArrayUtils.WriteIntToByteArray(data, 0x06, 1, true, 0x08); // BPP
+            ArrayUtils.WriteIntToByteArray(data, 0x07, 2, true, width); // width
+            ArrayUtils.WriteIntToByteArray(data, 0x09, 2, true, height); // height
+            ArrayUtils.WriteIntToByteArray(data, 0x0B, 2, true, 0x04); // xaspect
+            ArrayUtils.WriteIntToByteArray(data, 0x0D, 2, true, 0x03); // yaspect
+            ArrayUtils.WriteIntToByteArray(data, 0x0F, 1, true, 0x00); // unknown1
+            ArrayUtils.WriteIntToByteArray(data, 0x10, 2, true, 0x09); // subhsize
+            ArrayUtils.WriteIntToByteArray(data, 0x12, 4, true, 0x58465053); // shmagic
+            ArrayUtils.WriteIntToByteArray(data, 0x16, 2, true, 0x0F); // unknown2
+            ArrayUtils.WriteIntToByteArray(data, 0x18, 1, true, 0x00); // unknown3
+            ArrayUtils.WriteIntToByteArray(data, 0x19, 2, true, 0x02); // unknown4
             Array.Copy(palette, 0, data, 0x1B, palette.Length);
             Array.Copy(imageData, 0, data, palette.Length + 0x1B, imageData.Length);
             return data;

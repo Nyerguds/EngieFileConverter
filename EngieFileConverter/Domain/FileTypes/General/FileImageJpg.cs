@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -31,7 +32,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new NotSupportedException(FILE_EMPTY);
             Int32 quality;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "QUA"), out quality);
             quality = Math.Max(1, Math.Min(quality, 100));

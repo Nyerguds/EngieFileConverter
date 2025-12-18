@@ -10,6 +10,9 @@ using Nyerguds.Util;
 namespace EngieFileConverter.Domain.FileTypes
 {
 
+    /// <summary>
+    /// AdventureSoft / HorrorSoft VGA format (even files). Used by the AGOS engine.
+    /// </summary>
     public class FileFramesAdvVga : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }

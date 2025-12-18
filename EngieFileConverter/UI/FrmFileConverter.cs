@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using EngieFileConverter.Domain.FileTypes;
 using EngieFileConverter.Domain.HeightMap;
 using System.Text;
+using Nyerguds.Util.UI.SaveOptions;
 
 namespace EngieFileConverter.UI
 {
@@ -58,6 +59,11 @@ namespace EngieFileConverter.UI
 #endif
         }
 
+        public static String GetTitle()
+        {
+            return GetTitle(false);
+        }
+
         public static String GetTitle(Boolean withAuthor)
         {
             String title = PROG_NAME + " " + GeneralUtils.ProgramVersion();
@@ -65,7 +71,6 @@ namespace EngieFileConverter.UI
                 title += " - " + PROG_AUTHOR;
             return title;
         }
-
 
         public FrmFileConverter(String[] args)
             : this()
@@ -255,7 +260,8 @@ namespace EngieFileConverter.UI
             DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message.ToString(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (dr == DialogResult.Yes)
             {
-                currentType.Dispose();
+                if (currentType != null)
+                    currentType.Dispose();
                 return fr;
             }
             fr.Dispose();
@@ -295,6 +301,7 @@ namespace EngieFileConverter.UI
         private void ReloadUi(Boolean fromNewFile)
         {
             Boolean hasFrames = this.m_LoadedFile != null && this.m_LoadedFile.Frames != null && this.m_LoadedFile.Frames.Length > 0;
+            Int32 bpp = this.m_LoadedFile != null ? this.m_LoadedFile.BitsPerPixel : -1;
             this.lblFrame.Enabled = hasFrames;
             this.numFrame.Enabled = hasFrames;
             this.numFrame.Minimum = -1;
@@ -317,28 +324,37 @@ namespace EngieFileConverter.UI
                 if (last >= 0 && !this.m_LoadedFile.IsFramesContainer)
                     this.numFrame.Minimum = 0;
             }
-            SupportedFileType loadedFile = this.GetShownFile();
-            Boolean hasFile = loadedFile != null;
-            this.tsmiSave.Enabled = hasFile;
+            SupportedFileType shownFile = this.GetShownFile();
+            Boolean hasFile = shownFile != null;
+            Boolean hasShownImage = hasFile && shownFile.GetBitmap() != null;
+            Int32 shownBpp = hasShownImage ? shownFile.BitsPerPixel : -1;
             Boolean canExportFrames = this.m_LoadedFile != null && (this.m_LoadedFile.FileClass & FileClass.FrameSet) != 0;
+
+            // General
+            this.tsmiSave.Enabled = hasFile;
             this.tsmiSaveFrames.Enabled = canExportFrames;
             this.tsmiFramesToSingleImage.Enabled = canExportFrames;
-            this.tsmiCopy.Enabled = hasFile;
+            this.tsmiCopy.Enabled = hasShownImage;
 
             // General frame tools
-            this.tsmiImageToFrames.Enabled = hasFile && loadedFile.GetBitmap() != null;
+            this.tsmiImageToFrames.Enabled = hasShownImage;
             this.tsmiFramesToSingleImage.Enabled = canExportFrames;
-            // C&C64 toolsets
-            this.tsmiToHeightMap.Enabled = loadedFile is FileMapWwCc1Pc;
-            this.tsmiToPlateaus.Enabled = loadedFile is FileMapWwCc1Pc;
-            this.tsmiToHeightMapAdv.Enabled = loadedFile is FileMapWwCc1Pc;
-            this.tsmiTo65x65HeightMap.Enabled = hasFile && loadedFile.GetBitmap() != null && loadedFile.Width == 64 && loadedFile.Height == 64;
-            // Tiberian Sun shadow tools
-            this.tsmiCombineShadows.Enabled = hasFrames && frames > 0 && frames % 2 == 0;
-            this.tsmiSplitShadows.Enabled = hasFrames && frames > 0;
             // General animations "paste on frames" option.
             this.tsmiPasteOnFrames.Enabled = hasFrames && frames > 0;
-            
+            // Extract colours
+            this.tsmiExtractPal.Enabled = hasFile && shownBpp > 0 && shownBpp <= 8;
+            this.tsmiExtract4BitPal.Enabled = hasFile && shownBpp == 8;
+            this.tsmiImageToPalette4Bit.Enabled = hasShownImage;
+            this.tsmiImageToPalette8Bit.Enabled = hasShownImage;
+            // C&C64 toolsets
+            this.tsmiToHeightMap.Enabled = shownFile is FileMapWwCc1Pc;
+            this.tsmiToPlateaus.Enabled = shownFile is FileMapWwCc1Pc;
+            this.tsmiToHeightMapAdv.Enabled = shownFile is FileMapWwCc1Pc;
+            this.tsmiTo65x65HeightMap.Enabled = hasShownImage && shownFile.Width == 64 && shownFile.Height == 64;
+            // Tiberian Sun shadow tools
+            this.tsmiCombineShadows.Enabled = hasFrames && bpp == 8 && frames > 0 && frames % 2 == 0;
+            this.tsmiSplitShadows.Enabled = hasFrames && bpp == 8 && frames > 0;
+
             if (!hasFile)
             {
                 String emptystr = "---";
@@ -359,20 +375,20 @@ namespace EngieFileConverter.UI
                 this.RemoveProcessingLabel();
                 return;
             }
-            Int32 bpc = loadedFile.BitsPerPixel;
-            this.lblValFilename.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.LoadedFileName);
-            this.lblValType.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ShortTypeDescription);
+            Int32 bpc = shownFile.BitsPerPixel;
+            this.lblValFilename.Text = GeneralUtils.DoubleFirstAmpersand(shownFile.LoadedFileName);
+            this.lblValType.Text = GeneralUtils.DoubleFirstAmpersand(shownFile.ShortTypeDescription);
             this.toolTip1.SetToolTip(this.lblValType, this.lblValType.Text);
-            this.lblValSize.Text = loadedFile.Width + "×" + loadedFile.Height;
+            this.lblValSize.Text = shownFile.Width + "×" + shownFile.Height;
             this.lblValColorFormat.Text = bpc == 0 ? "N/A" : (bpc + " BPP" + (bpc == 4 || bpc == 8 ? " (paletted)" : String.Empty));
-            Color[] palette = loadedFile.GetColors();
-            Int32 exposedColours = loadedFile.ColorsInPalette;
+            Color[] palette = shownFile.GetColors();
+            Int32 exposedColors = shownFile.ColorsInPalette;
             Int32 actualColors = palette == null ? 0 : palette.Length;
-            Boolean needsPalette = loadedFile.NeedsPalette();
-            this.lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColours + " in file)" : String.Empty);
-            this.lblValInfo.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ExtraInfo);
+            Boolean needsPalette = shownFile.NeedsPalette();
+            this.lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColors + " in file)" : String.Empty);
+            this.lblValInfo.Text = GeneralUtils.DoubleFirstAmpersand(shownFile.ExtraInfo);
             this.cmbPalettes.Enabled = needsPalette;
-            Bitmap image = loadedFile.GetBitmap();
+            Bitmap image = shownFile.GetBitmap();
             this.pzpImage.Image = image;
             this.RefreshPalettes(fromNewFile, fromNewFile);
             if (needsPalette && fromNewFile)
@@ -471,7 +487,7 @@ namespace EngieFileConverter.UI
                 String message = "No types found for saving this data.";
                 if (hasFrames && !isFrame)
                     message += "\nTry exporting as frames instead.";
-                MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             if (!filteredTypes.Contains(selectType))
@@ -483,7 +499,7 @@ namespace EngieFileConverter.UI
                     newSelectType = typeof (FileImagePng);
                 selectType = newSelectType;
             }
-            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, filteredTypes.ToArray(), false, true, loadedFile.LoadedFile, out selectedItem);
+            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, filteredTypes.ToArray(), null, false, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
             SaveOption[] saveOptions;
@@ -495,8 +511,7 @@ namespace EngieFileConverter.UI
                     SaveOptionInfo soi = new SaveOptionInfo();
                     soi.Name = GeneralUtils.DoubleFirstAmpersand("Extra save options for " + selectedItem.ShortTypeDescription);
                     soi.Properties = saveOptions;
-                    FrmExtraOptions frmExtraOpts = new FrmExtraOptions();
-                    frmExtraOpts.Init(soi);
+                    FrmOptions frmExtraOpts = new FrmOptions(GetTitle(), soi);
                     if (frmExtraOpts.ShowDialog(this) != DialogResult.OK)
                         return;
                     saveOptions = frmExtraOpts.GetSaveOptions();
@@ -506,7 +521,7 @@ namespace EngieFileConverter.UI
             {
                 String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
                                  + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
-                MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Object[] arrParams =
@@ -558,12 +573,12 @@ namespace EngieFileConverter.UI
 
         protected void FrmFileConverter_FormClosing(Object sender, FormClosingEventArgs e)
         {
-            if (!this.m_Loading || m_ProcessingThread == null || !m_ProcessingThread.IsAlive)
+            if (!this.m_Loading || this.m_ProcessingThread == null || !this.m_ProcessingThread.IsAlive)
                 return;
-            DialogResult result = ShowMessageBox("Operations are in progress! Are you sure you want to quit?", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+            DialogResult result = this.ShowMessageBox("Operations are in progress! Are you sure you want to quit?", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
             if (result == DialogResult.Yes)
             {
-                m_ProcessingThread.Abort();
+                this.m_ProcessingThread.Abort();
             }
             else
             {
@@ -653,7 +668,7 @@ namespace EngieFileConverter.UI
                 bpp = 0;
             }
             Boolean showPal = bpp > 0 && bpp <= 8;
-            palColorViewer.Visible = showPal;
+            this.palColorViewer.Visible = showPal;
             if (showPal)
                 PalettePanel.InitPaletteControl(bpp, this.palColorViewer, pal, PALETTE_DIM);
         }
@@ -714,7 +729,7 @@ namespace EngieFileConverter.UI
                         return;
                     if (currentPal.SourceFile != null && currentPal.Entry >= 0)
                     {
-                        DialogResult dr = MessageBox.Show("This will remove all changes you have made to the palette since it was loaded!\n\nAre you sure you want to continue?", GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                        DialogResult dr = MessageBox.Show("This will remove all changes you have made to the palette since it was loaded!\n\nAre you sure you want to continue?", GetTitle(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                         if (dr != DialogResult.Yes)
                             return;
                     }
@@ -755,7 +770,7 @@ namespace EngieFileConverter.UI
             }
             FrmManagePalettes palSave = new FrmManagePalettes(currentPal.BitsPerPixel);
             palSave.Icon = this.Icon;
-            palSave.Title = GetTitle(false);
+            palSave.Title = GetTitle();
             palSave.PaletteToSave = currentPal;
             palSave.SuggestedSaveName = this.m_LoadedFile.LoadedFile ?? this.m_LoadedFile.LoadedFileName;
             palSave.StartPosition = FormStartPosition.CenterParent;
@@ -965,54 +980,25 @@ namespace EngieFileConverter.UI
 
         private void EditColor(Object sender, EventArgs e)
         {
-            MenuItem cm = sender as MenuItem;
-            if (cm == null)
-                return;
-            if (!(cm.Tag is Int32))
-                return;
-            Int32 index = (Int32)cm.Tag;
-            ColorDialog cdl = new ColorDialog();
-            cdl.Color = this.palColorViewer.Palette[index];
-            cdl.FullOpen = true;
-            cdl.CustomColors = this.pzpImage.CustomColors;
-            DialogResult res = cdl.ShowDialog(this);
-            this.pzpImage.CustomColors = cdl.CustomColors;
-            if (res != DialogResult.OK)
-                return;
-            SupportedFileType loadedFile = this.GetShownFile();
-            this.SetPaletteColor(this.palColorViewer, index, cdl.Color, loadedFile);
+
         }
 
         private void SetColorTransparent(Object sender, EventArgs e)
         {
-            this.SetPalColorAlpha(sender, e, 0);
+            this.SetPalColorAlpha(sender, 0);
         }
         
         private void SetColorOpaque(Object sender, EventArgs e)
         {
-            this.SetPalColorAlpha(sender, e, 255);
+            this.SetPalColorAlpha(sender, 255);
         }
 
         private void SetColorAlpha(Object sender, EventArgs e)
         {
-            MenuItem cm = sender as MenuItem;
-            if (cm == null)
-                return;
-            if (!(cm.Tag is Int32))
-                return;
-            Int32 index = (Int32)cm.Tag;
-            if(this.palColorViewer.Palette.Length <= index)
-                return;
-            Color col = this.palColorViewer.Palette[index];
-            FrmSetAlpha alphaForm = new FrmSetAlpha(col.A);
-            if (alphaForm.ShowDialog(this) != DialogResult.OK)
-                return;
-            col = Color.FromArgb(alphaForm.Alpha, col);
-            SupportedFileType loadedFile = this.GetShownFile();
-            this.SetPaletteColor(this.palColorViewer, index, col, loadedFile);
+
         }
 
-        private void SetPalColorAlpha(Object sender, EventArgs e, Int32 alpha)
+        private void SetPalColorAlpha(Object sender, Int32 alpha)
         {
             MenuItem cm = sender as MenuItem;
             if (cm == null)
@@ -1035,7 +1021,7 @@ namespace EngieFileConverter.UI
             External
         }
         
-        private void TsmiImageToFramesClick(Object sender, EventArgs e)
+        private void TsmiImageToFrames_Click(Object sender, EventArgs e)
         {
             SupportedFileType shownFile = this.GetShownFile();
             if (shownFile == null)
@@ -1074,7 +1060,7 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null)
                 return;
-            SupportedFileType[] frames = m_LoadedFile.Frames;
+            SupportedFileType[] frames = this.m_LoadedFile.Frames;
             Int32 nrOfframes;
             if (frames == null || (nrOfframes = frames.Length) == 0)
                 return;
@@ -1126,16 +1112,16 @@ namespace EngieFileConverter.UI
             so[1] = new SaveOption("FRH", SaveOptionType.Number, "Frame height", maxHeight + ",", maxHeight.ToString());
             so[2] = new SaveOption("FPL", SaveOptionType.Number, "Frames per line", "1," + nrOfframes, ((Int32)Math.Sqrt(nrOfframes)).ToString());
             if (highestBpp <= 8)
-                so[3] = new SaveOption("BGI", SaveOptionType.Palette, "Background colour around frames", highestBpp + "|" + paletteStr, "0");
+                so[3] = new SaveOption("BGI", SaveOptionType.Palette, "Background color around frames", highestBpp + "|" + paletteStr, "0");
             else
-                so[3] = new SaveOption("BGC", SaveOptionType.Color, "Background colour around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
+                so[3] = new SaveOption("BGC", SaveOptionType.Color, "Background color around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
             SaveOptionInfo soi = new SaveOptionInfo();
             soi.Name = "Frames to single image";
             soi.Properties = so;
-            FrmExtraOptions extraopts = new FrmExtraOptions();
-
+            FrmOptions extraopts;
             try
             {
+                extraopts = new FrmOptions(GetTitle(), soi);
                 extraopts.Size = extraopts.MinimumSize;
                 extraopts.Init(soi);
                 if (extraopts.ShowDialog(this) != DialogResult.OK)
@@ -1143,7 +1129,7 @@ namespace EngieFileConverter.UI
             }
             catch (NotSupportedException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             so = extraopts.GetSaveOptions();
@@ -1212,12 +1198,12 @@ namespace EngieFileConverter.UI
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + e.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + e.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 if (plateauImage.Width != 64 || plateauImage.Height != 64)
                 {
-                    MessageBox.Show(this, "Height levels image needs to be 64×64!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, "Height levels image needs to be 64×64!", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
             }
@@ -1239,7 +1225,7 @@ namespace EngieFileConverter.UI
             String imgFileName = baseFileName + ".img";
             Object[] arrParams =
             {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
-                new Func<SupportedFileType>(()=> Make65x65HeightMap(image, imgFileName)),
+                new Func<SupportedFileType>(()=> this.Make65x65HeightMap(image, imgFileName)),
                 false, false, "Creating height map"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
@@ -1273,10 +1259,31 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
-            // TODO maybe ask the indices with a simple save options dialog?
+
+            SaveOption[] so = new SaveOption[1];
+            so[0] = new SaveOption("IND", SaveOptionType.Number, "Input shadow index", "0,255", "4");
+            SaveOptionInfo soi = new SaveOptionInfo();
+            soi.Name = "Input index for shadow:";
+            soi.Properties = so;
+            try
+            {
+                FrmOptions opts = new FrmOptions(GetTitle(), soi);
+                //opts.Size = opts.MinimumSize;
+                opts.Init(soi);
+                if (opts.ShowDialog(this) != DialogResult.OK)
+                    return;
+            }
+            catch (NotSupportedException ex)
+            {
+                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            Int32 ind;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(so, "IND"), out ind);
+            
             Object[] arrParams =
             {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
-                new Func<SupportedFileType>(()=> FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, 4, 1)),
+                new Func<SupportedFileType>(()=> FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, (Byte)ind, 1)),
                 true, false, "Splitting shadows"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
@@ -1287,10 +1294,30 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
-            // TODO maybe ask the indices with a simple save options dialog?
+            SaveOption[] so = new SaveOption[1];
+            so[0] = new SaveOption("IND", SaveOptionType.Number, "Input shadow index", "0,255", "4");
+            SaveOptionInfo soi = new SaveOptionInfo();
+            soi.Name = "Output index for shadow:";
+            soi.Properties = so;
+            try
+            {
+                FrmOptions opts = new FrmOptions(GetTitle(), soi);
+                //opts.Size = opts.MinimumSize;
+                opts.Init(soi);
+                if (opts.ShowDialog(this) != DialogResult.OK)
+                    return;
+            }
+            catch (NotSupportedException ex)
+            {
+                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            Int32 ind;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(so, "IND"), out ind);
+
             Object[] arrParams =
             {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
-                new Func<SupportedFileType>(()=> FileFramesWwShpTs.CombineShadows(this.m_LoadedFile, 1, 4)),
+                new Func<SupportedFileType>(()=> FileFramesWwShpTs.CombineShadows(this.m_LoadedFile, 1, (Byte)ind)),
                 true, false, "Combining shadows"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
@@ -1321,7 +1348,7 @@ namespace EngieFileConverter.UI
             }
             catch (NotSupportedException ex)
             {
-                MessageBox.Show(this, ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1331,7 +1358,192 @@ namespace EngieFileConverter.UI
             image.Dispose();
             return newfile;
         }
-        
+
+        private void tsmiExtractPal_Click(Object sender, EventArgs e)
+        {
+            SupportedFileType shownImage = this.GetShownFile();
+            if (shownImage == null)
+                return;
+            Int32 bpp = shownImage.BitsPerPixel;
+            Color[] pal = shownImage.GetColors();
+            Int32 nrOfColors = pal.Count();
+            if (nrOfColors == 0 || (bpp != 1 && bpp != 4 && bpp != 8))
+                return;
+            Int32 fullPal = 1 << bpp;
+            Int32 height = (Int32) Math.Sqrt(fullPal);
+            Int32 width = fullPal / height;
+            Byte[] image = new Byte[fullPal];
+            for (Int32 i = 0; i < fullPal; ++i)
+                image[i] = (Byte)i;
+            PixelFormat pf = ImageUtils.GetIndexedPixelFormat(bpp);
+            image = ImageUtils.ConvertFrom8Bit(image, width, height, bpp, true);
+            Int32 stride = ImageUtils.GetMinimumStride(width, bpp);
+            Bitmap bm = ImageUtils.BuildImage(image, width, height, stride, pf, pal, Color.Black);
+            FileImagePng palImage = new FileImagePng();
+            String path = Path.GetDirectoryName(shownImage.LoadedFile);
+            String name = Path.GetFileNameWithoutExtension(shownImage.LoadedFile);
+            palImage.LoadFile(bm, Path.Combine(path, name + ".png"));
+            this.ReloadWithDispose(palImage, true, true);
+        }
+
+        private void tsmiImageToPalette4Bit_Click(Object sender, EventArgs e)
+        {
+            this.ImageToPalette(true);
+        }
+
+        private void tsmiImageToPalette8Bit_Click(Object sender, EventArgs e)
+        {
+            this.ImageToPalette(false);
+        }
+
+        private void ImageToPalette(Boolean fourBit)
+        {
+            SupportedFileType shownImage = this.GetShownFile();
+            if (shownImage == null || shownImage.GetBitmap() == null)
+                return;
+            try
+            {
+                SaveOption[] so = new SaveOption[2];
+                so[0] = new SaveOption("CRX", SaveOptionType.Number, "X", "0," + (shownImage.Width - 1), "0");
+                so[1] = new SaveOption("CRY", SaveOptionType.Number, "Y", "0," + (shownImage.Height - 1), "0");
+                SaveOptionInfo soi = new SaveOptionInfo();
+                soi.Name = "This will take a (wrapping) line of pixels and convert them to a color palette.\nCoordinates of start pixel:";
+                soi.Properties = so;
+                try
+                {
+                    FrmOptions opts = new FrmOptions(GetTitle(), soi);
+                    //opts.Size = opts.MinimumSize;
+                    opts.Init(soi);
+                    if (opts.ShowDialog(this) != DialogResult.OK)
+                        return;
+                }
+                catch (NotSupportedException ex)
+                {
+                    MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                Int32 coordX;
+                Int32.TryParse(SaveOption.GetSaveOptionValue(so, "CRX"), out coordX);
+                Int32 coordY;
+                Int32.TryParse(SaveOption.GetSaveOptionValue(so, "CRY"), out coordY);
+                Object[] arrParams =
+                {
+                    //Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                    new Func<SupportedFileType>(() => this.ConvertToPalette(shownImage, coordX, coordY, fourBit)), true, true, "Converting to palette"
+                };
+                this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+                this.m_ProcessingThread.Start(arrParams);
+            }
+            catch (NotSupportedException ex)
+            {
+                MessageBox.Show(this, ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private SupportedFileType ConvertToPalette(SupportedFileType file, Int32 x, Int32 y, Boolean fourBit)
+        {
+            if (file == null || (file.GetBitmap()) == null)
+                return null;
+            Int32 palEdge = fourBit ? 4 : 16;
+            Int32 palSize = palEdge * palEdge;
+            Int32 palStride = fourBit ? palEdge / 2 : palEdge;
+            String path = Path.GetDirectoryName(file.LoadedFile);
+            String name = Path.GetFileNameWithoutExtension(file.LoadedFile);
+            Byte[] imageData = ImageUtils.GetImageData(file.GetBitmap(), PixelFormat.Format24bppRgb);
+            Int32 startPoint = (y * file.Width + x) * 3;
+            Int32 palLen = Math.Min(3 * palSize, imageData.Length - startPoint);
+            Int32 palEnd = startPoint + palLen;
+            Byte[] paletteData = new Byte[palLen];
+            Int32 palPtr = 0;
+            for (Int32 i = startPoint; i < palEnd; i += 3)
+            {
+                paletteData[palPtr++] = imageData[i + 2];
+                paletteData[palPtr++] = imageData[i + 1];
+                paletteData[palPtr++] = imageData[i];
+            }
+            Color[] col = ColorUtils.ReadEightBitPalette(paletteData, false);
+            Byte[] newImageData = Enumerable.Range(0, palSize).Select(b => (Byte)b).ToArray();
+            if (fourBit)
+                newImageData = ImageUtils.ConvertFrom8Bit(newImageData, palEdge, palEdge, 4, true);
+            PixelFormat pf = fourBit ? PixelFormat.Format4bppIndexed : PixelFormat.Format8bppIndexed;
+            Bitmap bm = ImageUtils.BuildImage(newImageData, palEdge, palEdge, palStride, pf, col, Color.Black);
+            
+            FileImagePng palImage = new FileImagePng();
+            palImage.LoadFile(bm, Path.Combine(path, name + ".png"));
+            return palImage;
+        }
+
+        private void tsmiExtract4BitPal_Click(Object sender, EventArgs e)
+        {
+            SupportedFileType shownImage = this.GetShownFile();
+            if (shownImage == null || shownImage.GetBitmap() == null || shownImage.BitsPerPixel != 8)
+                return;
+
+            SaveOption[] so = new SaveOption[1];
+            so[0] = new SaveOption("start", SaveOptionType.Number, "Start index", "0," + (shownImage.Width - 1), "0");
+            SaveOptionInfo soi = new SaveOptionInfo();
+            soi.Name = "16-color palette from 256-color palette.\n\nPreselect range. Press Cancel to select manually.";
+            soi.Properties = so;
+            Int32[] selectedIndices = null;
+            try
+            {
+                FrmOptions opts = new FrmOptions(GetTitle(), soi);
+                opts.Size = opts.MinimumSize;
+                opts.Init(soi);
+                if (opts.ShowDialog(this) == DialogResult.OK)
+                {
+                    Int32 startIndex;
+                    Int32.TryParse(SaveOption.GetSaveOptionValue(so, "start"), out startIndex);
+                    selectedIndices = Enumerable.Range(startIndex, Math.Min(16, 256 - startIndex)).ToArray();
+                }
+            }
+            catch (NotSupportedException ex)
+            {
+                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            FrmPalette palFrm = new FrmPalette(shownImage.GetColors(), false, ColorSelMode.Multi);
+            palFrm.SelectedIndices = selectedIndices;
+            palFrm.Text = "Select 16 colors";
+            if (palFrm.ShowDialog(this) != DialogResult.OK)
+                return;
+            Color[] col = palFrm.GetSelectedColors();
+
+            Byte[] newImageData = Enumerable.Range(0, 16).Select(b => (Byte)b).ToArray();
+            newImageData = ImageUtils.ConvertFrom8Bit(newImageData, 4, 4, 4, true);
+            PixelFormat pf = PixelFormat.Format4bppIndexed;
+            Bitmap bm = ImageUtils.BuildImage(newImageData, 4, 4, 2, pf, col, Color.Black);
+
+            FileImagePng palImage = new FileImagePng();
+            String path = Path.GetDirectoryName(shownImage.LoadedFile);
+            String name = Path.GetFileNameWithoutExtension(shownImage.LoadedFile);
+            palImage.LoadFile(bm, Path.Combine(path, name + ".png"));
+            this.ReloadWithDispose(palImage, true, true);
+        }
+
+        private void tsmiManagePalettes4Bit_Click(Object sender, EventArgs e)
+        {
+            this.ManagePalettes(true);
+        }
+
+        private void tsmiManagePalettes8Bit_Click(Object sender, EventArgs e)
+        {
+            this.ManagePalettes(false);
+        }
+
+        private void ManagePalettes(Boolean fourBit)
+        {
+            FrmManagePalettes palSave = new FrmManagePalettes(fourBit ? 4 : 8);
+            palSave.Icon = this.Icon;
+            palSave.Title = GetTitle();
+            palSave.PaletteToSave = null;
+            palSave.StartPosition = FormStartPosition.CenterParent;
+            if (palSave.ShowDialog(this) != DialogResult.OK)
+                return;
+            this.RefreshPalettes(true, true);
+            this.RefreshColorControls();
+        }
+
         /// <summary>
         ///  Executes a threaded operation while locking the UI.
         ///  Arguments for the thread are: func returning SupportedFileType, reload as new, reset auto-zoom, and a string to indicate the process type being executed (eg. "splitting").
@@ -1436,7 +1648,7 @@ namespace EngieFileConverter.UI
             this.m_LoadedFile = newFile;
             if (resetZoom)
                 this.AutoSetZoom();
-            EnableToolstrips(true);
+            this.EnableToolstrips(true);
             if (!this.pzpImage.Enabled)
                 this.pzpImage.Enabled = true;
             this.ReloadUi(asNew);
@@ -1465,6 +1677,10 @@ namespace EngieFileConverter.UI
                 this.tsmiTo65x65HeightMap.Enabled = false;
                 this.tsmiCombineShadows.Enabled = false;
                 this.tsmiSplitShadows.Enabled = false;
+                this.tsmiExtractPal.Enabled = false;
+                this.tsmiExtract4BitPal.Enabled = false;
+                this.tsmiImageToPalette4Bit.Enabled = false;
+                this.tsmiImageToPalette8Bit.Enabled = false;
             }
             this.tsmiTestBed.Enabled = enable;
         }
@@ -1473,7 +1689,7 @@ namespace EngieFileConverter.UI
         {
             if (message == null)
                 return DialogResult.Cancel;
-            return MessageBox.Show(this, message, GetTitle(false), buttons, icon);
+            return MessageBox.Show(this, message, GetTitle(), buttons, icon);
         }
 
         private void TsmiTestBed(Object sender, EventArgs e)
@@ -1482,6 +1698,7 @@ namespace EngieFileConverter.UI
             this.ExecuteTestCode();
 #endif
         }
+
     }
 
 }

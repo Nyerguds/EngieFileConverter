@@ -52,7 +52,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imageData = Enumerable.Range(0, this.Width * this.Height).Select(x => (Byte) x).ToArray();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
             if (this.m_Palette.Length < 0x100)
-                this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
+                this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Color[] cols = this.CheckInputForColors(fileToSave, true);
             if (cols.Length % 16 != 0)
-                throw new NotSupportedException("Amiga palettes must be a multiple of 16 colours!");
+                throw new NotSupportedException("Amiga palettes must be a multiple of 16 colors!");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
             for (Int32 i = 0; i < cols.Length; ++i)

@@ -156,7 +156,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public static FileFrames CheckForFrames(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames)
         {
             String baseName;
-
             minName = null;
             maxName = null;
             hasEmptyFrames = false;
@@ -204,6 +203,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     frame.SetBitsPerColor(currentType.BitsPerPixel);
                     frame.SetFileClass(currentType.FileClass);
                     frame.SetColorsInPalette(currentType.ColorsInPalette);
+                    frame.SetExtraInfo("Empty file.");
                     framesContainer.AddFrame(frame);
                     continue;
                 }
@@ -212,13 +212,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     SupportedFileType frameFile = (SupportedFileType)Activator.CreateInstance(currentType.GetType());
                     Byte[] fileData = File.ReadAllBytes(currentFrame);
                     frameFile.LoadFile(fileData, currentFrame);
-                    FileImageFrame frame = new FileImageFrame();
-                    frame.LoadFileFrame(framesContainer, frameFile, frameFile.GetBitmap(), currentFrame, -1);
-                    frame.SetBitsPerColor(frameFile.BitsPerPixel);
-                    frame.SetFileClass(frameFile.FileClass);
-                    frame.SetColorsInPalette(frameFile.ColorsInPalette);
-                    frame.SetExtraInfo(frameFile.ExtraInfo);
-                    framesContainer.AddFrame(frame);
+                    //FileImageFrame frame = new FileImageFrame();
+                    //frame.LoadFileFrame(framesContainer, frameFile, frameFile.GetBitmap(), currentFrame, -1);
+                    //frame.SetBitsPerColor(frameFile.BitsPerPixel);
+                    //frame.SetFileClass(frameFile.FileClass);
+                    //frame.SetColorsInPalette(frameFile.ColorsInPalette);
+                    //frame.SetExtraInfo(frameFile.ExtraInfo);
+                    framesContainer.AddFrame(frameFile);
                     if (commonPalette)
                         commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
                     if (nullPalette)
@@ -249,7 +249,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="image">Image to paste onto the frames.</param>
         /// <param name="pasteLocation">Point at which to paste the image.</param>
         /// <param name="framesRange">Arra containing the indices to paste the image on.</param>
-        /// <param name="keepIndices">If all involved images are indexed, and no overflow can occur, paste bare data indices when handling indexed types rather than matching image colours to a palette.</param>
+        /// <param name="keepIndices">If all involved images are indexed, and no overflow can occur, paste bare data indices when handling indexed types rather than matching image colors to a palette.</param>
         /// <returns>A new FileFrames object containing the edited frames.</returns>
         public static FileFrames PasteImageOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
         {
@@ -443,8 +443,8 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="frameWidth">Width of the cut out frames.</param>
         /// <param name="frameHeight">Height of the cut out frames.</param>
         /// <param name="frames">Upper limit to the amount of frames to generate.</param>
-        /// <param name="cropColor">Colour to trim away for cropping frames, if the source is high-colour.</param>
-        /// <param name="cropIndex">Colour index to trim away for cropping frames, if the source is indexed.</param>
+        /// <param name="cropColor">Color to trim away for cropping frames, if the source is high-color.</param>
+        /// <param name="cropIndex">Color index to trim away for cropping frames, if the source is indexed.</param>
         /// <param name="matchBpp">Bits per pixel for the palette to match. 0 for no palette matching.</param>
         /// <param name="matchPalette">Palette to match. Only used if <see cref="matchBpp"/> is not 0.</param>
         /// <param name="cloneSource">True to clone the source image, to prevent conflicts in multithreaded use.</param>

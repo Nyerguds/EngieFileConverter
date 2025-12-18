@@ -77,7 +77,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Array.Copy(fileData, headerSize + palDataLen, imageData, 0, imgDataLen);
             PixelFormat pf = _IsHighCol ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed;
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, _Width, _Height, _Width, pf, m_Palette, Color.Empty);
-            this.m_LoadedImage.Palette = BitmapHandler.GetPalette(m_Palette);
+            this.m_LoadedImage.Palette = ImageUtils.GetPalette(m_Palette);
             this.ExtraInfo = "Version: " + _Version + Environment.NewLine;
             if (horizonalDpi < 0 && verticalDpi < 0)
                 this.ExtraInfo += "Aspect ratio: : " + (-horizonalDpi) + "x" + (-verticalDpi);

@@ -144,7 +144,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 nrOftiles = this.m_rawTiles.Length;
             this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_rawTiles, 24, 24, 24, nrOftiles, this.m_Palette, 1);
             if (this.m_Palette.Length < 0x100)
-                this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
+                this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
         }
 
         private Byte[] AdjustTo8BitPalette(Byte[] dataFile, Byte[] palIndexFile, Int32 width, Int32 height, ref Int32 stride)

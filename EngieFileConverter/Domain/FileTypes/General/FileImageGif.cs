@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Drawing.Imaging;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -17,6 +20,14 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             get { return new String[] {this.ShortTypeDescription }; }
         }
+
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException(FILE_EMPTY);
+            return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ImageFormat.Gif);
+        }
+
         /*/
         // animated gif frames splitting code. Doesn't work because the .net framework insists animated gif is 32bpp ARGB. All my WTF.
 

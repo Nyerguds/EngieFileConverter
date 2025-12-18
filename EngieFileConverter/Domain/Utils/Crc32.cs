@@ -20,7 +20,7 @@ namespace Nyerguds.Util
             Int32 end = start + length;
             for (Int32 i = start; i < end; ++i)
             {
-                Byte index = (Byte)(((crc) & 0xFF) ^ bytes[i]);
+                Byte index = (Byte)((crc & 0xFF) ^ bytes[i]);
                 crc = (crc >> 8) ^ table[index];
             }
             return ~crc;

@@ -42,10 +42,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new NotSupportedException(FILE_EMPTY);
             Color[] pal = fileToSave.GetColors();
             Boolean noPalTransparency = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NTP"));
-            return BitmapHandler.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length, noPalTransparency);
+            return ImageUtils.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length, noPalTransparency);
         }
     }
 }

@@ -112,7 +112,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         bmp = this.GetBmp<FileImageBmp>(frameData);
                     else
                     {
-                        bmp = DibHandler.ImageFromDib(frameData, true, out originalPixelFormat);
+                        bmp = DibHandler.ImageFromDib(frameData, 0, true, out originalPixelFormat);
                         if (bmp != null)
                             type = "dib";
                     }

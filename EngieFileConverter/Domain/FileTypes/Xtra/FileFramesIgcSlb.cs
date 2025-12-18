@@ -22,9 +22,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Interactive Girls images"; } }
+        public override String ShortTypeName { get { return "Interactive Girls archive"; } }
         public override String[] FileExtensions { get { return new String[] { "slb", "m3" }; } }
-        public override String ShortTypeDescription { get { return "Interactive Girls SLB images File"; } }
+        public override String ShortTypeDescription { get { return "Interactive Girls SLB archive"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Boolean FramesHaveCommonPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 8; } }

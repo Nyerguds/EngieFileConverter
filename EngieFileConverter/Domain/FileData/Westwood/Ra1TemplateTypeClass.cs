@@ -1,8 +1,10 @@
-﻿using System;
+﻿#if DEBUG
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nyerguds.GameData.Westwood
+namespace Nyerguds.FileData.Westwood
 {
     public class Ra1TemplateTypeClass
     {
@@ -1251,3 +1253,4 @@ namespace Nyerguds.GameData.Westwood
         }
     }
 }
+#endif

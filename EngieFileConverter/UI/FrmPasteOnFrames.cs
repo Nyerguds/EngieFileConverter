@@ -74,7 +74,7 @@ namespace EngieFileConverter.UI
                     if (selectedType == null)
                     {
                         String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
-                        MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                 }
@@ -96,7 +96,7 @@ namespace EngieFileConverter.UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + ex.Message, FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + ex.Message, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
             {
@@ -121,7 +121,7 @@ namespace EngieFileConverter.UI
             if (retrievedData == null)
             {
                 if (!failSilently)
-                    MessageBox.Show(this, "No data on clipboard!", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "No data on clipboard!", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
             Boolean loaded = false;
@@ -133,7 +133,7 @@ namespace EngieFileConverter.UI
                     if (clipboardimage == null)
                     {
                         if (!failSilently)
-                            MessageBox.Show(this, "No image data on clipboard!", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show(this, "No image data on clipboard!", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return false;
                     }
                     using (MemoryStream ms = new MemoryStream())
@@ -160,7 +160,7 @@ namespace EngieFileConverter.UI
             catch (Exception ex)
             {
                 if (!failSilently)
-                    MessageBox.Show(this, "Could not load clipboard data:\n\n" + ex.Message, FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, "Could not load clipboard data:\n\n" + ex.Message, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;                
             }
             finally
@@ -188,13 +188,13 @@ namespace EngieFileConverter.UI
         {
             if (txtFrames.Text.Trim(",- \r\n\t".ToCharArray()).Length == 0)
             {
-                MessageBox.Show(this, "No frame ranges specified.", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "No frame ranges specified.", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Int32[] frameRange = GeneralUtils.GetRangedNumbers(txtFrames.Text).Where(i => i < m_Frames).ToArray();
             if (frameRange.Length == 0)
             {
-                MessageBox.Show(this, "No valid frame ranges found in given text.", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "No valid frame ranges found in given text.", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             this.FrameRange = frameRange;
