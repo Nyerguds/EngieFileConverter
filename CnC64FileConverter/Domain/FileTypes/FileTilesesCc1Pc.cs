@@ -4,13 +4,13 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using Nyerguds.CCTypes;
+using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileTilesetPC : SupportedFileType
+    public class FileTilesetCc1PC : SupportedFileType
     {
         public override String[] FileExtensions { get { return new String[] { "tmp", "tem", "win", "des", "sno" }; } }
         public override String ShortTypeName { get { return "PCTile"; } }
@@ -31,7 +31,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 hdrIndexImages;
         protected Int32 hdrIndexTilesetImagesList;
         protected List<PCTile> m_TilesList;
-        protected Color[] m_Palette = null;
         protected Byte[][] m_Tiles;
         protected Boolean[] m_TileUseList;
 
@@ -53,19 +52,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return m_TilesList.Cast<SupportedFileType>().ToArray(); } }
 
-        public override void SetColors(Color[] palette)
-        {
-            m_Palette = palette.ToArray();
-            base.SetColors(palette);
-            if (m_TilesList == null)
-                return;
-            foreach (PCTile pcTile in this.m_TilesList)
-            {
-                pcTile.Origin = null;
-                pcTile.SetColors(palette);
-                pcTile.Origin = this;
-            }
-        }
 
         public override void LoadFile(String filename)
         {
@@ -81,6 +67,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
+            // TODO: add frames support?
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException("Can only save 8 BPP images as this type.");
             Bitmap bitmap = fileToSave.GetBitmap();
@@ -142,7 +129,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Array.Copy(finalIndices, 0, finalData, indexTilesetImagesList, finalIndices.Length);
             return finalData;
         }
-        
+
         private void LoadFromFileData(Byte[] fileData, String sourceFileName)
         {
             Int32 fileLen = fileData.Length;
@@ -254,7 +241,7 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override Int32 BitsPerColor { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        
+
         public PCTile(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index)
             : base(origin, sourceFileName, tileImage, null, index, 0)
         { }

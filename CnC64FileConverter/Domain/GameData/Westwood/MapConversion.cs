@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Nyerguds.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public static class MapConversion
     {
@@ -16,7 +16,7 @@ namespace Nyerguds.CCTypes
         public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", global::CnC64FileConverter.Properties.Resources.th_temperate);
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
         public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
-        
+
         private static Dictionary<Int32, TileInfo> ReadTileInfo()
         {
             String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
@@ -38,7 +38,7 @@ namespace Nyerguds.CCTypes
                 info.TileName = sectionName;
                 info.Width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
                 info.Height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
-                info.PrimaryHeightType = GeneralUtils.TryParseEnum(tilesetsFile2.GetStringValue(sectionName, "PrimaryType", null), HeightTerrainType.Clear, true);
+                info.PrimaryHeightType = GeneralUtils.TryParseEnum(tilesetsFile2.GetStringValue(sectionName, "PrimaryType", null), TerrainTypeEnh.Clear, true);
                 Char[] types = new Char[info.Width * info.Height];
                 for (Int32 y = 0; y < info.Height; y++)
                 {
@@ -47,7 +47,7 @@ namespace Nyerguds.CCTypes
                     for (Int32 x = 0; x < info.Width; x++)
                         types[y * info.Width + x] = x >= len ? '?' : typechars[x];
                 }
-                HeightTerrainType[] typedCells = new HeightTerrainType[types.Length];
+                TerrainTypeEnh[] typedCells = new TerrainTypeEnh[types.Length];
                 for (Int32 i = 0; i < types.Length; i++)
                 {
                     switch (types[i])
@@ -56,34 +56,40 @@ namespace Nyerguds.CCTypes
                             typedCells[i] = info.PrimaryHeightType;
                             break;
                         case '_':
-                            typedCells[i] = HeightTerrainType.Unused;
+                            typedCells[i] = TerrainTypeEnh.Unused;
                             break;
                         case 'C':
-                            typedCells[i] = HeightTerrainType.Clear;
+                            typedCells[i] = TerrainTypeEnh.Clear;
                             break;
                         case 'W':
-                            typedCells[i] = HeightTerrainType.Water;
+                            typedCells[i] = TerrainTypeEnh.Water;
                             break;
                         case 'I':
-                            typedCells[i] = HeightTerrainType.Rock;
+                            typedCells[i] = TerrainTypeEnh.Rock;
                             break;
                         case 'B':
-                            typedCells[i] = HeightTerrainType.Beach;
+                            typedCells[i] = TerrainTypeEnh.Beach;
                             break;
                         case 'R':
-                            typedCells[i] = HeightTerrainType.Road;
+                            typedCells[i] = TerrainTypeEnh.Road;
                             break;
                         case 'P':
-                            typedCells[i] = HeightTerrainType.CliffPlateau;
+                            typedCells[i] = TerrainTypeEnh.CliffPlateau;
                             break;
                         case 'F':
-                            typedCells[i] = HeightTerrainType.CliffFace;
+                            typedCells[i] = TerrainTypeEnh.CliffFace;
+                            break;
+                        case 'M':
+                            typedCells[i] = TerrainTypeEnh.Smudge;
+                            break;
+                        case 'S':
+                            typedCells[i] = TerrainTypeEnh.Snow;
                             break;
                         default:
                             if (Regex.IsMatch(types[i].ToString(), "^[a-zA-Z]$"))
                                 typedCells[i] = info.PrimaryHeightType;
                             else
-                                typedCells[i] = HeightTerrainType.Unused;
+                                typedCells[i] = TerrainTypeEnh.Unused;
                             break;
                     }
                 }
@@ -172,11 +178,15 @@ namespace Nyerguds.CCTypes
 
         public static CnCMap ConvertMap(CnCMap map, Dictionary<Int32, CnCMapCell> mapping, Byte? defaultHigh, Byte? defaultLow, Boolean toN64, out List<CnCMapCell> errorcells)
         {
-            Byte highByte = defaultHigh.GetValueOrDefault((Byte)0xFF);
+            Byte highByte = defaultHigh.GetValueOrDefault(0xFF);
             Byte lowByte = defaultLow.GetValueOrDefault((Byte)(toN64 ? 0xFF : 0x00));
             CnCMap newmap = new CnCMap(map.GetAsBytes());
             if (toN64)
+            {
                 CleanUpMapClearTerrain(newmap);
+                // Prevents snow cells from being seen as as errors. They are a known anomaly that is removed gracefully.
+                RemoveSnow(newmap);
+            }
             errorcells = new List<CnCMapCell>();
             for (Int32 i = 0; i < newmap.Cells.Length; i++)
             {
@@ -221,13 +231,13 @@ namespace Nyerguds.CCTypes
             return newmapping;
         }
 
-        public static HeightTerrainType[] SimplifyMap(CnCMap mapData)
+        public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData)
         {
-            HeightTerrainType[] simplifiedMap = new HeightTerrainType[64 * 64];
+            TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[64 * 64];
             for (Int32 i = 0; i < mapData.Cells.Length; i++)
             {
                 CnCMapCell cell = mapData.Cells[i];
-                HeightTerrainType terrain = HeightTerrainType.Clear;
+                TerrainTypeEnh terrain = TerrainTypeEnh.Clear;
                 if (cell.HighByte != 0xFF)
                 {
                     TileInfo info;
@@ -253,13 +263,32 @@ namespace Nyerguds.CCTypes
         {
             foreach (CnCMapCell cell in map.Cells)
             {
-                if (cell.HighByte == 0)
+                if (cell.HighByte == 0 // XCC
+                    || (cell.HighByte == 0xFF && cell.LowByte == 0xFF)) // cncmap
                 {
                     cell.HighByte = 0xFF;
                     cell.LowByte = 0x00;
                 }
-                else if (cell.HighByte == 0xFF && cell.LowByte == 0xFF)
-                    cell.LowByte = 0x00;
+            }
+        }
+
+        /// <summary>
+        /// Replaces snow with clear terrain.
+        /// </summary>
+        /// <param name="map"></param>
+        public static void RemoveSnow(CnCMap map)
+        {
+            foreach (CnCMapCell cell in map.Cells)
+            {
+                TileInfo tileInfo;
+                if (!TILEINFO.TryGetValue(cell.HighByte, out tileInfo))
+                    continue;
+                if(tileInfo.TypedCells.Length <= cell.LowByte)
+                    continue;
+                if(tileInfo.TypedCells[cell.LowByte] != TerrainTypeEnh.Snow)
+                    continue;
+                cell.HighByte = 0xFF;
+                cell.LowByte = 0x00;
             }
         }
 
@@ -299,7 +328,7 @@ namespace Nyerguds.CCTypes
             }
             return tileInfo;
         }
-        
+
         protected static void WriteTileInfo()
         {
             //tilesets2.ini - original saving code. To convert frmo tileinfo to tileinfo2

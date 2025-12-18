@@ -179,7 +179,7 @@ namespace SimplePaletteQuantizer.Helpers
                     result = color.R;
                     break;
 
-                case ColorModel.HueSaturationBrightness: 
+                case ColorModel.HueSaturationBrightness:
                     result = Convert.ToInt32(color.GetHue()/HueFactor);
                     break;
 
@@ -240,7 +240,7 @@ namespace SimplePaletteQuantizer.Helpers
 
             return result;
         }
-        
+
         public static void GetColorComponents(ColorModel colorModel, Color color, out Single componentA, out Single componentB, out Single componentC)
         {
             componentA = 0.0f;

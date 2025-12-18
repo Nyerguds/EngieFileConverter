@@ -115,12 +115,14 @@ namespace Nyerguds.Util.UI
 
         private static T FindMoreSpecificItem<T>(Type[] moreSpecificTypesList, String currentPath, Type currentType, out Int32 indexInList) where T : FileTypeBroadcaster
         {
+            indexInList = 0;
+            if (currentPath == null)
+                return default(T);;
             FileDialogItem<T>[] items = moreSpecificTypesList.Select(x => new FileDialogItem<T>(x)).ToArray();
             String ext = Path.GetExtension(currentPath).TrimStart('.');
             T[] specificTypes = IdentifyByExtension<T>(moreSpecificTypesList, currentPath);
             T specificType = default(T);
             Boolean typeFound = false;
-            indexInList = 0;
             if (specificTypes.Length > 0)
             {
                 foreach (T obj in specificTypes)

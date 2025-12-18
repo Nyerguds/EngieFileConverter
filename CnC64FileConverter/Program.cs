@@ -27,8 +27,10 @@ namespace CnC64FileConverter
         /// <returns>The System.Reflection.Assembly that resolves the type, assembly, or resource; or null if the assembly cannot be resolved.</returns>
         private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
-            String dllName = args.Name.Contains(',') ? args.Name.Substring(0, args.Name.IndexOf(',')) : args.Name.Replace(".dll", "");
-            dllName = dllName.Replace(".", "_");
+            String baseName = args.Name;
+            String dllName = baseName.Contains(',') ? baseName.Substring(0, baseName.IndexOf(',')) : baseName.Replace(".dll", "");
+
+            dllName = dllName.Replace(".", "_").Replace("-", "_");
             if (dllName.EndsWith("_resources"))
                 return null;
             System.Resources.ResourceManager rm = new System.Resources.ResourceManager(typeof(Program).Namespace + ".Properties.Resources", System.Reflection.Assembly.GetExecutingAssembly());

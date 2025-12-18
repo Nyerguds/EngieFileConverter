@@ -97,12 +97,12 @@ namespace Nyerguds.ImageManipulation
             this.shiftAmounts[(Int32)ColorComponent.Green] = greenShift;
             this.multipliers [(Int32)ColorComponent.Green] = greenMultiplier;
             this.limitMasks[(Int32)ColorComponent.Green] = GetLimitMask(greenBits, greenShift);
-            
+
             this.bitsAmounts [(Int32)ColorComponent.Blue] = blueBits;
             this.shiftAmounts[(Int32)ColorComponent.Blue] = blueShift;
             this.multipliers [(Int32)ColorComponent.Blue] = blueMultiplier;
             this.limitMasks[(Int32)ColorComponent.Blue] = GetLimitMask(blueBits, blueShift);
-            
+
             this.bitsAmounts [(Int32)ColorComponent.Alpha] = alphaBits;
             this.shiftAmounts[(Int32)ColorComponent.Alpha] = alphaShift;
             this.multipliers [(Int32)ColorComponent.Alpha] = alphaMultiplier;

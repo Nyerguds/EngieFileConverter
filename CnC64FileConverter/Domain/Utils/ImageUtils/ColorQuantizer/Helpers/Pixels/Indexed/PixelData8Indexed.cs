@@ -9,7 +9,7 @@ namespace SimplePaletteQuantizer.Helpers.Pixels.Indexed
         // raw component values
         private Byte index;
 
-        // index methods 
+        // index methods
         public Byte GetIndex(Int32 offset) { return index; }
         public void SetIndex(Int32 offset, Byte value) { index = value; }
     }

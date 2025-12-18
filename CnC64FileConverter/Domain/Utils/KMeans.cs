@@ -72,7 +72,7 @@ namespace Nyerguds.Util
             // makes sense to return the means (at the expense of some method signature uglinesss)
             //
             // another alternative is to return, as an out parameter, some measure of cluster goodness
-            // such as the average distance between cluster means, or the average distance between tuples in 
+            // such as the average distance between cluster means, or the average distance between tuples in
             // a cluster, or a weighted combination of both
             return clustering;
         }
@@ -114,10 +114,10 @@ namespace Nyerguds.Util
                 if (clusterCounts[k] == 0)
                     return false; // Bad clustering. No change to means[][]
 
-            // update, zero-out means so it can be used as scratch matrix 
+            // update, zero-out means so it can be used as scratch matrix
             for (Int32 k = 0; k < numClusters; ++k)
                 ClearMeans(means, k);
-            
+
             for (Int32 k = 0; k < numClusters; k++)
             {
                 Int32 count = 0;

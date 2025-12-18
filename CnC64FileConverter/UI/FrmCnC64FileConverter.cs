@@ -38,20 +38,20 @@ namespace CnC64FileConverter.UI
 
         public FrmCnC64FileConverter()
         {
-            InitializeComponent();
+            this.InitializeComponent();
             this.Text = GetTitle(true);
-            picImage.BackColor = backgroundFillColor;
-            lblTransparentColorVal.BackColor = backgroundFillColor;
+            this.picImage.BackColor = backgroundFillColor;
+            this.lblTransparentColorVal.BackColor = backgroundFillColor;
             PalettePanel.InitPaletteControl(8, palColorViewer, new Color[0], PALETTE_DIM);
             this.palColorViewer.MaxColors = 0;
-            m_DefaultPalettes = LoadDefaultPalettes();
-            m_ReadPalettes = LoadExtraPalettes();
-            RefreshPalettes(false, false);
+            this.m_DefaultPalettes = LoadDefaultPalettes();
+            this.m_ReadPalettes = LoadExtraPalettes();
+            this.RefreshPalettes(false, false);
             ContextMenu cmCopyPreview = new ContextMenu();
             MenuItem mniCopy = new MenuItem("Copy");
             mniCopy.Click += new EventHandler(this.PicImage_CopyPreview);
             cmCopyPreview.MenuItems.Add(mniCopy);
-            picImage.ContextMenu = cmCopyPreview;
+            this.picImage.ContextMenu = cmCopyPreview;
         }
 
         public static String GetTitle(Boolean withAuthor)
@@ -122,7 +122,7 @@ namespace CnC64FileConverter.UI
             SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
             this.LoadFile(path, null, possibleTypes);
         }
-        
+
         private void LoadFile(String path, SupportedFileType selectedType, SupportedFileType[] possibleTypes)
         {
             this.m_Loading = true;
@@ -162,6 +162,7 @@ namespace CnC64FileConverter.UI
                     error = ex;
                     this.m_LoadedFile = null;
                 }
+                this.m_LoadedFile = this.CheckForFrames(path, this.m_LoadedFile);
                 ReloadUi(true);
                 if (error != null)
                     MessageBox.Show(this, "Image loading failed" + ": " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -171,73 +172,105 @@ namespace CnC64FileConverter.UI
                 this.m_Loading = false;
             }
         }
-                
+
+        /// <summary>
+        /// Checks if the current type is frameless, and if so, checks if it is part of a numerical range of frames.
+        /// If so, and all found frames can be loaded as the identified type, the program asks to load all the files
+        /// as frames, instead of loading one file as image.
+        /// </summary>
+        /// <param name="path">path that was opened.</param>
+        /// <param name="currentType">Currently loaded file from the given path.</param>
+        /// <returns>A generic SupportedType object filled with the frames, or the original 'currentType' object if the detect failed or was aborted.</returns>
+        private SupportedFileType CheckForFrames(String path, SupportedFileType currentType)
+        {
+            String minName;
+            String maxName;
+            Boolean hasEmptyFrames;
+            SupportedFileType fr = SupportedFileType.CheckForFrames(path, currentType, out minName, out maxName, out hasEmptyFrames);
+            if (fr == null)
+                return currentType;
+            String emptywarning = hasEmptyFrames ? "\nSome of these frames are empty files. Not every save format supports empty frames." : String.Empty;
+            String message = "The file appears to be part of a range (" + minName + " - " + maxName + ")." + emptywarning + "\n\nDo you wish to load it as frames?";
+            if (MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                return fr;
+            return currentType;
+        }
+
         private void ReloadUi(Boolean fromNewFile)
         {
             Boolean hasFrames = m_LoadedFile != null && m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0;
-            lblFrame.Enabled = hasFrames;
-            numFrame.Enabled = hasFrames;
+            this.lblFrame.Enabled = hasFrames;
+            this.numFrame.Enabled = hasFrames;
+            //this.numFrame.Minimum = -1;
             if (!hasFrames)
             {
-                numFrame.Value = -1;
-                lblNrOfFrames.Visible = false;
+                this.numFrame.Value = -1;
+                this.lblNrOfFrames.Visible = false;
             }
             else
             {
+                if (fromNewFile)
+                    this.numFrame.Value = -1;
                 Int32 last = m_LoadedFile.Frames.Length - 1;
-                numFrame.Maximum = last;
-                lblNrOfFrames.Visible = true;
-                lblNrOfFrames.Text = "/ " + last;
+                this.numFrame.Maximum = last;
+                this.lblNrOfFrames.Visible = true;
+                this.lblNrOfFrames.Text = "/ " + last;
+                //if (last >= 0 && !this.m_LoadedFile.RenderCompositeFrame)
+                //    this.numFrame.Minimum = 0;
             }
             SupportedFileType loadedFile = GetLoadedFile();
-            tsmiSave.Enabled = loadedFile != null;
-            tsmiExport.Enabled = loadedFile != null;
-            this.tsmiCopy.Enabled = loadedFile != null;
-            tsmiToHeightMap.Enabled = loadedFile is FileMapPc;
-            tsmiToPlateaus.Enabled = loadedFile is FileMapPc;
-            tsmiToHeightMapAdv.Enabled = loadedFile is FileMapPc;
-            tsmiTo65x65HeightMap.Enabled = loadedFile is FileImage;
+            Boolean hasFile = loadedFile != null;
+            this.tsmiSave.Enabled = hasFile;
+            this.tsmiExport.Enabled = hasFile;
+            this.tsmiSaveFrames.Enabled = hasFile && m_LoadedFile.ContainsFrames;
+            this.tsmiCopy.Enabled = hasFile;
+            // C&C64 toolsets
+            this.tsmiToHeightMap.Enabled = loadedFile is FileMapCc1Pc;
+            this.tsmiToPlateaus.Enabled = loadedFile is FileMapCc1Pc;
+            this.tsmiToHeightMapAdv.Enabled = loadedFile is FileMapCc1Pc;
+            this.tsmiTo65x65HeightMap.Enabled = loadedFile is FileImage && !loadedFile.ContainsFrames && loadedFile.Width == 64 && loadedFile.Height == 64;
             // 4 is the supertype; 8 the derivative
             this.tsmiTilesetsToFrames.Enabled = loadedFile is FileTilesN64Bpp4;
             this.tsmiTilesetsToTilesetFiles.Enabled = loadedFile is FileTilesN64Bpp4;
-            if (loadedFile == null)
+
+            if (!hasFile)
             {
                 String emptystr = "---";
-                lblValFilename.Text = emptystr;
-                lblValType.Text = emptystr;
+                this.lblValFilename.Text = emptystr;
+                this.lblValType.Text = emptystr;
                 this.toolTip1.SetToolTip(lblValType, null);
-                lblValWidth.Text = emptystr;
-                lblValHeight.Text = emptystr;
-                lblValColorFormat.Text = emptystr;
-                lblValColorsInPal.Text = emptystr;
+                this.lblValWidth.Text = emptystr;
+                this.lblValHeight.Text = emptystr;
+                this.lblValColorFormat.Text = emptystr;
+                this.lblValColorsInPal.Text = emptystr;
                 this.cmbPalettes.Enabled = false;
                 this.cmbPalettes.SelectedIndex = 0;
                 this.btnResetPalette.Enabled = false;
                 this.btnSavePalette.Enabled = false;
-                picImage.Image = null;
-                RefreshImage();
+                this.picImage.Image = null;
+                this.RefreshImage();
                 PalettePanel.InitPaletteControl(8, palColorViewer, new Color[0], PALETTE_DIM);
                 this.palColorViewer.MaxColors = 0;
                 return;
             }
             Int32 bpc = loadedFile.BitsPerColor;
-            lblValFilename.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.LoadedFileName);
-            lblValType.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ShortTypeDescription);
+            this.lblValFilename.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.LoadedFileName);
+            this.lblValType.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ShortTypeDescription);
             this.toolTip1.SetToolTip(lblValType, lblValType.Text);
-            lblValWidth.Text = loadedFile.Width.ToString();
-            lblValHeight.Text = loadedFile.Height.ToString();
-            lblValColorFormat.Text = bpc == 0 ? "N/A" : (bpc + " BPP" + (bpc == 4 || bpc == 8 ? " (paletted)" : String.Empty));
+            this.lblValWidth.Text = loadedFile.Width.ToString();
+            this.lblValHeight.Text = loadedFile.Height.ToString();
+            this.lblValColorFormat.Text = bpc == 0 ? "N/A" : (bpc + " BPP" + (bpc == 4 || bpc == 8 ? " (paletted)" : String.Empty));
             Color[] palette = loadedFile.GetColors();
             Int32 exposedColours = loadedFile.ColorsInPalette;
             Int32 actualColors = palette == null? 0 : palette.Length;
             Boolean needsPalette = exposedColours != actualColors;
-            lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColours + " in file)" : String.Empty);
+            this.lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColours + " in file)" : String.Empty);
             this.cmbPalettes.Enabled = needsPalette;
-            picImage.Image = loadedFile.GetBitmap();
+            this.picImage.Image = loadedFile.GetBitmap();
             this.RefreshPalettes(false, false);
             if (needsPalette && fromNewFile)
             {
-                CmbPalettes_SelectedIndexChanged(null, null);
+                this.CmbPalettes_SelectedIndexChanged(null, null);
             }
             else
             {
@@ -248,9 +281,11 @@ namespace CnC64FileConverter.UI
 
         private ColorStatus GetColorStatus()
         {
-            SupportedFileType loadedFile = GetLoadedFile();
+            SupportedFileType loadedFile = this.GetLoadedFile();
             if (loadedFile == null)
                 return ColorStatus.None;
+            if (loadedFile.FrameParent != null)
+                loadedFile = loadedFile.FrameParent;
             Color[] cols = loadedFile.GetColors();
             if (cols == null || cols.Length == 0)
                 return ColorStatus.None;
@@ -263,9 +298,9 @@ namespace CnC64FileConverter.UI
 
         public List<PaletteDropDownInfo> GetPalettes(Int32 bpp, Boolean reloadFiles)
         {
-            List<PaletteDropDownInfo> allPalettes = m_DefaultPalettes.Where(p => p.BitsPerPixel == bpp).ToList();
+            List<PaletteDropDownInfo> allPalettes = this.m_DefaultPalettes.Where(p => p.BitsPerPixel == bpp).ToList();
             if (reloadFiles)
-                m_ReadPalettes = LoadExtraPalettes();
+                this.m_ReadPalettes = LoadExtraPalettes();
             allPalettes.AddRange(this.m_ReadPalettes.Where(p => p.BitsPerPixel == bpp));
             return allPalettes;
         }
@@ -285,50 +320,70 @@ namespace CnC64FileConverter.UI
             if (this.m_StartupParamPath != null)
                 this.LoadFile(this.m_StartupParamPath, null, null);
             else
-                ReloadUi(true);
+                this.ReloadUi(true);
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
         {
-            this.Save(false);
+            this.Save(false, false);
         }
 
         private void BtnSaveExport_Click(object sender, EventArgs e)
         {
-            this.Save(true);
+            this.Save(true, false);
         }
-        
-        private void Save(Boolean export)
+
+        private void BtnSaveFrames_Click(object sender, EventArgs e)
+        {
+            this.Save(true, true);
+        }
+
+        private void Save(Boolean export, Boolean frames)
         {
             Boolean saveRaw = (Control.ModifierKeys & Keys.Shift) != 0;
-            if (m_LoadedFile == null)
+            if (this.m_LoadedFile == null)
                 return;
             SupportedFileType selectedItem;
             Boolean hasFrames = m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0;
-            SupportedFileType loadedFile = hasFrames && numFrame.Value != -1 ? m_LoadedFile.Frames[(Int32)numFrame.Value] : m_LoadedFile;
+            SupportedFileType loadedFile = !frames && hasFrames && numFrame.Value != -1 ? m_LoadedFile.Frames[(Int32)numFrame.Value] : m_LoadedFile;
             Type selectType = null;
             if (export || !SupportedFileType.SupportedSaveTypes.Contains(loadedFile.GetType()))
                 selectType = loadedFile.PreferredExportType.GetType();
             if (selectType == null)
                 selectType = loadedFile.GetType();
-
-            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, SupportedFileType.SupportedSaveTypes, true, loadedFile.LoadedFile, out selectedItem);
+            Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
+            if (frames)
+                saveTypes = saveTypes.Where(t => !(((SupportedFileType)Activator.CreateInstance(t)).ContainsFrames)).ToArray();
+            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, saveTypes, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
             try
             {
-                //TODO somehow detect holding [shift]?
-                selectedItem.SaveAsThis(loadedFile, filename, saveRaw);
+                if (!frames)
+                    selectedItem.SaveAsThis(loadedFile, filename, saveRaw);
+                else
+                {
+                    String framename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename));
+                    String extension = Path.GetExtension(filename);
+                    for (Int32 i = 0; i < loadedFile.Frames.Length; i++)
+                    {
+                        SupportedFileType frame = loadedFile.Frames[i];
+                        String framePath = framename + "-" + i.ToString("D5") + extension;
+                        if (frame.GetBitmap() == null) // Allow empty frames as empty files.
+                            File.WriteAllBytes(framePath, new Byte[0]);
+                        else
+                            selectedItem.SaveAsThis(frame, framePath, saveRaw);
+                    }
+                }
             }
             catch (NotSupportedException ex)
             {
-                String message = ex.Message;
-                if (String.IsNullOrEmpty(message))
-                    message = "Cannot save type " + loadedFile.ShortTypeName + " as type " + selectedItem.ShortTypeName + ".";
+                String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
+                    + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
                 MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
-        
+
         private void BtnExit_Click(object sender, EventArgs e)
         {
             this.Close();
@@ -351,9 +406,9 @@ namespace CnC64FileConverter.UI
 
         private void NumZoom_ValueChanged(object sender, EventArgs e)
         {
-            RefreshImage();
+            this.RefreshImage();
         }
-        
+
         private void RefreshImage()
         {
             Bitmap bm = (Bitmap)picImage.Image;
@@ -397,7 +452,7 @@ namespace CnC64FileConverter.UI
 
         private void PicImage_Click(object sender, EventArgs e)
         {
-            pnlImageScroll.Focus();
+            this.pnlImageScroll.Focus();
         }
 
         private void LblTransparentColorVal_Click(object sender, EventArgs e)
@@ -411,8 +466,8 @@ namespace CnC64FileConverter.UI
             if (res == DialogResult.OK || res == DialogResult.Yes)
             {
                 this.backgroundFillColor = cdl.Color;
-                lblTransparentColorVal.BackColor = backgroundFillColor;
-                picImage.BackColor = backgroundFillColor;
+                this.lblTransparentColorVal.BackColor = backgroundFillColor;
+                this.picImage.BackColor = backgroundFillColor;
                 this.NumZoom_ValueChanged(null, null);
             }
         }
@@ -431,10 +486,10 @@ namespace CnC64FileConverter.UI
         {
             GenerateHeightMap(false);
         }
-        
+
         private void GenerateHeightMap(Boolean selectHeightMap)
         {
-            if (!(this.m_LoadedFile is FileMapPc))
+            if (!(this.m_LoadedFile is FileMapCc1Pc))
                 return;
             String loadedPath = this.m_LoadedFile.LoadedFile;
             String baseFileName = Path.Combine(Path.GetDirectoryName(loadedPath), Path.GetFileNameWithoutExtension(loadedPath));
@@ -465,7 +520,7 @@ namespace CnC64FileConverter.UI
                     return;
                 }
             }
-            FileMapPc map = (FileMapPc)this.m_LoadedFile;
+            FileMapCc1Pc map = (FileMapCc1Pc)this.m_LoadedFile;
             this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map, plateauImage, null);
             this.ReloadUi(false);
         }
@@ -486,9 +541,9 @@ namespace CnC64FileConverter.UI
 
         private void TsmiToPlateaus_Click(object sender, EventArgs e)
         {
-            if (!(this.m_LoadedFile is FileMapPc))
+            if (!(this.m_LoadedFile is FileMapCc1Pc))
                 return;
-            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64((FileMapPc)this.m_LoadedFile, "_lvl");
+            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64((FileMapCc1Pc)this.m_LoadedFile, "_lvl");
             this.ReloadUi(false);
         }
 
@@ -633,7 +688,7 @@ namespace CnC64FileConverter.UI
             Keys k = Control.ModifierKeys;
             if ((k & Keys.Control) != 0)
             {
-                this.numZoom.EnteredValue = this.numZoom.LimitRange(this.numZoom.EnteredValue + (e.Delta / 120));
+                this.numZoom.EnteredValue = this.numZoom.Constrain(this.numZoom.EnteredValue + (e.Delta / 120));
                 HandledMouseEventArgs args = e as HandledMouseEventArgs;
                 if (args != null)
                     args.Handled = true;

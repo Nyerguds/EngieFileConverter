@@ -160,7 +160,7 @@ namespace SimplePaletteQuantizer.Helpers
         public Byte[] Copy()
         {
             // transfers whole image to a working memory
-            Byte[] result = new Byte[Size]; 
+            Byte[] result = new Byte[Size];
             Marshal.Copy(bitmapData.Scan0, result, 0, Size);
 
             // returns the backup
@@ -223,7 +223,7 @@ namespace SimplePaletteQuantizer.Helpers
                 result = pixel.Color;
             }
             // returns the found color
-            return result;    
+            return result;
         }
 
         public Int32 ReadIndexUsingPixel(Pixel pixel, Byte[] buffer = null)
@@ -370,11 +370,9 @@ namespace SimplePaletteQuantizer.Helpers
                 lineTasks[index] = new LineTask((Int32) pointOffset, (Int32) (pointOffset + pointsPerTask));
                 pointOffset += pointsPerTask;
             }
-
             // process the image in a parallel manner
             foreach (LineTask lineTask in lineTasks)
                 process(lineTask);
-            
             //Parallel.ForEach(lineTasks, process);
         }
 
@@ -387,10 +385,10 @@ namespace SimplePaletteQuantizer.Helpers
             // checks parameters
             Guard.CheckNull(path, "path");
             Guard.CheckNull(processingAction, "processPixelFunction");
-            
+
             // determines mode
             Boolean isAdvanced = processingAction is ProcessPixelAdvancedFunction;
-            
+
             // prepares the per pixel task
             Action<LineTask> processPerPixel = lineTask =>
             {
@@ -515,7 +513,7 @@ namespace SimplePaletteQuantizer.Helpers
         {
             TransformPerPixelBase(target, path, transformPixelAdvancedFunction, parallelTaskCount);
         }
-        
+
         #endregion
 
         #region | Scan colors methods |
@@ -585,7 +583,7 @@ namespace SimplePaletteQuantizer.Helpers
         #endregion
 
         #region | Quantize methods |
-        
+
         public void Quantize(ImageBuffer target, IColorQuantizer quantizer, Int32 colorCount, Int32 parallelTaskCount = 4)
         {
             // checks parameters
@@ -616,7 +614,6 @@ namespace SimplePaletteQuantizer.Helpers
 
                 // marks pixel as processed by default
                 Boolean result = true;
-                
                 // returns the result
                 return result;
             };
@@ -624,7 +621,6 @@ namespace SimplePaletteQuantizer.Helpers
             // step 5 - generates the target image
             IList<Point> path = quantizer.GetPointPath(Width, Height);
             TransformPerPixel(target, path, quantize, parallelTaskCount);
-            
             // step 8 - clean-up
             quantizer.Finish();
         }

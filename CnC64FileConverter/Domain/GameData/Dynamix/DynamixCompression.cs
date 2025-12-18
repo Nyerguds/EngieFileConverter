@@ -1,6 +1,7 @@
 ﻿using System;
+using Nyerguds.Util;
 
-namespace Nyerguds.Util
+namespace Nyerguds.GameData.Dynamix
 {
     /// <summary>
     /// Dynamix compression / decompression class. Offers functionality to decompress chunks using RLE or LZW decompression,

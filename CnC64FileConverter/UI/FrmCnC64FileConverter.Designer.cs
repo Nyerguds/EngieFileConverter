@@ -71,6 +71,7 @@
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
             this.picImage = new RedCell.UI.Controls.PixelBox();
+            this.tsmiSaveFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numZoom)).BeginInit();
@@ -246,6 +247,7 @@
             this.tsmiOpen,
             this.tsmiSave,
             this.tsmiExport,
+            this.tsmiSaveFrames,
             this.tsmiExit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
@@ -255,7 +257,7 @@
             // 
             this.tsmiOpen.Name = "tsmiOpen";
             this.tsmiOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.tsmiOpen.Size = new System.Drawing.Size(199, 22);
+            this.tsmiOpen.Size = new System.Drawing.Size(202, 22);
             this.tsmiOpen.Text = "&Open File";
             this.tsmiOpen.Click += new System.EventHandler(this.BtnOpen_Click);
             // 
@@ -263,7 +265,7 @@
             // 
             this.tsmiSave.Name = "tsmiSave";
             this.tsmiSave.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.tsmiSave.Size = new System.Drawing.Size(199, 22);
+            this.tsmiSave.Size = new System.Drawing.Size(202, 22);
             this.tsmiSave.Text = "&Save File...";
             this.tsmiSave.Click += new System.EventHandler(this.BtnSave_Click);
             // 
@@ -271,7 +273,7 @@
             // 
             this.tsmiExport.Name = "tsmiExport";
             this.tsmiExport.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
-            this.tsmiExport.Size = new System.Drawing.Size(199, 22);
+            this.tsmiExport.Size = new System.Drawing.Size(202, 22);
             this.tsmiExport.Text = "Quick Conv&ert...";
             this.tsmiExport.Click += new System.EventHandler(this.BtnSaveExport_Click);
             // 
@@ -279,7 +281,7 @@
             // 
             this.tsmiExit.Name = "tsmiExit";
             this.tsmiExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.tsmiExit.Size = new System.Drawing.Size(199, 22);
+            this.tsmiExit.Size = new System.Drawing.Size(202, 22);
             this.tsmiExit.Text = "Exit";
             this.tsmiExit.Click += new System.EventHandler(this.BtnExit_Click);
             // 
@@ -518,6 +520,14 @@
             this.picImage.Visible = false;
             this.picImage.Click += new System.EventHandler(this.PicImage_Click);
             // 
+            // tsmiSaveFrames
+            // 
+            this.tsmiSaveFrames.Name = "tsmiSaveFrames";
+            this.tsmiSaveFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
+            this.tsmiSaveFrames.Size = new System.Drawing.Size(202, 22);
+            this.tsmiSaveFrames.Text = "Save as &Frames...";
+            this.tsmiSaveFrames.Click += new System.EventHandler(this.BtnSaveFrames_Click);
+            // 
             // FrmCnC64FileConverter
             // 
             this.AllowDrop = true;
@@ -612,6 +622,7 @@
         private System.Windows.Forms.Button btnSavePalette;
         private System.Windows.Forms.ToolStripMenuItem tsmiCopy;
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.ToolStripMenuItem tsmiSaveFrames;
     }
 }
 

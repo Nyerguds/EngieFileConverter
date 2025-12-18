@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nyerguds.Util;
 
-namespace Nyerguds.Util
+namespace Nyerguds.GameData.Dynamix
 {
     /// <summary>
     /// LZW compression class. Experimental.

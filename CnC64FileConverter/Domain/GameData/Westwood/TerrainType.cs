@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Nyerguds.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public enum TerrainType
     {

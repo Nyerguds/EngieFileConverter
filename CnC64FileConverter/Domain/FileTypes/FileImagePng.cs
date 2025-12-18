@@ -12,6 +12,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             get { return "Portable Network Graphics"; }
         }
+        public override SupportedFileType PreferredExportType { get { return new FileImgN64(); } }
 
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions

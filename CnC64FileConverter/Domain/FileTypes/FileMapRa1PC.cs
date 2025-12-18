@@ -8,7 +8,7 @@ using CnC64FileConverter.Domain.CCTypes;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileMapRAPC : SupportedFileType
+    public class FileMapRa1PC : SupportedFileType
     {
 
         /// <summary>Very short code name for this type.</summary>
@@ -30,7 +30,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void LoadFile(Byte[] fileData)
         {
             String fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
-            IniFile mapini = new IniFile(null, IniFile.ENCODING_DOS_US);
+            IniFile mapini = new IniFile(fileDataText, IniFile.ENCODING_DOS_US);
             ReadRAMap(mapini);
         }
 

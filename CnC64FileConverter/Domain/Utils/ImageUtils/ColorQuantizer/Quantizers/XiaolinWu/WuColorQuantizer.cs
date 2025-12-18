@@ -288,7 +288,7 @@ namespace SimplePaletteQuantizer.Quantizers.XiaolinWu
                 direction = Red;
 
                 // cannot split empty cube
-                if (cutRed[0] < 0) return false; 
+                if (cutRed[0] < 0) return false;
             }
             else
             {
@@ -497,7 +497,7 @@ namespace SimplePaletteQuantizer.Quantizers.XiaolinWu
                 }
             }
 
-            // copies the per pixel tags 
+            // copies the per pixel tags
             for (Int32 index = 0; index < imageSize; ++index)
             {
                 quantizedPixels[index] = tag[quantizedPixels[index]];

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace Nyerguds.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public class TileInfo
     {
@@ -17,7 +15,7 @@ namespace Nyerguds.CCTypes
         /// <summary>Obsolete. No longer used since the switch to tilesets2. TypedCells is used instead.</summary>
         public List<Int32> SecondaryTypeCells;
         public Int32 NameID;
-        public HeightTerrainType PrimaryHeightType = HeightTerrainType.Clear;
-        public HeightTerrainType[] TypedCells = new HeightTerrainType[0];
+        public TerrainTypeEnh PrimaryHeightType = TerrainTypeEnh.Clear;
+        public TerrainTypeEnh[] TypedCells = new TerrainTypeEnh[0];
     }
 }

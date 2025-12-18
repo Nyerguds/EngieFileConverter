@@ -6,11 +6,12 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Nyerguds.GameData.Westwood;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileImgLcw : SupportedFileType
+    public class FileImgWwLcw : SupportedFileType
     {
         private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 10, 5, 5, 5, 0, 0, 0, true);
         public override Int32 Width { get { return hdrWidth; } }
@@ -23,12 +24,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "BRImg"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
-        public override String ShortTypeDescription { get { return "LCW Image file"; } }
+        public override String ShortTypeDescription { get { return "Blade Runner LCW image"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get{ return 16; } }
 
-        public FileImgLcw() { }
-        
+        public FileImgWwLcw() { }
+
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData);
@@ -40,7 +41,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData);
             SetFileNames(filename);
         }
-        
+
         public override Boolean ColorsChanged()
         {
             return false;
@@ -50,7 +51,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             return SaveImg(fileToSave.GetBitmap());
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData)
         {
             if (fileData.Length < DATAOFFSET)
@@ -65,7 +66,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             if (!this.hdrId.SequenceEqual(Encoding.ASCII.GetBytes("LCW")))
                 throw new FileTypeLoadException("File does not start with signature \"LCW\".");
-            
+            Image.FromFile("file..path");
             // WARNING! The hi-colour format is 16 BPP, but the image data is converted to 32 bpp for creating the actual image!
             Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor);
             Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor) * this.Height;
@@ -73,7 +74,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             try
             {
                 Int32 offset = DATAOFFSET;
-                CHRONOLIB.Compression.WWCompression.LcwUncompress(fileData, ref offset, imageData);
+                WWCompression.LcwUncompress(fileData, ref offset, imageData);
                 imageData = Convert16bTo32b(imageData, 0, this.Width, this.hdrHeight, ref stride);
             }
             catch (Exception e)
@@ -98,7 +99,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride);
             imageData = Convert32bTo16b(imageData, image.Width, image.Height,ref stride);
-            Byte[] compressedData = CHRONOLIB.Compression.WWCompression.LcwCompress(imageData);
+            Byte[] compressedData = Nyerguds.GameData.Westwood.WWCompression.LcwCompress(imageData);
             Byte[] fullData = new Byte[compressedData.Length + DATAOFFSET];
             fullData[0] = (Byte)'L';
             fullData[1] = (Byte)'C';
@@ -145,7 +146,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             stride = newStride;
             return newImageData;
         }
-        
+
         protected void ReadHeader(Byte[] headerBytes)
         {
             this.hdrId = new Byte[3];

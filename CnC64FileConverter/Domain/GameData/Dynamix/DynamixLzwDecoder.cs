@@ -1,6 +1,7 @@
 ﻿using System;
+using Nyerguds.Util;
 
-namespace Nyerguds.Util
+namespace Nyerguds.GameData.Dynamix
 {
     /// <summary>
     /// The Dynamix LZW decompression class.

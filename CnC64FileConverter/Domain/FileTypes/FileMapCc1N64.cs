@@ -1,4 +1,4 @@
-﻿using Nyerguds.CCTypes;
+﻿using Nyerguds.GameData.Westwood;
 using Nyerguds.Util;
 using System;
 using System.Drawing;
@@ -6,17 +6,17 @@ using System.IO;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileMapN64 : FileMapPc
-    {        
+    public class FileMapCc1N64 : FileMapCc1Pc
+    {
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "N64Map"; } }
         public override String ShortTypeDescription { get { return "N64 C&C map file"; } }
         public override String[] FileExtensions { get { return new String[] { "map" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription }; } }
-        public override SupportedFileType PreferredExportType { get { return new FileMapPc(); } }
+        public override SupportedFileType PreferredExportType { get { return new FileMapCc1Pc(); } }
 
-        public FileMapN64() { }
+        public FileMapCc1N64() { }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -33,11 +33,11 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
-            if (!(fileToSave is FileMapPc))
+            if (!(fileToSave is FileMapCc1Pc))
                 throw new NotSupportedException(String.Empty);
-            return ((FileMapPc)fileToSave).N64MapData;
+            return ((FileMapCc1Pc)fileToSave).N64MapData;
         }
-        
+
         protected Bitmap ReadN64MapAsImage(String filename)
         {
             Theater theater = GetTheaterFromIni(filename, (Theater)0xFF);
@@ -63,7 +63,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
     }
 
-    public class FileMapN64FromIni : FileMapN64
+    public class FileMapN64FromIni : FileMapCc1N64
     {
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "ini" }; } }

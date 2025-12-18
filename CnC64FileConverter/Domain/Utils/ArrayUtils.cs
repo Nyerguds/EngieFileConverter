@@ -42,7 +42,7 @@ namespace Nyerguds.Util
                     return false;
             return true;
         }
-        
+
         public static void WriteIntToByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian, UInt32 value)
         {
             Int32 lastByte = bytes - 1;
@@ -54,7 +54,7 @@ namespace Nyerguds.Util
                 data[offs] = (Byte)(value >> (8 * index) & 0xFF);
             }
         }
-        
+
         public static UInt32 ReadIntFromByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian)
         {
             Int32 lastByte = bytes - 1;

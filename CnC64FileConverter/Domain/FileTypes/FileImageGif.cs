@@ -42,7 +42,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             return m_Palette == null ? new Color[0] : m_Palette.ToArray();
         }
-        
+
         public FileImageGif() {}
         protected FileImageGif(Bitmap image, String filename)
         {
@@ -61,7 +61,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             using (Bitmap loadedImage = new Bitmap(ms))
             {
                 m_Palette = loadedImage.Palette.Entries;
-                Int32 length = loadedImage.GetFrameCount(FrameDimension.Time); 
+                Int32 length = loadedImage.GetFrameCount(FrameDimension.Time);
                 if (length > 1)
                 {
                     Bitmap[] tilesList = ImageUtils.GetFramesFromAnimatedGIF(loadedImage);

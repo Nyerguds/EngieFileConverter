@@ -7,6 +7,7 @@ using System.Linq;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.Text;
+using Nyerguds.GameData.Dynamix;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -20,7 +21,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 ColorsInPalette { get { return m_loadedPalette ? this.m_Palette.Length : 0; } }
 
         protected Boolean m_loadedPalette = false;
-        protected Color[] m_Palette = null;
         protected Int32 m_bpp = 8;
 
         public override void SetColors(Color[] palette)
@@ -148,7 +148,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, false, false);
             this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, m_Palette, null);
             //save debug output
-            File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
+            //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
@@ -237,7 +237,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             scrChunk.IsContainer = true;
             return scrChunk.WriteChunk();
         }
-       
+
     }
 
 }

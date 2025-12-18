@@ -12,7 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Nyerguds.CCTypes;
+using Nyerguds.GameData.Westwood;
 
 namespace CnC64FileConverter
 {
@@ -23,11 +23,8 @@ namespace CnC64FileConverter
         /// </summary>
         public static Int32 Run(String[] args)
         {
-            //if (AttachConsole(-1))
-            //    Console.ReadKey();
             if (args.Length > 1)
                 return ConvertImage(args);
-            
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new FrmCnC64FileConverter(args));
@@ -39,13 +36,13 @@ namespace CnC64FileConverter
 
 
         public static Int32 ConvertImage(String[] args)
-        {            
+        {
             Boolean hasconsole = AttachConsole(-1);
             Boolean showErrors = true;
             Boolean showFeedback = false;
             Boolean noCompress = false;
             Boolean tilesets = false;
-            
+
             Int32 i;
             Boolean readPaletteFile = false;
             String paletteFile = null;
@@ -70,7 +67,7 @@ namespace CnC64FileConverter
                 if (String.Equals(args[i], "/P", StringComparison.InvariantCultureIgnoreCase) && paletteFile == null)
                     readPaletteFile = true;
             }
-            if (!hasconsole) 
+            if (!hasconsole)
             {
                 showErrors = false;
                 showFeedback = false;
@@ -175,7 +172,6 @@ namespace CnC64FileConverter
                         Console.Write(feedback);
                     Console.WriteLine("Error: " + e.Message);
                 }
-                
                 return 1;
             }
             return 0;

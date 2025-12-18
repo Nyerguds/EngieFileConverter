@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace SimplePaletteQuantizer.Helpers.Pixels.NonIndexed
 {
     /// <summary>
-    /// Name |          Blue         |        Green          |           Red         | 
+    /// Name |          Blue         |        Green          |           Red         |
     /// Bit  |00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|20|21|22|23|
     /// Byte |00000000000000000000000|11111111111111111111111|22222222222222222222222|
     /// </summary>

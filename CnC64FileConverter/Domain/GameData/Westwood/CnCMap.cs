@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace Nyerguds.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public class CnCMap
     {
@@ -116,7 +116,7 @@ namespace Nyerguds.CCTypes
         {
             return Value.ToString("X4");
         }
-        
+
         public Int32 CompareTo(CnCMapCell other)
         {
             return this.Value.CompareTo(other.Value);

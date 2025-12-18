@@ -5,12 +5,12 @@ using System.IO;
 using System.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
-using Nyerguds.CCTypes;
+using Nyerguds.GameData.Westwood;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    
-    public abstract class FileTilesN64 : SupportedFileType
+
+    public abstract class FileTilesCc1N64 : SupportedFileType
     {
         protected abstract Int32 Bpp { get; }
         public override String[] FileExtensions { get { return new String[] { "da" + Bpp }; } }
@@ -20,7 +20,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected String ExtPalIndex { get { return "nd" + Bpp; } }
         protected String ExtPalFile { get { return "pa" + Bpp; } }
         protected String ExtTileIds { get { return "tl" + Bpp; } }
-        protected Color[] m_palette;
         protected N64Tile[] m_tilesList = new N64Tile[0];
         protected Byte[][] m_rawTiles;
         protected Byte[] m_palIndexFile;
@@ -30,33 +29,14 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_tilesList.Cast<SupportedFileType>().ToArray(); } }
 
-        public override Int32 ColorsInPalette { get { return this.m_palette == null ? 0 : this.m_palette.Length; } }
+        public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : this.m_Palette.Length; } }
         public override Int32 BitsPerColor { get { return 8; } }
 
         public override Color[] GetColors()
         {
-            return this.m_palette == null ? new Color[0] : this.m_palette.ToArray();
+            return this.m_Palette == null ? new Color[0] : this.m_Palette.ToArray();
         }
-        
-        public override void SetColors(Color[] palette)
-        {
-            if (this.m_backupPalette == null)
-                this.m_backupPalette = GetColors();
-            this.m_palette = palette;
-            base.SetColors(palette);
-            Int32 singlePalSize = 1 << Bpp;
-            foreach (N64Tile tile in this.m_tilesList)
-            {
-                Color[] subPal = new Color[singlePalSize];
-                if ((tile.PaletteIndex + 1) * singlePalSize > palette.Length)
-                    continue;
-                Array.Copy(this.m_palette, tile.PaletteIndex * singlePalSize, subPal, 0, singlePalSize);
-                tile.Origin = null;
-                tile.SetColors(subPal);
-                tile.Origin = this;
-            }
-        }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             throw new FileTypeLoadException("Tilesets cannot be loaded from byte array; they require file names.");
@@ -103,7 +83,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (tileIdsFile.Length != entries * 2)
                 throw new FileTypeLoadException("Tileset load failed: amount of entries in " + ExtTileIds + "file does not match those in " + ExtData + " file.");
             this.MakeTilesList(filename, m_dataFile, m_palIndexFile, tileIdsFile, palette);
-            this.m_palette = palette.GetColors();
+            this.m_Palette = palette.GetColors();
             this.BuildFullImage();
             this.LoadedFile = filename;
             this.LoadedFileName = fileNameBase + "." + ExtData + "/" + ExtPalIndex + "/" + ExtPalFile + "/" + ExtTileIds;
@@ -158,13 +138,13 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             throw new NotSupportedException("Saving as this type is not supported.");
         }
-        
+
         protected override void BuildFullImage()
         {
             Int32 nrOftiles = this.m_rawTiles.Length;
-            this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_rawTiles, 24, 24, 24, nrOftiles, this.m_palette, this.m_CompositeFrameTilesWidth);
-            if (this.m_palette.Length < 0x100)
-                this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_palette);
+            this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_rawTiles, 24, 24, 24, nrOftiles, this.m_Palette, this.m_CompositeFrameTilesWidth);
+            if (this.m_Palette.Length < 0x100)
+                this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
         }
 
         private Byte[] AdjustTo8BitPalette(Byte[] dataFile, Byte[] palIndexFile, Int32 width, Int32 height, ref Int32 stride)
@@ -183,7 +163,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             stride = width;
             return imageData;
         }
-        
+
         public void ConvertToTiles(String outputFolder, String baseName, SupportedFileType outputType)
         {
             if (!(outputType is FileImage))
@@ -204,13 +184,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     }
 
-    public class FileTilesN64Bpp4 : FileTilesN64
+    public class FileTilesN64Bpp4 : FileTilesCc1N64
     {
         protected override Int32 Bpp { get { return 4; } }
         protected override FilePaletteN64 PaletteType { get { return new FilePaletteN64Pa4(); } }
     }
 
-    public class FileTilesN64Bpp8 : FileTilesN64
+    public class FileTilesN64Bpp8 : FileTilesCc1N64
     {
         protected override Int32 Bpp { get { return 8; } }
         protected override FilePaletteN64 PaletteType { get { return new FilePaletteN64Pa8(); } }
@@ -222,9 +202,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "N64Tile"; } }
         public override String ShortTypeDescription { get { return "N64 " +this.Bpp + "-bit terrain tile";} }
         public override String[] FileExtensions { get { return new String[0]; } }
-        public override SupportedFileType PreferredExportType { get { return new FileImagePng(); } }
 
-        public SupportedFileType Origin { get; set; }
         public String SourceFileName { get; private set; }
         public CnCMapCell CellData { get; private set; }
         public Int32 PaletteIndex { get; private set; }
@@ -233,7 +211,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public N64Tile(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte? highByte, Byte lowByte, Int32 paletteIndex)
         {
-            this.Origin = origin;
+            this.FrameParent = origin;
             this.SourceFileName = sourceFileName;
             m_LoadedImage = tileImage;
             TileInfo ti = null;
@@ -245,22 +223,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.LoadedFile = Path.Combine(Path.GetDirectoryName(sourceFileName), LoadedFileName);
             this.CellData = new CnCMapCell(highByte ?? 0xFF, lowByte);
             this.PaletteIndex = paletteIndex;
-        }
-
-        public override void SetColors(Color[] palette)
-        {
-            base.SetColors(palette);
-            if (this.Origin == null || this.PaletteIndex < 0)
-                return;
-            // Sets color in origin object, which will in turn adjust all separate tile palettes.
-            Int32 singlePalSize = 1 << Bpp;
-            if (palette.Length > singlePalSize)
-                return;
-            Color[] cols = this.Origin.GetColors();
-            if (cols.Length < singlePalSize * (PaletteIndex + 1))
-                return;
-            Array.Copy(palette, 0, cols, singlePalSize * PaletteIndex, singlePalSize);
-            this.Origin.SetColors(cols);
         }
 
         public override String ToString()

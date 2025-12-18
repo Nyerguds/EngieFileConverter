@@ -93,7 +93,7 @@ namespace SimplePaletteQuantizer.Helpers
         /// </value>
         public Boolean IsIndexed
         {
-            get { return Parent.IsIndexed; }    
+            get { return Parent.IsIndexed; }
         }
 
         #endregion
@@ -181,8 +181,8 @@ namespace SimplePaletteQuantizer.Helpers
         /// <param name="y">The Y coordinate.</param>
         public void Update(Int32 x, Int32 y)
         {
-            X = x; 
-            Y = y; 
+            X = x;
+            Y = y;
             bitOffset = Parent.GetBitOffset(x);
         }
 

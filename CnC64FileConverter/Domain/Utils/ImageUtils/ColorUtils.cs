@@ -5,7 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
-using Nyerguds.CCTypes;
+using Nyerguds.GameData.Westwood;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -38,12 +38,11 @@ namespace Nyerguds.ImageManipulation
 
         public static Boolean HasGrayPalette(Bitmap image)
         {
-            Int32 grayPfs = Math.Min(8, Image.GetPixelFormatSize(image.PixelFormat));
-            Color[] grayPalette = PaletteUtils.GenerateGrayPalette(grayPfs, false, false);
-
             PixelFormat pf = image.PixelFormat;
             if (pf != PixelFormat.Format1bppIndexed && pf != PixelFormat.Format4bppIndexed && pf != PixelFormat.Format8bppIndexed)
                 return false;
+            Int32 grayPfs = Math.Min(8, Image.GetPixelFormatSize(image.PixelFormat));
+            Color[] grayPalette = PaletteUtils.GenerateGrayPalette(grayPfs, false, false);
             Color[] pal = image.Palette.Entries;
             if (pal.Length != grayPalette.Length)
                 return false;
@@ -56,7 +55,7 @@ namespace Nyerguds.ImageManipulation
             }
             return true;
         }
-                
+
         public static Color[] GetEightBitColorPalette(SixBitColor[] sixbitpalette)
         {
             Color[] eightbitpalette = new Color[sixbitpalette.Length];
@@ -64,7 +63,7 @@ namespace Nyerguds.ImageManipulation
                 eightbitpalette[i] = sixbitpalette[i].GetAsColor();
             return eightbitpalette;
         }
-        
+
         public static SixBitColor[] GetSixBitColorPalette(Color[] eightbitpalette)
         {
             SixBitColor[] sixbitpalette = new SixBitColor[eightbitpalette.Length];
@@ -72,7 +71,7 @@ namespace Nyerguds.ImageManipulation
                 sixbitpalette[i] = new SixBitColor(eightbitpalette[i]);
             return sixbitpalette;
         }
-        
+
         public static void WriteSixBitPaletteFile(Color[] palette, String palfilename)
         {
             SixBitColor[] newpal = GetSixBitColorPalette(palette);
@@ -201,6 +200,6 @@ namespace Nyerguds.ImageManipulation
             }
             return colorMatch;
         }
-        
+
     }
 }

@@ -1,4 +1,4 @@
-﻿using Nyerguds.CCTypes;
+﻿using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Ini;
 using System;
@@ -21,27 +21,27 @@ namespace CnC64FileConverter.Domain.HeightMap
         private const Int32 WATER_HEIGHT_DIFF = -0x20;
         private static readonly Color[] LEVEL_COLORS = Enumerable.Range(0, 5).Select(x => Color.FromArgb(Math.Min(0xFF, BASE_HEIGHT * x), Math.Min(0xFF, BASE_HEIGHT * x), Math.Min(0xFF, BASE_HEIGHT * x))).ToArray();
 
-        public static FileImagePng GeneratePlateauImage64x64(FileMapPc mapFile, String suffix)
+        public static FileImagePng GeneratePlateauImage64x64(FileMapCc1Pc mapFile, String suffix)
         {
             return GenerateHeightMapImage64x64(mapFile, null, true, suffix);
         }
 
-        public static FileImagePng GenerateHeightMapImage64x64(FileMapPc mapFile, Bitmap plateauLevelsImage, String suffix)
+        public static FileImagePng GenerateHeightMapImage64x64(FileMapCc1Pc mapFile, Bitmap plateauLevelsImage, String suffix)
         {
             return GenerateHeightMapImage64x64(mapFile, plateauLevelsImage, false, suffix);
         }
 
-        private static FileImagePng GenerateHeightMapImage64x64(FileMapPc map, Bitmap plateauLevelsImage, Boolean forPlateau, String returnNameSuffix)
+        private static FileImagePng GenerateHeightMapImage64x64(FileMapCc1Pc map, Bitmap plateauLevelsImage, Boolean forPlateau, String returnNameSuffix)
         {
             String loadedPath = map.LoadedFile;
             String baseFileName = Path.Combine(Path.GetDirectoryName(loadedPath), Path.GetFileNameWithoutExtension(loadedPath));
             String iniFileName = baseFileName + ".ini";
             String pngFileName = baseFileName + (returnNameSuffix ?? String.Empty) + ".png";
             IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
-            
+
             if (forPlateau)
                 plateauLevelsImage = null;
-            HeightTerrainType[] simpleMap = MapConversion.SimplifyMap(map.Map);
+            TerrainTypeEnh[] simpleMap = MapConversion.SimplifyMap(map.Map);
 
             Int32 mapStartX = 1;
             Int32 mapStartY = 1;
@@ -83,29 +83,32 @@ namespace CnC64FileConverter.Domain.HeightMap
                 Int32 val = BASE_HEIGHT;
                 if (eightBitPlateauData != null)
                     val = val / 2 * eightBitPlateauData[i];
-                HeightTerrainType cur = simpleMap[i];
+                TerrainTypeEnh cur = simpleMap[i];
                 switch (cur)
                 {
-                    case HeightTerrainType.Clear:
-                    case HeightTerrainType.Road:
+                    case TerrainTypeEnh.Clear:
+                    case TerrainTypeEnh.Road:
+                    case TerrainTypeEnh.Smudge:
+                    case TerrainTypeEnh.Snow:
+
                         break;
-                    case HeightTerrainType.Water:
+                    case TerrainTypeEnh.Water:
                         if (!forPlateau)
                             val += WATER_HEIGHT_DIFF;
                         break;
-                    case HeightTerrainType.Rock:
+                    case TerrainTypeEnh.Rock:
                         if (!forPlateau)
                             val += ROCKS_HEIGHT_DIFF;
                         break;
-                    case HeightTerrainType.Beach:
+                    case TerrainTypeEnh.Beach:
                         if (!forPlateau)
                             val += BEACH_HEIGHT_DIFF;
                         break;
-                    case HeightTerrainType.CliffFace:
+                    case TerrainTypeEnh.CliffFace:
                         if (forPlateau)
                             val += BASE_HEIGHT;
                         break;
-                    case HeightTerrainType.CliffPlateau:
+                    case TerrainTypeEnh.CliffPlateau:
                         if (forPlateau || eightBitPlateauData == null)
                             val += BASE_HEIGHT;
                         break;
@@ -124,20 +127,20 @@ namespace CnC64FileConverter.Domain.HeightMap
             return returnImg;
         }
 
-        private static void ReducePlateaus(Byte[] eightBitPlateauData, HeightTerrainType[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
+        private static void ReducePlateaus(Byte[] eightBitPlateauData, TerrainTypeEnh[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
         {
             for (Int32 y = mapStartY; y < mapEndY; y++)
             {
                 for (Int32 x = mapStartX; x < mapEndX; x++)
                 {
                     Int32 offset = y * 64 + x;
-                    if (simpleMap[offset] == HeightTerrainType.CliffFace)
+                    if (simpleMap[offset] == TerrainTypeEnh.CliffFace)
                         eightBitPlateauData[offset] = (Byte)Math.Max(0, eightBitPlateauData[offset] - 1);
                 }
             }
         }
 
-        private static void ReducePlateausEnh(Byte[] eightBitPlateauData, HeightTerrainType[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
+        private static void ReducePlateausEnh(Byte[] eightBitPlateauData, TerrainTypeEnh[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
         {
             Boolean[] reduce = new Boolean[eightBitPlateauData.Length];
             for (Int32 y = mapStartY; y < mapEndY; y++)
@@ -146,17 +149,17 @@ namespace CnC64FileConverter.Domain.HeightMap
                 {
                     Int32 height = eightBitPlateauData[y * 64 + x];
                     Byte[] heightsAround = GetNeighbouringTypes(eightBitPlateauData, x, y, mapStartX, mapStartY, mapEndX, mapEndY, (Byte)1, (Byte)0xFF);
-                    HeightTerrainType type = simpleMap[y * 64 + x];
-                    HeightTerrainType[] typesAround = GetNeighbouringTypes(simpleMap, x, y, mapStartX, mapStartY, mapEndX, mapEndY, HeightTerrainType.Clear, HeightTerrainType.Unused);
+                    TerrainTypeEnh type = simpleMap[y * 64 + x];
+                    TerrainTypeEnh[] typesAround = GetNeighbouringTypes(simpleMap, x, y, mapStartX, mapStartY, mapEndX, mapEndY, TerrainTypeEnh.Clear, TerrainTypeEnh.Unused);
                     // 0 1 2
                     // 3   4
                     // 5 6 7
                     Boolean reduceThis = false;
-                    if (type == HeightTerrainType.Clear || type == HeightTerrainType.Road)
+                    if (type == TerrainTypeEnh.Clear || type == TerrainTypeEnh.Road || type == TerrainTypeEnh.Snow || type == TerrainTypeEnh.Smudge)
                     {
                         for (Int32 i = 0; i < typesAround.Length; i++)
                         {
-                            if ((typesAround[i] == HeightTerrainType.Clear || typesAround[i] == HeightTerrainType.Road) && heightsAround[i] < height)
+                            if ((typesAround[i] == TerrainTypeEnh.Clear || typesAround[i] == TerrainTypeEnh.Road || typesAround[i] == TerrainTypeEnh.Snow || typesAround[i] == TerrainTypeEnh.Smudge) && heightsAround[i] < height)
                             {
                                 reduceThis = true;
                                 break;
@@ -224,37 +227,37 @@ namespace CnC64FileConverter.Domain.HeightMap
             return typesAround;
         }
 
-        private static void ExpandOutsideBorders(HeightTerrainType[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
+        private static void ExpandOutsideBorders(TerrainTypeEnh[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
         {
             for (Int32 y = mapStartY; y < mapEndY; y++)
             {
                 // duplicate leftmost cell of inner map to left edge
-                HeightTerrainType htt = simpleMap[y * 64 + mapStartX];
-                if (htt == HeightTerrainType.Rock)
-                    htt = HeightTerrainType.Clear;
+                TerrainTypeEnh htt = simpleMap[y * 64 + mapStartX];
+                if (htt == TerrainTypeEnh.Rock)
+                    htt = TerrainTypeEnh.Clear;
                 for (Int32 x = 0; x < mapStartX; x++)
                     simpleMap[y * 64 + x] = htt;
                 // duplicate rightmost cell of inner map to right edge
                 htt = simpleMap[y * 64 + mapEndX - 1];
-                if (htt == HeightTerrainType.Rock)
-                    htt = HeightTerrainType.Clear;
+                if (htt == TerrainTypeEnh.Rock)
+                    htt = TerrainTypeEnh.Clear;
                 for (Int32 x = mapEndX; x < 64; x++)
                     simpleMap[y * 64 + x] = htt;
             }
             // duplicate top row
-            HeightTerrainType[] curRow = new HeightTerrainType[64];
+            TerrainTypeEnh[] curRow = new TerrainTypeEnh[64];
             Array.Copy(simpleMap, mapStartY * 64, curRow, 0, 64);
             for (Int32 i = 0; i < 64; i++)
-                if (curRow[i] == HeightTerrainType.Rock)
-                    curRow[i] = HeightTerrainType.Clear;
+                if (curRow[i] == TerrainTypeEnh.Rock)
+                    curRow[i] = TerrainTypeEnh.Clear;
             for (Int32 y = 0; y < mapStartY; y++)
                 Array.Copy(curRow, 0, simpleMap, y * 64, 64);
 
             // duplicate bottom row
             Array.Copy(simpleMap, (mapEndY - 1) * 64, curRow, 0, 64);
             for (Int32 i = 0; i < 64; i++)
-                if (curRow[i] == HeightTerrainType.Rock)
-                    curRow[i] = HeightTerrainType.Clear;
+                if (curRow[i] == TerrainTypeEnh.Rock)
+                    curRow[i] = TerrainTypeEnh.Clear;
             for (Int32 y = mapEndY; y < 64; y++)
                 Array.Copy(curRow, 0, simpleMap, y * 64, 64);
         }

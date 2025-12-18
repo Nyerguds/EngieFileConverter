@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
 
-namespace Nyerguds.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public class SixBitColor
     {

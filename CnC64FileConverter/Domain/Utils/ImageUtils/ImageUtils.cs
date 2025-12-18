@@ -106,9 +106,8 @@ namespace Nyerguds.ImageManipulation
                 {
                     // What a mess just to have non-crappy jpeg. Scratch that; jpeg is always crappy.
                     ImageCodecInfo jpegEncoder = null;
-                    ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
                     Guid formatId = ImageFormat.Jpeg.Guid;
-                    foreach (ImageCodecInfo codec in codecs)
+                    foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
                     {
                         if (codec.FormatID == formatId)
                         {
@@ -163,11 +162,8 @@ namespace Nyerguds.ImageManipulation
         public static Bitmap ConvertToPalettedGrayscale(Bitmap image, Int32 bpp, Boolean bigEndianBits)
         {
             PixelFormat pf = PaletteUtils.GetPalettedFormat(bpp);
-            if (image.PixelFormat == PixelFormat.Format4bppIndexed || image.PixelFormat == PixelFormat.Format8bppIndexed)
-            {
-                if (image.PixelFormat == pf && ColorUtils.HasGrayPalette(image))
-                    return CloneImage(image);
-            }
+            if (image.PixelFormat == pf && ColorUtils.HasGrayPalette(image))
+                return CloneImage(image);
             if (image.PixelFormat != PixelFormat.Format32bppArgb)
                 image = PaintOn32bpp(image, Color.Black);
             Int32 grayBpp = Image.GetPixelFormatSize(pf);
@@ -213,6 +209,24 @@ namespace Nyerguds.ImageManipulation
             if (bpp < 8)
                 newImageData = ConvertFrom8Bit(newImageData, width, height, bpp, bigEndianBits, ref stride);
             return newImageData;
+        }
+
+
+        public static Boolean CompareHiColorImages(Byte[] imageData1, Int32 stride1, Byte[] imageData2, Int32 stride2, Int32 width, Int32 height, PixelFormat pf)
+        {
+            Int32 byteSize = Image.GetPixelFormatSize(pf) / 8;
+            for (Int32 y = 0; y < height; y++)
+            {
+                for (Int32 x = 0; x < width; x++)
+                {
+                    Int32 offset1 = y * stride1 + x * byteSize;
+                    Int32 offset2 = y * stride2 + x * byteSize;
+                    for (Int32 n = 0; n > byteSize; n++)
+                        if (imageData1[offset1 + n] != imageData2[offset2 + n])
+                            return false;
+                }
+            }
+            return true;
         }
 
         public static Byte[] Match8BitDataToPalette(Byte[] imageData, Int32 width, Int32 height, Color[] sourcePalette, Color[] targetPalette)
@@ -282,7 +296,7 @@ namespace Nyerguds.ImageManipulation
                 newImageData = ConvertFrom8Bit(newImageData, width, height, bpp, bigEndianBits, ref stride);
             return newImageData;
         }
-        
+
         /// <summary>
         /// Gets the raw bytes from an image.
         /// </summary>
@@ -375,7 +389,7 @@ namespace Nyerguds.ImageManipulation
             }
             return newImage;
         }
-        
+
         private static void CopyToMemory(IntPtr target, Byte[] bytes, Int32 startPos, Int32 length, Int32 origStride, Int32 targetStride)
         {
             Int32 sourcePos = startPos;

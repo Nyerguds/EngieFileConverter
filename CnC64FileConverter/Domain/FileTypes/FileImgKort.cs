@@ -1,4 +1,4 @@
-﻿using Nyerguds.CCTypes;
+﻿using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System;
@@ -15,8 +15,6 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override Int32 Width { get { return 320; } }
         public override Int32 Height { get { return 240; } }
-        protected Color[] m_palette;
-        protected Boolean hasPalette;
 
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "KORTDat"; } }
@@ -26,30 +24,10 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 BitsPerColor { get{ return 8; } }
 
         public FileImgKort() { }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData);
-        }
-        
-        public override Color[] GetColors()
-        {
-            // ensures the UI can show the partial palette.
-            return m_palette == null ? null : m_palette.ToArray();
-        }
-        
-        public override void SetColors(Color[] palette)
-        {
-            m_palette = palette;
-            base.SetColors(palette);
-        }        
-
-        public override Boolean ColorsChanged()
-        {
-            // assume there's no palette, or no backup was ever made
-            if (this.m_backupPalette == null)
-                return false;
-            return !m_palette.SequenceEqual(this.m_backupPalette);
         }
 
         public override void LoadFile(String filename)
@@ -86,8 +64,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] imageData = new Byte[len];
             for (Int32 y = 0; y < this.Height; y++)
                 Array.Copy(targetData, (this.Height - 1 - y) * this.Width, imageData, y * this.Width, this.Width);
-            this.m_palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_palette, null);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_Palette, null);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)

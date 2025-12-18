@@ -1,4 +1,4 @@
-﻿using Nyerguds.CCTypes;
+﻿using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System;
@@ -77,7 +77,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 10, 5, 5, 5, 0, 0, 0, true);
         public override Int32 Width { get { return 320; } }
         public override Int32 Height { get { return 200; } }
-        protected Color[] m_palette;
         protected Boolean hasPalette;
         protected Int32 compressionType = -1;
         protected virtual Int32 CompressionType { get { return compressionType; } }
@@ -96,28 +95,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             LoadFromFileData(fileData, this.CompressionType);
         }
-        
-        public override Color[] GetColors()
-        {
-            // ensures the UI can show the partial palette.
-            return m_palette == null ? null : m_palette.ToArray();
-        }
-        
-        public override void SetColors(Color[] palette)
-        {
-            if (this.m_backupPalette == null)
-                this.m_backupPalette = GetColors();
-            m_palette = palette;
-            base.SetColors(palette);
-        }        
-
-        public override Boolean ColorsChanged()
-        {
-            // assume there's no palette, or no backup was ever made
-            if (this.m_backupPalette == null)
-                return false;
-            return !m_palette.SequenceEqual(this.m_backupPalette);
-        }
 
         public override void LoadFile(String filename)
         {
@@ -125,7 +102,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, this.CompressionType);
             SetFileNames(filename);
         }
-                
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveCps(fileToSave.GetBitmap(), fileToSave.GetColors(), !this.InternalColors, this.CompressionType);
@@ -167,11 +144,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     throw new FileTypeLoadException("Could not load CPS palette: " + ex2.Message, ex2);
                 }
-                m_palette = ColorUtils.GetEightBitColorPalette(palette);
+                m_Palette = ColorUtils.GetEightBitColorPalette(palette);
                 this.hasPalette = true;
             }
-            if (this.m_palette == null)
-                this.m_palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
+            if (this.m_Palette == null)
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
             Byte[] imageData = new Byte[bufferSize];
             Int32 dataOffset = 10 + paletteLength;
             try
@@ -185,10 +162,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     case 2:
                         throw new NotImplementedException("Compression types 1 and 2 are not yet supported!");
                     case 3:
-                        CHRONOLIB.Compression.WWCompression.RleDecode(fileData, ref dataOffset, null, imageData, false);
+                        Nyerguds.GameData.Westwood.WWCompression.RleDecode(fileData, ref dataOffset, null, imageData, false);
                         break;
                     case 4:
-                        CHRONOLIB.Compression.WWCompression.LcwUncompress(fileData, ref dataOffset, imageData);
+                        Nyerguds.GameData.Westwood.WWCompression.LcwUncompress(fileData, ref dataOffset, imageData);
                         break;
                     default:
                         throw new FileTypeLoadException("Unsupported compression format, " + compression);
@@ -201,7 +178,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             try
             {
                 //Int32 stride = ImageUtils.GetMinimumStride(this.Width, Image.GetPixelFormatSize(pf));
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_palette, null);
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_Palette, null);
             }
             catch (IndexOutOfRangeException)
             {
@@ -229,10 +206,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 case 2:
                     throw new NotImplementedException("Compression types 1 and 2 are not yet supported!");
                 case 3:
-                    compressedData = CHRONOLIB.Compression.WWCompression.RleEncode(imageData);
+                    compressedData = Nyerguds.GameData.Westwood.WWCompression.RleEncode(imageData);
                     break;
                 case 4:
-                    compressedData = CHRONOLIB.Compression.WWCompression.LcwCompress(imageData);
+                    compressedData = Nyerguds.GameData.Westwood.WWCompression.LcwCompress(imageData);
                     break;
                 default:
                     throw new NotSupportedException("Unknown compression type given.");

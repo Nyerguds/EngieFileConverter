@@ -22,8 +22,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             get { return new String[] { "Portable Network Graphics", "Bitmap", "CompuServe GIF image", "JPEG. Gods, why would you do that?", "JPEG. No seriously, why?" }; }
         }
-        public override Int32 ColorsInPalette { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Palette.Entries.Length; } }
-        public override SupportedFileType PreferredExportType { get { return new FileImgN64(); } }
+        public override SupportedFileType PreferredExportType { get { return new FileImagePng(); } }
 
         protected Int32 m_ColsInPal;
 
@@ -35,7 +34,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             m_ColsInPal = colors;
             SetFileNames(filename);
         }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             try

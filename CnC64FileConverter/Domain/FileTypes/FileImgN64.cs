@@ -37,12 +37,11 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>0 = 4bpp, 1=8bpp, 2 = 16bpp</summary>
         protected Byte hdrColorFormat;
         protected Int32 hdrColorsInPalette;
-        protected Color[] m_palette;
 
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "N64Img"; } }
         public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
-        public override String ShortTypeDescription { get { return "C&C64 Image file"; } }
+        public override String ShortTypeDescription { get { return "C&C64 image"; } }
 
         public override Int32 ColorsInPalette { get { return hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
 
@@ -57,7 +56,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     case 1:
                         return 8;
                     case 2:
-                        return 16; // odd format; little-endian
+                        return 16; // odd format; big-endian
                     default:
                         return -1;
                 }
@@ -65,7 +64,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
 
         public FileImgN64() { }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData);
@@ -81,30 +80,30 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Color[] GetColors()
         {
             // ensures the UI can show the partial palette.
-            return m_palette == null ? null : m_palette.ToArray();
+            return this.m_Palette == null ? null : this.m_Palette.ToArray();
         }
 
         public override void SetColors(Color[] palette)
         {
-            if (this.m_backupPalette == null)
-                this.m_backupPalette = GetColors();
-            m_palette = palette;
+            if (this.m_BackupPalette == null)
+                this.m_BackupPalette = GetColors();
+            this.m_Palette = palette;
             base.SetColors(palette);
         }
 
         public override Boolean ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made
-            if (this.m_backupPalette == null)
+            if (this.m_BackupPalette == null)
                 return false;
-            return !m_palette.SequenceEqual(this.m_backupPalette);
+            return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, fileToSave.ColorsInPalette == 0 && fileToSave.GetColors().Length != 0);
         }
-        
+
         protected void LoadFromFileData(Byte[] fileData)
         {
             if (fileData.Length < 16)
@@ -126,7 +125,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             // WARNING! The hi-colour format is 16 BPP, but the image data is converted to 32 bpp for creating the actual image!
             Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor);
             Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor) * this.Height;
-            Byte[] imageData = new Byte[imageDataSize];
+            Byte[] imageData;
             Int32 expectedSize = this.hdrDataOffset + imageDataSize;
             if ((this.hdrColorFormat == 0 || this.hdrColorFormat == 1) && this.hdrPaletteOffset != 0)
                 expectedSize = Math.Max(expectedSize, this.hdrPaletteOffset + this.hdrBytesPerColor * this.hdrColorsInPalette);
@@ -135,9 +134,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             try
             {
                 // Fill image data array. For 16-bit colour, convert to 32 bit. For 8 or lower, just copy.
-
                 if (this.hdrColorFormat != 2)
+                {
+                    imageData = new Byte[imageDataSize];
                     Array.Copy(fileData, this.hdrDataOffset, imageData, 0, Math.Min(fileData.Length - this.hdrDataOffset, imageDataSize));
+                }
                 else
                     imageData = Convert16bTo32b(fileData, this.hdrDataOffset, this.Width, this.Height, ref stride);
                 if (this.hdrPaletteOffset != 0)
@@ -145,20 +146,20 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 palSize = this.hdrBytesPerColor * this.hdrColorsInPalette;
                     Byte[] paletteData = new Byte[palSize];
                     Array.Copy(fileData, this.hdrPaletteOffset, paletteData, 0, palSize);
-                    this.m_palette = Get16BitColors(paletteData, this.hdrColorsInPalette, false);
+                    this.m_Palette = Get16BitColors(paletteData, this.hdrColorsInPalette, false);
                 }
                 else if (this.hdrColorFormat != 2)
                 {
                     // No palette in file, but paletted color format. Generate grayscale palette.
                     Int32 bpp = this.BitsPerColor;
 
-                    this.m_palette = PaletteUtils.GenerateGrayPalette(bpp, false, false);
+                    this.m_Palette = PaletteUtils.GenerateGrayPalette(bpp, false, false);
                     // Ignore original value here.
                     this.hdrBytesPerColor = 4;
                 }
                 else
                 {
-                    this.m_palette = null;
+                    this.m_Palette = null;
                 }
             }
             catch (Exception e)
@@ -169,9 +170,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 PixelFormat pf = this.GetPixelFormat();
                 //Int32 stride = ImageUtils.GetMinimumStride(this.Width, Image.GetPixelFormatSize(pf));
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, pf, this.m_palette, null);
-                if (this.m_palette != null)
-                    this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_palette);
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, pf, this.m_Palette, null);
+                if (this.m_Palette != null)
+                    this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
             }
             catch (IndexOutOfRangeException)
             {
@@ -195,7 +196,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                         image = ImageUtils.PaintOn32bpp(image, Color.Black);
                 }
             }
-
             // 0 = 4bpp, 1=8bpp, 2 = 16bpp
             Byte colorFormat;
             Int32 width = image.Width;
@@ -248,7 +248,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             Int32 paletteOffset = paletteColors == 0 ? 0 : 16 + imageData.Length;
             Int32 palbpc = colorFormat > 1 ? 0 : (asNoPalGray8bpp ? 4 : 2);
-            
+
             // Header
             Byte[] fullData = new Byte[0x10 + imageData.Length + paletteData.Length];
             //DataOffset
@@ -311,7 +311,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             stride = newStride;
             return newImageData;
         }
-                
+
         /// <summary>
         /// Only for internal use; this assumes that 16 bit images are processed as 32 bit.
         /// </summary>
@@ -354,7 +354,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             return entries;
         }
-        
+
         protected void ReadHeader(Byte[] headerBytes)
         {
             if (headerBytes.Length < 10)

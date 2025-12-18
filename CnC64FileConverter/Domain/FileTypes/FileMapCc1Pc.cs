@@ -6,12 +6,12 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Text.RegularExpressions;
 using Nyerguds.Util;
-using Nyerguds.CCTypes;
+using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileMapPc : SupportedFileType
+    public class FileMapCc1Pc : SupportedFileType
     {
         protected static readonly Regex HEXREGEX = new Regex("^[0-9A-F]+h$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         protected static readonly Regex ROADREGEX1 = new Regex("^D\\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -29,6 +29,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color.FromArgb(0x5E, 0x55, 0x44), //Road = 5
             Color.FromArgb(0x50, 0x50, 0x50), //CliffFace = 6
             Color.FromArgb(0x40, 0x40, 0x40), //CliffPlateau = 7
+            Color.FromArgb(0x4D, 0x57, 0x4D), //Smudge = 8
+            Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
         };
         protected static Color[] paletteDesert = new Color[]
         {
@@ -40,6 +42,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color.FromArgb(0xAB, 0x81, 0x55), //Road = 5
             Color.FromArgb(0x50, 0x50, 0x50), //CliffFace = 6
             Color.FromArgb(0x40, 0x40, 0x40), //CliffPlateau = 7
+            Color.FromArgb(0x5E, 0x48, 0x3E), //Smudge = 8
+            Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
         };
         protected static Color[] paletteSnow = new Color[]
         {
@@ -51,8 +55,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color.FromArgb(0x92, 0x8A, 0x80), //Road = 5
             Color.FromArgb(0x60, 0x60, 0x60), //CliffFace = 6
             Color.FromArgb(0x60, 0x60, 0x60), //CliffPlateau = 7
+            Color.FromArgb(0x9E, 0x9E, 0x9E), //Smudge = 8
+            Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
         };
-        
+
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "PCMap"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -62,7 +68,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 64; } }
         public override Int32 Height { get { return 64; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override SupportedFileType PreferredExportType { get { return new FileMapN64(); } }
+        public override SupportedFileType PreferredExportType { get { return new FileMapCc1N64(); } }
         public override Int32 BitsPerColor { get { return 0; } }
 
         public Byte[] PCMapData { get; protected set; }
@@ -71,8 +77,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public CnCMap Map { get { return new CnCMap(PCMapData);} }
 
 
-        public FileMapPc() { }
-        
+        public FileMapCc1Pc() { }
+
         public override void LoadFile(Byte[] fileData)
         {
             this.PCMapData = fileData;
@@ -86,7 +92,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             m_LoadedImage = ReadMapAsImage(filename, (Theater)0xFF);
             SetFileNames(filename);
         }
-        
+
         public override Color[] GetColors()
         {
             return null;
@@ -94,9 +100,9 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
-            if (fileToSave is FileMapPc)
+            if (fileToSave is FileMapCc1Pc)
                 throw new NotSupportedException(String.Empty);
-            return ((FileMapPc)fileToSave).PCMapData;
+            return ((FileMapCc1Pc)fileToSave).PCMapData;
         }
 
         protected Bitmap ReadMapAsImage(String filename, Theater theater)
@@ -130,7 +136,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
-            HeightTerrainType[] simplifiedMap;
+            TerrainTypeEnh[] simplifiedMap;
             try
             {
                 simplifiedMap = MapConversion.SimplifyMap(new CnCMap(fileData));
@@ -166,7 +172,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             return ImageUtils.BuildImage(imageData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Black);
         }
-        
+
         protected Byte[] IdentifyTheaterAndConvert(Byte[] fileData, ref Theater theater, Boolean toPC, String sourceFile)
         {
             Dictionary<Int32, CnCMapCell> mappingDes = toPC ? MapConversion.DESERT_MAPPING : MapConversion.DESERT_MAPPING_REVERSED;
@@ -210,7 +216,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    // if sourceFile += null, use temperate as fallback if the amount of errors is equal
+                    // if sourceFile == null, use temperate as fallback if the amount of errors is equal
                     fileData = dataTemperate;
                     theater = Theater.Temperate;
                 }
@@ -226,7 +232,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
     }
 
-    public class FileMapPcFromIni : FileMapPc
+    public class FileMapPcFromIni : FileMapCc1Pc
     {
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "ini" }; } }
@@ -246,6 +252,4 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
 
     }
-
-    
 }

@@ -40,7 +40,7 @@ namespace Nyerguds.Util.UI
         [Description("The last validated value of the EnhNumericUpDownControl.")]
         public Decimal EnteredValue
         {
-            get { return LimitRange(_EnteredValue);  }
+            get { return this.Constrain(_EnteredValue);  }
             set
             {
                 this.Value = value;
@@ -137,12 +137,12 @@ namespace Nyerguds.Util.UI
             return true;
         }
 
-        public Decimal LimitRange(Decimal value)
+        public Decimal Constrain(Decimal value)
         {
+            if (value < this.Minimum)
+                value = this.Minimum;
             if (value > this.Maximum)
                 value = this.Maximum;
-            else if (value < this.Minimum)
-                value = this.Minimum;
             return value;
         }
 

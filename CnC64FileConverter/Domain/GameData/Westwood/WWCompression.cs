@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CHRONOLIB.Compression
+namespace Nyerguds.GameData.Westwood
 {
     public static class WWCompression
     {
@@ -37,7 +37,7 @@ namespace CHRONOLIB.Compression
         //    64 bytes. 2 and 3 byte offset commands are more efficient otherwise.
         // 2. Runs of less than 3 should just be stored as is with the one byte fill
         //    command.
-        // 3. Runs greater than 10 or if the relative offset is greater than 
+        // 3. Runs greater than 10 or if the relative offset is greater than
         //    4095 use an absolute copy. Less than 64 bytes uses 3 byte command, else it
         //    uses the 5 byte command.
         // 4. If Absolute rule isn't met then copy from a relative offset with 2 byte
@@ -49,7 +49,7 @@ namespace CHRONOLIB.Compression
         // The XOR delta generator code works to the following assumptions
         //
         // 1. Any skip command is preferable if source and base are same
-        // 2. Fill is preferable to XOR if 4 or larger, XOR takes same data plus at 
+        // 2. Fill is preferable to XOR if 4 or larger, XOR takes same data plus at
         //    least 1 byte
         //
         ////////////////////////////////////////////////////////////////////////////////
@@ -127,10 +127,10 @@ namespace CHRONOLIB.Compression
             }
             Byte[] finalOutput = new Byte[outPtr];
             Array.Copy(bufferOut, 0, finalOutput, 0, outPtr);
-            // Return the final compressed data.
+            // Return the final decompressed data.
             return finalOutput;
         }
-        
+
         /// <summary>
         /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
@@ -146,12 +146,14 @@ namespace CHRONOLIB.Compression
         /// </summary>
         /// <param name="buffer">Input buffer</param>
         /// <param name="minimumRepeating">Minimum amount of repeating bytes before compression is applied.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding them as big-endian.</param>
         /// <returns>The run-length encoded data</returns>
         public static Byte[] RleEncode(Byte[] buffer, Int32 minimumRepeating, Boolean swapWords)
         {
             // Technically, compressing a repetition of 2 is not useful: the compressed data
             // ends up the same size, but it adds an extra byte to the data that follows it.
             // But it is allowed for the sake of completeness.
+            // 1 is not allowed since it would disable all detection of non-repeating data.
             if (minimumRepeating < 2)
                 minimumRepeating = 2;
             Int32 inPtr = 0;
@@ -260,7 +262,7 @@ namespace CHRONOLIB.Compression
             // relative LCW starts with 0 as flag to decoder.
             // this is only used by later games for decoding hi-color vqa files.
             if (relative)
-                output[putp++] = 0;            
+                output[putp++] = 0;
 
             //Implementations that properly conform to the WestWood encoder should
             //write a starting cmd1. It's important for using the offset copy commands
@@ -398,7 +400,7 @@ namespace CHRONOLIB.Compression
         }
 
         /// <summary>
-        ///     Decompresses data in the proprietary LCW format used in many games 
+        ///     Decompresses data in the proprietary LCW format used in many games
         ///     developed by Westwood Studios.
         /// </summary>
         /// <param name="input">The data to decompress.</param>
@@ -416,7 +418,7 @@ namespace CHRONOLIB.Compression
             // Techncically it can just be cropped at the end, though this value is used to
             // automatically cut off repeat-commands that go too far.
             Int32 writeEnd = output.Length;
-            
+
             //Decide if the stream uses relative 3 and 5 byte commands
 	        //Extension allows effective compression of data > 64k
 	        //https://github.com/madmoose/scummvm/blob/bladerunner/engines/bladerunner/decompress_lcw.cpp
@@ -547,8 +549,8 @@ namespace CHRONOLIB.Compression
             Int32 getsendp = Math.Min(source.Length, @base.Length);
             Byte[] dest = new Byte[XORWorstCase(getsendp)];
 
-            //Only check getsp to save a redundant check. 
-            //Both source and base should be same size and both pointers should be 
+            //Only check getsp to save a redundant check.
+            //Both source and base should be same size and both pointers should be
             //incremented at the same time.
             while (getsp < getsendp)
             {
@@ -593,7 +595,7 @@ namespace CHRONOLIB.Compression
                 while (xorcount != 0)
                 {
                     UInt16 count = 0;
-                    //Its cheaper to do the small cmd twice than do the large cmd once 
+                    //Its cheaper to do the small cmd twice than do the large cmd once
                     //for data that can be handled by two small cmds.
                     //cmd 0???????
                     if (xorcount < XOR_MED)
@@ -654,7 +656,7 @@ namespace CHRONOLIB.Compression
                 while (skipcount != 0)
                 {
                     UInt16 count = 0;
-                    //Again its cheaper to do the small cmd twice than do the large cmd 
+                    //Again its cheaper to do the small cmd twice than do the large cmd
                     //once for data that can be handled by two small cmds.
                     //cmd 1???????
                     if (skipcount < XOR_MED)
@@ -680,7 +682,7 @@ namespace CHRONOLIB.Compression
             dest[putp++] = 0x80;
             dest[putp++] = 0;
             dest[putp++] = 0;
-            
+
             Byte[] finalOutput = new Byte[putp];
             Array.Copy(dest, 0, finalOutput, 0, putp);
             // Return the final data

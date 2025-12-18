@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Nyerguds.GameData.Dynamix;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -23,53 +24,18 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Dynamix BMP animations file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get { return 8; } }
-        protected FileImagePng[] m_TilesList = new FileImagePng[0];
+        protected SupportedFileType[] m_TilesList = new SupportedFileType[0];
 
         /// <summary>Enables frame controls on the UI.</summary>
         public override Boolean ContainsFrames { get { return m_TilesList.Length > 1; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_TilesList.Cast<SupportedFileType>().ToArray(); } }
+        public override SupportedFileType[] Frames { get { return m_TilesList.ToArray(); } }
+        /// <summary>If the type supports frames, this determines whether an overview-frame is available as index '-1'. If not, index 0 is accessed directly.</summary>
+        public override Boolean RenderCompositeFrame { get { return false; } }
 
-        protected Color[] m_palette;
-
-        public override Color[] GetColors()
-        {
-            // ensures the UI can show the partial palette.
-            return m_palette == null ? null : m_palette.ToArray();
-        }
-        
-        public override void SetColors(Color[] palette)
-        {
-            Int32 paletteLength = 1 << this.BitsPerColor;
-            Color[] pal = new Color[paletteLength];
-            for (Int32 i = 0; i < paletteLength; i++)
-            {
-                if (i < palette.Length)
-                    pal[i] = Color.FromArgb(0xFF, palette[i]);
-                else
-                    pal[i] = Color.Empty;
-            }
-            this.m_palette = pal;
-            if (m_LoadedImage == null)
-                return;
-            ColorPalette imagePal = this.m_LoadedImage.Palette;
-            Int32 entries = imagePal.Entries.Length;
-            for (Int32 i = 0; i < entries; i++)
-            {
-                if (i < palette.Length)
-                    imagePal.Entries[i] = Color.FromArgb(0xFF, palette[i]);
-                else
-                    imagePal.Entries[i] = Color.Empty;
-            }
-            this.m_LoadedImage.Palette = imagePal;
-            foreach (FileImagePng tile in this.m_TilesList)
-            {
-                tile.SetColors(imagePal.Entries);
-            }
-        }
 
         public FileImgDynBmp() { }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData);
@@ -81,7 +47,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData);
             SetFileNames(filename);
         }
-        
+
         public override Boolean ColorsChanged()
         {
             return false;
@@ -124,17 +90,18 @@ namespace CnC64FileConverter.Domain.FileTypes
             frameData2 = new Byte[fullDataSize]; Array.Copy(frameData, 0, frameData2, 0, Math.Min(frameData.Length, fullDataSize));
             //File.WriteAllBytes("test.bm", frameData2);
             Int32 offset = 0;
-            m_TilesList = new FileImagePng[frames];
+            m_TilesList = new SupportedFileType[frames];
             for (Int32 i = 0; i < frames; i++)
             {
                 Int32 curSize = widths[i] * heights[i];
                 Byte[] image = new Byte[curSize];
                 Array.Copy(frameData2, offset, image, 0, curSize);
                 offset += curSize;
-                this.m_palette = PaletteUtils.GenerateGrayPalette(8, false, false);
-                Bitmap curImage = ImageUtils.BuildImage(image, widths[i], heights[i], widths[i], PixelFormat.Format8bppIndexed, this.m_palette, null);
-                this.m_TilesList[i] = new FileImagePng();
-                this.m_TilesList[i].LoadFile(curImage, 1 << BitsPerColor, "frame" + i.ToString("000") + ".png");
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
+                Bitmap curImage = ImageUtils.BuildImage(image, widths[i], heights[i], widths[i], PixelFormat.Format8bppIndexed, this.m_Palette, null);
+                FileImageFrame frame = new FileImageFrame();
+                frame.LoadFile(curImage, 1 << BitsPerColor, "frame" + i.ToString("D5"));
+                this.m_TilesList[i] = frame;
                 if (m_LoadedImage == null)
                     m_LoadedImage = curImage;
             }

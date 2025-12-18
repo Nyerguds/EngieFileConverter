@@ -1,5 +1,5 @@
 ﻿using Nyerguds.ImageManipulation;
-using Nyerguds.CCTypes;
+using Nyerguds.GameData.Westwood;
 using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Nyerguds.GameData.Dynamix;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -23,9 +24,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
         public override Int32 ColorsInPalette { get { return 256; } }
-        public override SupportedFileType PreferredExportType { get { return new FilePalettePc(); } }
-
-        protected Color[] m_palette;
+        public override SupportedFileType PreferredExportType { get { return new FilePaletteWwPc(); } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -52,8 +51,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + e.Message, e);
             }
-            m_palette = ColorUtils.GetEightBitColorPalette(palette);
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_palette, Color.Black);
+            this.m_Palette = ColorUtils.GetEightBitColorPalette(palette);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 
         public override void LoadFile(String filename)
@@ -65,14 +64,14 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Color[] GetColors()
         {
-            return m_palette.ToArray();
+            return this.m_Palette.ToArray();
         }
 
         public override void SetColors(Color[] palette)
         {
-            if (this.m_backupPalette == null)
-                this.m_backupPalette = GetColors();
-            m_palette = palette;
+            if (this.m_BackupPalette == null)
+                this.m_BackupPalette = GetColors();
+            this.m_Palette = palette;
             // update image
             base.SetColors(palette);
         }
@@ -80,9 +79,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made
-            if (this.m_backupPalette == null)
+            if (this.m_BackupPalette == null)
                 return false;
-            return !m_palette.SequenceEqual(this.m_backupPalette);
+            return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)

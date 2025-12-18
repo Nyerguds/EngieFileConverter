@@ -17,36 +17,28 @@ namespace SimplePaletteQuantizer.Extensions
         {
             switch (pixelFormat)
             {
-                case PixelFormat.Format1bppIndexed: 
+                case PixelFormat.Format1bppIndexed:
                     return 1;
-
-                case PixelFormat.Format4bppIndexed: 
+                case PixelFormat.Format4bppIndexed:
                     return 4;
-
-                case PixelFormat.Format8bppIndexed: 
+                case PixelFormat.Format8bppIndexed:
                     return 8;
-
                 case PixelFormat.Format16bppArgb1555:
                 case PixelFormat.Format16bppGrayScale:
                 case PixelFormat.Format16bppRgb555:
                 case PixelFormat.Format16bppRgb565:
                     return 16;
-
-                case PixelFormat.Format24bppRgb: 
+                case PixelFormat.Format24bppRgb:
                     return 24;
-
                 case PixelFormat.Format32bppArgb:
                 case PixelFormat.Format32bppPArgb:
                 case PixelFormat.Format32bppRgb:
                     return 32;
-
-                case PixelFormat.Format48bppRgb: 
+                case PixelFormat.Format48bppRgb:
                     return 48;
-
                 case PixelFormat.Format64bppArgb:
                 case PixelFormat.Format64bppPArgb:
                     return 64;
-
                 default:
                     String message = string.Format("A pixel format '{0}' not supported!", pixelFormat);
                     throw new NotSupportedException(message);
