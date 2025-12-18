@@ -206,8 +206,7 @@ namespace Nyerguds.Util
         {
             if (String.IsNullOrEmpty(input))
                 return new Int32[0];
-            Char[] trimVals = " \t\r\n".ToCharArray();
-            input = input.Trim(trimVals);
+            input = Regex.Replace(input, "\\s", String.Empty);
             if (input.Length == 0)
                 return new Int32[0];
             groupsSeparator = groupsSeparator.Trim();
@@ -217,12 +216,9 @@ namespace Nyerguds.Util
             for (Int32 i = 0; i < nrOfParts; ++i)
             {
                 String part = parts[i];
-                String edPart = part.Trim(trimVals);
-                if (edPart.Length == 0)
-                    continue;
                 // Unlike a simple Split, the use of regex allows the use of negative values if the range splitter is "-".
                 Regex split = new Regex("^(-?\\d+)\\s*(" + Regex.Escape(rangeSeparator) + "\\s*(-?\\d+))?$");
-                Match m = split.Match(edPart);
+                Match m = split.Match(part);
                 if (m.Success)
                 {
                     Int32 val1 = Int32.Parse(m.Groups[1].Value);

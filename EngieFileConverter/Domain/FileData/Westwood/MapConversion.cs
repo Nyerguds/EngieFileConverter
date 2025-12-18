@@ -3,6 +3,8 @@ using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Nyerguds.FileData.Westwood
@@ -10,6 +12,8 @@ namespace Nyerguds.FileData.Westwood
     public static class MapConversion
     {
         public static readonly Dictionary<Int32, TileInfo> TILEINFO = ReadTileInfo();
+        public static readonly Dictionary<String, StructInfo> STRUCTUREINFO = ReadStructInfo(EngieFileConverter.Properties.Resources.structs, "structs.ini", "Structures");
+        public static readonly Dictionary<String, StructInfo> TERRAININFO = ReadStructInfo(EngieFileConverter.Properties.Resources.terrain, "terrain.ini", "Terrain");
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", EngieFileConverter.Properties.Resources.th_desert);
         public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", EngieFileConverter.Properties.Resources.th_temperate);
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
@@ -98,6 +102,95 @@ namespace Nyerguds.FileData.Westwood
                 tileInfo2.Add(currentId, info);
             }
             return tileInfo2;
+        }
+
+        private static Dictionary<String, StructInfo> ReadStructInfo(String structsResource, String structsFilename, String listSection)
+        {
+            String file = Path.Combine(GeneralUtils.GetApplicationPath(), structsFilename);
+            String fileGrids = Path.Combine(GeneralUtils.GetApplicationPath(), "grids.ini");
+            String structData;
+            if (File.Exists(file))
+                structData = File.ReadAllText(file);
+            else
+                structData = structsResource;
+            IniFile structsFile = new IniFile(null, structData, true, IniFile.ENCODING_DOS_US, true);
+
+            String gridsData = null;
+            if (File.Exists(fileGrids))
+                gridsData = File.ReadAllText(fileGrids);
+            else
+                gridsData = EngieFileConverter.Properties.Resources.grids;
+            IniFile gridsFile = gridsData == null ? null : new IniFile(null, gridsData, true, IniFile.ENCODING_DOS_US, true);
+
+            Dictionary<String, StructInfo> structs = new Dictionary<String, StructInfo>(StringComparer.InvariantCultureIgnoreCase);
+            Dictionary<String, String> structsList = structsFile.GetSectionContent(listSection);
+            Regex dimRegex = new Regex("^\\s*(\\d+)\\s*x\\s*(\\d+)\\s*$", RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Int32 curId = 0;
+            String curIdStr = curId.ToString();
+            while (structsList.ContainsKey(curIdStr))
+            {
+                String structName = structsList[curIdStr];
+                Dictionary<String, String> structInfo = structsFile.GetSectionContent(structName);
+                String occupy;
+                Int32 width = 1;
+                if (gridsFile != null && structInfo.ContainsKey("OccupyList"))
+                    occupy = GetOccupyList(gridsFile, structInfo["OccupyList"], out width);
+                else
+                    occupy = String.Empty;
+                
+                Boolean[] occupyList = new Boolean[occupy.Length];
+                for (Int32 i = 0; i < occupy.Length; i++)
+                {
+                    Char cell = occupy[i];
+                    occupyList[i] = isAlphabetChar(cell);
+                }
+                String dimensions;
+                if (!structInfo.TryGetValue("Dimensions", out dimensions))
+                    dimensions = "1x1";
+                Match dimMatch = dimRegex.Match(dimensions);
+                if (dimMatch.Success)
+                {
+                    StructInfo si = new StructInfo();
+                    si.StructName = structName;
+                    si.Width = width;
+                    si.Height = Int32.Parse(dimMatch.Groups[2].Value);
+                    si.OccupyList = occupyList;
+                    si.HasBib = structsFile.GetBoolValue(structName, "HasBib", false);
+                    structs.Add(structName, si);
+                }
+                curId++;
+                curIdStr = curId.ToString();
+            }
+            return structs;
+        }
+
+        private static String GetOccupyList(IniFile gridsFile, String gridName, out Int32 width)
+        {
+            Dictionary<String, String> grid = gridsFile.GetSectionContent(gridName);
+            Int32 curId = 0;
+            String curIdStr = curId.ToString();
+            List<String> lines = new List<String>();
+            while (grid.ContainsKey(curIdStr))
+            {
+                lines.Add(grid[curIdStr]);
+                curId++;
+                curIdStr = curId.ToString();
+            }
+            StringBuilder fullGrid = new StringBuilder();
+            width = lines.Max(ln => ln.Length);
+            foreach (String line in lines)
+            {
+                Int32 add = width - line.Length;
+                fullGrid.Append(line);
+                if (add > 0)
+                    fullGrid.Append(new String('-', add));
+            }
+            return fullGrid.ToString();
+        }
+
+        private static Boolean isAlphabetChar(Char ch)
+        {
+            return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'));
         }
 
         private static Dictionary<Int32, CnCMapCell> LoadMapping(String filename, Byte[] internalFallback)

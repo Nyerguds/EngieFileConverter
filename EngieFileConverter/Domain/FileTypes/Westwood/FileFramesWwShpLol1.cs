@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Nyerguds.FileData.Compression;
@@ -12,7 +10,7 @@ using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-    public class FileFramesWwShpLol1 : SupportedFileType
+    public class FileFramesWwShpLol1 : SupportedFileType, Dune2ShpType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
@@ -116,7 +114,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         break;
                     case 4:
                         uncompressedData = new Byte[hdrUncompressedSize];
-                        Int32 written = WWCompression.LcwDecompress(fileData, ref dataOffset, uncompressedData, 0);
+                        WWCompression.LcwDecompress(fileData, ref dataOffset, uncompressedData, 0);
                         break;
                     default:
                         throw new FileTypeLoadException("Unsupported compression format \"" + hdrCompression + "\".");
@@ -126,7 +124,6 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Error decompressing image data: " + e.Message, e);
             }
-            //File.WriteAllBytes(sourcePath + ".unlcw", uncompressedData);
             Boolean isVersion107;
             Int32[] remapFrames;
             Int32[] notCompressedFrames;
@@ -167,7 +164,8 @@ namespace EngieFileConverter.Domain.FileTypes
             // If it is a non-image format which does contain colours, offer to save with palette
             FileFramesWwShpLol1 shp = fileToSave as FileFramesWwShpLol1;
             Int32 compression = shp != null ? shp.CompressionType : 4;
-            Boolean hasRemap = shp != null && shp.RemappedIndices != null && shp.RemappedIndices.Length > 0;
+            Dune2ShpType d2shp = fileToSave as Dune2ShpType;
+            Boolean hasRemap = d2shp != null && d2shp.RemappedIndices != null && d2shp.RemappedIndices.Length > 0;
             Boolean probablyRemappedUnit = frames.Length > 16;
             if (probablyRemappedUnit)
             {
@@ -196,20 +194,19 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
             }
-            String remapped = hasRemap && !probablyRemappedUnit ? GeneralUtils.GroupNumbers(shp.RemappedIndices) : String.Empty;
-            Boolean hasUncompressed = shp != null && shp.UncompressedIndices != null && shp.UncompressedIndices.Length > 0;
-            String uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(shp.UncompressedIndices) : String.Empty;
+            String remapped = hasRemap && !probablyRemappedUnit ? GeneralUtils.GroupNumbers(d2shp.RemappedIndices) : String.Empty;
+            Boolean hasUncompressed = d2shp != null && d2shp.UncompressedIndices != null && d2shp.UncompressedIndices.Length > 0;
+            String uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(d2shp.UncompressedIndices) : String.Empty;
 
             return new SaveOption[]
             {
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Overall file compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
-                new SaveOption("NCM", SaveOptionType.Boolean, "Don't compress separate frames", "0"),
+                new SaveOption("NCM", SaveOptionType.Boolean, "Don't compress separate frames (might give better overall compression)", "0"),
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped.", "1"),
                 new SaveOption("RMU", SaveOptionType.Boolean, "Treat as remapped unit (apply remapping to all frames except the remap table itself at index #16)", null, probablyRemappedUnit ? "1" : "0", new SaveEnableFilter("RMT", false, "1")),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, new SaveEnableFilter("RMU", true, "1")),
-                new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "1"),
-                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCA", false, "0"))
-
+                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, ", remapped, new SaveEnableFilter("RMU", true, "1")),
+                new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "0", "1", new SaveEnableFilter("NCM", true, "1")),
+                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCM", true, "1"), new SaveEnableFilter("NCA", true, "1"))
             };
         }
 
@@ -235,11 +232,20 @@ namespace EngieFileConverter.Domain.FileTypes
             SaveOption noCompAuto = SaveOption.GetSaveOption(saveOptions, "NCA");
             SaveOption noCompSpecified = SaveOption.GetSaveOption(saveOptions, "NCS");
             List<SaveOption> saveOpts = new List<SaveOption>();
-            saveOpts.Add(new SaveOption("VER", SaveOptionType.Boolean, null, null, noFramesCompr ? "2" : "1"));
+            saveOpts.Add(new SaveOption("VER", SaveOptionType.Boolean, null, null, "1"));
             saveOpts.Add(new SaveOption("RMT", SaveOptionType.Boolean, null, null, addRemap || !String.IsNullOrEmpty(remapRange) ? "1" : "0"));
             saveOpts.Add(new SaveOption("RMS", SaveOptionType.String, null, null, remapRange));
-            if (noCompAuto != null) saveOpts.Add(noCompAuto);
-            if (noCompSpecified != null) saveOpts.Add(noCompSpecified);
+            if (noFramesCompr)
+            {
+                saveOpts.Add(new SaveOption("NCA", SaveOptionType.Boolean, "", "0"));
+                saveOpts.Add(new SaveOption("NCS", SaveOptionType.String, String.Empty, String.Empty, String.Empty));
+            }
+            else
+            {
+                if (noCompAuto != null) saveOpts.Add(noCompAuto);
+                if (noCompSpecified != null) saveOpts.Add(noCompSpecified);
+            }
+
             // Lands of Lore Shape format is Dune 2 SHP embedded in CPS format.
             FileFramesWwShpD2 baseShp = new FileFramesWwShpD2();
             Byte[] dune2shpData = baseShp.SaveToBytesAsThis(fileToSave, saveOpts.ToArray());

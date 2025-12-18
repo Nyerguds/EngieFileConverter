@@ -1,4 +1,4 @@
-﻿using Nyerguds.Ini;
+using Nyerguds.Ini;
 using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
@@ -53,12 +53,12 @@ namespace EngieFileConverter.Domain.FileTypes
             if (!sectionNames.Contains("Map"))
                 throw new FileTypeLoadException("No [Map] section found in file!");
 
-            Byte[] mapTerrain = this.ExpandRAMap(mapini, "MapPack");
-            Byte[] mapOverlay = this.ExpandRAMap(mapini, "OverlayPack");
+            Byte[] mapTerrain = this.ExpandRAMap(mapini, "MapPack", 3);
+            Byte[] mapOverlay = this.ExpandRAMap(mapini, "OverlayPack", 1);
             this.SetFileNames(path);
         }
 
-        private Byte[] ExpandRAMap(IniFile mapIniFile, String section)
+        private Byte[] ExpandRAMap(IniFile mapIniFile, String section, Int32 cellSize)
         {
             Dictionary<String, String> sectionValues = mapIniFile.GetSectionContent(section);
             StringBuilder sb = new StringBuilder();
@@ -71,7 +71,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] compressedMap = Convert.FromBase64String(sb.ToString());
             Int32 readPtr = 0;
             Int32 writePtr = 0;
-            Byte[] mapFile = new Byte[128 * 128 * 3];
+            Byte[] mapFile = new Byte[128 * 128 * cellSize];
 
             while (readPtr + 4 <= compressedMap.Length)
             {

@@ -98,11 +98,14 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         private void PickTrimColor()
         {
-            FrmPalette palSelect = new FrmPalette(this.m_Palette.ToArray(), false, ColorSelMode.Single);
-            palSelect.SelectedIndices = new Int32[] { lblColor.Tag as Int32? ?? 0 };
-            if (palSelect.ShowDialog() != DialogResult.OK)
-                return;
-            Int32 selectedColor = palSelect.SelectedIndices.Length == 0 ? 0 : palSelect.SelectedIndices[0];
+            Int32 selectedColor;
+            using (FrmPalette palSelect = new FrmPalette(this.m_Palette.ToArray(), false, ColorSelMode.Single))
+            {
+                palSelect.SelectedIndices = new Int32[] {lblColor.Tag as Int32? ?? 0};
+                if (palSelect.ShowDialog() != DialogResult.OK)
+                    return;
+                selectedColor = palSelect.SelectedIndices.Length == 0 ? 0 : palSelect.SelectedIndices[0];
+            }
             lblColor.Tag = selectedColor;
             lblColor.TrueBackColor = this.m_Palette[selectedColor];
             this.lblColorVal.Text = "Index " + selectedColor;

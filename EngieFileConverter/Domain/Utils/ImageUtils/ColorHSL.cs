@@ -13,6 +13,7 @@ namespace Nyerguds.ImageManipulation
         private Double hue = 1.0;
         private Double saturation = 1.0;
         private Double luminosity = 1.0;
+        private Byte alpha = 255;
 
         public static Double SCALE = 240.0;
 
@@ -21,15 +22,22 @@ namespace Nyerguds.ImageManipulation
             get { return this.hue * SCALE; }
             set { this.hue = this.CheckRange(value / SCALE); }
         }
+
         public Double Saturation
         {
             get { return this.saturation * SCALE; }
             set { this.saturation = this.CheckRange(value / SCALE); }
         }
+
         public Double Luminosity
         {
             get { return this.luminosity * SCALE; }
             set { this.luminosity = this.CheckRange(value / SCALE); }
+        }
+        public Byte Alpha
+        {
+            get { return this.alpha; }
+            set { this.alpha = value; }
         }
 
         private Double CheckRange(Double value)
@@ -70,7 +78,7 @@ namespace Nyerguds.ImageManipulation
                     b = GetColorComponent(temp1, temp2, hslColor.hue - 1.0 / 3.0);
                 }
             }
-            return Color.FromArgb((Int32)(255 * r), (Int32)(255 * g), (Int32)(255 * b));
+            return Color.FromArgb(hslColor.Alpha, (Int32)(255 * r), (Int32)(255 * g), (Int32)(255 * b));
         }
 
         private static Double GetColorComponent(Double temp1, Double temp2, Double temp3)
@@ -84,6 +92,7 @@ namespace Nyerguds.ImageManipulation
                 return temp1 + ((temp2 - temp1) * ((2.0 / 3.0) - temp3) * 6.0);
             return temp1;
         }
+
         private static Double MoveIntoRange(Double temp3)
         {
             if (temp3 < 0.0)
@@ -92,6 +101,7 @@ namespace Nyerguds.ImageManipulation
                 temp3 -= 1.0;
             return temp3;
         }
+
         private static Double GetTemp2(ColorHSL hslColor)
         {
             Double temp2;
@@ -108,9 +118,19 @@ namespace Nyerguds.ImageManipulation
             hslColor.hue = color.GetHue() / 360.0; // we store hue as 0-1 as opposed to 0-360
             hslColor.luminosity = color.GetBrightness();
             hslColor.saturation = color.GetSaturation();
+            hslColor.Alpha = color.A;
             return hslColor;
         }
         #endregion
+
+        public void SetARGB(Int32 alpha, Int32 red, Int32 green, Int32 blue)
+        {
+            ColorHSL hslColor = (ColorHSL)Color.FromArgb(alpha, red, green, blue);
+            this.hue = hslColor.hue;
+            this.saturation = hslColor.saturation;
+            this.luminosity = hslColor.luminosity;
+            this.alpha = (Byte)alpha;
+        }
 
         public void SetRGB(Int32 red, Int32 green, Int32 blue)
         {
@@ -123,17 +143,32 @@ namespace Nyerguds.ImageManipulation
         public ColorHSL() { }
         public ColorHSL(Color color)
         {
-            this.SetRGB(color.R, color.G, color.B);
+            this.SetARGB(color.A, color.R, color.G, color.B);
         }
+
         public ColorHSL(Int32 red, Int32 green, Int32 blue)
         {
             this.SetRGB(red, green, blue);
         }
+
+        public ColorHSL(Int32 alpha, Int32 red, Int32 green, Int32 blue)
+        {
+            this.SetARGB(alpha, red, green, blue);
+        }
+
         public ColorHSL(Double hue, Double saturation, Double luminosity)
         {
             this.Hue = hue;
             this.Saturation = saturation;
             this.Luminosity = luminosity;
+        }
+
+        public ColorHSL(Double hue, Double saturation, Double luminosity, Int32 alpha)
+        {
+            this.Hue = hue;
+            this.Saturation = saturation;
+            this.Luminosity = luminosity;
+            this.Alpha = (Byte)alpha;
         }
 
     }

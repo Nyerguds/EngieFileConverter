@@ -247,6 +247,14 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
+        /// <summary>
+        /// Uses Pythagorean distance in 3D colour space to find the closest match to a given colour on
+        /// a given colour palette, and returns the index on the palette at which that match was found.
+        /// </summary>
+        /// <param name="col">The colour to find the closest match to</param>
+        /// <param name="colorPalette">The palette of available colours to match</param>
+        /// <param name="excludedindices">List of palette indices that are specifically excluded from the search.</param>
+        /// <returns>The index on the palette of the colour that is the closest to the given colour.</returns>
         public static Int32 GetClosestPaletteIndexMatch(Color col, Color[] colorPalette, List<Int32> excludedindices)
         {
             Int32 colorMatch = 0;
@@ -262,6 +270,7 @@ namespace Nyerguds.ImageManipulation
                 Int32 redDistance = paletteColor.R - red;
                 Int32 greenDistance = paletteColor.G - green;
                 Int32 blueDistance = paletteColor.B - blue;
+                // Technically, Pythagorean distance needs to have a root taken of the result, but this is not needed for just comparing them.
                 Int32 distance = (redDistance * redDistance) + (greenDistance * greenDistance) + (blueDistance * blueDistance);
                 if (distance >= leastDistance)
                     continue;

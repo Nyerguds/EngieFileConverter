@@ -1,10 +1,12 @@
 ﻿Engie File Converter
--------------- Created by by Nyerguds (04/04/2017)
+--------------------
 
 This tool was originally created to allow viewing and converting image formats found in the
 Nintendo 64 ROM of the Command & Conquer game. Since then, it has evolved into a more general
 modding suite supporting a large range of file formats from classic 90's era games.
 
+Created by Maarten 'Nyerguds' Meuris
+First release: 04/04/2017
 
 Special thanks to:
 -Kamuix and Chad1233 for their help in testing this
@@ -13,7 +15,7 @@ Special thanks to:
 
 
 If you like what I'm doing, and you have too much money, feel free to donate:
-https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=nyerguds@gmail.com&currency_code=EUR
+https://www.paypal.com/donate/?business=nyerguds@gmail.com&currency_code=EUR
 
 
 Features:
@@ -21,11 +23,10 @@ Features:
 -Supports opening and saving all classic image types (png/gif/bmp/jpg), and a load of game formats.
 -Gives a visual representation of the loaded file, with zoom and adjustable background color.
 -Can display and edit the file's color palette, if it has one.
--Can save opened files as any supported format, though some conversions are obviously impossible;
- high-color images can't be saved as palette, and only maps can be saved as maps.
+-Can save opened files as any compatible supported format.
 -Preserves the color palette when saving 4-bit and 8-bit paletted images.
 -Supports drag & drop for opening files.
--Has utilities to help generate height maps for missions.
+-Has utilities to edit ranges of frames, and to convert to and from sprite sheets.
 -Offers save options for the types that need them.
 
 
@@ -75,6 +76,9 @@ The DaisyField format's decryption was vastly simplified thanks to some hints fr
 
 The Interactive Girls Club bit mask compression was figured out thanks to CTPAX-X Team.
 
+The bulk of the research on the Dynamix SCN/OFF format was done by user Knt47 of the VOGONS.org
+forums and Shikadi modding wiki.
+
 
 Version history:
 ---------------
@@ -85,7 +89,19 @@ Engie File Converter.
 
 Engie File Converter versions:
 
-v1.5.2: (29/06/2020 15:25)
+v1.5.3: (31/01/2021 00:40 CET)
+-Polished save options of Dune II and Lands of Lore 1 SHP files.
+-Save options window will size itself to suit the given options.
+-All popup windows now properly dispose their used resources.
+-Added better options for internal sizes of Windows icons.
+-Added support for INT 33 mouse cursors. Note that this type will not be autodetected.
+-Added save option for png to expand the palette of 4-bit images with 4 or less colours to 16
+ colours. This prevents editors from re-saving it as 2-bit, which .net can't open as indexed.
+-Added support for loading and saving Dynamix BMP files of the SCN/OFF format. These are
+ images with 4-bit data that can be incremented to other indices in an 8-bit image.
+-Fixed a bug where colours converted from 6-bit to 8-bit and then back would be changed.
+
+v1.5.2: (29/06/2020 15:25 CET)
 -Added support for Mythos LBV, the raw 8-bit 320x200 image with palette from Serrated Scalpel.
 -Fixed bug: KORT image saving accidentally checked on 320x200 instead of 320x240.
 -Fixed bug: Cancelling the confirm dialog in "Save Palette" still closed the palettes window.
@@ -93,10 +109,10 @@ v1.5.2: (29/06/2020 15:25)
 -"Paste on frames" now works on sequences with empty frames. Empty frames will be ignored.
 -Added option on Dune II SHP to save specific frame ranges without compression.
 
-v1.5.1: (28/02/2020 12:11)
+v1.5.1: (28/02/2020 12:11 CET)
 -Fixed an error in the save logic for Mythos VDA that made it add an extra frame at the start.
 
-v1.5.0: (26/02/2020 14:19)
+v1.5.0: (26/02/2020 14:19 CET)
 -Cleaned up loads of obsolete internals related to color palette handling.
 -Six-bit colors now correctly scale up to 0-255, rather than the simple *4 that gave 0-252.
 -Added "Save raw" option, for saving the raw bytes of the loaded image.
@@ -119,13 +135,13 @@ v1.5.0: (26/02/2020 14:19)
 -Removed transparency mask on index 0 from Dynamix BMP Matrix type.
 -Removed useless 4-bit view from Dynamix SCR format.
 
-v1.4.9: (29/10/2019 11:05)
+v1.4.9: (29/10/2019 11:05 CET)
 -Added palette visualiser to the "Match to palette" function.
 
-v1.4.8: (29/10/2019 10:00)
+v1.4.8: (29/10/2019 10:00 CET)
 -Fixed broken detection of Nintendo 64 C&C maps.
 
-v1.4.7: (28/10/2019 19:01)
+v1.4.7: (28/10/2019 19:01 CET)
 -"Paste on frames" now also works for a single image.
 -Fixed flickering on zoom.
 -Added "Match to palette" function under Edit -> Colors.
@@ -133,19 +149,19 @@ v1.4.7: (28/10/2019 19:01)
  a palette is shown on the UI, including for the '-1' frame on frames with a common palette.
 -"Palette to image" will now use the name of the palette if it was selected from the dropdown.
 
-v1.4.6: (14/07/2019 12:00)
+v1.4.6: (14/07/2019 12:00 CET)
 -Fixed more bugs in palette management tool
 -Added palette manager in menu, independent from palette saving.
 -Added an "Image to palette" tool to convert the pixels from an image to palette colors.
 -Added a "palette to image" tool to convert the palette of the current image to an image.
 -Added own loading logic for BMP format, to correctly identify 16-bit BMP files.
 
-v1.4.5: (18/06/2019 13:56)
+v1.4.5: (18/06/2019 13:56 CET)
 -Added support for the Interactive Girls GX2 format.
 -Added read-only support for the GX2 images in Interactive Girls .m3 / .slb archives.
 -Fixed a crash when converting an indexed image to a smaller palette in the frames splitter.
 
-v1.4.4: (05/06/2019 19:00)
+v1.4.4: (05/06/2019 19:00 CET)
 -Single-image Visage files no longer show their dimensions as 0×0.
 -Optimised the drawing of the palette control.
 -Fixed bug where WSA files continuing from a previous file added messy pixels on the first frame.
@@ -156,16 +172,16 @@ v1.4.4: (05/06/2019 19:00)
 -Added support for the 15 Move Hole BIF image format.
 -Added reading support for the SexTris image format.
 
-v1.4.3: (22/01/2019 18:47)
+v1.4.3: (22/01/2019 18:47 CET)
 -Simplified internal workings of the palette panel
 -Added support for Playstation and Amiga palettes.
 -Added a "paste from clipboard" button on the Paste on Frames dialog.
 
-v1.4.2: (28/11/2018 12:25)
+v1.4.2: (28/11/2018 12:25 CET)
 -Fixed several issues with CPS and WSA loading.
 -Added support for ToonStruck 640x480 CPS format.
 
-v1.4.1: (16/10/2018 14:42)
+v1.4.1: (16/10/2018 14:42 CET)
 -Compacted the UI to allow showing more additional info.
 -Fixed the position of Lands of Lore SHP in the save types list.
 -Optimised Dune II and Lands of Lore SHP; they no longer store duplicate frames.
@@ -173,7 +189,7 @@ v1.4.1: (16/10/2018 14:42)
 -Splitting an indexed image into frames now also sets the palette on empty frames.
 -Added option to save Tiberian Sun SHP as uncompressed; required for the mouse cursor.
 
-v1.4.0: (07/09/2018 13:00)
+v1.4.0: (07/09/2018 13:00 CET)
 -Added multithreading to all operations, to prevent UI freezes.
 -Pasting on a range of frames no longer makes it lose its "has common palette" status.
 -Improved error handling on Mythos VGS/VDA saving.
@@ -181,27 +197,27 @@ v1.4.0: (07/09/2018 13:00)
 -Enhanced WSA chaining logic to allow chaining from CPS files, and from larger dimensions.
 -Fixed bugs in WSA detection logic.
 
-v1.3.6: (04/09/2018 16:27)
+v1.3.6: (04/09/2018 16:27 CET)
 -Fixed the frame range interpreter used in "Paste image on frames" and in Dune II saving.
 -Sped up conversion from high color to palette by caching color values in a lookup table.
 
-v1.3.5: (24/08/2018 07:40)
+v1.3.5: (24/08/2018 07:40 CET)
 -Fixed a bug in the splitting logic for non-32bpp high color images.
 
-v1.3.4: (23/08/2018 18:40)
+v1.3.4: (23/08/2018 18:40 CET)
 -Improved the radar color options for Tiberian Sun SHP files.
 -Added support for Amiga CPS files. The multi-palette types are handled as frames.
 
-v1.3.3: (21/08/2018 12:20)
+v1.3.3: (21/08/2018 12:20 CET)
 -Fixed scaling issue on images with custom DPI setting.
 -Added automatic maximum zoom boundary to avoid memory corruption in PictureBox.
 -Added zoom levels below "1". Negative values are seen as fractions, so it skips 0 and -1.
 
-v1.3.2: (20/08/2018 14:15)
+v1.3.2: (20/08/2018 14:15 CET)
 -Added a palette selector for the fill color in the frames-to-image options list.
 -Fixed a crash when matching an indexed image to a palette in the image-to-frames window.
 
-v1.3.1: (18/08/2018 20:15)
+v1.3.1: (18/08/2018 20:15 CET)
 -The background color selector on the UI is now a control selectable with [Tab].
 -Added support for C&C SHP files with a loop frame.
 -Added support for the Monopoly type to the WSA format.
@@ -210,7 +226,7 @@ v1.3.1: (18/08/2018 20:15)
 -Enhanced image-to-frames with a background color trim option.
 -Enhanced image-to-frames with a palette matching option.
 
-v1.3.0: (10/08/2018 23:05)
+v1.3.0: (10/08/2018 23:05 CET)
 -Renamed the project. Original projected name was "Nyerguds's Game File Converter", or "NGFC",
  which then mutated into "Engie FC", or "Engie File Converter".
 -Visage Animation load chaining now also works with a png file as base for a chain.
@@ -222,29 +238,29 @@ v1.3.0: (10/08/2018 23:05)
 
 CnC64FileConverter versions:
 
-v1.2.20: (03/08/2018 12:40)
+v1.2.20: (03/08/2018 12:40 CET)
 -Added better memory management in the "paste image on frames" feature.
 -Optimised the paste logic for frame ranges containing palette differences.
 -Files that were pasted on will no longer identify as having a common palette if they don't.
 -Visage Animation continued from a previous file will now use its own palette everywhere.
 
-v1.2.19: (03/08/2018 21:20)
+v1.2.19: (03/08/2018 21:20 CET)
 -Loading a Visage Animation's initial state from PNG no longer messed up the save logic.
 -Added feature to paste an image on a range of frames.
 
-v1.2.18: (27/07/2018 20:30)
+v1.2.18: (27/07/2018 20:30 CET)
 -Implemented Westwood Dune II Shape (SHP) support.
 -Save options can now get disabled based on a parent option's value.
 -Save options with text input can now filter out illegal characters.
 
-v1.2.17: (19/07/2018 19:21)
+v1.2.17: (19/07/2018 19:21 CET)
 -Implemented Westwood Tiberian Sun Shape (SHP) support.
 
-v1.2.16: (16/07/2018 08:50)
+v1.2.16: (16/07/2018 08:50 CET)
 -Implemented Westwood C&C1/RA1 Shape (SHP) support.
 -Fixed slow loading on VDA files due to bug in color palette handling.
 
-v1.2.15: (10/07/2018 18:35)
+v1.2.15: (10/07/2018 18:35 CET)
 -Saving Mythos VDA no longer allows frames after 0 to have pixels of color 255 on new locations.
 -Disallowed saving frame types as palettes since some types don't have a global palette.
 -Fixed "File not found" error when trying to load a Mythos VDA file without VDX.
@@ -252,7 +268,7 @@ v1.2.15: (10/07/2018 18:35)
 -Mythos animations now show the total chunk count in the file on the index frame.
 -Added more detailed save options for the Mythos animations compression algorithm.
 
-v1.2.14: (28/06/2018 13:50)
+v1.2.14: (28/06/2018 13:50 CET)
 -A VDA chained from png will now indicate its first frame the same way as a normally loaded png.
 -Fixed bug that could let WSA load chaining skip missing files (which wouldn't load correctly).
 -Fixed chunk overflow check mechanism in the VDA animations save process.
@@ -262,7 +278,7 @@ v1.2.14: (28/06/2018 13:50)
 -Changed Windows icon handling so it no longer shows up as a type that supports frame input.
 -Fixed focus issues in the save options window.
 
-v1.2.13: (26/06/2018 13:04)
+v1.2.13: (26/06/2018 13:04 CET)
 -Added check on maximum compressed length in Mythos RLE format; it can't exceed 0xFFFF.
 -Added check on maximum amount of chunks when saving Mythos VDA format; it can't exceed 0x7FFF.
 -Added a leniency (of 8/256) to the palette match check in Mythos VDA chaining logic.
@@ -270,11 +286,11 @@ v1.2.13: (26/06/2018 13:04)
 -Added proper cleanup of temporary images in memory loaded in the chaining logics.
 -Added fixes for some unlikely fringe cases in VDA chaining that could crash the program.
 
-v1.2.12: (24/06/2018 19:25)
+v1.2.12: (24/06/2018 19:25 CET)
 -Changed load chaining on the Mythos animation format so the found base frame is added.
  Westwood WSA format reserves an empty frame for this anyway, so it remains unchanged.
 
-v1.2.11: (24/06/2018 17:00)
+v1.2.11: (24/06/2018 17:00 CET)
 -Changed chunk merging on Mythos VDA format to a save option.
 -Improved multiple-extensions support in saving dialog.
 -Optimised Mythos animation VDX writing to avoid using expensive 'new offset' commands.
@@ -282,14 +298,14 @@ v1.2.11: (24/06/2018 17:00)
 -Added load chaining for Mythos VDA and Westwood WSA format.
 -Improved support for opening Windows icon files.
 
-v1.2.10: (23/06/2018 01:00)
+v1.2.10: (23/06/2018 01:00 CET)
 -Fixed transparency support in several supported types.
 -Added identical-tile optimising in C&C tileset saving.
 -Fixed bug in PixelFormatter that corrupted color writing by mixing up the channels order.
 -Fixed bug in the Mythos RLE compression when saving flag bytes near the end of a line.
 -Implemented loading and saving of Mythos animation and palette files.
 
-v1.2.9: (06/06/2018 14:40)
+v1.2.9: (06/06/2018 14:40 CET)
 -Added Westwood palette stretch tables as new supported type.
 -When zooming in, the image panel will stay centered on one point.
 -Unloaded images are now properly cleaned up and removed from memory.
@@ -298,38 +314,38 @@ v1.2.9: (06/06/2018 14:40)
 -Fixed bug that removed transparency from the last frame in Mythos Visage format.
 -Implemented full compression loading and saving support for Mythos Visage format.
 
-v1.2.8: (25/01/2018 18:50)
+v1.2.8: (25/01/2018 18:50 CET)
 -Added vertical image scrolling with shift + scrollwheel.
 -Image types that can natively be opened by the .Net framework but are not specifically
  supported in the editor (like .tif) will now open as general type "Image".
 -The disabled palette dropdown will now correctly display the reason why it is disabled.
 -When loading a file, the zoom factor will automatically adjust to the loaded image.
 
-v1.2.7: (15/11/2017 07:36)
+v1.2.7: (15/11/2017 07:36 CET)
 -Fixed background handling in MA8 chunk data by switching index 00 and FF on the image.
 
-v1.2.6: (15/11/2017 14:32)
+v1.2.6: (15/11/2017 14:32 CET)
 -Added support for MA8 format used in the Macintosh versions of the Dynamix images.
 
-v1.2.5: (09/11/2017 13:47)
+v1.2.5: (09/11/2017 13:47 CET)
 -Fixed the X and Y trimming functions to make WSA save work correctly.
 
-v1.2.4: (20/10/2017 13:37)
+v1.2.4: (20/10/2017 13:37 CET)
 -Fixed some checks in the file load to make them fail properly instead of giving internal errors.
 -Added Westwood WSA format, though the detection might not be 100% correct yet.
 
-v1.2.3: (26/09/2017 19:05)
+v1.2.3: (26/09/2017 19:05 CET)
 -Fixed oversight in the KotB format. The written files now work correctly in the game.
 
-v1.2.2: (24/09/2017 16:50)
+v1.2.2: (24/09/2017 16:50 CET)
 -Fixed main chunks in Dynamix files not saving as container chunks.
 
-v1.2.1: (23/09/2017 21:23)
+v1.2.1: (23/09/2017 21:23 CET)
 -Fixed crash when saving images with uneven width in Dynamix VGA/BIN format.
 -Added tighter checks on Dynamix image input; they can only handle widths divisible by 8.
 -Exporting to frames now always takes png as default format.
 
-v1.2: (22/09/2017 15:30)
+v1.2: (22/09/2017 15:30 CET)
 -Added new Save Options dialog for types that need extra options for saving.
 -Added very efficient automatic filter system to determine what types a file can be saved as.
 -Removed "export" function; it was no longer useful.
@@ -342,10 +358,10 @@ v1.2: (22/09/2017 15:30)
 -Detects most specific type when opening a general format like "Image" through the Open menu.
 -Type detection is restricted to the types contained in the chosen type in the Open File menu.
 
-v1.1.4: (13/09/2017 09:27)
+v1.1.4: (13/09/2017 09:27 CET)
 -Improved file detection checks and error message handling in several file types.
 
-v1.1.3: (12/09/2017 21:20)
+v1.1.3: (12/09/2017 21:20 CET)
 -Optimised RLE compression for Elvira VGA format to compress better than the original.
 -Added checks on empty data before saving.
 -Changed frames handling so types can have frames without being seen as a frames container.
@@ -357,61 +373,61 @@ v1.1.3: (12/09/2017 21:20)
 -Fixed bug where the stride wasn't collapsed to the width on grayscale C&C64 images.
 -Added support for King of the Beach .PAK image format.
 
-v1.1.2: (07/09/2017 15:03)
+v1.1.2: (07/09/2017 15:03 CET)
 -Added better support for frames; when opening an image with a numeric suffix that is part of
  a range of images, the tool will ask to load it as frames.
 -Added Elvira VGA writing support.
 
-v1.1.1: (10/08/2017 15:53)
+v1.1.1: (10/08/2017 15:53 CET)
 -Added support for different compression types in CPS files.
 
-v1.1.0: (05/08/2017 19:43)
+v1.1.0: (05/08/2017 19:43 CET)
 -Added support for the KORT_DAT.### images of "King Arthur's Knights of the Round Table"
 -For formats with optional compression, (like SCR), hold shift while clicking "save"
  to save as uncompressed.
 
-v1.0.9: (31/07/2017 00:24)
+v1.0.9: (31/07/2017 00:24 CET)
 -Fixed confusing naming in internal toolsets, and simplified byte reading/writing methods.
 -Fixed bug where the height map conversion tools caused files to lose their file name,
  which caused crashes when trying to save the result.
 -Fixed errors in CPS reading.
 -Added Dynamix SCR reading and writing, though only the VGA/BIN type is supported.
 
-v1.0.8: (05/05/2017 17:53)
+v1.0.8: (05/05/2017 17:53 CET)
 -Fixed bugs in opening logic that made the program give errors on opening .IMG files.
 -Fixed oversight in .IMG saving logics that didn't pass on the palette length.
 -Fixed bug in the N64 8-bit palette data that gave it the .pa4 extension.
 -Added support for reading and writing LCW-compressed images.
 
-v1.0.7: (01/05/2017 20:08)
+v1.0.7: (01/05/2017 20:08 CET)
 -Added an option to copy the image to the clipboard.
 -Added palette support for paletteless file formats.
 -Added the ability to open C&C template (tileset) files.
 
-v1.0.6: (07/04/2017 22:34)
+v1.0.6: (07/04/2017 22:34 CET)
 -Fixed bug in the file open logic that prevented opening certain types through the menus.
 
-v1.0.5: (07/04/2017 21:21)
+v1.0.5: (07/04/2017 21:21 CET)
 -Fixed a bug that prevented full clearing of the left map edge
 -Fixed a minor bug in the terrain type definitions.
 -When an ini file dropped into the program it will check if a map can be found for it.
 -UI options now get disabled when not applicable.
 
-v1.0.4: (07/04/2017 17:32)
+v1.0.4: (07/04/2017 17:32 CET)
 -The converted 65x65 height maps will immediately be loaded in the program as paletteless IMG
  format, so they can more easily be saved into that format.
 
-v1.0.3: (07/04/2017 15:30)
+v1.0.3: (07/04/2017 15:30 CET)
 -Fixed small palette import bug in tilesets
 -Added tools to generate height maps from missions.
 
-v1.0.2: (04/04/2017 23:53)
+v1.0.2: (04/04/2017 23:53 CET)
 -Fixed png export of map files.
 
-v1.0.1: (04/04/2017 23:33)
+v1.0.1: (04/04/2017 23:33 CET)
 -Fixed behaviour of map import to allow PC maps saved by CCMAP.
 
-v1.0: (04/04/2017 22:33)
+v1.0: (04/04/2017 22:33 CET)
 -Removed img type debug info (internal data size) from the user interface.
 -Can now open normal images (png/gif/bmp/jpg).
 -Can now open both PC and N64 format C&C maps, visualizing them as 64x64 image with terrain types,
@@ -426,26 +442,26 @@ v1.0: (04/04/2017 22:33)
 
 CnC64ImageViewer versions:
 
-v1.2.2: (03/02/2017 08:00)
+v1.2.2: (03/02/2017 08:00 CET)
 -Fixed a crash in the zooming panel arrow keys scrolling.
 
-v1.2.1: (20/11/2016 16:00)
+v1.2.1: (20/11/2016 16:00 CET)
 -Added error checking and feedback on failure to load.
 -Optimized palette viewer, and added an indicator for transparency.
 -Version number is shown on the title bar.
 -Fixed a bug in the viewer that made it shift the image slightly up.
 
-v1.2: (19/11/2016 17:21)
+v1.2: (19/11/2016 17:21 CET)
 -Identified last unknown value in the header as part of the "number of colors" value.
 -Added palette viewer.
 -Added icon.
 
-v1.1: (19/11/2016 14:35)
+v1.1: (19/11/2016 14:35 CET)
 -Tool now shows the full header data and other file info.
 -Implemented zoom on the viewer.
 -Transparency color in the viewer can be customized.
 -Added classic Open / Save buttons with dialogs.
 
-v1.0: (19/11/2016 01:04)
+v1.0: (19/11/2016 01:04 CET)
 -Very rudimentary decoder and viewer.
 -Double-clicking an image saves it to disk as png in folder of origin.

@@ -101,7 +101,7 @@ namespace Nyerguds.ImageManipulation
                 case 1: return PixelFormat.Format1bppIndexed;
                 case 4: return PixelFormat.Format4bppIndexed;
                 case 8: return PixelFormat.Format8bppIndexed;
-                default: throw new ArgumentException("Unsupported indexed pixel format '" + bpp + "'!", "fileToSave");
+                default: throw new ArgumentException("Unsupported indexed pixel format '" + bpp + "'!", "bpp");
             }
         }
 
@@ -951,7 +951,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="height">Height of the image.</param>
         /// <param name="start">Start offset of the image data in the fileData parameter.</param>
         /// <param name="bitsLength">Amount of bits used by one pixel.</param>
-        /// <param name="bigEndian">True if the bits in the original image data are stored as big-endian.</param>
+        /// <param name="bigEndian">True if the blocks of pixels in the original image data are stored as big-endian, meaning, the highest values are the leftmost pixels.</param>
         /// <param name="stride">Stride used in the original image data. Will be adjusted to the new stride value, which will always equal the width.</param>
         /// <returns>The image data in a 1-byte-per-pixel format, with a stride exactly the same as the width.</returns>
         public static Byte[] ConvertTo8Bit(Byte[] imageData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian, ref Int32 stride)
@@ -1002,13 +1002,13 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data8bit">The eight bit per pixel image data</param>
         /// <param name="width">The width of the image</param>
         /// <param name="height">The height of the image</param>
-        /// <param name="bitsLength">The new amount of bits per pixel</param>
-        /// <param name="bigEndian">True if the bits in the new image data are to be stored as big-endian. One-bit images should generally be big-endian, while 4-bit ones should not be.</param>
+        /// <param name="newBitLength">The new amount of bits per pixel</param>
+        /// <param name="bigEndian">True if the blocks of pixels in the new image data are to be stored as big-endian, meaning, the highest values are the leftmost pixels.</param>
         /// <returns>The image data converted to the requested amount of bits per pixel.</returns>
-        public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 bitsLength, Boolean bigEndian)
+        public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 newBitLength, Boolean bigEndian)
         {
             Int32 stride = width;
-            return ConvertFrom8Bit(data8bit, width, height, bitsLength, bigEndian, ref stride);
+            return ConvertFrom8Bit(data8bit, width, height, newBitLength, bigEndian, ref stride);
         }
 
         /// <summary>
@@ -1017,18 +1017,24 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data8bit">The eight bit per pixel image data.</param>
         /// <param name="width">The width of the image.</param>
         /// <param name="height">The height of the image.</param>
-        /// <param name="bitsLength">The new amount of bits per pixel.</param>
-        /// <param name="bigEndian">True if the bits in the new image data are to be stored as big-endian.</param>
+        /// <param name="newBitLength">The new amount of bits per pixel.</param>
+        /// <param name="bigEndian">True if the blocks of pixels in the new image data are to be stored as big-endian, meaning, the highest values are the leftmost pixels.</param>
         /// <param name="stride">Stride used in the original image data. Will be adjusted to the new stride value.</param>
         /// <returns>The image data converted to the requested amount of bits per pixel.</returns>
-        public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 bitsLength, Boolean bigEndian, ref Int32 stride)
+        public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 newBitLength, Boolean bigEndian, ref Int32 stride)
         {
-            Int32 parts = 8 / bitsLength;
+            if (newBitLength > 8)
+                throw new ArgumentException("Cannot convert to bit format greater than 8!", "newBitLength");
+            if (stride < width)
+                throw new ArgumentException("Stride is too small for the given width!", "stride");
+            if (data8bit.Length < stride * height)
+                throw new ArgumentException("Data given data is too small to contain an 8-bit image of the given dimensions", "data8bit");
+            Int32 parts = 8 / newBitLength;
             // Amount of bytes to write per line
-            Int32 newStride = GetMinimumStride(width, bitsLength);
+            Int32 newStride = GetMinimumStride(width, newBitLength);
             // Bit mask for reducing original data to actual bits maximum.
             // Should not be needed if data is correct, but eh.
-            Int32 bitmask = (1 << bitsLength) - 1;
+            Int32 bitmask = (1 << newBitLength) - 1;
             Byte[] dataXbit = new Byte[newStride * height];
             // Actual conversion process.
             for (Int32 y = 0; y < height; ++y)
@@ -1040,10 +1046,10 @@ namespace Nyerguds.ImageManipulation
                     // This will always get a new index
                     Int32 index8bit = y * stride + x;
                     // Amount of bits to shift the data to get to the current pixel data
-                    Int32 shift = (x % parts) * bitsLength;
+                    Int32 shift = (x % parts) * newBitLength;
                     // Reversed for big-endian
                     if (bigEndian)
-                        shift = 8 - shift - bitsLength;
+                        shift = 8 - shift - newBitLength;
                     // Get data, reduce to bit rate, shift it and store it.
                     dataXbit[indexXbit] |= (Byte) ((data8bit[index8bit] & bitmask) << shift);
                 }

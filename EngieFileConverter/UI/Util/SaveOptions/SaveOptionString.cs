@@ -54,7 +54,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.txtValue.Select();
         }
 
-        public override void DisableValue(Boolean enabled)
+        public override void SetEnabled(Boolean enabled)
         {
             try
             {

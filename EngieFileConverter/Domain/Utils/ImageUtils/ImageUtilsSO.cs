@@ -1,6 +1,8 @@
 ﻿#if DEBUG
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
@@ -304,6 +306,55 @@ namespace Nyerguds.ImageManipulation
 
 
         /// <summary>
+        /// Takes Bayer sensor image with red, green and blue pixels, and extracts their values into an 8-bit image.
+        /// Written for a StackOverflow question.
+        /// https://stackoverflow.com/a/50038800/395685
+        /// </summary>
+        /// <param name="image">Bitmap with sensor data.</param>
+        /// <param name="greenFirst">Indicates whether green is the first encountered pixel on the image.</param>
+        /// <param name="blueRowFirst">Indicates whether the blue pixels are on the first or second row.</param>
+        /// <returns>An 8-bit image.</returns>
+        public static Bitmap BayerGridToGray(Bitmap image, Boolean greenFirst, Boolean blueRowFirst)
+        {
+            Int32 stride;
+            Byte[] arr = GetImageData(image, out stride, PixelFormat.Format24bppRgb);
+            Int32 width = image.Width;
+            Int32 height = image.Height;
+
+            Byte[] result = new Byte[width * height];
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 curPtr = y * stride;
+                Int32 resPtr = y * width;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    // Get correct colour components from sliding window
+                    Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1);
+                    Boolean blueRow = y % 2 == (blueRowFirst ? 0 : 1);
+                    // BGR
+                    Byte blue = arr[curPtr + 0];
+                    Byte green = arr[curPtr + 1];
+                    Byte red = arr[curPtr + 2];
+                    Byte val = isGreen ? green : blueRow ? blue : red;
+
+                    // Blue
+                    result[resPtr + 0] = val;
+                    // Green
+                    result[resPtr + 1] = val;
+                    // Red
+                    result[resPtr + 2] = val;
+                    curPtr += 3;
+                    resPtr += 3;
+                }
+            }
+            Bitmap resultImg = BuildImage(result, width, height, width, PixelFormat.Format8bppIndexed);
+            ColorPalette palette = resultImg.Palette;
+            for (Int32 i = 0; i < 256; i++)
+                palette.Entries[i] = Color.FromArgb(i, i, i);
+            return resultImg;
+        }
+
+        /// <summary>
         /// Build Bayer image from 8-bit sensor array. This function lacks end-of-row compensation
         /// algorithms, and will just return an image one pixel smaller than the given data.
         /// Written for a StackOverflow question.
@@ -516,6 +567,73 @@ namespace Nyerguds.ImageManipulation
             for (Int32 i = 0; i < colsLength; ++i)
                 avgVal += cols[i].GetValueOrDefault();
             return colsCount == 0 ? (Byte) 0x80 : (Byte) (avgVal / colsCount);
+        }
+
+        /// <summary>
+        /// Build Bayer image from 8-bit sensor array. Fills in left and bottom row with copied content.
+        /// </summary>
+        /// <param name="arr">Array of sensor data.</param>
+        /// <param name="width">Width of sensor data array.</param>
+        /// <param name="height">Height of sensor data array.</param>
+        /// <param name="stride">Stride of sensor data array.</param>
+        /// <param name="greenFirst">Indicates whether green is the first encountered pixel on the image.</param>
+        /// <param name="blueRowFirst">Indicates whether the blue pixels are on the first or second row.</param>
+        /// <returns>The decoded image.</returns>
+        public static Byte[] BayerToRgb2x2Expand(Byte[] arr, ref Int32 width, ref Int32 height, ref Int32 stride, Boolean greenFirst, Boolean blueRowFirst)
+        {
+            Int32 processWidth = width - 1;
+            Int32 processHeight = height - 1;
+            Int32 lastWidth = width - 2;
+            Int32 lastHeight = height - 2;
+            Int32 newStride = width * 3;
+            Byte[] result = new Byte[newStride * height];
+            for (Int32 y = 0; y < processHeight; ++y)
+            {
+                Int32 curPtr = y * stride;
+                Int32 resPtr = y * newStride;
+                for (Int32 x = 0; x < processWidth; ++x)
+                {
+                    // Get correct colour components from sliding window
+                    Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1);
+                    Boolean blueRow = y % 2 == (blueRowFirst ? 0 : 1);
+                    Byte cornerCol1 = isGreen ? arr[curPtr + 1] : arr[curPtr];
+                    Byte cornerCol2 = isGreen ? arr[curPtr + stride] : arr[curPtr + stride + 1];
+                    Byte greenCol1 = isGreen ? arr[curPtr] : arr[curPtr + 1];
+                    Byte greenCol2 = isGreen ? arr[curPtr + stride + 1] : arr[curPtr + stride];
+                    Byte redCol = blueRow ? cornerCol2 : cornerCol1;
+                    Byte greenCol = (Byte) ((greenCol1 + greenCol2) / 2);
+                    Byte blueCol = blueRow ? cornerCol1 : cornerCol2;
+                    // 24bpp RGB is saved as [B, G, R].
+                    result[resPtr + 0] = blueCol;
+                    result[resPtr + 1] = greenCol;
+                    result[resPtr + 2] = redCol;
+                    // fill last column
+                    if (x == lastWidth)
+                    {
+                        result[resPtr + 3] = blueCol;
+                        result[resPtr + 4] = greenCol;
+                        result[resPtr + 5] = redCol;
+                    }
+                    // fill last row
+                    if (y == lastHeight)
+                    {
+                        result[resPtr + newStride + 0] = blueCol;
+                        result[resPtr + newStride + 1] = greenCol;
+                        result[resPtr + newStride + 2] = redCol;
+                    }
+                    // fill last pixel
+                    if (x == lastWidth && y == lastHeight)
+                    {
+                        result[resPtr + newStride + 3] = blueCol;
+                        result[resPtr + newStride + 4] = greenCol;
+                        result[resPtr + newStride + 5] = redCol;
+                    }
+                    curPtr++;
+                    resPtr += 3;
+                }
+            }
+            stride = newStride;
+            return result;
         }
 
         /// <summary>
@@ -957,97 +1075,264 @@ namespace Nyerguds.ImageManipulation
             return result;
         }
 
-    public static void BakeImages(String whiteFilePath, String materialsFolder, String resultFolder)
-    {
-        Int32 width;
-        Int32 height;
-        Int32 stride;
-        // extract bytes of shape & alpha image
-        Byte[] shapeImageBytes;
-        using (Bitmap shapeImage = new Bitmap(whiteFilePath))
+        public static void BakeImages(String whiteFilePath, String materialsFolder, String resultFolder)
         {
-            width = shapeImage.Width;
-            height = shapeImage.Height;
+            Int32 width;
+            Int32 height;
+            Int32 stride;
             // extract bytes of shape & alpha image
-            shapeImageBytes = GetImageData(shapeImage, out stride, PixelFormat.Format32bppArgb);
-        }
-        using (Bitmap blackImage = ExtractBlackImage(shapeImageBytes, width, height, stride))
-        {
-            //For every material image, calls the fusion method below.
-            foreach (String materialImagePath in Directory.GetFiles(materialsFolder))
+            Byte[] shapeImageBytes;
+            using (Bitmap shapeImage = new Bitmap(whiteFilePath))
             {
-                using (Bitmap patternImage = new Bitmap(materialImagePath))
-                //using (Bitmap result = ApplyAlphaToImage(shapeImageBytes, width, height, stride, patternImage))
-                using (Bitmap materialImage = TilePattern(patternImage, width, height, Color.Black))
-                using (Bitmap result = ApplyAlphaToImage(shapeImageBytes, width, height, stride, materialImage))
+                width = shapeImage.Width;
+                height = shapeImage.Height;
+                // extract bytes of shape & alpha image
+                shapeImageBytes = GetImageData(shapeImage, out stride, PixelFormat.Format32bppArgb);
+            }
+            using (Bitmap blackImage = ExtractBlackImage(shapeImageBytes, width, height, stride))
+            {
+                //For every material image, calls the fusion method below.
+                foreach (String materialImagePath in Directory.GetFiles(materialsFolder))
                 {
-                    if (result == null)
-                        continue;
-                    // paint black lines image onto alpha-adjusted pattern image.
-                    using (Graphics g = Graphics.FromImage(result))
-                        g.DrawImage(blackImage, 0, 0);
-                    result.Save(Path.Combine(resultFolder, Path.GetFileNameWithoutExtension(materialImagePath) + ".png"), ImageFormat.Png);
+                    using (Bitmap patternImage = new Bitmap(materialImagePath))
+                        //using (Bitmap result = ApplyAlphaToImage(shapeImageBytes, width, height, stride, patternImage))
+                    using (Bitmap materialImage = TilePattern(patternImage, width, height, Color.Black))
+                    using (Bitmap result = ApplyAlphaToImage(shapeImageBytes, width, height, stride, materialImage))
+                    {
+                        if (result == null)
+                            continue;
+                        // paint black lines image onto alpha-adjusted pattern image.
+                        using (Graphics g = Graphics.FromImage(result))
+                            g.DrawImage(blackImage, 0, 0);
+                        result.Save(Path.Combine(resultFolder, Path.GetFileNameWithoutExtension(materialImagePath) + ".png"), ImageFormat.Png);
+                    }
                 }
             }
         }
-    }
 
-    public static Bitmap ExtractBlackImage(Byte[] shapeImageBytes, Int32 width, Int32 height, Int32 stride)
-    {
-        // Create black lines image.
-        Byte[] imageBytesBlack = new Byte[shapeImageBytes.Length];
-        // Line start offset is set to 3 to immediately get the alpha component.
-        Int32 lineOffsImg = 3;
-        for (Int32 y = 0; y < height; y++)
+        public static Bitmap ExtractBlackImage(Byte[] shapeImageBytes, Int32 width, Int32 height, Int32 stride)
         {
-            Int32 curOffs = lineOffsImg;
-            for (Int32 x = 0; x < width; x++)
+            // Create black lines image.
+            Byte[] imageBytesBlack = new Byte[shapeImageBytes.Length];
+            // Line start offset is set to 3 to immediately get the alpha component.
+            Int32 lineOffsImg = 3;
+            for (Int32 y = 0; y < height; y++)
             {
-                // copy either alpha or inverted brightness (whichever is lowest)
-                // from the shape image onto black lines image as alpha, effectively
-                // only retaining the visible black lines from the shape image.
-                // I use curOffs - 1 (red) because it's the simplest operation.
-                Byte alpha = shapeImageBytes[curOffs];
-                Byte invBri = (Byte) (255 - shapeImageBytes[curOffs - 1]);
-                imageBytesBlack[curOffs] = Math.Min(alpha, invBri);
-                // Adjust offset to next pixel.
-                curOffs += 4;
+                Int32 curOffs = lineOffsImg;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    // copy either alpha or inverted brightness (whichever is lowest)
+                    // from the shape image onto black lines image as alpha, effectively
+                    // only retaining the visible black lines from the shape image.
+                    // I use curOffs - 1 (red) because it's the simplest operation.
+                    Byte alpha = shapeImageBytes[curOffs];
+                    Byte invBri = (Byte) (255 - shapeImageBytes[curOffs - 1]);
+                    imageBytesBlack[curOffs] = Math.Min(alpha, invBri);
+                    // Adjust offset to next pixel.
+                    curOffs += 4;
+                }
+                // Adjust line offset to next line.
+                lineOffsImg += stride;
             }
-            // Adjust line offset to next line.
-            lineOffsImg += stride;
+            // Make the black lines images out of the byte array.
+            return BuildImage(imageBytesBlack, width, height, stride, PixelFormat.Format32bppArgb);
         }
-        // Make the black lines images out of the byte array.
-        return BuildImage(imageBytesBlack, width, height, stride, PixelFormat.Format32bppArgb);
-    }
 
-    public static Bitmap ApplyAlphaToImage(Byte[] alphaImageBytes, Int32 width, Int32 height, Int32 stride, Bitmap texture)
-    {
-        Byte[] imageBytesPattern;
-        if (texture.Width != width || texture.Height != height)
-            return null;
-        // extract bytes of pattern image. Stride should be the same.
-        Int32 patternStride;
-        imageBytesPattern = ImageUtils.GetImageData(texture, out patternStride, PixelFormat.Format32bppArgb);
-        if (patternStride != stride)
-            return null;
-        // Line start offset is set to 3 to immediately get the alpha component.
-        Int32 lineOffsImg = 3;
-        for (Int32 y = 0; y < height; y++)
+        public static Bitmap ApplyAlphaToImage(Byte[] alphaImageBytes, Int32 width, Int32 height, Int32 stride, Bitmap texture)
         {
-            Int32 curOffs = lineOffsImg;
-            for (Int32 x = 0; x < width; x++)
+            if (texture.Width != width || texture.Height != height)
+                return null;
+            // extract bytes of pattern image. Stride should be the same.
+            Int32 patternStride;
+            Byte[] imageBytesPattern = ImageUtils.GetImageData(texture, out patternStride, PixelFormat.Format32bppArgb);
+            if (patternStride != stride)
+                return null;
+            // Line start offset is set to 3 to immediately get the alpha component.
+            Int32 lineOffsImg = 3;
+            for (Int32 y = 0; y < height; y++)
             {
-                // copy alpha from shape image onto pattern image.
-                imageBytesPattern[curOffs] = alphaImageBytes[curOffs];
-                // Adjust offset to next pixel.
-                curOffs += 4;
+                Int32 curOffs = lineOffsImg;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    // copy alpha from shape image onto pattern image.
+                    imageBytesPattern[curOffs] = alphaImageBytes[curOffs];
+                    // Adjust offset to next pixel.
+                    curOffs += 4;
+                }
+                // Adjust line offset to next line.
+                lineOffsImg += stride;
             }
-            // Adjust line offset to next line.
-            lineOffsImg += stride;
+            // Make a image out of the byte array, and return it.
+            return BuildImage(imageBytesPattern, width, height, stride, PixelFormat.Format32bppArgb);
         }
-        // Make a image out of the byte array, and return it.
-        return BuildImage(imageBytesPattern, width, height, stride, PixelFormat.Format32bppArgb);
-    }
+
+        public static void WriteImagesToIcons(List<String> imagePaths, String icoDirPath)
+        {
+            // Change this to whatever you prefer.
+            InterpolationMode scalingMode = InterpolationMode.HighQualityBicubic;
+            //imagePaths => all images which I am converting to ico files
+            imagePaths.ForEach(imgPath =>
+            {
+                // The correct way of replacing an extension
+                String icoPath = Path.Combine(icoDirPath, Path.GetFileNameWithoutExtension(imgPath) + ".ico");
+                using (Bitmap orig = new Bitmap(imgPath))
+                using (Bitmap squared = orig.CopyToSquareCanvas(Color.Transparent))
+                using (Bitmap resize16 = squared.Resize(16, 16, scalingMode))
+                using (Bitmap resize32 = squared.Resize(32, 32, scalingMode))
+                using (Bitmap resize48 = squared.Resize(48, 48, scalingMode))
+                using (Bitmap resize64 = squared.Resize(64, 64, scalingMode))
+                using (Bitmap resize96 = squared.Resize(96, 96, scalingMode))
+                using (Bitmap resize128 = squared.Resize(128, 128, scalingMode))
+                using (Bitmap resize192 = squared.Resize(192, 192, scalingMode))
+                using (Bitmap resize256 = squared.Resize(256, 256, scalingMode))
+                {
+                    Image[] includedSizes = new Image[]
+                        { resize16, resize32, resize48, resize64, resize96, resize128, resize192, resize256 };
+                    ConvertImagesToIco(includedSizes, icoPath);
+                }
+            });
+        }
+
+        public static Bitmap CopyToSquareCanvas(this Bitmap source, Color canvasBackground)
+        {
+            Int32 maxSide = source.Width > source.Height ? source.Width : source.Height;
+            Bitmap bitmapResult = new Bitmap(maxSide, maxSide, PixelFormat.Format32bppArgb);
+            using (Graphics graphicsResult = Graphics.FromImage(bitmapResult))
+            {
+                graphicsResult.Clear(canvasBackground);
+                Int32 xOffset = (maxSide - source.Width) / 2;
+                Int32 yOffset = (maxSide - source.Height) / 2;
+                graphicsResult.DrawImage(source, new Rectangle(xOffset, yOffset, source.Width, source.Height));
+            }
+            return bitmapResult;
+        }
+
+        public static Bitmap Resize(this Bitmap source, Int32 width, Int32 height, InterpolationMode scalingMode)
+        {
+            Bitmap result = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                // Set desired interpolation mode here
+                g.InterpolationMode = scalingMode;
+                // Nearest Neighbor hard-pixel scaling needs this adjusted to work correctly
+                if (scalingMode == InterpolationMode.NearestNeighbor)
+                    g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.DrawImage(source, new Rectangle(0, 0, width, height), new Rectangle(0, 0, source.Width, source.Height), GraphicsUnit.Pixel);
+            }
+            return result;
+        }
+
+        public static void ConvertImagesToIco(Image[] images, String outputPath)
+        {
+            if (images == null)
+                throw new ArgumentNullException("images");
+            Int32 imgCount = images.Length;
+            if (imgCount == 0)
+                throw new ArgumentException("No images given!", "images");
+            if (imgCount > 0xFFFF)
+                throw new ArgumentException("Too many images!", "images");
+            using (FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+            using (BinaryWriter iconWriter = new BinaryWriter(fs))
+            {
+                Byte[][] frameBytes = new Byte[imgCount][];
+                // 0-1 reserved, 0
+                iconWriter.Write((Int16)0);
+                // 2-3 image type, 1 = icon, 2 = cursor
+                iconWriter.Write((Int16)1);
+                // 4-5 number of images
+                iconWriter.Write((Int16)imgCount);
+                // Calculate header size for first image data offset.
+                Int32 offset = 6 + (16 * imgCount);
+                for (Int32 i = 0; i < imgCount; ++i)
+                {
+                    // Get image data
+                    Image curFrame = images[i];
+                    if (curFrame.Width > 256 || curFrame.Height > 256)
+                        throw new ArgumentException("Image too large!", "images");
+                    // for these three, 0 is interpreted as 256,
+                    // so the cast reducing 256 to 0 is no problem.
+                    Byte width = (Byte)curFrame.Width;
+                    Byte height = (Byte)curFrame.Height;
+                    Byte colors = (Byte)curFrame.Palette.Entries.Length;
+                    Int32 bpp;
+                    Byte[] frameData;
+                    using (MemoryStream pngMs = new MemoryStream())
+                    {
+                        curFrame.Save(pngMs, ImageFormat.Png);
+                        frameData = pngMs.ToArray();
+                    }
+                    // Get the colour depth to save in the icon info. This needs to be
+                    // fetched explicitly, since png does not support certain types
+                    // like 16bpp, so it will convert to the nearest valid on save.
+                    Byte colDepth = frameData[24];
+                    Byte colType = frameData[25];
+                    // I think .Net saving only supports colour types 2, 3 and 6 anyway.
+                    switch (colType)
+                    {
+                        case 2: bpp = 3 * colDepth; break; // RGB
+                        case 6: bpp = 4 * colDepth; break; // ARGB
+                        default: bpp = colDepth; break; // Indexed & greyscale
+                    }
+                    frameBytes[i] = frameData;
+                    Int32 imageLen = frameData.Length;
+                    // Write image entry
+                    // 0 image width. 
+                    iconWriter.Write(width);
+                    // 1 image height.
+                    iconWriter.Write(height);
+                    // 2 number of colors.
+                    iconWriter.Write(colors);
+                    // 3 reserved
+                    iconWriter.Write((Byte)0);
+                    // 4-5 color planes
+                    iconWriter.Write((Int16)0);
+                    // 6-7 bits per pixel
+                    iconWriter.Write((Int16)bpp);
+                    // 8-11 size of image data
+                    iconWriter.Write(imageLen);
+                    // 12-15 offset of image data
+                    iconWriter.Write(offset);
+                    offset += imageLen;
+                }
+                for (Int32 i = 0; i < imgCount; i++)
+                {
+                    // Write image data
+                    // png data must contain the whole png data file
+                    iconWriter.Write(frameBytes[i]);
+                }
+                iconWriter.Flush();
+            }
+        }
+
+        public static void ConvertToIco(Image img, string file, int size)
+        {
+            Icon icon;
+            using (var msImg = new MemoryStream())
+            using (var msIco = new MemoryStream())
+            {
+                img.Save(msImg, ImageFormat.Png);
+                using (var bw = new BinaryWriter(msIco))
+                {
+                    bw.Write((short) 0); //0-1 reserved
+                    bw.Write((short) 1); //2-3 image type, 1 = icon, 2 = cursor
+                    bw.Write((short) 1); //4-5 number of images
+                    bw.Write((byte) size); //6 image width
+                    bw.Write((byte) size); //7 image height
+                    bw.Write((byte) 0); //8 number of colors
+                    bw.Write((byte) 0); //9 reserved
+                    bw.Write((short) 0); //10-11 color planes
+                    bw.Write((short) 32); //12-13 bits per pixel
+                    bw.Write((int) msImg.Length); //14-17 size of image data
+                    bw.Write(22); //18-21 offset of image data
+                    bw.Write(msImg.ToArray()); // write image data
+                    bw.Flush();
+                    bw.Seek(0, SeekOrigin.Begin);
+                    icon = new Icon(msIco);
+                }
+            }
+            using (var fs = new FileStream(file, FileMode.Create, FileAccess.Write))
+                icon.Save(fs);
+        }
 
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat)
         {
@@ -1092,6 +1377,124 @@ namespace Nyerguds.ImageManipulation
             }
         }
 #endif
+        /// <summary>
+        /// Written for https://stackoverflow.com/q/65844918/395685
+        /// Finds the two most prominent colors in an image, changes all pixels in the image
+        /// to the closest match of those two colors, and returns the result as 8-bit image
+        /// with white as the most prominent color, and black as the secondary color.
+        /// </summary>
+        /// <param name="image">Image to reduce.</param>
+        /// <returns>
+        /// An 8-bit image with the image content of the input reduced to its two most prominently
+        /// occurring colours, with these colours replaced with white and black respectively.
+        /// </returns>
+        public static Bitmap ReduceToTwoMostUsedColors(Bitmap image)
+        {
+            // Get data out of the image, using LockBits and Marshal.Copy
+            Int32 width = image.Width;
+            Int32 height = image.Height;
+            // LockBits can actually -convert- the image data to the requested color depth.
+            // 32 bpp is the easiest to get the color components out.
+            BitmapData sourceData = image.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            // Not really needed for 32bpp, but technically the stride does not always match the
+            // amount of used data on each line, since the stride gets rounded up to blocks of 4.
+            Int32 stride = sourceData.Stride;
+            Byte[] imgBytes = new Byte[stride * height];
+            Marshal.Copy(sourceData.Scan0, imgBytes, 0, imgBytes.Length);
+            image.UnlockBits(sourceData);
+            // Make color population histogram
+            Int32 offset = 0;
+            Int32 lineOffset = 0;
+            Dictionary<Int32, Int32> histogram = new Dictionary<Int32, Int32>();
+            for (Int32 y = 0; y < height; y++)
+            {
+                offset = lineOffset;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    // Optional check: only handle if not mostly-transparent
+                    if (imgBytes[offset + 3] > 0x7F)
+                    {
+                        // Get color values from bytes, without alpha.
+                        // Little-endian: UInt32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
+                        Int32 val = (imgBytes[offset + 2] << 16) | (imgBytes[offset + 1] << 8) | imgBytes[offset + 0];
+                        if (histogram.ContainsKey(val))
+                            histogram[val] = histogram[val] + 1;
+                        else
+                            histogram[val] = 1;
+                    }
+                    offset += 4;
+                }
+                lineOffset += stride;
+            }
+            // Sort the histogram. This requires System.Linq
+            KeyValuePair<Int32, Int32>[] histoSorted = histogram.OrderByDescending(c => c.Value).ToArray();
+            // Technically these colors will be transparent when built like this, since their 
+            // alpha is 0, but we won't use them directly as colors anyway.
+            // Since we filter on alpha, getting a result is not 100% guaranteed.
+            Color colBackgr = histoSorted.Length < 1 ? Color.Black : Color.FromArgb(histoSorted[0].Key);
+            // if less than 2 colors, just default it to the same.
+            Color colContent = histoSorted.Length < 2 ? colBackgr : Color.FromArgb(histoSorted[1].Key);
+            // Make a new palette out of these colors for feeding into GetClosestPaletteIndexMatch later
+            Color[] matchPal = new Color[] { colBackgr, colContent };
+            // The 8-bit stride is simply the width in this case.
+            Int32 stride8Bit = width;
+            // Make 8-bit array to store the result
+            Byte[] imgBytes8Bit = new Byte[stride8Bit * height];
+            // Reset offsets for a new loop through the image data
+            offset = 0;
+            lineOffset = 0;
+            // Make new offset vars for a loop through the 8-bit image data
+            Int32 offset8Bit = 0;
+            Int32 lineOffset8Bit = 0;
+            for (Int32 y = 0; y < height; y++)
+            {
+                offset = lineOffset;
+                offset8Bit = lineOffset8Bit;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    Byte toWrite;
+                    // If transparent, revert to background color.
+                    if (imgBytes[3] <= 0x7F)
+                    {
+                        toWrite = 0;
+                    }
+                    else
+                    {
+                        Color col = Color.FromArgb(imgBytes[offset + 2], imgBytes[offset + 1], imgBytes[offset + 0]);
+                        toWrite = (Byte)ColorUtils.GetClosestPaletteIndexMatch(col, matchPal, null);
+                    }
+                    // Write the found color index to the 8-bit byte array.
+                    imgBytes8Bit[offset8Bit] = toWrite;
+                    offset += 4;
+                    offset8Bit++;
+                }
+                lineOffset += stride;
+                lineOffset8Bit += stride8Bit;
+            }
+            // Make new 8-bit image and copy the data into it.
+            Bitmap newBm = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+            BitmapData targetData = newBm.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, newBm.PixelFormat);
+            //  get minimum data width for the pixel format.
+            Int32 newDataWidth = ((Image.GetPixelFormatSize(newBm.PixelFormat) * width) + 7) / 8;
+            // Note that this Stride will most likely NOT match the image width; it is rounded up to the
+            // next multiple of 4 bytes. For that reason, we copy the data per line, and not as one block.
+            Int32 targetStride = targetData.Stride;
+            Int64 scan0 = targetData.Scan0.ToInt64();
+            for (Int32 y = 0; y < height; ++y)
+                Marshal.Copy(imgBytes8Bit, y * stride8Bit, new IntPtr(scan0 + y * targetStride), newDataWidth);
+            newBm.UnlockBits(targetData);
+            // 'Image.Palette' makes a COPY of the palette when accessed.
+            // So copy it out, modify it, then copy it back in.
+            ColorPalette pal = newBm.Palette;
+            pal.Entries[0] = Color.White;
+            pal.Entries[1] = Color.Black;
+            // Clear the rest of the palette (not really needed)
+            for (Int32 i = 2; i < 0x100; i++)
+                pal.Entries[i] = Color.Black;
+            newBm.Palette = pal;
+            return newBm;
+        }
+
     }
 }
 

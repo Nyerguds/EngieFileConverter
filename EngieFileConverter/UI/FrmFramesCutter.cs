@@ -31,6 +31,7 @@ namespace EngieFileConverter.UI
         private Int32  m_OriginalBpp;
         private Color[] m_OriginalPalette;
         private Boolean m_Loading;
+        private Bitmap m_previewImage;
 
         public FrmFramesCutter(Bitmap image, Int32[] customColors, PaletteDropDownInfo[] palettes)
         {
@@ -100,7 +101,7 @@ namespace EngieFileConverter.UI
                 Int32 framesX = fullWidth / width;
                 Int32 framesY = fullHeight / height;
                 Int32 frames = framesX * framesY;
-                Image oldImage = this.pzpFramePreview.Image;
+                Image oldImage = this.m_previewImage;
                 if (updateAmount)
                 {
                     this.pzpFramePreview.Image = null;
@@ -132,8 +133,10 @@ namespace EngieFileConverter.UI
                     matchBpp = pdd.BitsPerPixel;
                     matchPalette = pdd.Colors;
                 }
+                // Call this specifically with a 1-frame range so it generates only one image.
                 Bitmap[] result = ImageUtils.ImageToFrames(this.m_Image, width, height, trimColor, trimIndex, matchBpp, matchPalette, frameNr, frameNr);
                 Bitmap bmp = result.Length > 0 ? result[0] : null;
+                this.m_previewImage = bmp;
                 this.pzpFramePreview.Image = bmp;
                 Int32 frWidth = bmp != null ? bmp.Width : 0;
                 Int32 frHeight = bmp != null ? bmp.Height : 0;
@@ -258,10 +261,18 @@ namespace EngieFileConverter.UI
         {
             if (disposing)
             {
+                if (m_previewImage != null)
+                {
+                    try { m_previewImage.Dispose(); }
+                    catch { /* ignore */ }
+                }
                 if (this.components != null)
                     this.components.Dispose();
-                if (this.m_Image != null)
-                    this.m_Image.Dispose();
+                if (m_Image != null)
+                {
+                    try { m_Image.Dispose(); }
+                    catch { /* ignore */ }
+                }
             }
             base.Dispose(disposing);
         }

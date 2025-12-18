@@ -52,14 +52,14 @@ namespace Nyerguds.FileData.Dynamix
         /// </summary>
         /// <param name="identifier">Chunk identifier.</param>
         /// <param name="compressionType">Compression type.</param>
-        /// <param name="uncompressedSize">Size of the uncompressed data.</param>
+        /// <param name="decompressedSize">Size of the decompressed data.</param>
         /// <param name="data">Compressed data to copy into the chunk data.</param>
-        public DynamixChunk(String identifier, Byte compressionType, UInt32 uncompressedSize, Byte[] data)
+        public DynamixChunk(String identifier, Byte compressionType, UInt32 decompressedSize, Byte[] data)
             : this(identifier)
         {
             Byte[] fullData = new Byte[data.Length + 5];
             fullData[0] = compressionType;
-            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 1, uncompressedSize);
+            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 1, decompressedSize);
             Array.Copy(data, 0, fullData, 5, data.Length);
             this.m_data = fullData;
         }
@@ -178,7 +178,7 @@ namespace Nyerguds.FileData.Dynamix
             // Don't want to use BitConverter; then you have to check platform endianness and all that mess.
             //Int32 length = data[offset + 3] + (data[offset + 2] << 8) + (data[offset + 1] << 16) + (data[offset] << 24);
             Int32 length = ArrayUtils.ReadInt32FromByteArrayLe(data, offset + 4);
-            // Sometimes has a byte 80 there? Some flag I guess...
+            // Highest bit indicates this is a container chunk.
             length = (Int32)((UInt32)length & 0x7FFFFFFF);
             if (length < 0 || length + offset + 8 > data.Length)
                 throw new FileTypeLoadException("Bad chunk size in Dynamix image.");

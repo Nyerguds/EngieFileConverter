@@ -53,6 +53,29 @@ namespace EngieFileConverter.Domain.FileTypes
         public List<SupportedFileType> FramesList = new List<SupportedFileType>();
 
         public String BaseType { get; private set; }
+        public Type EmbeddedType { get; private set; }
+        public Boolean FromFileRange { get; private set; }
+
+
+        /// <summary>Creates a new FileFrames object</summary>
+        public FileFrames()
+        {
+        }
+
+        /// <summary>Creates a new FileFrames object</summary>
+        /// <param name="fromFileRange">Sets whether this file was created from a range of files.</param>
+        public FileFrames(Boolean fromFileRange)
+        {
+            this.FromFileRange = fromFileRange;
+        }
+
+        /// <summary>Creates a new FileFrames object</summary>
+        /// <param name="framesSource">Source of the frames. Giving this does not copy any frames, it just inherits the "from file range" status.</param>
+        public FileFrames(SupportedFileType framesSource)
+        {
+            FileFrames framesFile = framesSource as FileFrames;
+            this.FromFileRange = framesFile != null && framesFile.FromFileRange;
+        }
 
         protected Boolean m_CommonPalette;
         protected Boolean m_NeedsPalette;
@@ -233,7 +256,7 @@ namespace EngieFileConverter.Domain.FileTypes
             minName = Path.GetFileName(frameNames[0]);
             maxName = Path.GetFileName(frameNames[nrOfFrames - 1]);
 
-            FileFrames framesContainer = new FileFrames();
+            FileFrames framesContainer = new FileFrames(true);
             framesContainer.SetFileNames(baseName);
             if (currentType == null)
             {
@@ -252,6 +275,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     return null;
             }
             framesContainer.BaseType = currentType.ShortTypeName;
+            Type type = currentType.GetType();
+            framesContainer.EmbeddedType = type;
             Color[] pal = currentType.GetColors();
             // 'common palette' logic is started by setting it to True when there is a palette.
             Boolean commonPalette = pal != null && !currentType.NeedsPalette;
@@ -274,7 +299,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 try
                 {
-                    SupportedFileType frameFile = (SupportedFileType)Activator.CreateInstance(currentType.GetType());
+                    SupportedFileType frameFile = (SupportedFileType)Activator.CreateInstance(type);
                     Byte[] fileData = File.ReadAllBytes(currentFrame);
                     frameFile.LoadFile(fileData, currentFrame);
                     framesContainer.AddFrame(frameFile);
@@ -290,7 +315,6 @@ namespace EngieFileConverter.Domain.FileTypes
                     return null;
                 }
             }
-
             framesContainer.SetCommonPalette(commonPalette || nullPalette);
             framesContainer.SetFrameInputClass(frameTypes);
             if (framesContainer.FramesHaveCommonPalette)
@@ -387,7 +411,7 @@ namespace EngieFileConverter.Domain.FileTypes
             FileFrames newfile = null;
             if (!singleImage)
             {
-                newfile = new FileFrames();
+                newfile = new FileFrames(framesContainer);
                 newfile.SetFileNames(name);
                 newfile.SetCommonPalette(equalPal);
                 newfile.SetBitsPerPixel(framesContainer.BitsPerPixel);

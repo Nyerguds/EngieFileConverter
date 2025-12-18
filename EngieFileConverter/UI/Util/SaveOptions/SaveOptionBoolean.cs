@@ -27,7 +27,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.chkOption.Select();
         }
 
-        public override void DisableValue(Boolean enabled)
+        public override void SetEnabled(Boolean enabled)
         {
             try
             {

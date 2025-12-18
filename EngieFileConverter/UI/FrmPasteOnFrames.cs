@@ -63,8 +63,9 @@ namespace EngieFileConverter.UI
                 if ((tmpsft.InputFileClass & FileClass.Image) != 0)
                     filteredTypes.Add(saveType);
             }
+            Type[] autoImageTypes = filteredTypes.Intersect(SupportedFileType.AutoDetectTypes).ToArray();
             SupportedFileType selectedType;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), this.LastSelectedFolder, "images", null, true, out selectedType);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), autoImageTypes, this.LastSelectedFolder, "images", null, true, out selectedType);
             if (filename == null)
                 return;
             this.LastSelectedFolder = Path.GetDirectoryName(filename);

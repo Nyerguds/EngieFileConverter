@@ -17,9 +17,13 @@ namespace Nyerguds.ImageManipulation
         {
             // Build easy lookup tables for this, so no calculations are ever needed for this later.
             for (Int32 i = 0; i < 64; ++i)
-                ConvertToEightBit[i] = (Byte)(i * 255 / 63);
+                ConvertToEightBit[i] = (Byte)Math.Round(i * 255.0 / 63.0, MidpointRounding.ToEven);
             for (Int32 i = 0; i < 256; ++i)
-                ConvertToSixBit[i] = (Byte)(i * 63 / 255);
+                ConvertToSixBit[i] = (Byte)Math.Round(i * 63.0 / 255.0, MidpointRounding.ToEven);
+            for (Int32 i = 0; i < 64; i++)
+                if (ConvertToSixBit[ConvertToEightBit[i]] != i)
+                    throw new Exception("Programmer is dumb: Two-way colour conversions betseen 8-bit and 6-bit fuck things up.");
+
         }
 
         protected Byte m_Red;

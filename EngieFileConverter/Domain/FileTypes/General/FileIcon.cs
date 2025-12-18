@@ -204,19 +204,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean addInc = Math.Max(w, h) < 256;
             List<SaveOption> opts = new List<SaveOption>();
             if (addSq)
-                opts.Add(new SaveOption("SQR", SaveOptionType.Boolean, "Pad frames to square formats", null, "1"));
+                opts.Add(new SaveOption("SQR", SaveOptionType.Boolean, "Pad image to square format", null, "1"));
             if (addInc)
             {
                 opts.Add(new SaveOption("INC", SaveOptionType.Boolean, "Include formats larger than source image", "1"));
                 opts.Add(new SaveOption("PIX", SaveOptionType.Boolean, "Use pixel zoom for larger images", "0"));
             }
-            opts.Add(new SaveOption("16", SaveOptionType.Boolean, "Include 16x16", "1"));
-            opts.Add(new SaveOption("24", SaveOptionType.Boolean, "Include 24x24", "1"));
-            opts.Add(new SaveOption("32", SaveOptionType.Boolean, "Include 32x32", "1"));
-            opts.Add(new SaveOption("48", SaveOptionType.Boolean, "Include 48x48", "1"));
-            opts.Add(new SaveOption("64", SaveOptionType.Boolean, "Include 64x64", "1"));
-            opts.Add(new SaveOption("128", SaveOptionType.Boolean, "Include 128x128", "1"));
-            opts.Add(new SaveOption("256", SaveOptionType.Boolean, "Include 256x256", "1"));
+            // The character filter specifically disallows "-", so no actual ranges can be given.
+            opts.Add(new SaveOption("SIZ", SaveOptionType.String, "Included sizes: (Comma separated, max 256)", "0123456789, ", "16, 24, 32, 48, 64, 96, 128, 192, 256"));
             return opts.ToArray();
         }
 
@@ -225,22 +220,22 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean makeSquare = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "SQR"));
             Boolean upscale = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "INC"));
             Boolean pixelZoom = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PIX"));
-            Int32[] sizes = new Int32[] { 16, 24, 32, 48, 64, 128, 256 };
-            Int32 nrOfSizes = sizes.Length;
-            List<Int32> lstSizes = new List<Int32>();
-            for (Int32 i = 0; i < nrOfSizes; ++i)
+            String includedSizesStr = SaveOption.GetSaveOptionValue(saveOptions, "SIZ");
+            // The character filter specifically disallows "-", so no actual ranges can be given.
+            Int32[] sizes = GeneralUtils.GetRangedNumbers(includedSizesStr);
+            if (sizes.Length == 0)
+                throw new ArgumentException("The icon needs to contain at least one image.", "fileToSave");
+            for (Int32 i = 0; i < sizes.Length; i++)
             {
-                Int32 curSize = sizes[i];
-                Boolean included = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, curSize.ToString(CultureInfo.InvariantCulture)));
-                if (included)
-                    lstSizes.Add(curSize);
+                if (sizes[i] == 0)
+                    throw new ArgumentException("0 is not a valid icon size.", "saveOptions");
+                if (sizes[i] > 0x100)
+                    throw new ArgumentException("Icon sizes cannot be larger than 256.", "saveOptions");
             }
-            if (lstSizes.Count == 0)
-                throw new ArgumentException("The icon needs to contain at least one image!", "fileToSave");
             Bitmap bm = fileToSave.GetBitmap();
             using (MemoryStream ms = new MemoryStream())
             {
-                ConvertToIcon(bm, ms, makeSquare, upscale, pixelZoom, lstSizes.ToArray());
+                ConvertToIcon(bm, ms, makeSquare, upscale, pixelZoom, sizes);
                 return ms.ToArray();
             }
         }
@@ -262,8 +257,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentNullException("inputBitmap", "Input bitmap cannot be null.");
             if (output == null)
                 throw new ArgumentNullException("output", "Output stream cannot be null.");
+            if (sizes == null)
+                throw new ArgumentNullException("sizes", "Icon sizes cannot be null.");
             if (sizes.Length == 0)
-                throw new ArgumentNullException("sizes", "Need at least one icon size!");
+                throw new ArgumentException("Need at least one icon size.", "sizes");
 
             List<Byte[]> images = new List<Byte[]>();
             List<Byte> widths = new List<Byte>();
@@ -273,7 +270,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 sizesLen = sizes.Length;
             for (Int32 i = 0; i < sizesLen; ++i)
             {
-                Int32 size = Math.Min(sizes[i], 0x100);
+                Int32 size = sizes[i];
+                if (size > 0x100)
+                    throw new ArgumentException("Size cannot be larger than 256.", "sizes");
+
                 if (!upscale && size > maxDim)
                     continue;
                 Int32 width = size;
@@ -365,10 +365,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     // Get image data
                     Byte[] frameData = pngImages[i];
-                    Int32 width = frameData[19] | frameData[18] << 8;
-                    Int32 height = frameData[23] | frameData[22] << 8;
-                    if (width > 256 || frameData[16] != 0 || frameData[17] != 0 || height > 256 || frameData[20] != 0 || frameData[21] != 0)
-                        throw new ArgumentException("Image too large!", "pngImages");
+                    Int32 width = frameData[19] | frameData[18] << 8 | frameData[17] << 16 | frameData[16] << 24;
+                    Int32 height = frameData[23] | frameData[22] << 8 | frameData[21] << 16 | frameData[20] << 24;
+                    if (width > 256 || height > 256)
+                        throw new ArgumentException("Image " + i + "is too large!", "pngImages");
                     // Get the colour depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.

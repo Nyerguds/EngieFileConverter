@@ -139,7 +139,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.m_PaletteLoaded = palette != null;
             if (this.m_PaletteLoaded)
-                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(palette, 0, 0x100));
+                this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(palette, 0, 0x100);
             else
             {
                 String palFile = Path.Combine(basePath, baseName + ".pal");

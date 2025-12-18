@@ -54,14 +54,16 @@ namespace Nyerguds.Util.UI
             if (!this.ColorsEditable || e.Button != MouseButtons.Left)
                 return;
             Int32 colindex = (Int32)sender;
-            ColorDialog cdl = new ColorDialog();
-            cdl.Color = this.palettePanel.Palette[colindex];
-            cdl.FullOpen = true;
-            cdl.CustomColors = this.CustomColors;
-            DialogResult res = cdl.ShowDialog();
-            this.CustomColors = cdl.CustomColors;
-            if (res == DialogResult.OK || res == DialogResult.Yes)
-                this.palettePanel.Palette[colindex] = cdl.Color;
+            using (ColorDialog cdl = new ColorDialog())
+            {
+                cdl.Color = this.palettePanel.Palette[colindex];
+                cdl.FullOpen = true;
+                cdl.CustomColors = this.CustomColors;
+                DialogResult res = cdl.ShowDialog();
+                this.CustomColors = cdl.CustomColors;
+                if (res == DialogResult.OK || res == DialogResult.Yes)
+                    this.palettePanel.Palette[colindex] = cdl.Color;
+            }
         }
     }
 }

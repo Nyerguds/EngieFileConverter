@@ -145,4 +145,13 @@
   <data name="clipboard_image" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\resources\clipboard-image.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="structs" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\structs.ini;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="grids" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\grids.ini;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="terrain" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\resources\terrain.ini;System.String, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
 </root>

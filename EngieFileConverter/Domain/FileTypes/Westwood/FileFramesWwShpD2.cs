@@ -10,7 +10,7 @@ using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-    public class FileFramesWwShpD2 : SupportedFileType
+    public class FileFramesWwShpD2 : SupportedFileType, Dune2ShpType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
@@ -77,6 +77,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 extraInfoGlobal.Append("None");
             else
                 extraInfoGlobal.AppendNumbersGrouped(remapFrames);
+            extraInfoGlobal.Append("\nUncompressed indices: ");
+            if (notCompressedFrames.Length == 0)
+                extraInfoGlobal.Append("None");
+            else
+                extraInfoGlobal.AppendNumbersGrouped(notCompressedFrames);
             this.ExtraInfo = extraInfoGlobal.ToString();
         }
 
@@ -261,7 +266,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             PerformPreliminaryChecks(fileToSave);
-            FileFramesWwShpD2 d2File = fileToSave as FileFramesWwShpD2;
+            Dune2ShpType d2File = fileToSave as Dune2ShpType;
             Boolean isdune100shape = d2File != null && !d2File.IsVersion107;
             Boolean hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
             String remapped = hasRemap ? GeneralUtils.GroupNumbers(d2File.RemappedIndices) : String.Empty;
@@ -274,9 +279,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
                 new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, new SaveEnableFilter("RMA", true, "1")),
+                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, ", remapped, new SaveEnableFilter("RMA", true, "1")),
                 new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "1"),
-                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCA", false, "0"))
+                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCA", false, "0"))
             };
         }
 
@@ -288,26 +293,25 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version);
 
             Boolean isVersion107 = version != 0;
-            Boolean noLcw = version == 2;
             // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
             Boolean addRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMT"));
             Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMA"));
             String remapSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
             Boolean remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
             Int32[] remappedFrames = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
-            Boolean specificCompression = !GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NCA"));
+            Boolean compressAuto = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NCA"));
             String uncomprSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "NCS");
-            Int32[] uncompFrames = specificCompression ? GeneralUtils.GetRangedNumbers(uncomprSpecificStr) : null;
+            Int32[] uncompFrames = compressAuto ? null : GeneralUtils.GetRangedNumbers(uncomprSpecificStr);
             Int32 nrOfFrames = frames.Length;
             Boolean[] remapFrame = new Boolean[nrOfFrames];
             if (addRemap)
             {
-                if (remapAll)
+                if (remapAll || remappedFrames.Length == 0)
                 {
                     for (Int32 i = 0; i < nrOfFrames; ++i)
                         remapFrame[i] = true;
                 }
-                else if (remappedFrames != null)
+                else
                 {
                     Int32 remapLen = remappedFrames.Length;
                     for (Int32 i = 0; i < remapLen; ++i)
@@ -319,15 +323,22 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             Boolean[] dontCompress = new Boolean[nrOfFrames];
-            if (specificCompression)
+            if (!compressAuto)
             {
-
-                Int32 noCompLen = uncompFrames.Length;
-                for (Int32 i = 0; i < noCompLen; ++i)
+                if (uncompFrames.Length == 0)
                 {
-                    Int32 noCompFrameIndex = uncompFrames[i];
-                    if (noCompFrameIndex >= 0 && noCompFrameIndex < nrOfFrames)
-                        dontCompress[noCompFrameIndex] = true;
+                    for (Int32 i = 0; i < nrOfFrames; ++i)
+                        dontCompress[i] = true;
+                }
+                else
+                {
+                    Int32 noCompLen = uncompFrames.Length;
+                    for (Int32 i = 0; i < noCompLen; ++i)
+                    {
+                        Int32 noCompFrameIndex = uncompFrames[i];
+                        if (noCompFrameIndex >= 0 && noCompFrameIndex < nrOfFrames)
+                            dontCompress[noCompFrameIndex] = true;
+                    }
                 }
             }
             Int32 addressSize = isVersion107 ? 4 : 2;
@@ -412,7 +423,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 imageData = WestwoodRleZero.CompressRleZeroD2(imageData, frmWidth, frmHeight);
                 Int32 zeroDataLen = imageData.Length;
-                Byte[] lcwData = noLcw || dontCompress[i] ? null : WWCompression.LcwCompress(imageData);
+                Byte[] lcwData = dontCompress[i] ? null : WWCompression.LcwCompress(imageData);
                 Boolean isCompressed = lcwData != null && lcwData.Length < imageData.Length;
                 if (isCompressed)
                     imageData = lcwData;
@@ -512,5 +523,12 @@ namespace EngieFileConverter.Domain.FileTypes
             // Bit 3: Has custom remap table size.
             CustomSizeRemap = 0x04
         }
+    }
+
+    public interface Dune2ShpType
+    {
+        Boolean IsVersion107 { get; set; }
+        Int32[] RemappedIndices { get; set; }
+        Int32[] UncompressedIndices { get; set; }
     }
 }

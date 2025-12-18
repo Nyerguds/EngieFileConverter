@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
@@ -14,20 +13,20 @@ namespace Nyerguds.ImageManipulation
     /// </summary>
     public class PixelFormatter
     {
-        /// <summary>Standard PixelFormatter for .Net's 32-bit RGBA format.</summary>
-        public static PixelFormatter Format32BitArgb = new PixelFormatter(4, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
+        /// <summary>Standard PixelFormatter for .Net's big-endian 32-bit RGBA format.</summary>
+        public static PixelFormatter Format32BitArgbBe = new PixelFormatter(4, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
 
-        /// <summary>Standard PixelFormatter for .Net's 24-bit RGB format.</summary>
-        public static PixelFormatter Format24BitRgb = new PixelFormatter(3, 0, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
+        /// <summary>Standard PixelFormatter for .Net's big-endian 24-bit RGB format.</summary>
+        public static PixelFormatter Format24BitRgbBe = new PixelFormatter(3, 0x00000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
 
-        /// <summary>Standard PixelFormatter for .Net's 16-bit RGBA format with 1-bit transparency.</summary>
-        public static PixelFormatter Format16BitArgb1555 = new PixelFormatter(2, 0x8000, 0x7C00, 0x03E0, 0x001F, true);
+        /// <summary>Standard PixelFormatter for .Net's big-endian 16-bit RGBA format with 1-bit transparency.</summary>
+        public static PixelFormatter Format16BitArgb1555Be = new PixelFormatter(2, 0x8000, 0x7C00, 0x03E0, 0x001F, true);
 
-        /// <summary>Standard PixelFormatter for .Net's 16-bit RGB format with 5-bit components.</summary>
-        public static PixelFormatter Format16BitRgb555 = new PixelFormatter(2, 0x0000, 0x7C00, 0x03E0, 0x001F, true);
+        /// <summary>Standard PixelFormatter for .Net's big-endian 16-bit RGB format with 5-bit components.</summary>
+        public static PixelFormatter Format16BitRgb555Be = new PixelFormatter(2, 0x0000, 0x7C00, 0x03E0, 0x001F, true);
 
-        /// <summary>Standard PixelFormatter for .Net's 16-bit RGB format with 6-bit green.</summary>
-        public static PixelFormatter Format16BitRgb565 = new PixelFormatter(2, 0x0000, 0xF800, 0x07E0, 0x001F, true);
+        /// <summary>Standard PixelFormatter for .Net's big-endian 16-bit RGB format with 6-bit green.</summary>
+        public static PixelFormatter Format16BitRgb565Be = new PixelFormatter(2, 0x0000, 0xF800, 0x07E0, 0x001F, true);
 
         public Int32 BytesPerPixel
         {
@@ -42,28 +41,32 @@ namespace Nyerguds.ImageManipulation
         /// <summary>Bit masks get the bits for each color component (A,R,G,B).</summary>
         public ReadOnlyCollection<UInt32> BitMasks
         {
-            get { return new List<UInt32>(this.bitMasks).AsReadOnly(); }
+            get { return Array.AsReadOnly(this.bitMasks); }
         }
 
         /// <summary>Amount of bits for each component (A,R,G,B).</summary>
         public ReadOnlyCollection<Byte> BitsAmounts
         {
-            get { return new List<Byte>(this.bitsAmounts).AsReadOnly(); }
+            get { return Array.AsReadOnly(this.bitsAmounts); }
         }
 
         /// <summary>Multiplier for each component (A,R,G,B).</summary>
         public ReadOnlyCollection<Double> Multipliers
         {
-            get { return new List<Double>(this.multipliers).AsReadOnly(); }
+            get { return Array.AsReadOnly(this.multipliers); }
         }
         /// <summary>Maximum value for each component (A,R,G,B)</summary>
         public ReadOnlyCollection<UInt32> Maximums
         {
-            get { return new List<UInt32>(this.maxChan).AsReadOnly(); }
+            get { return Array.AsReadOnly(this.maxChan); }
         }
 
-        /// <summary>Internal maximum. Could be adjusted to 0xFFFF to support 16-bit colour components</summary>
-        private const UInt32 InternalMax = 0xFFFF;
+        /// <summary>Internal maximum bits per colour component. Currently set to support 8-bit colour components. 16-bit could work, but seems problematic to combine with masks.</summary>
+        private const Int32 InternalMaxBits = 8;
+        /// <summary>Internal maximum value per colour component.</summary>
+        private const UInt32 InternalMax = (UInt32)((1 << InternalMaxBits) - 1);
+        /// <summary>Internal maximum bits for the full processed color value.</summary>
+        private const Int32 InternalMaxSize = InternalMaxBits * 4;
         private const Double MultiplierFor8BitCol = 255.0 / InternalMax;
 
         /// <summary>Number of bytes to read per pixel. since this only handles ARGB, less than 1 is unsupported.</summary>
@@ -120,13 +123,13 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="bytesPerPixel">Amount of bytes to read per pixel.</param>
         /// <param name="maskAlpha">Bit mask for alpha component.</param>
-        /// <param name="alphaMultiplier">Multiplier for alpha component's value to adjust it to the normal 0-255 range.</param>
+        /// <param name="alphaMultiplier">Multiplier for alpha component's value to adjust it to the normal 0-255 range. Use -1 to generate it from the mask.</param>
         /// <param name="maskRed">Bit mask for red component.</param>
-        /// <param name="redMultiplier">Multiplier for red component's value to adjust it to the normal 0-255 range.</param>
+        /// <param name="redMultiplier">Multiplier for red component's value to adjust it to the normal 0-255 range. Use -1 to generate it from the mask.</param>
         /// <param name="maskGreen">Bit mask for green component.</param>
-        /// <param name="greenMultiplier">Multiplier for green component's value to adjust it to the normal 0-255 range.</param>
+        /// <param name="greenMultiplier">Multiplier for green component's value to adjust it to the normal 0-255 range. Use -1 to generate it from the mask.</param>
         /// <param name="maskBlue">Bit mask for blue component.</param>
-        /// <param name="blueMultiplier">Multiplier for blue component's value to adjust it to the normal 0-255 range.</param>
+        /// <param name="blueMultiplier">Multiplier for blue component's value to adjust it to the normal 0-255 range. Use -1 to generate it from the mask.</param>
         /// <param name="littleEndian">True if the read bytes are interpreted as little-endian.</param>
         public PixelFormatter(Byte bytesPerPixel,
             UInt32 maskAlpha, Double alphaMultiplier,
@@ -252,7 +255,7 @@ namespace Nyerguds.ImageManipulation
         private static Byte BitsFromMask(UInt32 mask)
         {
             UInt32 bits = 0;
-            for (Int32 bitloc = 0; bitloc < 32; ++bitloc)
+            for (Int32 bitloc = 0; bitloc < InternalMaxSize; ++bitloc)
                 bits += ((mask >> bitloc) & 1);
             return (Byte) bits;
         }
@@ -267,7 +270,7 @@ namespace Nyerguds.ImageManipulation
         {
             UInt32 curVal = 0;
             Int32 outIndex = 0;
-            for (Int32 bitloc = 0; bitloc < 32; ++bitloc)
+            for (Int32 bitloc = 0; bitloc < InternalMaxSize; ++bitloc)
             {
                 if (((mask >> bitloc) & 1) != 1)
                     continue;
@@ -290,7 +293,7 @@ namespace Nyerguds.ImageManipulation
             Int32 inIndex = 0;
             // Clear affected bits, so 1-bits already on destvalue that fall inside the mask don't change the added value.
             destValue = (destValue & (~mask));
-            for (Int32 bitloc = 0; bitloc < 32; ++bitloc)
+            for (Int32 bitloc = 0; bitloc < InternalMaxSize; ++bitloc)
             {
                 if (((mask >> bitloc) & 1) != 1)
                     continue;
@@ -483,21 +486,21 @@ namespace Nyerguds.ImageManipulation
 
         #region ArrayUtils import
 
-        private static UInt64 ReadIntFromByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian)
+        private static UInt32 ReadIntFromByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian)
         {
             Int32 lastByte = bytes - 1;
             if (data.Length < startIndex + bytes)
                 throw new ArgumentOutOfRangeException("startIndex", "Data array is too small to read a " + bytes + "-byte value at offset " + startIndex + ".");
-            UInt64 value = 0;
+            UInt32 value = 0;
             for (Int32 index = 0; index < bytes; ++index)
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                value += (UInt64)(data[offs] << (8 * index));
+                value += (UInt32)(data[offs] << (8 * index));
             }
             return value;
         }
 
-        private static void WriteIntToByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian, UInt64 value)
+        private static void WriteIntToByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian, UInt32 value)
         {
             Int32 lastByte = bytes - 1;
             if (data.Length < startIndex + bytes)

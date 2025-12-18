@@ -63,7 +63,7 @@ namespace Nyerguds.Util.UI
                 String name = file.Name;
                 try
                 {
-                    // Attempt to read as palette
+                    // Attempt to read as palette. Data is not actually used; this is just a premiminary check.
                     ColorUtils.ReadSixBitPaletteFile(file.FullName);
                 }
                 catch (ArgumentException) { continue; }
@@ -451,7 +451,7 @@ namespace Nyerguds.Util.UI
                 Color[] thisFullPal;
                 FileInfo pfile = new FileInfo(Path.Combine(this.appPath, palName));
                 if (pfile.Exists && pfile.Length == 0x300)
-                    thisFullPal = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(pfile.FullName));
+                    thisFullPal = ColorUtils.ReadFromSixBitPaletteFile(pfile.FullName);
                 else
                     thisFullPal = Enumerable.Repeat(Color.Black, 256).ToArray();
                 List<PaletteDropDownInfo> subPals = this.subPalettes[palName];

@@ -9,6 +9,8 @@ namespace Nyerguds.Util.UI.SaveOptions
     {
         private SaveOptionInfo m_soi;
 
+        public Int32 OptimalHeight { get; private set; }
+
         public FrmOptions()
         {
             this.InitializeComponent();
@@ -33,6 +35,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             Int32 nrOfProps = props.Length;
             for (Int32 i = 0; i < nrOfProps; ++i)
                 this.UpdateControlInfo(props[i]);
+            this.OptimalHeight = this.Height - pnlOptions.Height + lstOptions.Height;
         }
 
         public SaveOption[] GetSaveOptions()
@@ -84,24 +87,28 @@ namespace Nyerguds.Util.UI.SaveOptions
                 SaveOptionControl soc = this.lstOptions.GetListedControlByInfoObject(dependentControl);
                 if (soc == null)
                     continue;
-                Boolean matches = true;
+                Int32 matchAmount = 0;
+                Int32 neededAmount = nrOfFilters;
                 for (Int32 f = 0; f < nrOfFilters; ++f)
                 {
-                    if (this.EvaluateFilter(filters[f]))
-                        continue;
-                    matches = false;
-                    break;
+                    Boolean controlFound;
+                    if (this.EvaluateFilter(filters[f], out controlFound))
+                        matchAmount++;
+                    if (!controlFound)
+                        neededAmount--;
                 }
-                soc.DisableValue(matches);
+                Boolean passed = dependentControl.saveFilterAnd ? matchAmount == neededAmount : matchAmount > 0;
+                soc.SetEnabled(passed);
                 this.UpdateControlChildren(dependentControl);
             }
         }
 
-        private Boolean EvaluateFilter(SaveEnableFilter filter)
+        private Boolean EvaluateFilter(SaveEnableFilter filter, out Boolean controlFound)
         {
             String checkCode = filter.CheckOption;
             SaveOption[] saveOpts = this.m_soi.Properties;
             Int32 nrOfOpts = saveOpts.Length;
+            controlFound = false;
             for (Int32 i = 0; i < nrOfOpts; ++i)
             {
                 SaveOption opt = saveOpts[i];
@@ -111,8 +118,9 @@ namespace Nyerguds.Util.UI.SaveOptions
                 // A control that can't be modified automatically fails the test.
                 if (!checkSoc.Enabled)
                     return false;
+                controlFound = true;
                 Boolean curMatches = filter.CheckValues.Contains(opt.SaveData);
-                return (!filter.CheckInverted && curMatches) || (filter.CheckInverted && !curMatches);
+                return filter.CheckInverted ? !curMatches : curMatches;
             }
             return false;
         }

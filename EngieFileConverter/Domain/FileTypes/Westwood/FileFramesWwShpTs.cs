@@ -173,7 +173,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SaveOption[] opts = new SaveOption[nrOfOpts];
             Int32 opt = 0;
             opts[opt++] = new SaveOption("CMP", SaveOptionType.Boolean, "Enable transparency compression", "1");
-            opts[opt++] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
+            opts[opt++] = new SaveOption("TDL", SaveOptionType.Boolean, "Save duplicate frames only once", "1");
             opts[opt++] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
             //opts[opt++] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable when calculating average color (ignores hue of remap pixels)", "0");
             opts[opt++] = new SaveOption("TIB", SaveOptionType.Boolean, "Average color calculation: treat remap as tiberium", null, "0"); // "(treats remap as green instead of ignoring hue)", new SaveEnableFilter("REM", false, "1"));
@@ -488,7 +488,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 name = Path.GetFileNameWithoutExtension(file.LoadedFileName);
                 ext = Path.GetExtension(file.LoadedFileName);
             }
-            FileFrames newfile = new FileFrames();
+            FileFrames newfile = new FileFrames(file);
             newfile.SetCommonPalette(true);
             newfile.SetBitsPerPixel(8);
             newfile.SetNeedsPalette(file.NeedsPalette);
@@ -577,7 +577,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 name = file.LoadedFile;
             else if (file.LoadedFileName != null)
                 name = file.LoadedFileName;
-            FileFrames newfile = new FileFrames();
+            FileFrames newfile = new FileFrames(file);
             newfile.SetFileNames(name);
             newfile.SetCommonPalette(true);
             newfile.SetBitsPerPixel(8);

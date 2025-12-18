@@ -105,13 +105,15 @@ namespace Nyerguds.Util.UI.SaveOptions
         {
             ImageButtonCheckBox lbl = sender as ImageButtonCheckBox;
             if (lbl == null) return;
-            ColorDialog cdl = new ColorDialog();
-            cdl.Color = lbl.TrueBackColor;
-            cdl.FullOpen = true;
-            DialogResult res = cdl.ShowDialog(this);
-            if (res != DialogResult.OK && res != DialogResult.Yes)
-                return;
-            lbl.TrueBackColor = cdl.Color;
+            using (ColorDialog cdl = new ColorDialog())
+            {
+                cdl.Color = lbl.TrueBackColor;
+                cdl.FullOpen = true;
+                DialogResult res = cdl.ShowDialog(this);
+                if (res != DialogResult.OK && res != DialogResult.Yes)
+                    return;
+                lbl.TrueBackColor = cdl.Color;
+            }
             if (this.chkTransparent.Enabled)
                 this.chkTransparent.Checked = false;
             else if (this.numAlpha.Enabled && this.numAlpha.Value == 0)

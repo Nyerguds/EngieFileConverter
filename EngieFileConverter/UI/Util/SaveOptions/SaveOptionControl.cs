@@ -15,7 +15,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.m_Controller = controller;
         }
 
-        public virtual void DisableValue(Boolean enabled)
+        public virtual void SetEnabled(Boolean enabled)
         {
             this.Enabled = enabled;
         }

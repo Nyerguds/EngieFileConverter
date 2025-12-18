@@ -67,13 +67,10 @@ namespace EngieFileConverter.Domain.FileTypes
             SaveOption[] opts = new SaveOption[is4bpp ? 3 : 4];
             Int32 opt = 0;
             if (!is4bpp)
-            {
-                Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", saveType.ToString());
-            }
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", "0");
             opts[opt++] = new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString());
             opts[opt++] = new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString());
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), 1.ToString());
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", SaveCompressionTypes), "1");
             return opts;
         }
 
@@ -87,8 +84,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Color[] palette = fileToSave.GetColors();
             Int32 width = image.Width;
             Int32 height = image.Height;
-            Int32 saveType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
+            Int32 saveTypeInt;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveTypeInt);
+            DynBmpSaveType saveType = saveTypeInt == 0 ? DynBmpSaveType.VgaBin : DynBmpSaveType.Ma8;
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 blockWidth;
@@ -189,7 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 frs.AddFrame(fr);
             }
             // Call SaveToBmpChunk to turn into normal bmp
-            List<DynamixChunk> imageChunks = this.SaveToChunks(frs, compressionType, saveType);
+            List<DynamixChunk> imageChunks = this.SaveToChunks(frs, saveType, compressionType);
             // Fill matrix data
             DynamixChunk mtxChunk = new DynamixChunk("MTX", frameMatrixFinal);
             imageChunks.Add(mtxChunk);

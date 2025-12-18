@@ -44,7 +44,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("File size does not match header information.");
             try
             {
-                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, 0, 256));
+                this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, 0, 256);
             }
             catch (ArgumentException)
             {

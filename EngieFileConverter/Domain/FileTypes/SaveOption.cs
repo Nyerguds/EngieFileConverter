@@ -7,14 +7,19 @@ namespace Nyerguds.Util
     {
         public SaveOption(String code, SaveOptionType type, String UiString, String saveData)
             : this(code, type, UiString, null, saveData) { }
-
         public SaveOption(String code, SaveOptionType type, String UiString, String initValue, String saveData, params SaveEnableFilter[] filters)
+            : this(code, type, UiString, initValue, saveData, false, filters) { }
+        public SaveOption(String code, SaveOptionType type, String UiString, String initValue, String saveData)
+            : this(code, type, UiString, initValue, saveData, false) { }
+
+        public SaveOption(String code, SaveOptionType type, String UiString, String initValue, String saveData, Boolean saveFilterAnd, params SaveEnableFilter[] filters)
         {
             this.Code = code;
             this.Type = type;
             this.UiString = UiString;
             this.InitValue = initValue;
             this.SaveData = saveData;
+            this.saveFilterAnd = saveFilterAnd;
             this.Filters = filters.Where(f => f.CheckOption != code).ToArray();
         }
 
@@ -28,6 +33,8 @@ namespace Nyerguds.Util
         public String InitValue { get; private set; }
         /// <summary>The value of this option. Fill this in in advance to give a default value.</summary>
         public String SaveData { get; set; }
+        /// <summary>True if all filters need to apply to enable or disable a control.</summary>
+        public Boolean saveFilterAnd { get; set; }
         /// <summary>Filters. If given, all filters need to match to enable an option.</summary>
         public SaveEnableFilter[] Filters { get; set; }
 
@@ -40,6 +47,8 @@ namespace Nyerguds.Util
 
         public static SaveOption GetSaveOption(SaveOption[] list, String code)
         {
+            if (list == null)
+                return null;
             Int32 listLength = list.Length;
             for (Int32 i = 0; i < listLength; ++i)
             {

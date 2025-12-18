@@ -177,8 +177,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (paletteLength % 3 != 0)
                             throw new FileTypeLoadException("Bad length for 6-bit CPS palette!");
                         Int32 colors = paletteLength / 3;
-                        ColorSixBit[] sbPalette = ColorUtils.ReadSixBitPalette(fileData, palStart, colors);
-                        palette = ColorUtils.GetEightBitColorPalette(sbPalette);
+                        palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, palStart, colors);
                     }
                 }
                 catch (ArgumentException ex)

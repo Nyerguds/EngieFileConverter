@@ -6,6 +6,7 @@ using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
@@ -50,13 +51,18 @@ namespace EngieFileConverter.UI
             //this.ChromaKey();
             //this.ChromaKey2();
             //this.TestSplit();
+            //this.BayerGridtoGray();
             //this.BuildBayer();
             //this.Reduce12Bit();
             //this.CombineImages();
             //this.MakePatterns();
             //this.ExtractBlack();
             //this.MakeTrans();
-            //CombineVertical();
+            //this.CombineVertical();
+            //this.ConvertToIcons();
+            //this.ViewSTrisHidden();
+            //this.Ikegami();
+            this.SplitTwoColor();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -207,7 +213,7 @@ namespace EngieFileConverter.UI
                 framesContainer.AddFrame(frame);
                 frame.SetExtraInfo(sb.ToString().TrimEnd('\n'));
             }
-            Boolean x4 = true;
+            Boolean x4 = false;
 
             Bitmap composite;
             if (x4)
@@ -269,14 +275,20 @@ namespace EngieFileConverter.UI
 
         private void CombineHue()
         {
-            String filenameImage = "tank-b.png";
-            String filenameColors = "tank-c.png";
-            if (!File.Exists(filenameImage) || !File.Exists(filenameColors))
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null)
                 return;
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String filenameImage = "Sheppard_alpha_adj.png";
+            String filenameColors = "Sheppard_remast.jpg";
+            String pathImage = Path.Combine(path, filenameImage);
+            String pathColors = Path.Combine(path, filenameColors);
+            if (!File.Exists(pathImage) || !File.Exists(pathColors))
+                return;
+
             // image data
-            Bitmap im = ImageUtils.LoadBitmap(filenameImage);
+            Bitmap im = ImageUtils.LoadBitmap(pathImage);
             // colour data
-            Bitmap col = ImageUtils.LoadBitmap(filenameColors);
+            Bitmap col = ImageUtils.LoadBitmap(pathColors);
             if (im.Width != col.Width || im.Height != col.Height)
                 return;
             Int32 iStride;
@@ -289,7 +301,7 @@ namespace EngieFileConverter.UI
             {
                 ColorHSL curPix = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(imageData, i));
                 ColorHSL curCol = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(colorData, i));
-                ColorHSL newCol = new ColorHSL(curCol.Hue, curCol.Saturation, curPix.Luminosity);
+                ColorHSL newCol = new ColorHSL(curCol.Hue, curCol.Saturation, curPix.Luminosity, curPix.Alpha);
                 UInt32 val = (UInt32) ((Color) newCol).ToArgb();
                 ArrayUtils.WriteInt32ToByteArrayLe(imageData, i, val);
             }
@@ -899,6 +911,16 @@ namespace EngieFileConverter.UI
                 MessageBox.Show(this, "Last full white line is " + lastWhiteLine);
         }
 
+        private void BayerGridtoGray()
+        {
+            Bitmap image;
+            SupportedFileType shownFile = this.GetShownFile();
+            if (shownFile == null || (image = shownFile.GetBitmap()) == null)
+                return;
+            Bitmap bmNew = ImageUtilsSO.BayerGridToGray(image, true, false);
+            this.LoadTestFile(bmNew);
+        }
+
         private void BuildBayer()
         {
             Bitmap image;
@@ -909,8 +931,19 @@ namespace EngieFileConverter.UI
             Int32 height = image.Height;
             Byte[] imageData = ImageUtilsSO.GetChannelBytes(image, 0);
             Int32 stride = width;
-            Byte[] bayerData = ImageUtilsSO.BayerToRgb2x2Orig(imageData, ref width, ref height, ref stride, true, true);
-            Bitmap bmNew = ImageUtils.BuildImage(bayerData, width, height, stride, PixelFormat.Format24bppRgb, null, null);
+            Byte[] bayerData = ImageUtilsSO.BayerToRgb2x2Orig(imageData, ref width, ref height, ref stride, true, false);
+            Bitmap bmNew;
+            using (Bitmap bmBay = ImageUtils.BuildImage(bayerData, width, height, stride, PixelFormat.Format24bppRgb, null, null))
+            {
+                bmNew = new Bitmap(image.Width, image.Height, PixelFormat.Format32bppRgb);
+                using (Graphics g = Graphics.FromImage(bmNew))
+                {
+                    g.InterpolationMode = InterpolationMode.Bilinear;
+                    g.PixelOffsetMode = PixelOffsetMode.Half;
+                    g.DrawImage(bmBay, 0, 0, image.Width, image.Height);
+                    g.DrawImage(bmBay, 0.5f, 0.5f, width, height);
+                }
+            }
             this.LoadTestFile(bmNew);
         }
 
@@ -1087,10 +1120,91 @@ namespace EngieFileConverter.UI
             }
             foreach (Bitmap image in images)
                 image.Dispose();
-            //bitmap2.Save(Path.Combine(testFilesPath, "testCombine.png"), ImageFormat.Png);            
+            //bitmap2.Save(Path.Combine(testFilesPath, "testCombine.png"), ImageFormat.Png);
             this.LoadTestFile(bitmap2);
         }
 
+        private void ConvertToIcons()
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || m_LoadedFile.LoadedFile == null)
+                return;
+            List<String> originalNames = this.m_LoadedFile.Frames.Select(f => f.LoadedFile).Where(File.Exists).ToList();
+            if (originalNames.Count == 0)
+                return;
+            String outPath = Path.GetDirectoryName(originalNames[0]);
+            ImageUtilsSO.WriteImagesToIcons(originalNames, outPath);
+        }
+
+        private void ViewSTrisHidden()
+        {
+            // This image appears in a number of games. it may be the logo of some old adult warez distribution group.
+            // The files are always the same: a 6-bit colour palette in plain text format, and a raw 320x200 8-bit data array
+            // without header, inconspicuously named as if they are files of the game itself. The image is always the same too:
+            // Eddie, the zombie mascot of the band "Iron Maiden", carrying a British flag as depicted on the album "The Trooper".
+
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || (!(this.m_LoadedFile is FileImgStris) && !(this.m_LoadedFile is FileFrames && ((FileFrames)m_LoadedFile).EmbeddedType == typeof(FileImgStris))))
+                return;
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String palFile = Path.Combine(path, "14.sex");
+            String imgFile = Path.Combine(path, "15.sex");
+            if (!File.Exists(palFile) || !File.Exists(imgFile))
+                return;
+            Byte[] palB = File.ReadAllBytes(palFile);
+            for (Int32 i = 0; i < palB.Length; i++)
+                if (palB[i] != 0x0D && palB[i] != 0x0A && palB[i] != 0x20 && (palB[i] < '0' || palB[i] > '9'))
+                    return;
+            String palT = Encoding.ASCII.GetString(palB);
+            Regex line = new Regex("\\s*(\\d+)\\s*(\\d\\d?)\\s*(\\d\\d?)\\s*(\\d\\d?)\\s*?\r\n");
+            MatchCollection mc = line.Matches(palT);
+            Color[] palette = new Color[256];
+            foreach (Match m in mc)
+            {
+                Int32 index = Int32.Parse(m.Groups[1].Value);
+                if (index >= 256)
+                    continue;
+                palette[index] = new ColorSixBit(Byte.Parse(m.Groups[2].Value), Byte.Parse(m.Groups[3].Value), Byte.Parse(m.Groups[4].Value));
+            }
+            Byte[] imgB = File.ReadAllBytes(imgFile);
+            Bitmap image = ImageUtils.BuildImage(imgB, 320, 200, 320, PixelFormat.Format8bppIndexed, palette, Color.Black);
+            this.LoadTestFile(image);
+        }
+
+        private void Ikegami()
+        {
+            Byte[] graphic =
+            {
+                0x00, 0x00, 0x41, 0x7F, 0x7F, 0x41, 0x00, 0x00,
+                0x00, 0x7F, 0x7F, 0x18, 0x3C, 0x76, 0x63, 0x41,
+                0x00, 0x00, 0x7F, 0x7F, 0x49, 0x49, 0x49, 0x41,
+                0x00, 0x1C, 0x3E, 0x63, 0x41, 0x49, 0x79, 0x79,
+                0x00, 0x7C, 0x7E, 0x13, 0x11, 0x13, 0x7E, 0x7C,
+                0x00, 0x7F, 0x7F, 0x0E, 0x1C, 0x0E, 0x7F, 0x7F,
+                0x00, 0x00, 0x41, 0x7F, 0x7F, 0x41, 0x00, 0x00
+            };
+            //Bitmap ikegami = ImageUtils.BuildImage(graphic, 8, 56, 1, PixelFormat.Format1bppIndexed, new Color[] { Color.Black, Color.White }, null);
+            Byte[] conv1 = ImageUtils.ConvertTo8Bit(graphic, 8, 56, 0, 1, false);
+            Byte[] conv2 = new Byte[conv1.Length];
+            for (int i = 0; i < conv1.Length; i++)
+                conv2[(56 * (i%8)) + i / 8] = conv1[i];
+            //Bitmap ikegami = ImageUtils.BuildImage(conv2, 56, 8, 56, PixelFormat.Format8bppIndexed, new Color[] { Color.Black, Color.White }, null);
+            Byte[] conv3 = ImageUtils.ConvertFrom8Bit(conv2, 56, 8, 1, true);
+            Bitmap ikegami = ImageUtils.BuildImage(conv3, 56, 8, 7, PixelFormat.Format1bppIndexed, new Color[] { Color.Black, Color.White }, null);
+            
+
+            this.LoadTestFile(ikegami);
+        }
+
+        private void SplitTwoColor()
+        {
+            SupportedFileType shownFile = this.GetShownFile();
+            Bitmap image;
+            if (shownFile == null || (image = shownFile.GetBitmap()) == null)
+                return;
+            Bitmap newBm = ImageUtilsSO.ReduceToTwoMostUsedColors(image);
+            this.LoadTestFile(newBm);
+        }
+
+        
     }
 }
 #endif

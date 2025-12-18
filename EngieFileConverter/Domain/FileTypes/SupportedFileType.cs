@@ -351,15 +351,6 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVda),
             typeof(FileImgKotB),
             typeof(FileImgMythosLbv),
-            typeof(FilePalette6Bit),
-            typeof(FilePalette8Bit),
-            typeof(FilePaletteWwCc1N64Pa8),
-            typeof(FilePaletteWwCc1N64Pa4),
-            typeof(FileTblWwPal),
-            typeof(FilePaletteWwAmiga),
-#if DEBUG
-            typeof(FilePaletteWwPsx), // Experimental
-#endif
             typeof(FileFramesDfPic),
             typeof(FileFramesIgcSlb),
             typeof(FileFramesLadyGl),
@@ -370,6 +361,16 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImgStris),
             typeof(FileImgBif),
             typeof(FileImgJmx),
+            typeof(FilePalette6Bit),
+            typeof(FilePalette8Bit),
+            typeof(FilePaletteWwCc1N64Pa8),
+            //typeof(FileFramesInt33Cursor), // Not gonna autodetect this.
+            typeof(FilePaletteWwCc1N64Pa4),
+            typeof(FileTblWwPal),
+            typeof(FilePaletteWwAmiga),
+#if DEBUG
+            typeof(FilePaletteWwPsx), // Experimental
+#endif
 #if DEBUG
             typeof(FileImgMythosRmm), // Do not enable; too much chance on false positive.
 #endif
@@ -380,6 +381,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             typeof(FileImage),
             typeof(FileIcon),
+            typeof(FileFramesInt33Cursor),
             typeof(FileImgWwCps),
             typeof(FileImgWwCpsToon),
             typeof(FileFramesWwShpD2),
@@ -444,6 +446,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImageGif),
             typeof(FileImageJpg),
             typeof(FileIcon),
+            typeof(FileFramesInt33Cursor),
             typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
             typeof(FileFramesWwShpD2),
@@ -574,6 +577,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType typeObj = preferredTypes[i];
                 try
                 {
+                    typeObj = (SupportedFileType) Activator.CreateInstance(typeObj.GetType());
                     typeObj.LoadFile(fileData, path);
                     return typeObj;
                 }

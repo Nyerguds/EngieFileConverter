@@ -20,34 +20,62 @@ namespace Nyerguds.Util.UI
         /// <typeparam name="T">The basic type of which subtypes populate the typesList. Needs to inherit from FileTypeBroadcaster.</typeparam>
         /// <param name="owner">Owner window for the dialog.</param>
         /// <param name="title">Title of the dialog.</param>
-        /// <param name="typesList">List of class types that inherit from T.</param>
+        /// <param name="typesList">List of class types to show in the dropdown. Must inherit from T.</param>
+        /// <param name="generalTypesList">List of class types from which to generate the "all supported types" item. Must inherit from T.</param>
         /// <param name="currentPath">Path to open. Can contain a filename, but only the path is used.</param>
         /// <param name="generaltypedesc">General description of the type, to be used in "All supported ???". Defaults to "files" if left blank.</param>
         /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank for none.</param>
         /// <param name="orderList">True to order the list of entries by their description.</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
         /// <returns>The chosen filename, or null if the user cancelled.</returns>
-        public static String ShowOpenFileFialog<T>(IWin32Window owner, String title, Type[] typesList, String currentPath, String generaltypedesc, String generaltypeExt, Boolean orderList, out T selectedItem) where T : IFileTypeBroadcaster
+        public static String ShowOpenFileFialog<T>(IWin32Window owner, String title, Type[] typesList, Type[] generalTypesList, String currentPath, String generaltypedesc, String generaltypeExt, Boolean orderList, out T selectedItem) where T : IFileTypeBroadcaster
+        {
+            String[] returnVal = ShowOpenFileFialog(owner, title, false, typesList, generalTypesList, currentPath, generaltypedesc, generaltypeExt, orderList, out selectedItem);
+            if (returnVal == null || returnVal.Length == 0)
+                return null;
+            return returnVal[0];
+        }
+
+        /// <summary>
+        /// generates a file open dialog with automatically generated types list. Returns the chosen filename, or null if user cancelled.
+        /// The output parameter "selectedItem" will contain a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected.
+        /// </summary>
+        /// <typeparam name="T">The basic type of which subtypes populate the typesList. Needs to inherit from FileTypeBroadcaster.</typeparam>
+        /// <param name="owner">Owner window for the dialog.</param>
+        /// <param name="title">Title of the dialog.</param>
+        /// <param name="multiSelect">True to allow multi-select.</param>
+        /// <param name="typesList">List of class types to show in the dropdown. Must inherit from T.</param>
+        /// <param name="generalTypesList">List of class types from which to generate the "all supported types" item. Must inherit from T.</param>
+        /// <param name="currentPath">Path to open. Can contain a filename, but only the path is used.</param>
+        /// <param name="generaltypedesc">General description of the type, to be used in "All supported ???". Defaults to "files" if left blank.</param>
+        /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank for none.</param>
+        /// <param name="orderList">True to order the list of entries by their description.</param>
+        /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
+        /// <returns>The chosen filename, or null if the user cancelled.</returns>
+        public static String[] ShowOpenFileFialog<T>(IWin32Window owner, String title, Boolean multiSelect, Type[] typesList, Type[] generalTypesList, String currentPath, String generaltypedesc, String generaltypeExt, Boolean orderList, out T selectedItem) where T : IFileTypeBroadcaster
         {
             selectedItem = default(T);
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Multiselect = false;
-            FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
-            if (orderList)
-                items = items.OrderBy(item => item.Description).ToArray();
-            T[] correspondingObjects;
-            if (title != null)
-                ofd.Title = title;
-            ofd.Filter = GetFileFilterForOpen<T>(items, generaltypedesc, generaltypeExt, out correspondingObjects);
-            //ofd.FilterIndex = 1; // "all supported files". One-based for some fucked up reason.
-            //"Westwood font files (*.fnt)|*.fnt|All Files (*.*)|*.*";
-            ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
-            //ofd.FilterIndex
-            DialogResult res = ofd.ShowDialog(owner);
-            if (res != DialogResult.OK)
-                return null;
-            selectedItem = correspondingObjects[ofd.FilterIndex - 1];
-            return ofd.FileName;
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Multiselect = multiSelect;
+                FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
+                if (orderList)
+                    items = items.OrderBy(item => item.Description).ToArray();
+                FileDialogItem<T>[] generalItems = generalTypesList == null ? null : generalTypesList.Select(x => new FileDialogItem<T>(x)).OrderBy(item => item.Extensions == null ? "" : item.Extensions.FirstOrDefault() ?? "").ToArray();
+                T[] correspondingObjects;
+                if (title != null)
+                    ofd.Title = title;
+                ofd.Filter = GetFileFilterForOpen<T>(items, generalItems, generaltypedesc, generaltypeExt, out correspondingObjects);
+                //ofd.FilterIndex = 1; // "all supported files". One-based for some fucked up reason.
+                //"Westwood font files (*.fnt)|*.fnt|All Files (*.*)|*.*";
+                ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
+                //ofd.FilterIndex
+                DialogResult res = ofd.ShowDialog(owner);
+                if (res != DialogResult.OK)
+                    return null;
+                selectedItem = correspondingObjects[ofd.FilterIndex - 1];
+                return multiSelect ? ofd.FileNames : new String[] { ofd.FileName };
+            }
         }
 
         /// <summary>
@@ -68,75 +96,77 @@ namespace Nyerguds.Util.UI
         public static String ShowSaveFileFialog<T>(IWin32Window owner, String title, Type selectType, Type[] typesList, Type defaultSaveType, Boolean skipOtherExtensions, Boolean joinExtensions, String currentPath, out T selectedItem) where T : IFileTypeBroadcaster
         {
             selectedItem = default(T);
-            SaveFileDialog sfd = new SaveFileDialog();
-            List<FileDialogItem<T>> items = new List<FileDialogItem<T>>();
-            foreach (Type type in typesList)
+            using (SaveFileDialog sfd = new SaveFileDialog())
             {
-                FileDialogItem<T> fdi = new FileDialogItem<T>(type);
-                if (fdi.ItemObject.CanSave)
-                    items.Add(fdi);
-            }
-            Int32 filterIndex = 0;
-            Boolean typeFound = false;
-            if (selectType != null)
-            {
-                for (filterIndex = 0; filterIndex < items.Count; ++filterIndex)
+                List<FileDialogItem<T>> items = new List<FileDialogItem<T>>();
+                foreach (Type type in typesList)
                 {
-                    if (selectType != items[filterIndex].ItemType)
-                        continue;
-                    typeFound = true;
-                    break;
+                    FileDialogItem<T> fdi = new FileDialogItem<T>(type);
+                    if (fdi.ItemObject.CanSave)
+                        items.Add(fdi);
                 }
-            }
-            if (!typeFound && defaultSaveType != null)
-            {
-                for (filterIndex = 0; filterIndex < items.Count; ++filterIndex)
+                Int32 filterIndex = 0;
+                Boolean typeFound = false;
+                if (selectType != null)
                 {
-                    if (defaultSaveType != items[filterIndex].ItemType)
-                        continue;
-                    typeFound = true;
-                    break;
+                    for (filterIndex = 0; filterIndex < items.Count; ++filterIndex)
+                    {
+                        if (selectType != items[filterIndex].ItemType)
+                            continue;
+                        typeFound = true;
+                        break;
+                    }
                 }
-            }
-            if (typeFound)
-                filterIndex++;
-            else
-            {
-                // detect by loaded file extension
-                T specificType = FindMoreSpecificItem<T>(typesList, currentPath, selectType, out filterIndex);
-                if (specificType != null && !specificType.Equals(default(T)))
+                if (!typeFound && defaultSaveType != null)
                 {
-                    typeFound = true;
+                    for (filterIndex = 0; filterIndex < items.Count; ++filterIndex)
+                    {
+                        if (defaultSaveType != items[filterIndex].ItemType)
+                            continue;
+                        typeFound = true;
+                        break;
+                    }
+                }
+                if (typeFound)
                     filterIndex++;
-                }
-            }
-            if (!typeFound)
-                filterIndex = 1;
-            T[] correspondingObjects;
-            sfd.Filter = GetFileFilterForSave(items.ToArray(), skipOtherExtensions, joinExtensions, out correspondingObjects);
-            sfd.FilterIndex = filterIndex;
-            //sfd.Filter = "Westwood font file (*.fnt)|*.fnt";
-            sfd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
-            if (!String.IsNullOrEmpty(currentPath))
-            {
-                String fn = Path.GetFileName(currentPath);
-                String ext = Path.GetExtension(currentPath).TrimStart('.');
-                T selectedType = correspondingObjects[filterIndex - 1];
-                if (selectedType != null && !selectedType.Equals(default(T)) && selectedType.FileExtensions.Length > 0)
+                else
                 {
-                    // makes sure the extension's case matches the one in the filter, so the dialog doesn't add an additional one.
-                    Int32 extIndex = Array.FindIndex(selectedType.FileExtensions, x => x.Equals(ext, StringComparison.OrdinalIgnoreCase));
-                    ext = selectedType.FileExtensions[extIndex == -1 ? 0 : extIndex];
-                    fn = Path.GetFileNameWithoutExtension(currentPath) + "." + ext;
+                    // detect by loaded file extension
+                    T specificType = FindMoreSpecificItem<T>(typesList, currentPath, selectType, out filterIndex);
+                    if (specificType != null && !specificType.Equals(default(T)))
+                    {
+                        typeFound = true;
+                        filterIndex++;
+                    }
                 }
-                sfd.FileName = fn;
+                if (!typeFound)
+                    filterIndex = 1;
+                T[] correspondingObjects;
+                sfd.Filter = GetFileFilterForSave(items.ToArray(), skipOtherExtensions, joinExtensions, out correspondingObjects);
+                sfd.FilterIndex = filterIndex;
+                //sfd.Filter = "Westwood font file (*.fnt)|*.fnt";
+                sfd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
+                if (!String.IsNullOrEmpty(currentPath))
+                {
+                    String fn = Path.GetFileName(currentPath);
+                    String ext = Path.GetExtension(currentPath).TrimStart('.');
+                    T selectedType = correspondingObjects[filterIndex - 1];
+                    if (selectedType != null && !selectedType.Equals(default(T)) && selectedType.FileExtensions.Length > 0)
+                    {
+                        // makes sure the extension's case matches the one in the filter, so the dialog doesn't add an additional one.
+                        Int32 extIndex = Array.FindIndex(selectedType.FileExtensions, x => x.Equals(ext, StringComparison.OrdinalIgnoreCase));
+                        ext = selectedType.FileExtensions[extIndex == -1 ? 0 : extIndex];
+                        fn = Path.GetFileNameWithoutExtension(currentPath) + "." + ext;
+                    }
+                    sfd.FileName = fn;
+                }
+                sfd.Title = title;
+                DialogResult res = sfd.ShowDialog(owner);
+                if (res != DialogResult.OK)
+                    return null;
+                selectedItem = correspondingObjects[sfd.FilterIndex - 1];
+                return sfd.FileName;
             }
-            sfd.Title = title;
-            DialogResult res = sfd.ShowDialog(owner);
-            if (res != DialogResult.OK)
-                return null;
-            selectedItem = correspondingObjects[sfd.FilterIndex - 1];
-            return sfd.FileName;
         }
 
         private static T FindMoreSpecificItem<T>(Type[] moreSpecificTypesList, String currentPath, Type currentType, out Int32 indexInList) where T : IFileTypeBroadcaster
@@ -207,38 +237,32 @@ namespace Nyerguds.Util.UI
             return String.Join("|", types.ToArray());
         }
 
-        private static String GetFileFilterForOpen<T>(FileDialogItem<T>[] fileDialogItems, String generaltypedesc, String generaltypeExt, out T[] correspondingObjects) where T : IFileTypeBroadcaster
+        private static String GetFileFilterForOpen<T>(FileDialogItem<T>[] fileDialogItems, FileDialogItem<T>[] generalFileDialogItems, String generaltypedesc, String generaltypeExt, out T[] correspondingObjects) where T : IFileTypeBroadcaster
         {
             // don't add a "all supported types" entry if there is only one supported type.
-            Boolean singleItem = fileDialogItems.Length == 1;
             List<String> types = new List<String>();
             List<T> objects = new List<T>();
-            HashSet<String> allTypes = singleItem ? null : new HashSet<String>();
-            if (!singleItem)
+            if (generalFileDialogItems != null)
             {
-                types.Add(String.Empty); // to be replaced later
+                HashSet<String> allTypes = new HashSet<String>();
+                foreach (FileDialogItem<T> itemType in generalFileDialogItems)
+                    foreach (String filter in itemType.Filters.Distinct())
+                        allTypes.Add(filter);
+                if (!String.IsNullOrEmpty(generaltypeExt))
+                    allTypes.Add("*." + generaltypeExt);
+                String allTypesStr = String.Join(";", allTypes.ToArray());
+                if (String.IsNullOrEmpty(generaltypedesc))
+                    generaltypedesc = "files";
+                types.Add("All supported " + generaltypedesc + " (" + allTypesStr + ")|" + allTypesStr);
                 objects.Add(default(T));
             }
             foreach (FileDialogItem<T> itemType in fileDialogItems)
             {
                 HashSet<String> curTypes = new HashSet<String>();
                 foreach (String filter in itemType.Filters.Distinct())
-                {
                     curTypes.Add(filter);
-                    if (!singleItem)
-                        allTypes.Add(filter);
-                }
                 types.Add(String.Format("{0} ({1})|{1}", itemType.Description, String.Join(";", curTypes.ToArray())));
                 objects.Add(itemType.ItemObject);
-            }
-            if (String.IsNullOrEmpty(generaltypedesc))
-                generaltypedesc = "files";
-            if (!singleItem)
-            {
-                if (!String.IsNullOrEmpty(generaltypeExt))
-                    allTypes.Add("*." + generaltypeExt);
-                String allTypesStr = String.Join(";", allTypes.ToArray());
-                types[0] = "All supported " + generaltypedesc + " (" + allTypesStr + ")|" + allTypesStr;
             }
             types.Add("All files (*.*)|*.*");
             objects.Add(default(T));

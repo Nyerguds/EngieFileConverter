@@ -10,8 +10,8 @@
 
 namespace EngieFileConverter.Properties {
     using System;
-
-
+    
+    
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -23,15 +23,15 @@ namespace EngieFileConverter.Properties {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
-
+        
         private static global::System.Resources.ResourceManager resourceMan;
-
+        
         private static global::System.Globalization.CultureInfo resourceCulture;
-
+        
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal Resources() {
         }
-
+        
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
@@ -45,7 +45,7 @@ namespace EngieFileConverter.Properties {
                 return resourceMan;
             }
         }
-
+        
         /// <summary>
         ///   Overrides the current thread's CurrentUICulture property for all
         ///   resource lookups using this strongly typed resource class.
@@ -59,7 +59,7 @@ namespace EngieFileConverter.Properties {
                 resourceCulture = value;
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
@@ -69,7 +69,7 @@ namespace EngieFileConverter.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
@@ -79,7 +79,25 @@ namespace EngieFileConverter.Properties {
                 return ((System.Drawing.Icon)(obj));
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ; Structure and terrain grid definitions
+        ///
+        ///; The system will read line &quot;0=&quot;, &quot;1=&quot;, &quot;2=&quot; etc, and will see any &apos;x&apos; or &apos;X&apos;
+        ///; characters as cells of the foundation.
+        ///; Since the read aborts after finding an empty line, empty lines in between
+        ///; HAVE to added. I padded everything with other characters to show a rectangular
+        ///; shape, which solves that problem.
+        ///
+        ///; The origin (0,0) point of the grid can be specified with the keys &quot;XShift=&quot;
+        ///; and &quot;YShift=&quot;. Basically, this is the amount to subtract from the gi [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string grids {
+            get {
+                return ResourceManager.GetString("grids", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
@@ -89,7 +107,7 @@ namespace EngieFileConverter.Properties {
                 return ((byte[])(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
@@ -99,7 +117,7 @@ namespace EngieFileConverter.Properties {
                 return ((byte[])(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
@@ -109,7 +127,136 @@ namespace EngieFileConverter.Properties {
                 return ((byte[])(obj));
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [Structures]
+        ///0=WEAP
+        ///1=GTWR
+        ///2=ATWR
+        ///3=OBLI
+        ///4=HQ
+        ///5=GUN
+        ///6=FACT
+        ///7=PROC
+        ///8=SILO
+        ///9=HPAD
+        ///10=SAM
+        ///11=AFLD
+        ///12=NUKE
+        ///13=NUK2
+        ///14=HOSP
+        ///15=PYLE
+        ///16=ARCO
+        ///17=FIX
+        ///18=BIO
+        ///19=HAND
+        ///20=TMPL
+        ///21=EYE
+        ///22=MISS
+        ///23=V01
+        ///24=V02
+        ///25=V03
+        ///26=V04
+        ///27=V05
+        ///28=V06
+        ///29=V07
+        ///30=V08
+        ///31=V09
+        ///32=V10
+        ///33=V11
+        ///34=V12
+        ///35=V13
+        ///36=V14
+        ///37=V15
+        ///38=V16
+        ///39=V17
+        ///40=V18
+        ///41=V19
+        ///42=V20
+        ///43=V21
+        ///44=V22
+        ///45=V23
+        ///46=V24
+        ///47=V25
+        ///48=V26
+        ///49=V27
+        ///50=V28
+        ///51=V29
+        ///52=V30
+        ///53=V31
+        ///54=V32
+        ///55=V33
+        ///56=V34
+        ///57=V35
+        ///58=V36
+        ///59=V37
+        ///60=SBAG
+        ///61= [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string structs {
+            get {
+                return ResourceManager.GetString("structs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [Terrain]
+        ///0=T01
+        ///1=T02
+        ///2=T03
+        ///3=T04
+        ///4=T05
+        ///5=T06
+        ///6=T07
+        ///7=T08
+        ///8=T09
+        ///9=T10
+        ///10=T11
+        ///11=T12
+        ///12=T13
+        ///13=T14
+        ///14=T15
+        ///15=T16
+        ///16=T17
+        ///17=T18
+        ///18=SPLIT2
+        ///19=SPLIT3
+        ///20=TC01
+        ///21=TC02
+        ///22=TC03
+        ///23=TC04
+        ///24=TC05
+        ///25=ROCK1
+        ///26=ROCK2
+        ///27=ROCK3
+        ///28=ROCK4
+        ///29=ROCK5
+        ///30=ROCK6
+        ///31=ROCK7
+        ///
+        ///[T01]
+        ///OverlapList=T01Overlap
+        ///OccupyList=T01Occupy
+        ///Unknown3=1
+        ///HitPoints=600
+        ///NameID=38
+        ///Invulnerable=No
+        ///Unknown7=1
+        ///Unknown8=0
+        ///Unknown9=0
+        ///Unknown10=0
+        ///Unknown11=1
+        ///Unknown12=0
+        ///Unknown13=1
+        ///Options=28639349
+        ///Theaters=Tempe [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string terrain {
+            get {
+                return ResourceManager.GetString("terrain", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
@@ -119,7 +266,7 @@ namespace EngieFileConverter.Properties {
                 return ((byte[])(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
@@ -129,7 +276,7 @@ namespace EngieFileConverter.Properties {
                 return ((byte[])(obj));
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to [TileSets]
         ///0=CLEAR1
@@ -201,7 +348,7 @@ namespace EngieFileConverter.Properties {
                 return ResourceManager.GetString("tilesets", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to [TileSets]
         ///0=CLEAR1

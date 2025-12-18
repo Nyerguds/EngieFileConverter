@@ -241,15 +241,18 @@ namespace Nyerguds.Util.UI
 
         private void AdjustColor()
         {
-            ColorDialog cdl = new ColorDialog();
-            cdl.Color = this.BackgroundFillColor;
-            cdl.FullOpen = true;
-            cdl.CustomColors = this.CustomColors;
-            DialogResult res = cdl.ShowDialog(this);
-            this.CustomColors = cdl.CustomColors;
-            if (res != DialogResult.OK && res != DialogResult.Yes)
-                return;
-            Color col = cdl.Color;
+            Color col;
+            using (ColorDialog cdl = new ColorDialog())
+            {
+                cdl.Color = this.BackgroundFillColor;
+                cdl.FullOpen = true;
+                cdl.CustomColors = this.CustomColors;
+                DialogResult res = cdl.ShowDialog(this);
+                this.CustomColors = cdl.CustomColors;
+                if (res != DialogResult.OK && res != DialogResult.Yes)
+                    return;
+                col = cdl.Color;
+            }
             this.BackgroundFillColor = col;
             this.RefreshImage(false);
         }

@@ -64,6 +64,10 @@
     <Compile Include="Domain\FileData\EmotionalPictures\PppCompression.cs" />
     <Compile Include="Domain\FileData\IGC\IgcBitMaskCompression.cs" />
     <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
+    <Compile Include="Domain\FileData\Westwood\House.cs" />
+    <Compile Include="Domain\FileData\Westwood\OverlayTd.cs" />
+    <Compile Include="Domain\FileData\Westwood\StructInfo.cs" />
+    <Compile Include="Domain\FileTypes\General\FileFramesInt33Cursor.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosRmm.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosLbv.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpBr.cs" />
@@ -376,6 +380,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Resources\grids.ini" />
+    <None Include="Resources\structs.ini" />
+    <None Include="Resources\terrain.ini" />
     <None Include="Resources\th_desert.nms" />
     <None Include="Resources\th_temperate.nms" />
     <None Include="Resources\tilesets.ini" />

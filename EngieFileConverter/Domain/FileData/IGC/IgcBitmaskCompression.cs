@@ -65,7 +65,7 @@ namespace Nyerguds.FileData.IGC
         /// <param name="bitMaskData">Image data with bit masks.</param>
         /// <param name="stride">Amount of bytes in one pixel row in the image.</param>
         /// <param name="height">Height of the image.</param>
-        /// <returns>The uncompressed stride*height image data.</returns>
+        /// <returns>The decompressed stride*height image data.</returns>
         public static Byte[] BitMaskDecompress(Byte[] bitMaskData, Int32 stride, Int32 height)
         {
             Int32 inputLen = bitMaskData.Length;
@@ -95,7 +95,7 @@ namespace Nyerguds.FileData.IGC
                     {
                         if (inPtr >= inputLen)
                             throw new ArgumentException("Error decompressing image.", "bitMaskData");
-                        // Copy from RLE-uncompressed data
+                        // Copy from RLE-decompressed data
                         imageData[writePtr] = bitMaskData[inPtr++];
                     }
                     else

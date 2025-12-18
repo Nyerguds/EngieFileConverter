@@ -72,7 +72,7 @@ namespace Nyerguds.ImageManipulation
             if (detectDark)
                 clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] <= brightnessThreshold;
             else
-                clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] > brightnessThreshold;
+                clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] >= brightnessThreshold;
             if (mergeThreshold < 0)
                 return FindBlobs(brightness, width, height, clearsThreshold, true, getEdgesOnly);
             else

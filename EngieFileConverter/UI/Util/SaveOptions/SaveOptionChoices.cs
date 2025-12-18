@@ -70,7 +70,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         }
 
 
-        public override void DisableValue(Boolean enabled)
+        public override void SetEnabled(Boolean enabled)
         {
             try
             {

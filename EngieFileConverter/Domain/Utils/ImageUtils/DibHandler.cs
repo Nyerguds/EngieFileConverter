@@ -157,10 +157,10 @@ namespace Nyerguds.ImageManipulation
                     if (redMask == 0 && greenMask == 0 && blueMask == 0)
                     {
                         // Not sure if this case ever happens in DIBv5, tbh.
-                        redMask = PixelFormatter.Format32BitArgb.BitMasks[PixelFormatter.ColR];
-                        greenMask = PixelFormatter.Format32BitArgb.BitMasks[PixelFormatter.ColG];
-                        blueMask = PixelFormatter.Format32BitArgb.BitMasks[PixelFormatter.ColB];
-                        alphaMask = PixelFormatter.Format32BitArgb.BitMasks[PixelFormatter.ColA];
+                        redMask = PixelFormatter.Format32BitArgbBe.BitMasks[PixelFormatter.ColR];
+                        greenMask = PixelFormatter.Format32BitArgbBe.BitMasks[PixelFormatter.ColG];
+                        blueMask = PixelFormatter.Format32BitArgbBe.BitMasks[PixelFormatter.ColB];
+                        alphaMask = PixelFormatter.Format32BitArgbBe.BitMasks[PixelFormatter.ColA];
                     }
                     else
                     {
@@ -310,7 +310,7 @@ namespace Nyerguds.ImageManipulation
                         pf = alphaMask != 0 ? PixelFormat.Format32bppArgb : PixelFormat.Format32bppRgb;
                         // Any kind of custom format can be handled here.
                         PixelFormatter pixFormatter = new PixelFormatter(4, alphaMask, redMask, greenMask, blueMask, true);
-                        PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format32BitArgb, pixFormatter);
+                        PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format32BitArgbBe, pixFormatter);
                     }
                     break;
                 case 24:
@@ -318,7 +318,7 @@ namespace Nyerguds.ImageManipulation
                     if (redMask != 0 || greenMask != 0 || blueMask != 0)
                     {
                         PixelFormatter pixFormatter = new PixelFormatter(3, 0, redMask, greenMask, blueMask, true);
-                        PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format24BitRgb, pixFormatter);
+                        PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format24BitRgbBe, pixFormatter);
                     }
                     break;
                 case 16:
@@ -348,17 +348,17 @@ namespace Nyerguds.ImageManipulation
                             ReadOnlyCollection<Byte> bits = pixFormatter.BitsAmounts;
                             if (bits[PixelFormatter.ColA] == 1 && bits[PixelFormatter.ColR] == 5 && bits[PixelFormatter.ColG] == 5 && bits[PixelFormatter.ColB] == 5)
                             {
-                                PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitArgb1555, pixFormatter);
+                                PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitArgb1555Be, pixFormatter);
                                 pf = PixelFormat.Format16bppArgb1555;
                             }
                             else if (bits[PixelFormatter.ColA] == 0 && bits[PixelFormatter.ColR] == 5 && bits[PixelFormatter.ColG] == 5 && bits[PixelFormatter.ColB] == 5)
                             {
-                                PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitRgb555, pixFormatter);
+                                PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitRgb555Be, pixFormatter);
                                 pf = PixelFormat.Format16bppRgb555;
                             }
                             else if (bits[PixelFormatter.ColA] == 0 && bits[PixelFormatter.ColR] == 5 && bits[PixelFormatter.ColG] == 6 && bits[PixelFormatter.ColB] == 5)
                             {
-                                PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitRgb565, pixFormatter);
+                                PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitRgb565Be, pixFormatter);
                                 pf = PixelFormat.Format16bppRgb565;
                             }
                             else

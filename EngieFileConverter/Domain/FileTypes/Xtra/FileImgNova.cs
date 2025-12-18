@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
             List<String> extraInfo = new List<String>();
             if (palettePath != null && File.Exists(palettePath) && new FileInfo(palettePath).Length == 0x300)
             {
-                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(palettePath));
+                this.m_Palette = ColorUtils.ReadFromSixBitPaletteFile(palettePath);
                 this.m_PaletteLoaded = true;
                 extraInfo.Add("Palette loaded from " + paletteFilename);
             }
