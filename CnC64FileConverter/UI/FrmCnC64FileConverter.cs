@@ -202,7 +202,7 @@ namespace CnC64FileConverter.UI
         private void BtnOpen_Click(object sender, EventArgs e)
         {
             N64FileType selectedItem;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, N64FileType.SupportedOpenTypes, N64FileType.AutoDetectTypes, this.m_Filename, "images", null, out selectedItem);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, N64FileType.SupportedOpenTypes, N64FileType.SupportedSaveTypes, this.m_Filename, "images", null, out selectedItem);
             if (filename == null)
                 return;
             LoadImage(filename, selectedItem, null);

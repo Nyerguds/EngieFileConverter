@@ -32,6 +32,9 @@ At that point, it became the CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
 
+v1.0.6: (07/04/2017 22:34)
+-fixed bug in the file open logic that prevented opening certain types through the menus.
+
 v1.0.5: (07/04/2017 21:21)
 -Fixed a bug that prevented full clearing of the left map edge
 -Fixed a minor bug in the terrain type definitions.
