@@ -120,6 +120,9 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.12 (02/02/2025 10:30 CET)
+-Further optimised the Treasure Mountain .PAN format compression.
+
 v1.5.11 (01/02/2025 22:15 CET)
 -Added optimisation for the Treasure Mountain .PAN format.
 

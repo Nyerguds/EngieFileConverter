@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Reflection;
 using System.Text;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -357,7 +357,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 uniqueTiles[i] = ImageUtils.ConvertFrom8Bit(uniqueTiles[i], 8, 8, 4, true);
             }
             // Optimisation? Could sort so long beginnings and ends match up
-            OptimiseFrames(resultFrames, uniqueTiles);
+            //OptimiseFramesPair(resultFrames, uniqueTiles);
+            OptimiseFramesChain(resultFrames, uniqueTiles);
 
             // Put image data into one large array.
             byte[] tileset = new byte[tilesetLength * 32];
@@ -475,117 +476,6 @@ namespace EngieFileConverter.Domain.FileTypes
             return fileDataFinal;
         }
 
-        private void OptimiseFrames(int[][] frames, List<byte[]> tiles)
-        {
-            // Optimise: for each byte value, find the tiles with the longest start and end comprised of repeats of that
-            // value, and put them end-to-end so longer compressed ranges can be achieved in the final tileset image data.
-            int tilesetLength = tiles.Count;
-            // map byte value to dictionary of lengths, with for each length the list of tiles.
-            int[] tileStartLengths = new int[tilesetLength];
-            Dictionary<byte, Dictionary<int, List<int>>> startLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
-            int[] tileEndLengths = new int[tilesetLength];
-            Dictionary<byte, Dictionary<int, List<int>>> endLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
-            for (int i = 0; i < tilesetLength; ++i)
-            {
-                byte[] currTile = tiles[i];
-                // check start length of tile.
-                byte checkVal = currTile[0];
-                Dictionary<int, List<int>> lengthsForByteStart;
-                if (!startLengths.TryGetValue(checkVal, out lengthsForByteStart))
-                    startLengths[checkVal] = lengthsForByteStart = new Dictionary<int, List<int>>();
-                int len = 1;
-                while (len < 32 && currTile[len] == checkVal)
-                    len++;
-                tileStartLengths[i] = len;
-                List<int> tilesForStartLength;
-                if (!lengthsForByteStart.TryGetValue(len, out tilesForStartLength))
-                    lengthsForByteStart[len] = tilesForStartLength = new List<int>();
-                tilesForStartLength.Add(i);
-                // check end length of tile.
-                checkVal = currTile[31];
-                Dictionary<int, List<int>> lengthsForByteEnd;
-                if (!endLengths.TryGetValue(checkVal, out lengthsForByteEnd))
-                    endLengths[checkVal] = lengthsForByteEnd = new Dictionary<int, List<int>>();
-                len = 30;
-                while (len >= 0 && currTile[len] == checkVal)
-                    len--;
-                len = 31 - len;
-                tileEndLengths[i] = len;
-                List<int> tilesForEndLength;
-                if (!lengthsForByteEnd.TryGetValue(len, out tilesForEndLength))
-                    lengthsForByteEnd[len] = tilesForEndLength = new List<int>();
-                tilesForEndLength.Add(i);
-            }
-            Dictionary<int, int> tileRemap = new Dictionary<int, int>();
-            int tilemapIndex = 0;
-            foreach (byte startval in startLengths.Keys.OrderBy(b => b))
-            {
-                if (!endLengths.ContainsKey(startval))
-                    continue;
-                Dictionary<int, List<int>> lengthsForByteStart = startLengths[startval];
-                List<int> startLengthsDesc = lengthsForByteStart.Keys.OrderByDescending(b => b).SelectMany(b => lengthsForByteStart[b])
-                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
-                Dictionary<int, List<int>> lengthsForByteEnd = endLengths[startval];
-                List<int> endLengthsDesc = lengthsForByteEnd.Keys.OrderBy(b => b).SelectMany(b => lengthsForByteEnd[b])
-                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
-                // iterate over minimum
-                List<int> iterate = new List<int>(startLengthsDesc.Count < endLengthsDesc.Count ? startLengthsDesc : endLengthsDesc);
-                List<int> otherList = startLengthsDesc.Count < endLengthsDesc.Count ? endLengthsDesc : startLengthsDesc;
-                // remove duplicates in the two lists.
-                foreach (int tileNr in iterate.Where(t => otherList.Contains(t)))
-                {
-                    // Maximize usable pairs by always removing from largest list.
-                    if (endLengthsDesc.Count >= startLengthsDesc.Count)
-                        endLengthsDesc.Remove(tileNr);
-                    else
-                        startLengthsDesc.Remove(tileNr);
-                }
-                //  This logic is honestly extremely rough; it does not check if the resulting
-                //  joined amounts even exceed a length of 3. But it works; all files in the
-                //  game become smaller when re-saved.
-                int end = Math.Min(startLengthsDesc.Count, endLengthsDesc.Count);
-                for (int i = 0; i < end; ++i)
-                {
-                    int tile1 = startLengthsDesc[i];
-                    int tile2 = endLengthsDesc[i];
-
-                    int tile1StartLength = tileStartLengths[tile1];
-                    int tile2EndLength = tileEndLengths[tile2];
-                    // Check if one of the tiles is 100% filled with the value. This will only happen once per value.
-                    bool addedExtra = false;
-                    if (tile1StartLength == 32 && endLengthsDesc.Count > startLengthsDesc.Count)
-                    {
-                        tileRemap.Add(endLengthsDesc[end], tilemapIndex++);
-                        addedExtra = true;
-                    }
-                    tileRemap.Add(tile1, tilemapIndex++);
-                    tileRemap.Add(tile2, tilemapIndex++);
-                    if (!addedExtra && tile2EndLength == 32 && startLengthsDesc.Count > endLengthsDesc.Count)
-                    {
-                        tileRemap.Add(startLengthsDesc[end], tilemapIndex++);
-                    }
-                }
-            }
-            // Apply remap, filling in any unsorted tiles on the fly.
-            // Remap tileset
-            List<byte[]> origTiles = new List<byte[]>(tiles);
-            for (int i = 0; i < tilesetLength; ++i)
-            {
-                if (!tileRemap.ContainsKey(i))
-                    tileRemap.Add(i, tilemapIndex++);
-                tiles[tileRemap[i]] = origTiles[i];
-            }
-            // Remap tilemaps
-            for (int fr = 0; fr < frames.Length; ++fr)
-            {
-                int[] frame = frames[fr];
-                for (int i = 0; i < frame.Length; ++i)
-                {
-                    frame[i] = tileRemap[frame[i]];
-                }
-            }
-        }
-
         /// <summary>
         /// Find tile in list of unique tiles, and add this new tile to the list if it was not found.
         /// </summary>
@@ -649,6 +539,199 @@ namespace EngieFileConverter.Domain.FileTypes
             return -1;
         }
 
+        private void OptimiseFramesPair(int[][] frames, List<byte[]> tiles)
+        {
+            // Optimise: for each byte value, find the tiles with the longest start and end comprised of repeats of that
+            // value, and put them end-to-end so longer compressed ranges can be achieved in the final tileset image data.
+            int tilesetLength = tiles.Count;
+            // map byte value to dictionary of lengths, with for each length the list of tiles.
+            int[] tileStartLengths = new int[tilesetLength];
+            Dictionary<byte, Dictionary<int, List<int>>> startLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
+            int[] tileEndLengths = new int[tilesetLength];
+            Dictionary<byte, Dictionary<int, List<int>>> endLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
+            for (int i = 0; i < tilesetLength; ++i)
+            {
+                byte[] currTile = tiles[i];
+                // check start length of tile.
+                byte checkVal = currTile[0];
+                Dictionary<int, List<int>> lengthsForByteStart;
+                if (!startLengths.TryGetValue(checkVal, out lengthsForByteStart))
+                    startLengths[checkVal] = lengthsForByteStart = new Dictionary<int, List<int>>();
+                int len = 1;
+                while (len < 32 && currTile[len] == checkVal)
+                    len++;
+                tileStartLengths[i] = len;
+                List<int> tilesForStartLength;
+                if (!lengthsForByteStart.TryGetValue(len, out tilesForStartLength))
+                    lengthsForByteStart[len] = tilesForStartLength = new List<int>();
+                tilesForStartLength.Add(i);
+                // check end length of tile.
+                checkVal = currTile[31];
+                Dictionary<int, List<int>> lengthsForByteEnd;
+                if (!endLengths.TryGetValue(checkVal, out lengthsForByteEnd))
+                    endLengths[checkVal] = lengthsForByteEnd = new Dictionary<int, List<int>>();
+                len = 30;
+                while (len >= 0 && currTile[len] == checkVal)
+                    len--;
+                len = 31 - len;
+                tileEndLengths[i] = len;
+                List<int> tilesForEndLength;
+                if (!lengthsForByteEnd.TryGetValue(len, out tilesForEndLength))
+                    lengthsForByteEnd[len] = tilesForEndLength = new List<int>();
+                tilesForEndLength.Add(i);
+            }
+            Dictionary<int, int> tileRemap = new Dictionary<int, int>();
+            int tilemapIndex = 0;
+            foreach (byte startval in startLengths.Keys.OrderBy(b => b))
+            {
+                if (!endLengths.ContainsKey(startval))
+                    continue;
+                Dictionary<int, List<int>> lengthsForByteStart = startLengths[startval];
+                List<int> startLengthsDesc = lengthsForByteStart.Keys.OrderByDescending(b => b).SelectMany(b => lengthsForByteStart[b])
+                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
+                Dictionary<int, List<int>> lengthsForByteEnd = endLengths[startval];
+                List<int> endLengthsAsc = lengthsForByteEnd.Keys.OrderBy(b => b).SelectMany(b => lengthsForByteEnd[b])
+                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
+                // iterate over minimum
+                List<int> iterate = new List<int>(startLengthsDesc.Count < endLengthsAsc.Count ? startLengthsDesc : endLengthsAsc);
+                List<int> otherList = startLengthsDesc.Count < endLengthsAsc.Count ? endLengthsAsc : startLengthsDesc;
+                // remove duplicates in the two lists.
+                foreach (int tileNr in iterate.Where(t => otherList.Contains(t)))
+                {
+                    // Maximize usable pairs by always removing from largest list.
+                    if (endLengthsAsc.Count >= startLengthsDesc.Count)
+                        endLengthsAsc.Remove(tileNr);
+                    else
+                        startLengthsDesc.Remove(tileNr);
+                }
+                //  This logic is honestly extremely rough; it does not check if the resulting
+                //  joined amounts even exceed a length of 3. But it works; all files in the
+                //  game become smaller when re-saved.
+                int end = Math.Min(startLengthsDesc.Count, endLengthsAsc.Count);
+                for (int i = 0; i < end; ++i)
+                {
+                    int tile1 = startLengthsDesc[i];
+                    int tile2 = endLengthsAsc[i];
+
+                    int tile1StartLength = tileStartLengths[tile1];
+                    int tile2EndLength = tileEndLengths[tile2];
+                    // Check if one of the tiles is 100% filled with the value. This can only happen once per value.
+                    bool addedExtra = false;
+                    if (tile1StartLength == 32 && endLengthsAsc.Count > startLengthsDesc.Count)
+                    {
+                        tileRemap.Add(endLengthsAsc[end], tilemapIndex++);
+                        addedExtra = true;
+                    }
+                    tileRemap.Add(tile1, tilemapIndex++);
+                    tileRemap.Add(tile2, tilemapIndex++);
+                    if (!addedExtra && tile2EndLength == 32 && startLengthsDesc.Count > endLengthsAsc.Count)
+                    {
+                        tileRemap.Add(startLengthsDesc[end], tilemapIndex++);
+                    }
+                }
+            }
+            // Apply remap, filling in any unsorted tiles on the fly.
+            // Remap tileset
+            List<byte[]> origTiles = new List<byte[]>(tiles);
+            for (int i = 0; i < tilesetLength; ++i)
+            {
+                if (!tileRemap.ContainsKey(i))
+                    tileRemap.Add(i, tilemapIndex++);
+                tiles[tileRemap[i]] = origTiles[i];
+            }
+            // Remap tilemaps
+            for (int fr = 0; fr < frames.Length; ++fr)
+            {
+                int[] frame = frames[fr];
+                for (int i = 0; i < frame.Length; ++i)
+                {
+                    frame[i] = tileRemap[frame[i]];
+                }
+            }
+        }
+
+        private void OptimiseFramesChain(int[][] frames, List<byte[]> tiles)
+        {
+            // Optimise: chain images with the largest repeats at the first one's end and the second one's start,
+            // so longer compressed ranges can be achieved in the final tileset image data.
+            int tilesetLength = tiles.Count;
+            // make a table with the start and end info for each tile.
+            TileInfo[] tileInfo = new TileInfo[tilesetLength];
+            for (int i = 0; i < tilesetLength; ++i)
+            {
+                byte[] currTile = tiles[i];
+                // check start length of tile.
+                byte startVal = currTile[0];
+                int startLen = 1;
+                while (startLen < 32 && currTile[startLen] == startVal)
+                    startLen++;
+                // check end length of tile.
+                byte endVal = currTile[31];
+                int endLen = 30;
+                while (endLen >= 0 && currTile[endLen] == endVal)
+                    endLen--;
+                endLen = 31 - endLen;
+                tileInfo[i] = new TileInfo()
+                {
+                    StartByte = startVal,
+                    StartLength = startLen,
+                    EndByte = endVal,
+                    EndLength = endLen
+                };
+            }
+            // get tile without repeat at front, or as close as possible.
+            // This is to avoid wasting tiles that might be good for joining at the end.
+            // this is just a sorting, so it always gives a result.
+            int currentTile = Enumerable.Range(0, tilesetLength).OrderBy(t => tileInfo[t].StartLength).ThenByDescending(t => tileInfo[t].EndLength).First();
+            // remap table
+            Dictionary<int, int> tileRemap = new Dictionary<int, int>();
+            int tilemapIndex = 0;
+            // Add first tile
+            tileRemap.Add(currentTile, tilemapIndex++);
+
+            int nextTile;
+            while ((nextTile = GetNextChainTile(tileInfo, tileRemap, currentTile)) != -1)
+            {
+                tileRemap.Add(nextTile, tilemapIndex++);
+                currentTile = nextTile;
+            }
+            // Apply remap.
+            // Remap tileset
+            List<byte[]> origTiles = new List<byte[]>(tiles);
+            for (int i = 0; i < tilesetLength; ++i)
+            {
+                // not really needed; GetNextChainTile only returns -1 when no data is left that isn't inside tileRemap.
+                if (!tileRemap.ContainsKey(i))
+                    tileRemap.Add(i, tilemapIndex++);
+                tiles[tileRemap[i]] = origTiles[i];
+            }
+            // Remap tilemaps
+            for (int fr = 0; fr < frames.Length; ++fr)
+            {
+                int[] frame = frames[fr];
+                for (int i = 0; i < frame.Length; ++i)
+                {
+                    frame[i] = tileRemap[frame[i]];
+                }
+            }
+        }
+
+        private int GetNextChainTile(TileInfo[] tileInfo, Dictionary<int, int> tileRemap, int currentTile)
+        {
+            int tilesetLength = tileInfo.Length;
+            byte searchVal = tileInfo[currentTile].EndByte;
+            int searchLen = tileInfo[currentTile].EndLength;
+            int foundTile = Enumerable.Range(0, tilesetLength).Select(i => (int?)i).Where(t => tileInfo[t.Value].StartByte == searchVal && !tileRemap.ContainsKey(t.Value))
+                .OrderByDescending(t => tileInfo[t.Value].StartLength).FirstOrDefault() ?? -1;
+            // return tile with max added length
+            if (foundTile != -1)
+                return foundTile;
+            // nothing found: can't connect to previous tile. Return tile with different start value, lowest start amount and highest end amount.
+            return Enumerable.Range(0, tilesetLength).Select(i => (int?)i).Where(t => !tileRemap.ContainsKey(t.Value))
+                .OrderBy(t => tileInfo[t.Value].StartLength)
+                .ThenByDescending(t => tileInfo[t.Value].EndLength).FirstOrDefault() ?? -1;
+        }
+
         private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out int width, out int height)
         {
             // Preliminary checks
@@ -701,6 +784,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             return frames;
+        }
+
+        private class TileInfo
+        {
+            public byte StartByte { get; set; }
+            public int StartLength { get; set; }
+            public byte EndByte { get; set; }
+            public int EndLength { get; set; }
         }
     }
 }
