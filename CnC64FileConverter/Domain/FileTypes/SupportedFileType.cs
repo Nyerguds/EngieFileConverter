@@ -12,7 +12,7 @@ namespace CnC64FileConverter.Domain.FileTypes
     public abstract class SupportedFileType : FileTypeBroadcaster
     {
         protected Bitmap m_LoadedImage;
-        protected Color[] m_BackupPalette = null;
+        protected Color[] m_backupPalette = null;
         protected Int32 m_CompositeFrameTilesWidth = 1;
 
         /// <summary>Very short code name for this type.</summary>
@@ -58,7 +58,19 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public abstract void LoadFile(Byte[] fileData);
         public abstract void LoadFile(String filename);
-        public abstract void SaveAsThis(SupportedFileType fileToSave, String savePath);
+
+        public virtual void LoadFile(SupportedFileType file)
+        {
+            Byte[] thisBytes = SaveToBytesAsThis(file);
+            LoadFile(thisBytes);
+        }
+
+        public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        {
+            Byte[] data = SaveToBytesAsThis(fileToSave);
+            File.WriteAllBytes(savePath, data);
+        }
+        public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave);
 
         protected void SetFileNames(String path)
         {
@@ -70,7 +82,10 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (m_LoadedImage == null)
                 return new Color[0];
-            return m_LoadedImage.Palette.Entries.ToArray();
+            Color[] col1 = m_LoadedImage.Palette.Entries;
+            Color[] col2 = new Color[col1.Length];
+            Array.Copy(col1, col2, col1.Length);
+            return col2;
         }
 
         public virtual void SetColors(Color[] palette)
@@ -88,8 +103,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 || this.m_LoadedImage.Palette.Entries.Length == 0)
                 throw new NotSupportedException("This image has no palette.");
             ColorPalette cp = this.m_LoadedImage.Palette;
-            if (m_BackupPalette == null)
-                m_BackupPalette = GetColors();
+            if (this.m_backupPalette == null)
+                this.m_backupPalette = GetColors();
             for (Int32 i = 0; i < cp.Entries.Length; i++)
             {
                 if (palette.Length > i)
@@ -102,7 +117,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public virtual void ResetColors()
         {
-            SetColors(m_BackupPalette);
+            SetColors(this.m_backupPalette);
         }
 
         public virtual Boolean ColorsChanged()
@@ -115,9 +130,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 return false;
             Color[] cols = GetColors();
             // assume there's no palette, or no backup was ever made
-            if (cols == null || m_BackupPalette == null)
+            if (cols == null || this.m_backupPalette == null)
                 return false;
-            return !GetColors().SequenceEqual(m_BackupPalette);
+            return !GetColors().SequenceEqual(this.m_backupPalette);
         }
 
         public virtual Bitmap GetBitmap()
@@ -130,13 +145,20 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImgN64),
             typeof(FileMapN64),
             typeof(FileMapPc),
+            typeof(FileMapRAPC),
             typeof(FileImage),
-            typeof(FileImgLCW),
+            typeof(FileImgCps),
+            typeof(FileImgLcw),
             typeof(FileTilesN64Bpp4),
             typeof(FileTilesN64Bpp8),
             typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64),
+            typeof(FileFramesElv),
+            typeof(FileIconsElv),
+            typeof(FileImgDynBmp),
+            typeof(FileImgDynScr),
+            typeof(FilePaletteDyn),
         };
 
         private static Type[] m_autoDetectTypes =
@@ -151,13 +173,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
-            typeof(FileImgLCW),
+            typeof(FileImgCps),
+            typeof(FileImgLcw),
             typeof(FileTilesN64Bpp4),
             typeof(FileTilesN64Bpp8),
             typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64Pa8),
             typeof(FilePaletteN64Pa4),
+            typeof(FileImgDynBmp),
+            typeof(FileFramesElv),
+            typeof(FileImgDynScr),
+            typeof(FilePaletteDyn),
+            typeof(FileIconsElv),
         };
         private static Type[] m_supportedSaveTypes =
         {
@@ -170,11 +198,14 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
-            typeof(FileImgLCW),
+            typeof(FileImgCps),
+            typeof(FileImgLcw),
             typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64Pa4),
             typeof(FilePaletteN64Pa8),
+            typeof(FileIconsElv),
+            typeof(FileImgDynScr),
         };
 
         static SupportedFileType()

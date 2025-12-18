@@ -31,12 +31,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            if (fileToSave is FileMapPc)
-                File.WriteAllBytes(savePath, ((FileMapPc)fileToSave).N64MapData);
-            else
+            if (!(fileToSave is FileMapPc))
                 throw new NotSupportedException(String.Empty);
+            return ((FileMapPc)fileToSave).N64MapData;
         }
         
         protected Bitmap ReadN64MapAsImage(String filename)

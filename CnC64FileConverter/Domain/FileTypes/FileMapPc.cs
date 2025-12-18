@@ -91,13 +91,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             return null;
         }
-        
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
             if (fileToSave is FileMapPc)
-                File.WriteAllBytes(savePath, ((FileMapPc)fileToSave).PCMapData);
-            else
                 throw new NotSupportedException(String.Empty);
+            return ((FileMapPc)fileToSave).PCMapData;
         }
 
         protected Bitmap ReadMapAsImage(String filename, Theater theater)

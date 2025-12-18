@@ -10,11 +10,11 @@ namespace Nyerguds.Util
         String ShortTypeDescription { get; }
         /// <summary>Possible file extensions for this file type.</summary>
         String[] FileExtensions { get; }
-        /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
+        /// <summary>Brief name and description of the specific type for each extension, for the types dropdown in the save file dialog.</summary>
         String[] DescriptionsForExtensions { get; }
     }
 
-    /// <summary>File Load exceptions. These are typically ignored in favour of checking the next type to try.</summary>
+    /// <summary>File load exceptions. These are typically ignored in favour of checking the next type to try.</summary>
     public class FileTypeLoadException : Exception
     {
         public String AttemptedLoadedType { get; set; }

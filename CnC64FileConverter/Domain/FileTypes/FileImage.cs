@@ -2,6 +2,7 @@
 using Nyerguds.Util;
 using System;
 using System.Drawing;
+using System.IO;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -21,35 +22,25 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             get { return new String[] { "Portable Network Graphics", "Bitmap", "CompuServe GIF image", "JPEG. Gods, why would you do that?", "JPEG. No seriously, why?" }; }
         }
-        public override Int32 ColorsInPalette { get { return m_ColsInPal; } }
+        public override Int32 ColorsInPalette { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Palette.Entries.Length; } }
         public override SupportedFileType PreferredExportType { get { return new FileImgN64(); } }
-
-        public override Color[] GetColors()
-        {
-            if (m_LoadedImage == null)
-                return new Color[0];
-            Color[] col1 = m_LoadedImage.Palette.Entries;
-            Color[] col2 = new Color[m_ColsInPal];
-            Array.Copy(col1, col2, Math.Min(col1.Length, ColorsInPalette));
-            return col2;
-        }
 
         protected Int32 m_ColsInPal;
 
         public FileImage() { }
 
-        public void LoadFile(Bitmap image, Int32 colors, String displayfilename)
+        public void LoadFile(Bitmap image, Int32 colors, String filename)
         {
             m_LoadedImage = image;
             m_ColsInPal = colors;
-            LoadedFileName = displayfilename;
+            SetFileNames(filename);
         }
         
         public override void LoadFile(Byte[] fileData)
         {
             try
             {
-                m_LoadedImage = BitmapHandler.LoadBitmap(fileData, out m_ColsInPal);
+                m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
             }
             catch (Exception ex)
             {
@@ -61,8 +52,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             try
             {
-                m_LoadedImage = BitmapHandler.LoadBitmap(filename, out m_ColsInPal);
-                 SetFileNames(filename);
+                m_LoadedImage = BitmapHandler.LoadBitmap(filename);
+                SetFileNames(filename);
             }
             catch (Exception ex)
             {
@@ -70,9 +61,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            ImageUtils.SaveImage(fileToSave.GetBitmap(), savePath);
+            String filename = "test." + FileExtensions[0];
+            return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);
         }
     }
 }

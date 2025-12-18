@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -10,6 +11,8 @@ using SimplePaletteQuantizer.Quantizers.XiaolinWu;
 namespace Nyerguds.ImageManipulation
 {
     /// <summary>
+    /// Class to do K-means clustering on paletted images of the same size, to divide the images into
+    /// groups with similar colours.
     /// TData = Byte[], byte data for one tile. Easiest way to make the images to color-quantize.
     /// Uavg = Color[], as 16-colour palette
     /// Approach method is deviation from palette.
@@ -23,11 +26,26 @@ namespace Nyerguds.ImageManipulation
         private Color[] m_palette;
         private IColorQuantizer quantizer;
 
-        public Int32[] DoClustering(Int32 numClusters, out Color[][] means)
+        /// <summary>
+        /// Clusters the images into the requested amount of clusters, and returns
+        /// an array indicating which image is in which cluster. Also outputs the
+        /// final calculated averages; the generated optimal palette for each cluster.
+        /// </summary>
+        /// <param name="numClusters">Number of clusters to divide the image in.</param>
+        /// <param name="means">Output array returning the calculated means for each group</param>
+        /// <returns></returns>
+        public Int32[] DoClustering(UInt32 numClusters, out Color[][] means)
         {
             return this.Cluster(this.m_Frames, numClusters, out means);
         }
 
+        /// <summary>
+        /// Initialize the object to do K-means clustering.
+        /// </summary>
+        /// <param name="rawData">Array of raw image data from paletted images.</param>
+        /// <param name="framesWidth">Width of one image in the data.</param>
+        /// <param name="framesHeight">Height of one image in the data.</param>
+        /// <param name="palette">Palette to use for all the input data.</param>
         public KMeansPalettedTiles(Byte[][] rawData, Int32 framesWidth, Int32 framesHeight, Color[] palette)
         {
             this.m_Frames = rawData;
@@ -73,24 +91,29 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The distance of the image colours to the palette.</returns>
         protected override Double CalculateDistance(Byte[] dataEntry, Color[] mean)
         {
+            // Dotnet arrays are always initialized to 'default(type)', so the starting values here are all 0.
             Double[] matchedDataDistance = new Double[mean.Length];
             Int32[] matchedDataCount = new Int32[mean.Length];
             // Only do this per colour, not per pixel, or the most common colours will completely outweigh the less common ones.
-            Byte[] dataColors = dataEntry.Distinct().ToArray();
+            IEnumerable<Byte> dataColors = dataEntry.Distinct();
             foreach (Byte col in dataColors)
             {
-                // 1. Get closest match. Not gonna reference existing palette match function since I'll get the distance out of this straight away.
+                // 1. Get closest match. Not gonna reference existing palette match function
+                // here, since this processing itself will get the distance value we need.
                 Int32 colorMatch = 0;
                 Int32 leastDistance = Int32.MaxValue;
-                Int32 red = this.m_palette[col].R;
-                Int32 green = this.m_palette[col].G;
-                Int32 blue = this.m_palette[col].B;
+                Color imageCol = this.m_palette[col];
+                Int32 red = imageCol.R;
+                Int32 green = imageCol.G;
+                Int32 blue = imageCol.B;
                 for (Int32 j = 0; j < mean.Length; j++)
                 {
                     Color paletteColor = mean[j];
                     Int32 redDistance = paletteColor.R - red;
                     Int32 greenDistance = paletteColor.G - green;
                     Int32 blueDistance = paletteColor.B - blue;
+                    // Don't take square root here; least distance will still be least distance
+                    // even without that heavy operation. We'll take it after we found a match.
                     Int32 distance = (redDistance * redDistance) + (greenDistance * greenDistance) + (blueDistance * blueDistance);
                     if (distance >= leastDistance)
                         continue;
@@ -99,10 +122,13 @@ namespace Nyerguds.ImageManipulation
                     if (distance == 0)
                         break;
                 }
-                // Add distance into array and increase counter, so averages can be made at the end.
+                // 2. Add distance into array and increase counter, so averages can be made at the end.
                 matchedDataDistance[colorMatch] += Math.Sqrt(leastDistance);
                 matchedDataCount[colorMatch]++;
             }
+            // 3. Calculate total distance. Since all distances are positive values, this
+            // gives a good indication of how close the image is to the current palette.
+            // Averages will be taken for colours matching the same palette colour.
             Double totalDistance = 0;
             for (Int32 i = 0; i < mean.Length; i++)
             {
@@ -111,7 +137,8 @@ namespace Nyerguds.ImageManipulation
                     matchedDataDistance[i] /= count;
                 totalDistance += matchedDataDistance[i];
             }
-            // Technically should be divided by mean.Length, but that'll be the same every time so it'll just add needless processing.
+            // Technically should be divided by mean.Length, but that'll be the same every time
+            // so it'll just add needless processing, and reduce the result's precision.
             return totalDistance;
         }
     }

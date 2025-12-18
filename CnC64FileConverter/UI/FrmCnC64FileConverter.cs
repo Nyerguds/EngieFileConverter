@@ -306,10 +306,10 @@ namespace CnC64FileConverter.UI
             SupportedFileType selectedItem;
             Boolean hasFrames = m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0;
             SupportedFileType loadedFile = hasFrames && numFrame.Value != -1 ? m_LoadedFile.Frames[(Int32)numFrame.Value] : m_LoadedFile;
-            Type selectType;
+            Type selectType = null;
             if (export || !SupportedFileType.SupportedSaveTypes.Contains(loadedFile.GetType()))
                 selectType = loadedFile.PreferredExportType.GetType();
-            else
+            if (selectType == null)
                 selectType = loadedFile.GetType();
 
             String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, SupportedFileType.SupportedSaveTypes, true, loadedFile.LoadedFile, out selectedItem);
@@ -478,7 +478,7 @@ namespace CnC64FileConverter.UI
             Bitmap bm = HeightMapGenerator.GenerateHeightMapImage65x65(this.m_LoadedFile.GetBitmap());
             //Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref imgFileName);
             FileImgN64Gray file = new FileImgN64Gray();
-            file.LoadImage(bm, imgFileName);
+            file.LoadImage(bm, Path.GetFileName(imgFileName), imgFileName);
             this.m_LoadedFile = file;
             this.ReloadUi(false);
         }

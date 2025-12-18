@@ -42,6 +42,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             Byte[] imageData = Enumerable.Range(0, Width*Height).Select(x => (Byte)x).ToArray();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, Width, Height, 16, PixelFormat.Format8bppIndexed, this.m_palette, Color.Empty);
+            if (this.m_palette.Length < 0x100)
+                this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_palette);
         }
 
         public override void LoadFile(String filename)
@@ -58,8 +60,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void SetColors(Color[] palette)
         {
-            if (m_BackupPalette == null)
-                m_BackupPalette = GetColors();
+            if (this.m_backupPalette == null)
+                this.m_backupPalette = GetColors();
             m_palette = palette;
             // update image
             base.SetColors(palette);
@@ -68,22 +70,22 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made
-            if (m_BackupPalette == null)
+            if (this.m_backupPalette == null)
                 return false;
-            return !m_palette.SequenceEqual(m_BackupPalette);
+            return !m_palette.SequenceEqual(this.m_backupPalette);
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
             throw new NotSupportedException("Use specific PA4 or PA8 type.");
         }
 
-        protected void SaveAsThis(SupportedFileType fileToSave, String savePath, Boolean expandToFullSize)
+        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
         {
             Color[] palEntries = fileToSave.GetColors();
             if (palEntries == null || palEntries.Length == 0)
                 throw new NotSupportedException("Cannot save 32-bit images as " + this.ShortTypeName);
-            ColorUtils.WriteEightBitPaletteFile(palEntries, savePath, expandToFullSize);
+            return ColorUtils.GetEightBitPaletteData(palEntries, expandToFullSize);
         }
     }
 
@@ -94,9 +96,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "N64 C&C 4-bit palettes file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            SaveAsThis(fileToSave, savePath, false);
+            return SaveToBytesAsThis(fileToSave, false);
         }
     }
 
@@ -124,9 +126,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_palette, Color.Empty);
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            SaveAsThis(fileToSave, savePath, true);
+            return SaveToBytesAsThis(fileToSave, true);
         }
 
     }

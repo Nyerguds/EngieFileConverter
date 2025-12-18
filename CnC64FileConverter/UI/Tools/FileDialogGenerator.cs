@@ -35,7 +35,7 @@ namespace Nyerguds.Util.UI
             T[] correspondingObjects;
             if (title != null)
                 ofd.Title = title;
-            ofd.Filter = GetFileFilterForOpen<T>(items, generaltypedesc, generaltypeExt, out correspondingObjects);
+            ofd.Filter = GetFileFilterForOpen(items, generaltypedesc, generaltypeExt, out correspondingObjects);
             ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
             //ofd.FilterIndex
             DialogResult res = ofd.ShowDialog(owner);
@@ -62,12 +62,14 @@ namespace Nyerguds.Util.UI
             selectedItem = default(T);
             SaveFileDialog sfd = new SaveFileDialog();
             FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
-            Int32 filterIndex;
+            Int32 filterIndex = 0;
             Boolean typeFound = false;
-            for (filterIndex = 0; filterIndex < items.Length; filterIndex++)
+            if (selectType != null)
             {
-                if (selectType == items[filterIndex].ItemType)
+                for (filterIndex = 0; filterIndex < items.Length; filterIndex++)
                 {
+                    if (selectType != items[filterIndex].ItemType)
+                        continue;
                     typeFound = true;
                     break;
                 }
@@ -87,7 +89,7 @@ namespace Nyerguds.Util.UI
             if (!typeFound)
                 filterIndex = 1;
             T[] correspondingObjects;
-            sfd.Filter = GetFileFilterForSave<T>(items, skipOtherExtensions, out correspondingObjects);
+            sfd.Filter = GetFileFilterForSave(items, skipOtherExtensions, out correspondingObjects);
             sfd.FilterIndex = filterIndex;
             //sfd.Filter = "Westwood font file (*.fnt)|*.fnt";
             sfd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
@@ -209,7 +211,6 @@ namespace Nyerguds.Util.UI
         public static T[] IdentifyByExtension<T>(Type[] typesList, String receivedPath) where T : FileTypeBroadcaster
         {
             List<T> possibleMatches = new List<T>();
-            String filename = receivedPath;
             String ext = Path.GetExtension(receivedPath).TrimStart('.');
             FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
             // prefer those on which it is the primary type

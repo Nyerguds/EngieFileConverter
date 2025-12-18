@@ -1,5 +1,6 @@
 ﻿using Nyerguds.ImageManipulation;
 using System;
+using System.Drawing;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -24,9 +25,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             get { return new String[] { ShortTypeDescription }; }
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            BitmapHandler.SaveAsPng(fileToSave.GetBitmap(), savePath, fileToSave.GetColors().Length);
+            Color[] pal = fileToSave.GetColors();
+            return BitmapHandler.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length);
         }
     }
 }

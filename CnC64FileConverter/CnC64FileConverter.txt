@@ -14,24 +14,34 @@ help in designing the palette manager.
 Features:
 --------
 -Supports both opening and saving all classic image types (png/gif/bmp/jpg), the N64's IMG format,
- and game maps and color palettes of both the PC and N64 versions of the game.
--Gives a visual representation of the loaded file, with zoom and adjustable background color.
--Can display the file's color palette, if it has one.
+ and game maps and colour palettes of both the PC and N64 versions of the game.
+-Each type has a logical conversion target type set to save as with the "quick convert" option.
+-Gives a visual representation of the loaded file, with zoom and adjustable background colour.
+-Can display and edit the file's colour palette, if it has one.
 -Can save opened files as any supported format, though some conversions are obviously impossible;
  high-colour images can't be saved as palette, and only maps can be saved as maps.
 -Preserves the color palette when saving 4-bit and 8-bit paletted images.
 -Supports drag & drop for opening files.
 -Can be used as command line converter with the following syntax:
     CnC64FileConverter.exe infile.img outfile.png
+ This only works for file formats that can be identified purely by extension, though.
 -Has utilities to help generate height maps for missions.
 
 
 Version history:
 ---------------
-This tool stated as the CnC64ImageViewer, but later got expanded to a full conversion suite.
-At that point, it became the CnC64FileConverter v1.0.
+This tool started as the CnC64ImageViewer, but later got expanded to a full conversion suite.
+At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file formats,
+it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
+
+v1.0.9: (31/07/2017 0:24)
+-Fixed confusing naming in internal toolsets, and simplified byte reading/writing methods.
+-Fixed bug where the height map conversion tools caused files to lose their file name,
+ which caused crashes when trying to save the result.
+-Fixed errors in CPS reading.
+-Added Dynamix SCR reading and writing, though only the VGA/BIN type is supported.
 
 v1.0.8: (05/05/2017 17:53)
 -Fixed bugs in opening logic that made the program give errors on opening .IMG files.
@@ -45,7 +55,7 @@ v1.0.7: (01/05/2017 20:08)
 -Added the ability to open C&C template (tileset) files.
 
 v1.0.6: (07/04/2017 22:34)
--fixed bug in the file open logic that prevented opening certain types through the menus.
+-Fixed bug in the file open logic that prevented opening certain types through the menus.
 
 v1.0.5: (07/04/2017 21:21)
 -Fixed a bug that prevented full clearing of the left map edge
@@ -104,4 +114,4 @@ v1.1: (19/11/2016 14:35)
 
 v1.0: (19/11/2016 01:04)
 -Very rudimentary decoder and viewer.
--Double-clicking an image saved it to disk as png in folder of origin.
+-Double-clicking an image saves it to disk as png in folder of origin.

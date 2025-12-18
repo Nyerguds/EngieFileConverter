@@ -46,10 +46,11 @@
     <OutputPath>bin\x86\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>cnc64logo.ico</ApplicationIcon>
@@ -65,7 +66,6 @@
       <HintPath>Resources\Microsoft.WindowsAPICodePack.Shell.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -75,13 +75,20 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Domain\CCTypes\CnCShp.cs" />
+    <Compile Include="Domain\CCTypes\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\CCTypes\WWCompression.cs" />
-    <Compile Include="Domain\FileTypes\FileImgLCW.cs" />
+    <Compile Include="Domain\FileTypes\FilePaletteDyn.cs" />
     <Compile Include="Domain\FileTypes\FileTilesetPC.cs" />
+    <Compile Include="Domain\FileTypes\FileFramesElv.cs" />
+    <Compile Include="Domain\FileTypes\FileIconsElv.cs" />
+    <Compile Include="Domain\FileTypes\FileImgDynBmp.cs" />
+    <Compile Include="Domain\FileTypes\FileImgCps.cs" />
+    <Compile Include="Domain\FileTypes\FileImgLcw.cs" />
+    <Compile Include="Domain\FileTypes\FileMapRAPC.cs" />
+    <Compile Include="Domain\FileTypes\FileImgDynScr.cs" />
     <Compile Include="Domain\CCTypes\HeightTerrainType.cs" />
     <Compile Include="Domain\CCTypes\TerrainType.cs" />
     <Compile Include="Domain\CCTypes\Theater.cs" />
@@ -92,6 +99,10 @@
     <Compile Include="Domain\HeightMap\HeightMapGenerator.cs" />
     <Compile Include="Domain\HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
+    <Compile Include="Domain\Utils\Dynamix\DynamixChunk.cs" />
+    <Compile Include="Domain\Utils\Dynamix\DynamixCompression.cs" />
+    <Compile Include="Domain\Utils\Dynamix\DynamixLzwDecoder.cs" />
+    <Compile Include="Domain\Utils\Dynamix\DynamixLzwEncoder.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorHSL.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\ColorCaches\Common\ColorModel.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.IEnumerable.cs" />
@@ -225,6 +236,7 @@
     <None Include="Resources\th_temperate.nms" />
     <None Include="Resources\tilesets.ini" />
     <None Include="Resources\tilesets2.ini" />
+    <None Include="Resources\tilesets_ra1.ini" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="CnC64FileConverter.txt">

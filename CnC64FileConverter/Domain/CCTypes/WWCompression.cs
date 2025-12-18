@@ -250,33 +250,32 @@ namespace CHRONOLIB.Compression
         /// <param name="startOffset">Location to start at in the input array.</param>
         /// <param name="output">The buffer to store the decompressed data. This is assumed to be initialized to the correct size.</param>
         /// <returns>Length of the decompressed data in bytes.</returns>
-        public static Int32 LcwUncompress(Byte[] input, Int32 startOffset, Byte[] output)
+        public static Int32 LcwUncompress(Byte[] input, ref Int32 readOffset, Byte[] output)
         {
             if (input == null || input.Length == 0 || output == null || output.Length == 0)
                 return 0;
 	        Boolean relative = false;
             // Nyer's C# conversion: replacements for write and read for pointers.
-	        Int32 putp = 0;
-            Int32 getp = startOffset;
+	        Int32 writeOffset = 0;
             // Output length should be part of the information given in the file format using LCW.
             // Techncically it can just be cropped at the end, though this value is used to
             // automatically cut off repeat-commands that go too far.
-            Int32 putend = output.Length;
+            Int32 writeEnd = output.Length;
             
             //Decide if the stream uses relative 3 and 5 byte commands
 	        //Extension allows effective compression of data > 64k
 	        //https://github.com/madmoose/scummvm/blob/bladerunner/engines/bladerunner/decompress_lcw.cpp
             // this is only used by later games for decoding hi-color vqa files.
             // For other stuff (like shp), just check in advance to decide if the data is too big.
-	        if (input[getp] == 0)
+	        if (input[readOffset] == 0)
 	        {
 		        relative = true;
-		        getp++;
+		        readOffset++;
 	        }
 	        //DEBUG_SAY("LCW Decompression... \n");
-	        while (putp < putend)
+	        while (writeOffset < writeEnd)
 	        {
-		        Byte flag = input[getp++];
+		        Byte flag = input[readOffset++];
 		        UInt16 cpysize;
                 UInt16 offset;
 
@@ -288,17 +287,17 @@ namespace CHRONOLIB.Compression
 				        //long set 0b11111110
 				        if (flag == 0xFE)
 				        {
-                            cpysize = input[getp++];
-                            cpysize += (UInt16)((input[getp++]) << 8);
+                            cpysize = input[readOffset++];
+                            cpysize += (UInt16)((input[readOffset++]) << 8);
 
-					        if (cpysize > putend - putp)
-                                cpysize = (UInt16)(putend - putp);
+					        if (cpysize > writeEnd - writeOffset)
+                                cpysize = (UInt16)(writeEnd - writeOffset);
 
 					        //DEBUG_SAY("0b11111110 Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 3, dest - start, cpysize);
-                            for (int i=putp; i < putp+cpysize; i++)
-                                output[i] = input[getp];
-                            getp++;
-					        putp += cpysize;
+                            for (int i=writeOffset; i < writeOffset+cpysize; i++)
+                                output[i] = input[readOffset];
+                            readOffset++;
+					        writeOffset += cpysize;
 				        }
 				        else
 				        {
@@ -306,21 +305,21 @@ namespace CHRONOLIB.Compression
 					        //long move, abs 0b11111111
 					        if (flag == 0xFF)
 					        {
-                                cpysize = input[getp++];
-						        cpysize += (UInt16)((input[getp++]) << 8);
+                                cpysize = input[readOffset++];
+						        cpysize += (UInt16)((input[readOffset++]) << 8);
 
-						        if (cpysize > putend - putp)
+						        if (cpysize > writeEnd - writeOffset)
 						        {
-							        cpysize = (UInt16)(putend - putp);
+							        cpysize = (UInt16)(writeEnd - writeOffset);
 						        }
 
-                                offset = input[getp++];
-						        offset += (UInt16)((input[getp++]) << 8);
+                                offset = input[readOffset++];
+						        offset += (UInt16)((input[readOffset++]) << 8);
 
 						        //extended format for VQA32
 						        if (relative)
 						        {
-							        s = putp - offset;
+							        s = writeOffset - offset;
 						        }
 						        else
 						        {
@@ -330,24 +329,24 @@ namespace CHRONOLIB.Compression
 						        //DEBUG_SAY("0b11111111 Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 5, dest - start, cpysize, offset);
 						        for (; cpysize > 0; --cpysize)
 						        {
-							        output[putp++] = output[s++];
+							        output[writeOffset++] = output[s++];
 						        }
 					        //short move abs 0b11??????
 					        }
 					        else
 					        {
-						        if (cpysize > putend - putp)
+						        if (cpysize > writeEnd - writeOffset)
 						        {
-							        cpysize = (UInt16)(putend - putp);
+							        cpysize = (UInt16)(writeEnd - writeOffset);
 						        }
 
-                                offset = input[getp++];
-						        offset += (UInt16)((input[getp++]) << 8);
+                                offset = input[readOffset++];
+						        offset += (UInt16)((input[readOffset++]) << 8);
 
 						        //extended format for VQA32
 						        if (relative)
 						        {
-							        s = putp - offset;
+							        s = writeOffset - offset;
 						        }
 						        else
 						        {
@@ -357,7 +356,7 @@ namespace CHRONOLIB.Compression
 						        //DEBUG_SAY("0b11?????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 3, dest - start, cpysize, offset);
 						        for (; cpysize > 0; --cpysize)
 						        {
-                                    output[putp++] = output[s++];
+                                    output[writeOffset++] = output[s++];
 						        }
 					        }
 				        }
@@ -368,20 +367,20 @@ namespace CHRONOLIB.Compression
 				        if (flag == 0x80)
 				        {
 					        //DEBUG_SAY("0b10?????? Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 1, dest - start, 0);
-					        return putp;
+					        return writeOffset;
 				        }
 
 				        cpysize = (UInt16)(flag & 0x3F);
 
-				        if (cpysize > putend - putp)
+				        if (cpysize > writeEnd - writeOffset)
 				        {
-					        cpysize = (UInt16)(putend - putp);
+					        cpysize = (UInt16)(writeEnd - writeOffset);
 				        }
 
 				        //DEBUG_SAY("0b10?????? Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 1, dest - start, cpysize);
 				        for (; cpysize > 0; --cpysize)
 				        {
-					        output[putp++]= input[getp++];
+					        output[writeOffset++]= input[readOffset++];
 				        }
 			        }
 		        //short move rel 0b0???????
@@ -390,21 +389,21 @@ namespace CHRONOLIB.Compression
 		        {
 			        cpysize = (UInt16)((flag >> 4) + 3);
 
-			        if (cpysize > putend - putp)
+			        if (cpysize > writeEnd - writeOffset)
 			        {
-				        cpysize = (UInt16)(putend - putp);
+				        cpysize = (UInt16)(writeEnd - writeOffset);
 			        }
 
-			        offset = (UInt16)(((flag & 0xF) << 8) + input[getp++]);
+			        offset = (UInt16)(((flag & 0xF) << 8) + input[readOffset++]);
 			        //DEBUG_SAY("0b0??????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 2, dest - start, cpysize, offset);
 			        for (; cpysize > 0; --cpysize)
 			        {
-				        output[putp] = output[putp - offset];
-				        putp++;
+				        output[writeOffset] = output[writeOffset - offset];
+				        writeOffset++;
 			        }
 		        }
 	        }
-	        return putp;
+	        return writeOffset;
         }
 
         /// <summary>

@@ -69,7 +69,7 @@ namespace CnC64FileConverter.Domain.HeightMap
                     throw new NotSupportedException("Plateau levels image needs to be 64x64!");
                 Int32 plateauStride;
                 Byte[] plateauData = ImageUtils.GetImageData(ImageUtils.PaintOn32bpp(plateauLevelsImage, Color.Black), out plateauStride);
-                eightBitPlateauData = ImageUtils.Convert32BitToPaletted(plateauData, plateauLevelsImage.Width, plateauLevelsImage.Height, 8, LEVEL_COLORS, ref plateauStride);
+                eightBitPlateauData = ImageUtils.Convert32BitToPaletted(plateauData, plateauLevelsImage.Width, plateauLevelsImage.Height, 8, false, LEVEL_COLORS, ref plateauStride);
                 ReducePlateaus(eightBitPlateauData, simpleMap, 0, 0, 64, 64);
                 ReducePlateausEnh(eightBitPlateauData, simpleMap, 0, 0, 64, 64);
             }

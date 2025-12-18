@@ -16,7 +16,7 @@ namespace Nyerguds.ImageManipulation
     public class PixelFormatter
     {
         /// <summary>Standard PixelFormatter for .Net's RGBA format.</summary>
-        public static PixelFormatter Format32BitArgb = new PixelFormatter(4, 8, 16, 8, 8, 8, 0, 8, 24, false);
+        public static PixelFormatter Format32BitArgb = new PixelFormatter(4, 8, 16, 8, 8, 8, 0, 8, 24, true);
 
         /// <summary>Number of bytes to read per pixel.</summary>
         private Byte bytesPerPixel;
@@ -124,20 +124,35 @@ namespace Nyerguds.ImageManipulation
             return 255.0 / ((1 << colorComponentBitLength) - 1);
         }
 
+        /// <summary>
+        /// Gets a color pixel from the data, based on an offset.
+        /// </summary>
+        /// <param name="data">Image data as byte array.</param>
+        /// <param name="offset">Offset to read in the data.</param>
+        /// <returns>The color at that position.</returns>
         public Color GetColor(Byte[] data, Int32 offset)
         {
-
-            UInt32 value = ArrayUtils.GetIntFromByteArray(data, offset, this.bytesPerPixel, this.littleEndian);
+            UInt32 value = ArrayUtils.ReadIntFromByteArray(data, offset, this.bytesPerPixel, this.littleEndian);
             return GetColorFromValue(value);
         }
 
-
+        /// <summary>
+        /// Writes a color pixel in the data at the given offset.
+        /// </summary>
+        /// <param name="data">Image data as byte array.</param>
+        /// <param name="offset">Offset at which to write in the data.</param>
+        /// <param name="color">The color to set at that position.</param>
         public void WriteColor(Byte[] data, Int32 offset, Color color)
         {
             UInt32 value = GetValueFromColor(color);
             ArrayUtils.WriteIntToByteArray(data, offset, this.bytesPerPixel, this.littleEndian, value);
         }
 
+        /// <summary>
+        /// Gets a colour from a read UInt32 value.
+        /// </summary>
+        /// <param name="readValue">The read 4-byte value.</param>
+        /// <returns>The color.</returns>
         public Color GetColorFromValue(UInt32 readValue)
         {
             Byte[] components = new Byte[4];
@@ -154,14 +169,25 @@ namespace Nyerguds.ImageManipulation
                                   components[(Int32)ColorComponent.Blue]);
         }
 
+        /// <summary>
+        /// Gets a specific color component from a read integer value.
+        /// </summary>
+        /// <param name="readValue">The read integer value.</param>
+        /// <param name="type">The color component to get.</param>
+        /// <returns>The read color component, adjust to /256 fraction.</returns>
         private Byte GetChannelFromValue(UInt32 readValue, ColorComponent type)
         {
-            UInt32 val = (UInt32)(readValue & limitMasks[(Int32)type]);
-            val = (UInt32)(val >> this.shiftAmounts[(Int32)type]);
-            Double valD = (Double)(val * multipliers[(Int32)type]);
+            UInt32 val = (readValue & limitMasks[(Int32)type]);
+            val = (val >> this.shiftAmounts[(Int32)type]);
+            Double valD = (val * multipliers[(Int32)type]);
             return (Byte)Math.Min(255, Math.Round(valD, MidpointRounding.AwayFromZero));
         }
 
+        /// <summary>
+        /// Gets the bare integer value of a color.
+        /// </summary>
+        /// <param name="color">The color to convert.</param>
+        /// <returns>The integer value to write.</returns>
         public UInt32 GetValueFromColor(Color color)
         {
             Byte[] components = new Byte[] { color.R, color.G, color.B, color.A};
@@ -169,9 +195,9 @@ namespace Nyerguds.ImageManipulation
             for (Int32 i = 0; i < 4; i++)
             {
                 UInt32 mask = (UInt32)((1 << bitsAmounts[i]) - 1);
-                Double tempValD = (Double)components[i] / this.multipliers[i];
+                Double tempValD = components[i] / this.multipliers[i];
                 UInt32 tempVal = (Byte)Math.Min(mask, Math.Round(tempValD, MidpointRounding.AwayFromZero));
-                tempVal = (UInt32)(tempVal << this.shiftAmounts[i]);
+                tempVal = (tempVal << this.shiftAmounts[i]);
                 val |= tempVal;
             }
             return val;

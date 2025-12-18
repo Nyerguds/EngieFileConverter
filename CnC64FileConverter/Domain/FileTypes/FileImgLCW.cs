@@ -10,12 +10,12 @@ using System.Text;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileImgLCW : SupportedFileType
+    public class FileImgLcw : SupportedFileType
     {
-        private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 10, 5, 5, 5, 0, 0, 0, false);
+        private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 10, 5, 5, 5, 0, 0, 0, true);
         public override Int32 Width { get { return hdrWidth; } }
         public override Int32 Height { get { return hdrHeight; } }
-        protected const Int32 dataOffset = 11;
+        protected const Int32 DATAOFFSET = 11;
         protected Byte[] hdrId;
         protected Int32 hdrWidth;
         protected Int32 hdrHeight;
@@ -27,7 +27,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get{ return 16; } }
 
-        public FileImgLCW() { }
+        public FileImgLcw() { }
         
         public override void LoadFile(Byte[] fileData)
         {
@@ -45,15 +45,15 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             return false;
         }
-        
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            SaveImg(fileToSave.GetBitmap(), savePath, false);
+            return SaveImg(fileToSave.GetBitmap());
         }
         
         protected void LoadFromFileData(Byte[] fileData)
         {
-            if (fileData.Length < dataOffset)
+            if (fileData.Length < DATAOFFSET)
                 throw new FileTypeLoadException("File is not long enough to be a valid Blade Runner IMG file.");
             try
             {
@@ -72,7 +72,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] imageData = new Byte[imageDataSize];
             try
             {
-                CHRONOLIB.Compression.WWCompression.LcwUncompress(fileData, dataOffset, imageData);
+                Int32 offset = DATAOFFSET;
+                CHRONOLIB.Compression.WWCompression.LcwUncompress(fileData, ref offset, imageData);
                 imageData = Convert16bTo32b(imageData, 0, this.Width, this.hdrHeight, ref stride);
             }
             catch (Exception e)
@@ -90,7 +91,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        protected void SaveImg(Bitmap image, String savePath, Boolean asNoPalGray8bpp)
+        protected Byte[] SaveImg(Bitmap image)
         {
             if (image.PixelFormat != PixelFormat.Format32bppArgb)
                 image = ImageUtils.PaintOn32bpp(image, Color.Black);
@@ -98,19 +99,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] imageData = ImageUtils.GetImageData(image, out stride);
             imageData = Convert32bTo16b(imageData, image.Width, image.Height,ref stride);
             Byte[] compressedData = CHRONOLIB.Compression.WWCompression.LcwCompress(imageData);
-            Byte[] fullData = new Byte[compressedData.Length + dataOffset];
+            Byte[] fullData = new Byte[compressedData.Length + DATAOFFSET];
             fullData[0] = (Byte)'L';
             fullData[1] = (Byte)'C';
             fullData[2] = (Byte)'W';
-            ArrayUtils.SetBEIntInByteArray(fullData, 3, image.Width);
-            ArrayUtils.SetBEIntInByteArray(fullData, 7, image.Height);
-            Array.Copy(compressedData, 0, fullData, dataOffset, compressedData.Length);
-            File.WriteAllBytes(savePath, fullData);
+            ArrayUtils.WriteIntToByteArray(fullData, 3, 4, true, (UInt32)image.Width);
+            ArrayUtils.WriteIntToByteArray(fullData, 7, 4, true, (UInt32)image.Height);
+            Array.Copy(compressedData, 0, fullData, DATAOFFSET, compressedData.Length);
+            return fullData;
         }
 
         protected static Byte[] Convert16bTo32b(Byte[] imageData, Int32 startOffset, Int32 width, Int32 height, ref Int32 stride)
         {
-            Int32 newImageStride = width * 4; ;
+            Int32 newImageStride = width * 4;
             Byte[] newImageData = new Byte[height * newImageStride];
             for (Int32 y = 0; y < height; y++)
             {
@@ -149,8 +150,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             this.hdrId = new Byte[3];
             Array.Copy(headerBytes, this.hdrId, 3);
-            this.hdrWidth = ArrayUtils.GetBEIntFromByteArray(headerBytes, 3);
-            this.hdrHeight = ArrayUtils.GetBEIntFromByteArray(headerBytes, 7);
+            this.hdrWidth = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 3, 4, true);
+            this.hdrHeight = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 7, 4, true);
         }
     }
 }

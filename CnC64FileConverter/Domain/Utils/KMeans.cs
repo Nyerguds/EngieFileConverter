@@ -1,10 +1,7 @@
 ﻿using System;
+using System.Linq;
 
-// K-means clustering demo. ('Lloyd's algorithm')
-// Coded using static methods. Normal error-checking removed for clarity.
-// This code can be used in at least two ways. You can do a copy-paste and then insert the code into some system that uses clustering.
-// Or you can wrap the code up in a Class Library. The single public method is Cluster().
-
+// K-means clustering. ('Lloyd's algorithm')
 namespace Nyerguds.Util
 {
     /// <summary>
@@ -13,8 +10,8 @@ namespace Nyerguds.Util
     /// The Normalize and ClearMeans function are optional, for your own convenience.
     /// The CalculateClusterAverage and CalculateDistance need to be implemented.
     /// </summary>
-    /// <typeparam name="Tdata"></typeparam>
-    /// <typeparam name="Uavg"></typeparam>
+    /// <typeparam name="Tdata">Type of the input data.</typeparam>
+    /// <typeparam name="Uavg">Type of the averages data.</typeparam>
     public abstract class KMeans<Tdata,Uavg>
     {
 
@@ -26,12 +23,19 @@ namespace Nyerguds.Util
         /// <summary>
         /// Clusters the given data into the requested number of clusters.
         /// </summary>
-        /// <param name="rawData">Array of data items</param>
-        /// <param name="numClusters">Number of clusters</param>
-        /// <param name="means">The last calculated means for each cluster.</param>
+        /// <param name="rawData">Array of data items.</param>
+        /// <param name="numClusters">Number of clusters.</param>
+        /// <param name="means">The final calculated means for each cluster.</param>
         /// <returns>An array indicating in which cluster each data item was sorted.</returns>
-        public Int32[] Cluster(Tdata[] rawData, Int32 numClusters, out Uavg[] means)
+        public Int32[] Cluster(Tdata[] rawData, UInt32 numClusters, out Uavg[] means)
         {
+            if (rawData == null)
+                throw new ArgumentNullException("rawData", "Data cannot be null!");
+            if (numClusters == 0)
+                throw new ArgumentOutOfRangeException("numClusters", "Cannot cluster into 0 clusters!");
+            if (numClusters >= rawData.Length)
+                throw new ArgumentOutOfRangeException("numClusters", "Amount of requested clusters is greater than or equal to the data length. No meaningful clustering can be performed.");
+
             // k-means clustering
             // index of return is tuple ID, cell is cluster ID
             // ex: [2 1 0 0 2 2] means tuple 0 is cluster 2, tuple 1 is cluster 1, tuple 2 is cluster 0, tuple 3 is cluster 0, etc.
@@ -73,7 +77,7 @@ namespace Nyerguds.Util
             return clustering;
         }
 
-        private Int32[] InitClustering(Int32 numTuples, Int32 numClusters, Int32 randomSeed)
+        private Int32[] InitClustering(Int32 numTuples, UInt32 numClusters, Int32 randomSeed)
         {
             // init clustering semi-randomly (at least one tuple in each cluster)
             // consider alternatives, especially k-means++ initialization,
@@ -84,8 +88,8 @@ namespace Nyerguds.Util
             Int32[] clustering = new Int32[numTuples];
             for (Int32 i = 0; i < numClusters; ++i) // make sure each cluster has at least one tuple
                 clustering[i] = i;
-            for (Int32 i = numClusters; i < clustering.Length; ++i)
-                clustering[i] = random.Next(0, numClusters); // other assignments random
+            for (UInt32 i = numClusters; i < clustering.Length; ++i)
+                clustering[i] = random.Next(0, (Int32)numClusters); // other assignments random
             return clustering;
         }
 
@@ -108,7 +112,7 @@ namespace Nyerguds.Util
 
             for (Int32 k = 0; k < numClusters; k++)
                 if (clusterCounts[k] == 0)
-                    return false; // bad clustering. no change to means[][]
+                    return false; // Bad clustering. No change to means[][]
 
             // update, zero-out means so it can be used as scratch matrix 
             for (Int32 k = 0; k < numClusters; ++k)
@@ -124,7 +128,7 @@ namespace Nyerguds.Util
                 count = 0;
                 for (Int32 i = 0; i < data.Length; ++i)
                     if (clustering[i] == k)
-                        subData[++count] = data[i];
+                        subData[count++] = data[i];
                 means[k] = CalculateClusterAverage(subData);
             }
             return true;
@@ -151,11 +155,10 @@ namespace Nyerguds.Util
                     distances[k] = CalculateDistance(data[i], means[k]); // compute distances from curr tuple to all k means
 
                 Int32 newClusterID = MinIndex(distances); // find closest mean ID
-                if (newClusterID != newClustering[i])
-                {
-                    changed = true;
-                    newClustering[i] = newClusterID; // update
-                }
+                if (newClusterID == newClustering[i])
+                    continue;
+                changed = true;
+                newClustering[i] = newClusterID; // update
             }
 
             if (changed == false)
@@ -185,11 +188,10 @@ namespace Nyerguds.Util
             Double smallDist = distances[0];
             for (Int32 k = 0; k < distances.Length; ++k)
             {
-                if (distances[k] < smallDist)
-                {
-                    smallDist = distances[k];
-                    indexOfMin = k;
-                }
+                if (!(distances[k] < smallDist))
+                    continue;
+                smallDist = distances[k];
+                indexOfMin = k;
             }
             return indexOfMin;
         }

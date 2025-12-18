@@ -128,7 +128,8 @@ namespace CnC64FileConverter
                 try
                 {
                     // Check if image needs a palette.
-                    if (inputImage.ColorsInPalette == 0 && inputImage.GetColors().Length > 0 && paletteFile != null && File.Exists(paletteFile))
+                    Color[] cols = inputImage.GetColors();
+                    if (inputImage.ColorsInPalette == 0 && (cols != null && cols.Length > 0) && paletteFile != null && File.Exists(paletteFile))
                     {
                         Color[] palette = ReadPalette(paletteFile, showErrors, showFeedback);
                         if (palette != null)

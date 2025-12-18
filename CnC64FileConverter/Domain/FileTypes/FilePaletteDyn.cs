@@ -6,38 +6,62 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FilePalettePc : SupportedFileType
+    public class FilePaletteDyn : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "PCPal"; } }
+        public override String ShortTypeName { get { return "DynPal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "PC C&C palette"; } }
+        public override String ShortTypeDescription { get { return "Dynamix palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions {  get { return new String[]{ "pal" }; } }
+        public override String[] FileExtensions { get { return new String[] { "pal" }; } }
 
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
         public override Int32 ColorsInPalette { get { return 256; } }
-        public override SupportedFileType PreferredExportType { get { return new FilePaletteN64(); } }
+        public override SupportedFileType PreferredExportType { get { return new FilePalettePc(); } }
 
         protected Color[] m_palette;
 
         public override void LoadFile(Byte[] fileData)
         {
-            if (fileData.Length != 768)
+            if (fileData.Length < 0x10)
+                throw new FileTypeLoadException("File is not long enough to be a valid SCR file.");
+            DynamixChunk palChunk = DynamixChunk.GetChunk(fileData, "PAL", true);
+            if (palChunk == null || palChunk.Address != 0)
+                throw new FileTypeLoadException("File does not start with a PAL chunk!");
+            DynamixChunk vgaChunk = DynamixChunk.GetChunk(palChunk.Data, "VGA", true);
+            if (vgaChunk == null)
+                throw new FileTypeLoadException("File does not contain a VGA chunk!");
+            if (vgaChunk.DataLength != 768)
                 throw new FileTypeLoadException("Incorrect file size.");
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
             SixBitColor[] palette = null;
             Exception e = null;
             try
             {
-                palette = ColorUtils.ReadSixBitPalette(fileData);
+                palette = ColorUtils.ReadSixBitPalette(vgaChunk.Data);
+                /*/
+                // code to make 16-color palettes out of it
+                SixBitColor[] swap = new SixBitColor[256];
+                for (Int32 y = 0; y < 16; y++)
+                {
+                    for (Int32 x = 0; x < 16; x++)
+                    {
+                        Int32 offset = y * 16 + x;
+                        Int32 swapOffset = x * 16 + y;
+
+                        swap[swapOffset] = palette[offset];
+                    }
+                }
+                palette = swap;
+                //*/
             }
-            catch (ArgumentException ex) { e = ex;}
-            catch (NotSupportedException ex2) { e = ex2;}
+            catch (ArgumentException ex) { e = ex; }
+            catch (NotSupportedException ex2) { e = ex2; }
             if (e != null)
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + e.Message, e);
@@ -91,7 +115,21 @@ namespace CnC64FileConverter.Domain.FileTypes
                     cols[i] = Color.Black;
             }
             SixBitColor[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
-            return ColorUtils.GetSixBitPaletteData(sbcp);
+            Byte[] chunkData = ColorUtils.GetSixBitPaletteData(sbcp);
+            // write as Dynamix chunks
+            Int32 offset = 0;
+            Byte[] fullData = new Byte[16 + chunkData.Length];
+            Array.Copy(Encoding.ASCII.GetBytes("PAL:"), 0, fullData, offset, 4);
+            offset += 4;
+            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)(fullData.Length - 8));
+            offset += 4;
+            Array.Copy(Encoding.ASCII.GetBytes("VGA:"), 0, fullData, offset, 4);
+            offset += 4;
+            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)chunkData.Length);
+            offset += 4;
+            Array.Copy(chunkData, 0, fullData, offset, chunkData.Length);
+            //offset += chunkData.Length;
+            return fullData;
         }
 
     }

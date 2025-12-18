@@ -24,7 +24,7 @@ namespace Nyerguds.Util
             for (Int32 i = start; i < end; ++i)
             {
                 Byte index = (Byte)(((crc) & 0xFF) ^ bytes[i]);
-                crc = (UInt32)((crc >> 8) ^ table[index]);
+                crc = (crc >> 8) ^ table[index];
             }
             return ~crc;
         }
@@ -36,22 +36,17 @@ namespace Nyerguds.Util
 
         private static UInt32[] FillTable()
         {
-            UInt32 poly = 0xedb88320;
+            const UInt32 poly = 0xEDB88320;
             UInt32[] table = new UInt32[256];
-            UInt32 temp = 0;
             for (UInt32 i = 0; i < table.Length; ++i)
             {
-                temp = i;
+                UInt32 temp = i;
                 for (Int32 j = 8; j > 0; --j)
                 {
                     if ((temp & 1) == 1)
-                    {
-                        temp = (UInt32)((temp >> 1) ^ poly);
-                    }
+                        temp = ((temp >> 1) ^ poly);
                     else
-                    {
                         temp >>= 1;
-                    }
                 }
                 table[i] = temp;
             }

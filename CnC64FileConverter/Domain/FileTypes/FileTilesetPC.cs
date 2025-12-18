@@ -1,5 +1,4 @@
-﻿using CnC64FileConverter.Domain.FileTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -75,12 +74,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
 
-        public override void LoadFile(byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData, null);
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, string savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException("Can only save 8 BPP images as this type.");
@@ -119,46 +118,43 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 size = 0x20;
             Int32 indexImgStart = size;
             size += actualFrames * tileLength;
-            Int32 IndexTilesetImagesList = size;
+            Int32 indexTilesetImagesList = size;
             size += nrOfFrames;
-            Int32 IndexImages = size;
+            Int32 indexImages = size;
             size += actualFrames;
             Byte[] finalData = new Byte[size];
 
             // Width
-            ArrayUtils.SetBEShortInByteArray(finalData, 0x00, 24);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x00, 2, true, 24);
             // Height
-            ArrayUtils.SetBEShortInByteArray(finalData, 0x02, 24);
-            ArrayUtils.SetBEShortInByteArray(finalData, 0x04, (Int16)nrOfFrames);
-            ArrayUtils.SetBEIntInByteArray(finalData, 0x08, size);
-            ArrayUtils.SetBEIntInByteArray(finalData, 0x0C, indexImgStart);
-            ArrayUtils.SetBEShortInByteArray(finalData, 0x14, -1);
-            ArrayUtils.SetBEShortInByteArray(finalData, 0x16, 0x0D1A);
-            ArrayUtils.SetBEIntInByteArray(finalData, 0x18, IndexImages);
-            ArrayUtils.SetBEIntInByteArray(finalData, 0x1C, IndexTilesetImagesList);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x02, 2, true, 24);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x04, 2, true, (UInt32)nrOfFrames);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x08, 4, true, (UInt32)size);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x0C, 4, true, (UInt32)indexImgStart);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x14, 2, true, 0xFFFF);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x16, 2, true, 0x0D1A);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x18, 4, true, (UInt32)indexImages);
+            ArrayUtils.WriteIntToByteArray(finalData, 0x1C, 4, true, (UInt32)indexTilesetImagesList);
 
             for (Int32 i = 0; i < actualFrames; i++)
-            {
-                Byte[] frameData = tempFrames[i];
-                Array.Copy(frameData, 0, finalData, indexImgStart + tileLength * i, tileLength);
-            }
-            Array.Copy(finalIndices, 0, finalData, IndexTilesetImagesList, finalIndices.Length);
-            File.WriteAllBytes(savePath, finalData);
+                Array.Copy(tempFrames[i], 0, finalData, indexImgStart + tileLength * i, tileLength);
+            // Not done: write data to offset indexImages. Because, no one really knows what it does.
+            Array.Copy(finalIndices, 0, finalData, indexTilesetImagesList, finalIndices.Length);
+            return finalData;
         }
         
         private void LoadFromFileData(Byte[] fileData, String sourceFileName)
         {
-            // todo: load logic
             Int32 fileLen = fileData.Length;
             if (fileLen < 0x20)
-                throw new FileTypeLoadException("File is not long enough to be a valid IMG file.");
+                throw new FileTypeLoadException("File is not long enough to be a valid C&C tileset file.");
             try
             {
                 this.ReadHeader(fileData);
             }
             catch (Exception e)
             {
-                throw new FileTypeLoadException("Error loading header data: " + e.Message);
+                throw new FileTypeLoadException("Error loading header data: " + e.Message, e);
             }
             Int32 tileSize = this.hdrTileWidth * this.hdrTileHeight;
             Byte[] imagesList = new Byte[this.hdrNrOfTiles];
@@ -168,10 +164,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 actualImages = imagesList.Max(x => x == 0xFF ? -1 : (Int32)x) + 1;
             if (this.hdrImgStart + actualImages * tileSize > fileLen)
                 throw new FileTypeLoadException("Tile image data outside file range!");
-            // Probably not needed, but eh.
-            //Byte[] actualImagesList = new Byte[actualImages];
-            //Array.Copy(fileData, actualImagesList, actualImagesList.Length);
-
             m_TilesList = new List<PCTile>();
             if (this.m_Palette == null)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
@@ -232,19 +224,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 fileLen = headerBytes.Length;
             if (fileLen < 0x20)
                 return;
-            this.hdrTileWidth = ArrayUtils.GetBEShortFromByteArray(headerBytes, 0x00);
-            this.hdrTileHeight = ArrayUtils.GetBEShortFromByteArray(headerBytes, 0x02);
-            this.hdrNrOfTiles = ArrayUtils.GetBEShortFromByteArray(headerBytes, 0x04);
-            this.hdrZero1 = ArrayUtils.GetBEShortFromByteArray(headerBytes, 0x06);
-            this.hdrSize = ArrayUtils.GetBEIntFromByteArray(headerBytes, 0x08);
-            this.hdrImgStart = ArrayUtils.GetBEIntFromByteArray(headerBytes, 0x0C);
-            this.hdrZero2 = ArrayUtils.GetBEIntFromByteArray(headerBytes, 0x10);
-            this.hdrID1 = ArrayUtils.GetBEShortFromByteArray(headerBytes, 0x14);
-            this.hdrID2 = ArrayUtils.GetBEShortFromByteArray(headerBytes, 0x16);
+            this.hdrTileWidth = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x00, 2, true);
+            this.hdrTileHeight = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x02, 2, true);
+            this.hdrNrOfTiles = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x04, 2, true);
+            this.hdrZero1 = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x06, 2, true);
+            this.hdrSize = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x08, 4, true);
+            this.hdrImgStart = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x0C, 4, true);
+            this.hdrZero2 = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x10, 4, true);
+            this.hdrID1 = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x14, 2, true);
+            this.hdrID2 = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x16, 2, true);
             //61020000 == 0x261
-            this.hdrIndexImages = ArrayUtils.GetBEIntFromByteArray(headerBytes, 0x18);
+            this.hdrIndexImages = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x18, 4, true);
             //60020000 = 0x260
-            this.hdrIndexTilesetImagesList = ArrayUtils.GetBEIntFromByteArray(headerBytes, 0x1C);
+            this.hdrIndexTilesetImagesList = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x1C, 4, true);
             if (this.hdrSize != headerBytes.Length)
                 throw new FileTypeLoadException("file size in header does not match.");
             if (this.hdrTileHeight != 24 || this.hdrTileWidth != 24)

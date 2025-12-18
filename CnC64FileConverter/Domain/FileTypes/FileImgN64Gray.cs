@@ -3,6 +3,7 @@ using Nyerguds.Util;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -52,8 +53,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (this.m_palette == null || this.ColorsInPalette == this.m_palette.Length)
                 throw new FileTypeLoadException("This is not a grayscale paletteless IMG file.");
         }
-        
-        public void LoadImage(Bitmap img, String displayFileName)
+
+        public void LoadImage(Bitmap img, String displayFileName, String fullFilePath)
         {
             hdrBytesPerColor = 4;
             hdrReadBytesPerColor = 4;
@@ -61,12 +62,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             hdrColorsInPalette = 0;
             this.m_palette = PaletteUtils.GenerateGrayPalette(8, false, false);
             this.m_LoadedImage = ImageUtils.ConvertToPalettedGrayscale(img);
+            this.LoadedFile = fullFilePath;
             this.LoadedFileName = displayFileName;
         }
 
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
         {
-            SaveImg(fileToSave.GetBitmap(), 0, savePath, true);
+            return SaveImg(fileToSave.GetBitmap(), 0, true);
         }
     }
 }
