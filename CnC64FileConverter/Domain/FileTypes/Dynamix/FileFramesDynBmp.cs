@@ -65,8 +65,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData, filename, false);
             SetFileNames(filename);
+            LoadFromFileData(fileData, filename, false);
         }
 
         public override Boolean ColorsChanged()
@@ -100,6 +100,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         palDyn.LoadFile(palName);
                         m_Palette = palDyn.GetColors();
                         m_loadedPalette = true;
+                        this.LoadedFileName += "/PAL";
                     }
                     catch
                     {
@@ -124,7 +125,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             String dataChunk = new String(new Char[] { (Char)fileData[addr2 + 0x08], (Char)fileData[addr2 + 0x09], (Char)fileData[addr2 + 0x0A], (Char)fileData[addr2 + 0x0B] });
             Boolean vqt = "VQT:".Equals(dataChunk);
             Boolean scn = "SCN:".Equals(dataChunk);
-
             DynamixChunk matrix = DynamixChunk.ReadChunk(mainChunk.Data, "MTX");
             if (matrix != null && !asMatrixImage)
                 throw new FileTypeLoadException("This is not a matrix-type image.");
@@ -149,6 +149,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (binChunk == null)
                         throw new FileTypeLoadException("Cannot find BIN chunk!");
                     this.IsMa8 = true;
+
                 }
                 if (binChunk.Data.Length == 0)
                     throw new FileTypeLoadException("Empty BIN chunk!");
@@ -158,6 +159,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 else
                     throw new FileTypeLoadException("Unknown compression type, " + compressionType);
                 Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
+                if (this.IsMa8) // MA8 seems to have indices 0 and FF switched
+                    DynamixCompression.SwitchBackground(bindata);
                 Byte[] vgadata = null;
                 DynamixChunk vgaChunk = DynamixChunk.ReadChunk(mainChunk.Data, "VGA");
                 if (vgaChunk == null)
@@ -214,7 +217,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerColor);
-                frame.SetColorsInPalette(0);
+                frame.SetColorsInPalette(this.m_loadedPalette ? this.m_Palette.Length : 0);
                 this.m_FramesList[i] = frame;
             }
             if (matrix != null && frames > 0)
@@ -271,7 +274,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileToSave == null)
                 throw new NotSupportedException("File to save is empty!");
-
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
                 FileFrames frameSave = new FileFrames();
@@ -342,6 +344,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 Byte compressionBin = 0;
                 Byte[] binData = fullData;
+                if (isMa8) // MA8 seems to have indices 0 and FF switched
+                    DynamixCompression.SwitchBackground(binData);
                 UInt32 dataLenBin = (UInt32)binData.Length;
                 if (compressionType != 0) 
                 {

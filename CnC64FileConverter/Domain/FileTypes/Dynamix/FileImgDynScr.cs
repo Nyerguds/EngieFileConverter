@@ -109,6 +109,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         palDyn.LoadFile(palName);
                         m_Palette = palDyn.GetColors();
                         m_loadedPalette = true;
+                        this.LoadedFileName += "/PAL";
                     }
                     catch
                     {
@@ -140,6 +141,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             else
                 throw new FileTypeLoadException("Unknown compression type, " + compressionType);
             Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
+            if (this.IsMa8) // MA8 seems to have indices 0 and FF switched
+                DynamixCompression.SwitchBackground(bindata);
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "vga.bin", vgadata);
             Byte[] vgadata = null;
@@ -184,8 +187,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 else
                     pf = PixelFormat.Format8bppIndexed;
-                if (m_loadedPalette)
-                    this.LoadedFileName += "/PAL";
             }
             else if (!asFrame)
             {
@@ -218,8 +219,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 pf = PixelFormat.Format8bppIndexed;
                 fullData = DynamixCompression.EnrichFourBit(vgadata, bindata);
-                if (m_loadedPalette)
-                    this.LoadedFileName += "/PAL";
             }
             if (m_Palette == null)
                 m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
@@ -271,15 +270,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             Int32 stride;
             Byte[] data = ImageUtils.GetImageData(image, out stride);
-
             if (compressionType < 0 || compressionType > 2)
                 throw new NotSupportedException("Unknown compression type, " + compressionType);
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)
                 throw new NotSupportedException("LZW compression is currently not supported!");
-            Boolean isMA8 = saveType == 1;
-            if (image.PixelFormat == PixelFormat.Format4bppIndexed || isMA8)
+            Boolean asMa8 = saveType == 1;
+            if (asMa8) // MA8 seems to have indices 0 and FF switched
+                DynamixCompression.SwitchBackground(data);
+            if (image.PixelFormat == PixelFormat.Format4bppIndexed || asMa8)
             {
                 UInt32 dataLen = (UInt32)data.Length;
                 Byte compression = 0;
@@ -292,7 +292,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         compression = (Byte)compressionType;
                     }
                 }
-                DynamixChunk binChunk = new DynamixChunk(isMA8? "MA8" : "BIN", compression, dataLen, data);
+                DynamixChunk binChunk = new DynamixChunk(asMa8? "MA8" : "BIN", compression, dataLen, data);
                 chunks.Add(binChunk);
             }
             else

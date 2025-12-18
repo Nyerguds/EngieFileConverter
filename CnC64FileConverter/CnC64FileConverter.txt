@@ -57,6 +57,9 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.7: (15/11/2017 7:36)
+-Fixed background handling in MA8 chunk data by switching index 00 and FF on the image.
+
 v1.2.6: (15/11/2017 14:32)
 -Added support for MA8 format used in the Macintosh versions of the Dynamix images.
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Nyerguds.Util;
 using Nyerguds.Util.GameData;
 
@@ -146,6 +147,19 @@ namespace Nyerguds.GameData.Dynamix
             // Uses standard RLE implementation.
             RleCompressionHighBitRepeat rle = new RleCompressionHighBitRepeat();
             return rle.RleEncodeData(buffer);
+        }
+
+        /// <summary>Switches index 00 and FF on indexed image data, to compensate for this oddity in the MA8 chunks.</summary>
+        /// <param name="imageData">Image data to process.</param>
+        public static void SwitchBackground(Byte[] imageData)
+        {
+            for (Int32 i = 0; i < imageData.Length; i++)
+            {
+                if (imageData[i] == 0x00)
+                    imageData[i] = 0xFF;
+                else if (imageData[i] == 0xFF)
+                    imageData[i] = 0x00;
+            }
         }
     }
 }
