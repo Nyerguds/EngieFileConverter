@@ -152,7 +152,7 @@ namespace Nyerguds.Util
         {
             // Technically, compressing a repetition of 2 is not useful: the compressed data
             // ends up the same size, but it adds an extra byte to the data that follows it.
-            // But it is allowed for the sake of completion.
+            // But it is allowed for the sake of completeness.
             if (minimumRepeating < 2)
                 minimumRepeating = 2;
             Int32 inPtr = 0;

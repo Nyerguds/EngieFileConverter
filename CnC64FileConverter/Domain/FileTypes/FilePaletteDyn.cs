@@ -105,22 +105,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             // write as Dynamix chunks
             DynamixChunk vgaChunk = new DynamixChunk("VGA", paletteData);
             DynamixChunk palChunk = DynamixChunk.BuildChunk("PAL", vgaChunk);
+            palChunk.IsContainer = true;
             return palChunk.WriteChunk();
-            /*/
-            Int32 offset = 0;
-            Byte[] fullData = new Byte[16 + paletteData.Length];
-            Array.Copy(Encoding.ASCII.GetBytes("PAL:"), 0, fullData, offset, 4);
-            offset += 4;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)(fullData.Length - 8));
-            offset += 4;
-            Array.Copy(Encoding.ASCII.GetBytes("VGA:"), 0, fullData, offset, 4);
-            offset += 4;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)paletteData.Length);
-            offset += 4;
-            Array.Copy(paletteData, 0, fullData, offset, paletteData.Length);
-            //offset += chunkData.Length;
-            return fullData;
-            //*/
         }
 
     }

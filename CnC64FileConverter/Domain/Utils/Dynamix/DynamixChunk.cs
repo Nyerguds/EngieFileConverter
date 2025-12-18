@@ -9,7 +9,7 @@ namespace Nyerguds.Util
     {
         public String Identifier { get; private set; }
         public Int32 Address { get; private set; }
-        public Boolean BitFlag { get; set; }
+        public Boolean IsContainer { get; set; }
         public Byte[] Data
         {
             get { return this.m_data; }
@@ -87,7 +87,7 @@ namespace Nyerguds.Util
             offset += 4;
             ArrayUtils.WriteIntToByteArray(target, offset, 4, true, (UInt32)(DataLength));
             offset += 4;
-            if (BitFlag)
+            if (IsContainer)
                 target[offset - 1] |= 0x80;
             Array.Copy(Data, 0, target, offset, DataLength);
             return offset + DataLength;
@@ -125,7 +125,7 @@ namespace Nyerguds.Util
                 return null;
             DynamixChunk dc = new DynamixChunk(chunkName);
             dc.Address = address;
-            dc.BitFlag = (data[7] & 0x80) != 0;
+            dc.IsContainer = (data[7] & 0x80) != 0;
             dc.Data = GetChunkData(data, dc.Address);
             return dc;
         }

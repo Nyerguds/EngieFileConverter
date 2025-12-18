@@ -205,6 +205,7 @@ namespace CnC64FileConverter.UI
                 String emptystr = "---";
                 lblValFilename.Text = emptystr;
                 lblValType.Text = emptystr;
+                this.toolTip1.SetToolTip(lblValType, null);
                 lblValWidth.Text = emptystr;
                 lblValHeight.Text = emptystr;
                 lblValColorFormat.Text = emptystr;
@@ -222,6 +223,7 @@ namespace CnC64FileConverter.UI
             Int32 bpc = loadedFile.BitsPerColor;
             lblValFilename.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.LoadedFileName);
             lblValType.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ShortTypeDescription);
+            this.toolTip1.SetToolTip(lblValType, lblValType.Text);
             lblValWidth.Text = loadedFile.Width.ToString();
             lblValHeight.Text = loadedFile.Height.ToString();
             lblValColorFormat.Text = bpc == 0 ? "N/A" : (bpc + " BPP" + (bpc == 4 || bpc == 8 ? " (paletted)" : String.Empty));

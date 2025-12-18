@@ -11,6 +11,67 @@ using System.Text;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
+    public class FileImgCps0: FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 0; } }
+        protected override String Compressiondesc { get { return "Uncompressed"; } }
+        protected override Boolean InternalColors { get { return false; } }
+    }
+    public class FileImgCps0c : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 0; } }
+        protected override String Compressiondesc { get { return "Uncompressed - PAL"; } }
+        protected override Boolean InternalColors { get { return true; } }
+    }
+    public class FileImgCps1 : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 1; } }
+        protected override String Compressiondesc { get { return "LZW12"; } }
+        protected override Boolean InternalColors { get { return false; } }
+    }
+    public class FileImgCps1c : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 1; } }
+        protected override String Compressiondesc { get { return "LZW12 - PAL"; } }
+        protected override Boolean InternalColors { get { return true; } }
+    }
+    public class FileImgCps2 : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 2; } }
+        protected override String Compressiondesc { get { return "LZW14"; } }
+        protected override Boolean InternalColors { get { return false; } }
+    }
+    public class FileImgCps2c : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 2; } }
+        protected override String Compressiondesc { get { return "LZW14 - PAL"; } }
+        protected override Boolean InternalColors { get { return true; } }
+    }
+    public class FileImgCps3 : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 3; } }
+        protected override String Compressiondesc { get { return "CMV/RLE"; } }
+        protected override Boolean InternalColors { get { return false; } }
+    }
+    public class FileImgCps3c : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 3; } }
+        protected override String Compressiondesc { get { return "CMV/RLE - PAL"; } }
+        protected override Boolean InternalColors { get { return true; } }
+    }
+    public class FileImgCps4 : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 4; } }
+        protected override String Compressiondesc { get { return "LCW"; } }
+        protected override Boolean InternalColors { get { return false; } }
+    }
+    public class FileImgCps4c : FileImgCps
+    {
+        protected override Int32 CompressionType { get { return 4; } }
+        protected override String Compressiondesc { get { return "LCW - PAL"; } }
+        protected override Boolean InternalColors { get { return true; } }
+    }
+
     public class FileImgCps : SupportedFileType
     {
         private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 10, 5, 5, 5, 0, 0, 0, true);
@@ -18,19 +79,22 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return 200; } }
         protected Color[] m_palette;
         protected Boolean hasPalette;
+        protected Int32 compressionType = -1;
+        protected virtual Int32 CompressionType { get { return compressionType; } }
+        protected virtual String Compressiondesc { get { return "Unspecified"; } }
+        protected virtual Boolean InternalColors { get { return hasPalette; } }
 
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "CPS"; } }
         public override String[] FileExtensions { get { return new String[] { "cps" }; } }
-        public override String ShortTypeDescription { get { return "CPS Image file"; } }
+        public override String ShortTypeDescription { get { return "CPS Image file (" + this.Compressiondesc + ")"; } }
         public override Int32 ColorsInPalette { get { return hasPalette? 256 : 0; } }
         public override Int32 BitsPerColor { get{ return 8; } }
 
-        public FileImgCps() { }
-        
+
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, this.CompressionType);
         }
         
         public override Color[] GetColors()
@@ -58,30 +122,34 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, this.CompressionType);
             SetFileNames(filename);
         }
                 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
-            return SaveCps(fileToSave.GetBitmap(), fileToSave.GetColors(), fileToSave.ColorsInPalette == 0 && fileToSave.GetColors().Length != 0);
+            return SaveCps(fileToSave.GetBitmap(), fileToSave.GetColors(), !this.InternalColors, this.CompressionType);
         }
 
-
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(Byte[] fileData, Int32 comprType)
         {
-            if (fileData.Length < 2)
+            if (fileData.Length < 10)
                 throw new FileTypeLoadException("File is not long enough to be a valid CPS file.");
             Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            if (fileSize+2 != fileData.Length)
+            Int32 compression = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+            if (comprType != -1 && comprType != compression)
+                throw new FileTypeLoadException("Not a CPS with compression " + comprType);
+
+
+            if (!((compression != 0 || compression != 4) && fileSize == fileData.Length) && !((compression == 0 || compression == 4) && fileSize + 2 == fileData.Length))
                 throw new FileTypeLoadException("File size in header does not match!");
-            Int32 four = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-            if (four != 4)
-                throw new FileTypeLoadException("Invalid values encountered in header.");
             Int32 bufferSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 4, 4, true);
             Int32 paletteLength = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
             if (paletteLength > 0)
             {
+                hasPalette = true;
+                if (!InternalColors)
+                    throw new FileTypeLoadException("Not a CPS without internal palette.");
                 if (paletteLength != 0x300)
                     throw new FileTypeLoadException("Invalid palette length in header!");
                 Byte[] pal = new Byte[paletteLength];
@@ -108,7 +176,23 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 dataOffset = 10 + paletteLength;
             try
             {
-                CHRONOLIB.Compression.WWCompression.LcwUncompress(fileData, ref dataOffset, imageData);
+                switch (compression)
+                {
+                    case 0:
+                        Array.Copy(fileData, dataOffset, imageData, 0, bufferSize);
+                        break;
+                    case 1:
+                    case 2:
+                        throw new NotImplementedException("Compression types 1 and 2 are not yet supported!");
+                    case 3:
+                        CHRONOLIB.Compression.WWCompression.RleDecode(fileData, ref dataOffset, null, imageData, false);
+                        break;
+                    case 4:
+                        CHRONOLIB.Compression.WWCompression.LcwUncompress(fileData, ref dataOffset, imageData);
+                        break;
+                    default:
+                        throw new FileTypeLoadException("Unsupported compression format, " + compression);
+                }
             }
             catch (Exception e)
             {
@@ -125,7 +209,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        protected static Byte[] SaveCps(Bitmap image, Color[] palette, Boolean asNoPalGray)
+        public static Byte[] SaveCps(Bitmap image, Color[] palette, Boolean asNoPalGray, Int32 compressionType)
         {
             if (image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
                 throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
@@ -134,13 +218,31 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Removes any stride
             if (stride != image.Width)
                 imageData = ImageUtils.ConvertTo8Bit(imageData, image.Width, image.Height, 0, 8, false, ref stride);
-            Byte[] compressedData = CHRONOLIB.Compression.WWCompression.LcwCompress(imageData);
+
+            Byte[] compressedData;
+            switch (compressionType)
+            {
+                case 0:
+                    compressedData = imageData;
+                    break;
+                case 1:
+                case 2:
+                    throw new NotImplementedException("Compression types 1 and 2 are not yet supported!");
+                case 3:
+                    compressedData = CHRONOLIB.Compression.WWCompression.RleEncode(imageData);
+                    break;
+                case 4:
+                    compressedData = CHRONOLIB.Compression.WWCompression.LcwCompress(imageData);
+                    break;
+                default:
+                    throw new NotSupportedException("Unknown compression type given.");
+            }
             Int32 dataLength = 10 + compressedData.Length;
             if (!asNoPalGray)
                 dataLength += 0x300;
             Byte[] fullData = new Byte[dataLength];
-            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32)(dataLength - 2));
-            ArrayUtils.WriteIntToByteArray(fullData, 2, 2, true, (UInt32)4);
+            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32)(dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
+            ArrayUtils.WriteIntToByteArray(fullData, 2, 2, true, (UInt32)compressionType);
             ArrayUtils.WriteIntToByteArray(fullData, 4, 4, true, (UInt32)imageData.Length);
             ArrayUtils.WriteIntToByteArray(fullData, 8, 2, true, (UInt32)(asNoPalGray ? 0 : 0x300));
             Int32 offset = 10;

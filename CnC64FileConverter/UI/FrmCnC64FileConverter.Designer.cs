@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.lblFilename = new System.Windows.Forms.Label();
             this.lblWidth = new System.Windows.Forms.Label();
             this.lblHeight = new System.Windows.Forms.Label();
@@ -63,6 +64,7 @@
             this.lblNrOfFrames = new System.Windows.Forms.Label();
             this.btnResetPalette = new System.Windows.Forms.Button();
             this.btnSavePalette = new System.Windows.Forms.Button();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.cmbPalettes = new Nyerguds.Util.UI.ComboBoxSmartWidth();
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorViewer = new Nyerguds.Util.UI.PalettePanel();
@@ -219,9 +221,10 @@
             // lblValType
             // 
             this.lblValType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValType.Location = new System.Drawing.Point(544, 77);
+            this.lblValType.AutoSize = true;
+            this.lblValType.Location = new System.Drawing.Point(544, 82);
             this.lblValType.Name = "lblValType";
-            this.lblValType.Size = new System.Drawing.Size(140, 23);
+            this.lblValType.Size = new System.Drawing.Size(16, 13);
             this.lblValType.TabIndex = 120;
             this.lblValType.Text = "---";
             this.lblValType.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -608,6 +611,7 @@
         private System.Windows.Forms.Button btnResetPalette;
         private System.Windows.Forms.Button btnSavePalette;
         private System.Windows.Forms.ToolStripMenuItem tsmiCopy;
+        private System.Windows.Forms.ToolTip toolTip1;
     }
 }
 

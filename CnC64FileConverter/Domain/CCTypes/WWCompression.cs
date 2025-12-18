@@ -76,6 +76,161 @@ namespace CHRONOLIB.Compression
             return datasize + ((datasize / 63) * 3) + 4;
         }
 
+        public static Byte[] RleDecode(Byte[] input, ref Int32 readOffset, Int32? endOffset, Byte[] bufferOut, Boolean swapWords)
+        {
+            Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, input.Length) : input.Length;
+            Int32 outPtr = 0;
+
+            // Westwood CMV/RLE implementation:
+            // highest bit set = followed by range of repeating bytes, but seen as (256-value)
+            // highest bit not set = followed by range of non-repeating bytes
+            // Value is 0: read 2 more bytes as Int16 to repeat.
+            // In all cases, the "code" specifies the amount of bytes; either to write, or to skip.
+
+            while (outPtr < bufferOut.Length && readOffset < inPtrEnd)
+            {
+                // get next code
+                Int32 code = input[readOffset++];
+                // RLE run
+                if ((code & 0x80) != 0 || code == 0)
+                {
+                    if (readOffset >= inPtrEnd)
+                        break;
+                    Int32 run;
+                    if (code == 0)
+                    {
+                        // Westwood extension for 16-bit repeat values.
+                        if (readOffset+2 >= inPtrEnd)
+                            break;
+                        run = swapWords? input[readOffset++] + (input[readOffset++] << 8) : (input[readOffset++] << 8) + input[readOffset++];
+                    }
+                    else
+                        run = 0x100 - code;
+                    Int32 rle = input[readOffset++];
+                    for (UInt32 lcv = 0; lcv < run; lcv++)
+                    {
+                        if (outPtr >= bufferOut.Length)
+                            break;
+                        bufferOut[outPtr++] = (Byte)rle;
+                    }
+                }
+                // raw run
+                else
+                {
+                    for (UInt32 lcv = 0; lcv < code; lcv++)
+                    {
+                        if (readOffset >= inPtrEnd || outPtr >= bufferOut.Length)
+                            break;
+                        bufferOut[outPtr++] = input[readOffset++];
+                    }
+                }
+            }
+            Byte[] finalOutput = new Byte[outPtr];
+            Array.Copy(bufferOut, 0, finalOutput, 0, outPtr);
+            // Return the final compressed data.
+            return finalOutput;
+        }
+        
+        /// <summary>
+        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// </summary>
+        /// <param name="buffer">Input buffer</param>
+        /// <returns>The run-length encoded data</returns>
+        public static Byte[] RleEncode(Byte[] buffer)
+        {
+            return RleEncode(buffer, 3, false);
+        }
+
+        /// <summary>
+        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// </summary>
+        /// <param name="buffer">Input buffer</param>
+        /// <param name="minimumRepeating">Minimum amount of repeating bytes before compression is applied.</param>
+        /// <returns>The run-length encoded data</returns>
+        public static Byte[] RleEncode(Byte[] buffer, Int32 minimumRepeating, Boolean swapWords)
+        {
+            // Technically, compressing a repetition of 2 is not useful: the compressed data
+            // ends up the same size, but it adds an extra byte to the data that follows it.
+            // But it is allowed for the sake of completeness.
+            if (minimumRepeating < 2)
+                minimumRepeating = 2;
+            Int32 inPtr = 0;
+            Int32 outPtr = 0;
+            // Ensure big enough buffer. Sanity check will be done afterwards.
+            Byte[] bufferOut = new Byte[(buffer.Length * 3) / 2];
+
+            // RLE implementation:
+            // highest bit set = followed by range of repeating bytes
+            // highest bit not set = followed by range of non-repeating bytes
+            // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
+            Int32 len = buffer.Length;
+            Boolean repeatDetected = false;
+            while (inPtr < len)
+            {
+                if (repeatDetected || HasRepeatingAhead(buffer, len, inPtr, minimumRepeating))
+                {
+                    repeatDetected = false;
+                    // Found more than (minimumRepeating) bytes. Worth compressing. Apply run-length encoding.
+                    Int32 start = inPtr;
+                    //0x7F
+                    Int32 end = Math.Min(inPtr + Int16.MaxValue, len);
+                    Byte cur = buffer[inPtr];
+                    // Already checked these
+                    inPtr += minimumRepeating;
+                    // Increase inptr to the last repeated.
+                    for (; inPtr < end && buffer[inPtr] == cur; inPtr++) { }
+                    Int32 repeat = inPtr - start;
+                    if (repeat < 0x80)
+                    {
+                        bufferOut[outPtr++] = (Byte)((0x100 - repeat) | 0x80);
+                        bufferOut[outPtr++] = cur;
+                    }
+                    else
+                    {
+                        Byte lenHi = (Byte)((repeat >> 8) & 0xFF);
+                        Byte lenLo = (Byte)(repeat & 0xFF);
+                        bufferOut[outPtr++] = 0;
+                        bufferOut[outPtr++] = swapWords ? lenLo : lenHi;
+                        bufferOut[outPtr++] = swapWords ? lenHi : lenLo;
+                        bufferOut[outPtr++] = cur;
+                    }
+                }
+                else
+                {
+                    while (!repeatDetected && inPtr < len)
+                    {
+                        Int32 start = inPtr;
+                        Int32 end = Math.Min(inPtr + 0x7F, len);
+                        for (; inPtr < end; inPtr++)
+                        {
+                            // detected bytes to compress after this one: abort.
+                            if (!HasRepeatingAhead(buffer, len, inPtr, minimumRepeating))
+                                continue;
+                            repeatDetected = true;
+                            break;
+                        }
+                        bufferOut[outPtr++] = (Byte)(inPtr - start);
+                        for (Int32 i = start; i < inPtr; i++)
+                            bufferOut[outPtr++] = buffer[i];
+                    }
+                }
+            }
+            Byte[] finalOut = new Byte[outPtr];
+            Array.Copy(bufferOut, 0, finalOut, 0, outPtr);
+            return finalOut;
+        }
+
+        public static Boolean HasRepeatingAhead(Byte[] buffer, Int32 max, Int32 ptr, Int32 minAmount)
+        {
+            if (ptr + minAmount - 1 >= max)
+                return false;
+            Byte cur = buffer[ptr];
+            for (Int32 i = 1; i < minAmount; i++)
+                if (buffer[ptr + i] != cur)
+                    return false;
+            return true;
+        }
+
         /// <summary>
         ///    Compresses data to the proprietary LCW format used in
         ///    many games developed by Westwood Studios. Compression is better
@@ -247,7 +402,7 @@ namespace CHRONOLIB.Compression
         ///     developed by Westwood Studios.
         /// </summary>
         /// <param name="input">The data to decompress.</param>
-        /// <param name="startOffset">Location to start at in the input array.</param>
+        /// <param name="readOffset">Location to start at in the input array.</param>
         /// <param name="output">The buffer to store the decompressed data. This is assumed to be initialized to the correct size.</param>
         /// <returns>Length of the decompressed data in bytes.</returns>
         public static Int32 LcwUncompress(Byte[] input, ref Int32 readOffset, Byte[] output)
@@ -289,7 +444,6 @@ namespace CHRONOLIB.Compression
 				        {
                             cpysize = input[readOffset++];
                             cpysize += (UInt16)((input[readOffset++]) << 8);
-
 					        if (cpysize > writeEnd - writeOffset)
                                 cpysize = (UInt16)(writeEnd - writeOffset);
 
@@ -307,57 +461,35 @@ namespace CHRONOLIB.Compression
 					        {
                                 cpysize = input[readOffset++];
 						        cpysize += (UInt16)((input[readOffset++]) << 8);
-
 						        if (cpysize > writeEnd - writeOffset)
-						        {
 							        cpysize = (UInt16)(writeEnd - writeOffset);
-						        }
-
                                 offset = input[readOffset++];
 						        offset += (UInt16)((input[readOffset++]) << 8);
 
 						        //extended format for VQA32
 						        if (relative)
-						        {
 							        s = writeOffset - offset;
-						        }
 						        else
-						        {
 							        s = offset;
-						        }
-
 						        //DEBUG_SAY("0b11111111 Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 5, dest - start, cpysize, offset);
 						        for (; cpysize > 0; --cpysize)
-						        {
 							        output[writeOffset++] = output[s++];
-						        }
 					        //short move abs 0b11??????
 					        }
 					        else
 					        {
 						        if (cpysize > writeEnd - writeOffset)
-						        {
 							        cpysize = (UInt16)(writeEnd - writeOffset);
-						        }
-
                                 offset = input[readOffset++];
 						        offset += (UInt16)((input[readOffset++]) << 8);
-
 						        //extended format for VQA32
 						        if (relative)
-						        {
 							        s = writeOffset - offset;
-						        }
 						        else
-						        {
 							        s = offset;
-						        }
-
 						        //DEBUG_SAY("0b11?????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 3, dest - start, cpysize, offset);
 						        for (; cpysize > 0; --cpysize)
-						        {
                                     output[writeOffset++] = output[s++];
-						        }
 					        }
 				        }
 			        //short copy 0b10??????
@@ -369,31 +501,20 @@ namespace CHRONOLIB.Compression
 					        //DEBUG_SAY("0b10?????? Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 1, dest - start, 0);
 					        return writeOffset;
 				        }
-
 				        cpysize = (UInt16)(flag & 0x3F);
-
 				        if (cpysize > writeEnd - writeOffset)
-				        {
 					        cpysize = (UInt16)(writeEnd - writeOffset);
-				        }
-
 				        //DEBUG_SAY("0b10?????? Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 1, dest - start, cpysize);
 				        for (; cpysize > 0; --cpysize)
-				        {
 					        output[writeOffset++]= input[readOffset++];
-				        }
 			        }
 		        //short move rel 0b0???????
 		        }
 		        else
 		        {
 			        cpysize = (UInt16)((flag >> 4) + 3);
-
 			        if (cpysize > writeEnd - writeOffset)
-			        {
 				        cpysize = (UInt16)(writeEnd - writeOffset);
-			        }
-
 			        offset = (UInt16)(((flag & 0xF) << 8) + input[readOffset++]);
 			        //DEBUG_SAY("0b0??????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 2, dest - start, cpysize, offset);
 			        for (; cpysize > 0; --cpysize)

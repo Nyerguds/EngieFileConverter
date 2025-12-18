@@ -19,7 +19,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Boolean hasPalette;
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "KORTDAT"; } }
+        public override String ShortTypeName { get { return "KORTDat"; } }
         public override String[] FileExtensions { get { return new String[] { "000", "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "016", "017" }; } }
         public override String ShortTypeDescription { get { return "KORT Image file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
@@ -71,6 +71,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 Int32 col = fileData[i];
                 Int32 rep = fileData[i+1];
+                if (rep == 0)
+                    throw new FileTypeLoadException("Repetition value 0 encountered. Not a KORT image file.");
+
+
                 for (UInt32 replen = 0; replen < rep; replen++)
                 {
                     if (destOffs >= len)
@@ -90,7 +94,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             Bitmap image = fileToSave.GetBitmap();
             if (image.Width != 320 || image.Height != 240 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 320x200 images can be saved as KORT image file!");
+                throw new NotSupportedException("Only 8-bit 320x240 images can be saved as KORT image file!");
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride);
             Int32 dataLen = imageData.Length;

@@ -28,6 +28,24 @@ Features:
 -Has utilities to help generate height maps for missions.
 
 
+Acknowledgements:
+----------------
+The PC C&C formats were deciphered using documentation written by Vladan Bato.
+
+The compression code used for handling the CPS and LCW formats was gracefully provided by the
+people of the RA++ project:
+https://redalertpp.org/
+
+The Dynamix decompression code was converted from the C++ code of VOGONS.org user tikalat's Midi
+Tools. It contains no license but I assume the fact he included the code implies that he doesn't
+mind it being useful to more people.
+https://www.vogons.org/viewtopic.php?p=273448#p273448
+
+The K.O.R.T. image format was decoded thanks to documentation included in the K.O.R.T. savegame
+editor written by David Eriksson, aka Edison of 2GooD.
+http://www.2good.nu/projekt/korted
+
+
 Version history:
 ---------------
 This tool started as the CnC64ImageViewer, but later got expanded to a full conversion suite.
@@ -35,6 +53,9 @@ At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file
 it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
+
+v1.1.1: (10/08/2017 15:53)
+-Added support for different compression types in CPS files.
 
 v1.1.0: (05/08/2017 19:43)
 -Added support for the KORT_DAT.### images of "King Arthur's Knights of the Round Table"

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace CnC64FileConverter
 {
-    class Program
+    public class Program
     {
         /// <summary>
         /// The main entry point for the application.
@@ -17,7 +17,6 @@ namespace CnC64FileConverter
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
             return CnC64ImgConverter.Run(args);
         }
-
 
         /// <summary>
         ///  Code to load embedded dll file. This is called when loading of an assembly fails. If the dll is embedded, the problem is resolved and the dll is loaded this way.
@@ -34,11 +33,7 @@ namespace CnC64FileConverter
                 return null;
             System.Resources.ResourceManager rm = new System.Resources.ResourceManager(typeof(Program).Namespace + ".Properties.Resources", System.Reflection.Assembly.GetExecutingAssembly());
             Byte[] dllBytes = rm.GetObject(dllName) as Byte[];
-
-            if (dllBytes != null)
-                return System.Reflection.Assembly.Load(dllBytes);
-            else
-                return null;
+            return dllBytes == null ? null : System.Reflection.Assembly.Load(dllBytes);
         }
     }
 }

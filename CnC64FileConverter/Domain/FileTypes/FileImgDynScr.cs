@@ -129,6 +129,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 pf = PixelFormat.Format8bppIndexed;
                 for (Int32 i = 0; i < vgadata.Length; i++)
                 {
+                    // This can be written much simpler, but I expanded it to clearly show each step.
                     Int32 offs = i * 2;
                     Byte binPix = bindata[i]; // 0x11
                     Byte vgaPix = vgadata[i]; // 0x33
@@ -147,7 +148,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, false, false);
             this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, m_Palette, null);
             //save debug output
-            //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
+            File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
@@ -233,7 +234,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 chunks.Add(vgaChunk);
             }
             DynamixChunk scrChunk = DynamixChunk.BuildChunk("SCR", chunks.ToArray());
-            scrChunk.BitFlag = true;
+            scrChunk.IsContainer = true;
             return scrChunk.WriteChunk();
         }
        
