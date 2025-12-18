@@ -120,6 +120,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
+                framePic.SetFileClass(this.FrameInputFileClass);
                 framePic.SetColorsInPalette(this.ColorsInPalette);
                 framePic.SetTransparencyMask(this.TransparencyMask);
                 StringBuilder extraInfo = new StringBuilder("Blit flags: ");
@@ -462,6 +463,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame frameNoShadows = new FileImageFrame();
                 frameNoShadows.LoadFileFrame(newfile, file, imageNoShadows, nameNoShadows, i);
                 frameNoShadows.SetBitsPerColor(frame.BitsPerPixel);
+                frameNoShadows.SetFileClass(frame.FileClass);
                 frameNoShadows.SetColorsInPalette(frame.ColorsInPalette);
                 frameNoShadows.SetTransparencyMask(transMask);
                 newfile.AddFrame(frameNoShadows);
@@ -473,6 +475,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame frameOnlyShadows = new FileImageFrame();
                 frameOnlyShadows.LoadFileFrame(newfile, file, imageOnlyShadows, nameOnlyShadows, i);
                 frameOnlyShadows.SetBitsPerColor(frame.BitsPerPixel);
+                frameOnlyShadows.SetFileClass(frame.FileClass);
                 frameOnlyShadows.SetColorsInPalette(frame.ColorsInPalette);
                 frameOnlyShadows.SetTransparencyMask(transMask);
                 shadowFrames[i] = frameOnlyShadows;
@@ -525,6 +528,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame frameCombined = new FileImageFrame();
                 frameCombined.LoadFileFrame(newfile, file, imageCombined, name, i);
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);
+                frameCombined.SetFileClass(frame.FileClass);
                 frameCombined.SetColorsInPalette(frame.ColorsInPalette);
                 frameCombined.SetTransparencyMask(transMask);
                 newfile.AddFrame(frameCombined);

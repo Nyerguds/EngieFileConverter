@@ -369,6 +369,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
+                frame.SetFileClass(this.FrameInputFileClass);
                 frame.SetColorsInPalette(this.ColorsInPalette);
                 frame.SetExtraInfo(generalInfo + specificInfo);
                 frame.SetTransparencyMask(this.TransparencyMask);

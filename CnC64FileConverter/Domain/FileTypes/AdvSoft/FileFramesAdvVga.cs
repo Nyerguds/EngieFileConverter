@@ -136,6 +136,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetColorsInPalette(0);
                 frame.SetBitsPerColor(4);
+                frame.SetFileClass(FileClass.Image4Bit);
                 frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }

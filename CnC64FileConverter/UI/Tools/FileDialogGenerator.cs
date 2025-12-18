@@ -21,7 +21,7 @@ namespace Nyerguds.Util.UI
         /// <param name="owner">Owner window for the dialog</param>
         /// <param name="title">Title of the dialog.</param>
         /// <param name="typesList">List of types to show.</param>
-        /// <param name="currentPath">Path to open. Can contain a filename, but only the path is used.</param>
+        /// <param name="currentPath">Path to open.</param>
         /// <param name="generaltypedesc">General description of the type, to be used in "All supported ???". Defaults to "files" if left blank.</param>
         /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank for none.</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
@@ -36,7 +36,7 @@ namespace Nyerguds.Util.UI
             if (title != null)
                 ofd.Title = title;
             ofd.Filter = GetFileFilterForOpen(items, generaltypedesc, generaltypeExt, out correspondingObjects);
-            ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
+            ofd.InitialDirectory = Path.GetFullPath(String.IsNullOrEmpty(currentPath) ? "." : currentPath);
             //ofd.FilterIndex
             DialogResult res = ofd.ShowDialog(owner);
             if (res != DialogResult.OK)
@@ -221,11 +221,22 @@ namespace Nyerguds.Util.UI
             return String.Join("|", types.ToArray());
         }
 
+        public static T[] IdentifyByExtension<T>(T[] typesList, String receivedPath) where T : FileTypeBroadcaster
+        {
+            FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
+            return IdentifyByExtension(items, receivedPath);
+        }
+
         public static T[] IdentifyByExtension<T>(Type[] typesList, String receivedPath) where T : FileTypeBroadcaster
+        {
+            FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
+            return IdentifyByExtension(items, receivedPath);
+        }
+
+        public static T[] IdentifyByExtension<T>(FileDialogItem<T>[] items, String receivedPath) where T : FileTypeBroadcaster
         {
             List<T> possibleMatches = new List<T>();
             String ext = Path.GetExtension(receivedPath).TrimStart('.');
-            FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
             // prefer those on which it is the primary type
             // Try only the single-extension types
             foreach (FileDialogItem<T> item in items)
@@ -261,7 +272,11 @@ namespace Nyerguds.Util.UI
         }
 
         /// <summary>Returns a newly created instance of this type.</summary>
-        public T ItemObject { get { return (T)Activator.CreateInstance(this.ItemType); } }
+        public T ItemObject { get { return itemObjectSet ? itemObject: (T)Activator.CreateInstance(this.ItemType); } }
+
+        private T itemObject;
+        private Boolean itemObjectSet;
+
         public Type ItemType { get; private set; }
 
         public FileDialogItem(Type itemtype)
@@ -270,6 +285,20 @@ namespace Nyerguds.Util.UI
                 throw new ArgumentException("Entries in autoDetectTypes list must all be " + typeof(T).Name + " classes!", "itemtype");
             this.ItemType = itemtype;
             T item = this.ItemObject;
+            if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
+                throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "itemtype");
+            this.Description = item.ShortTypeDescription;
+            this.Extensions = item.FileExtensions;
+            this.DescriptionsForExtensions = item.DescriptionsForExtensions;
+        }
+        
+        public FileDialogItem(T item)
+        {
+            if (item == null)
+                throw new ArgumentNullException("item");
+            this.ItemType = item.GetType();
+            this.itemObject = item;
+            this.itemObjectSet = true;
             if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
                 throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "itemtype");
             this.Description = item.ShortTypeDescription;

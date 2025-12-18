@@ -23,7 +23,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
 
-        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass FileClass { get { return m_fileClass; } }
+        private FileClass m_fileClass = FileClass.FrameSet;
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
@@ -287,6 +288,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("this is a palette-only VGS! Load it as palette.");
             if (!asVideo && m_PaletteSet && m_FramesList.Count == 1 && m_FramesList[0].Width == 320 && m_FramesList[0].Height == 200)
             {
+                this.m_fileClass = FileClass.Image8Bit;
                 this.m_LoadedImage = m_FramesList[0].GetBitmap();
                 m_FramesList.Clear();
                 this.ExtraInfo += "\nTreated as single image.";

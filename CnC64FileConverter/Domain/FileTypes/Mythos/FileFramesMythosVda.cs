@@ -165,6 +165,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         lastFrameData = this.Get320x200FrameData(pngFile);
                         if (lastFrameData != null)
                         {
+                            pngFile.SetFileClass(FileClass.Image8Bit);
                             lastFrame = pngFile;
                             loadChain.Clear();
                         }
@@ -375,6 +376,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frame.SetTransparencyMask(imageTransMask);
                     // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                     frame.SetColors(this.m_Palette, this);
+                    frame.SetFileClass(this.FrameInputFileClass);
                     frame.SetExtraInfo(CHUNKS + chunks);
                     framesList.Add(frame);
                     chunks = 0;

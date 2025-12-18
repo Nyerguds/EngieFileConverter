@@ -287,6 +287,7 @@ namespace Nyerguds.ImageManipulation
             for (Int32 i = 0; i < maxLen; i++)
                 if (palette[i].A == 0)
                     transparentIndices.Add(i);
+            Int32 firstTransIndex = transparentIndices.Count > 0 ? transparentIndices[0] : -1;
             for (Int32 y = 0; y < height; y++)
             {
                 Int32 inputOffs = y * stride;
@@ -294,8 +295,8 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 x = 0; x < width; x++)
                 {
                     Color c = Color.FromArgb(imageData[inputOffs + 3], imageData[inputOffs + 2], imageData[inputOffs + 1], imageData[inputOffs]);
-                    if (c.A < 128)
-                        newImageData[outputOffs] = 0;
+                    if (firstTransIndex >= 0 && c.A < 128)
+                        newImageData[outputOffs] = (Byte)firstTransIndex;
                     else
                         newImageData[outputOffs] = (Byte) ColorUtils.GetClosestPaletteIndexMatch(c, palette, transparentIndices);
                     inputOffs += 4;
@@ -642,8 +643,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Pastes 8-bit data on an 8-bit image. Note that the source data
-        /// is copied before the operation, so it is not modified.
+        /// Pastes 8-bit data on an 8-bit image.
         /// </summary>
         /// <param name="destData">Byte data of the image that is pasted on.</param>
         /// <param name="destWidth">Width of the image that is pasted on.</param>
@@ -660,6 +660,29 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] PasteOn8bpp(Byte[] destData, Int32 destWidth, Int32 destHeight, Int32 destStride,
             Byte[] pasteData, Int32 pasteWidth, Int32 pasteHeight, Int32 pasteStride,
             Rectangle targetPos, Boolean[] transparencyGuide, Boolean modifyOrig)
+        {
+            return PasteOn8bpp(destData, destWidth, destHeight, destStride, pasteData, pasteWidth, pasteHeight, pasteStride, targetPos, transparencyGuide, modifyOrig, null);
+        }
+
+        /// <summary>
+        /// Pastes 8-bit data on an 8-bit image.
+        /// </summary>
+        /// <param name="destData">Byte data of the image that is pasted on.</param>
+        /// <param name="destWidth">Width of the image that is pasted on.</param>
+        /// <param name="destHeight">Height of the image that is pasted on.</param>
+        /// <param name="destStride">Stride of the image that is pasted on.</param>
+        /// <param name="pasteData">Byte data of the image to paste.</param>
+        /// <param name="pasteWidth">Width of the image to paste.</param>
+        /// <param name="pasteHeight">Height of the image to paste.</param>
+        /// <param name="pasteStride">Stride of the image to paste.</param>
+        /// <param name="targetPos">Position at which to paste the image.</param>
+        /// <param name="transparencyGuide">Colour palette of the images, to determine which colours should be treated as transparent. Use null for no transparency.</param>
+        /// <param name="modifyOrig">True to modify the original array rather than returning a copy.</param>
+        /// <param name="transparencyMask">For transparency masking; true is transparent. If given, should have a size of transparencyMaskStride * pasteHeight.</param>
+        /// <returns>A new Byte array with the combined data, and the same stride as the source image.</returns>
+        public static Byte[] PasteOn8bpp(Byte[] destData, Int32 destWidth, Int32 destHeight, Int32 destStride,
+            Byte[] pasteData, Int32 pasteWidth, Int32 pasteHeight, Int32 pasteStride,
+            Rectangle targetPos, Boolean[] transparencyGuide, Boolean modifyOrig, Boolean[] transparencyMask)
         {
             if (targetPos.Width != pasteWidth || targetPos.Height != pasteHeight)
                 pasteData = CopyFrom8bpp(pasteData, pasteWidth, pasteHeight, pasteStride, new Rectangle(0, 0, targetPos.Width, targetPos.Height));
@@ -680,6 +703,7 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 i = 0; i < len; i++)
                     isTransparent[i] = transparencyGuide[i];
             }
+            Boolean transMaskGiven = transparencyMask != null && transparencyMask.Length == pasteWidth * pasteHeight;
             Int32 maxY = Math.Min(destHeight - targetPos.Y, targetPos.Height);
             Int32 maxX = Math.Min(destWidth - targetPos.X, targetPos.Width);
             for (Int32 y = 0; y < maxY; y++)
@@ -687,13 +711,13 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 x = 0; x < maxX; x++)
                 {
                     Int32 indexSource = y * pasteStride + x;
+                    Int32 indexTrans = transMaskGiven ? y * pasteWidth + x : 0;
                     Byte data = pasteData[indexSource];
-                    if (!isTransparent[data])
-                    {
-                        Int32 indexDest = (targetPos.Y + y) * destStride + targetPos.X + x;
-                        // This will always get a new index
-                        finalFileData[indexDest] = data;
-                    }
+                    if (isTransparent[data] || (transMaskGiven && transparencyMask[indexTrans]))
+                        continue;
+                    Int32 indexDest = (targetPos.Y + y) * destStride + targetPos.X + x;
+                    // This will always get a new index
+                    finalFileData[indexDest] = data;
                 }
             }
             return finalFileData;
@@ -731,6 +755,7 @@ namespace Nyerguds.ImageManipulation
 
         /// <summary>
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
+        /// The new stride at the end of the operation will always equal the width.
         /// </summary>
         /// <param name="fileData">The file data.</param>
         /// <param name="width">Width of the image.</param>
@@ -738,7 +763,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="start">Start offset of the image data in the fileData parameter.</param>
         /// <param name="bitsLength">Amount of bits used by one pixel.</param>
         /// <param name="bigEndian">True if the bits in the original image data are stored as big-endian.</param>
-        /// <param name="stride">Stride used in the original image data. Will be adjusted to the new stride value.</param>
+        /// <param name="stride">Stride used in the original image data. Will be adjusted to the new stride value, which will always equal the width.</param>
         /// <returns>The image data in a 1-byte-per-pixel format, with a stride exactly the same as the width.</returns>
         public static Byte[] ConvertTo8Bit(Byte[] fileData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian, ref Int32 stride)
         {

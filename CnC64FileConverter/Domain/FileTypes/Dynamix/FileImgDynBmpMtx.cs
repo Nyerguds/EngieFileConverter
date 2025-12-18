@@ -186,6 +186,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 fr.SetColorsInPalette(palette.Length);
                 fr.SetColors(this.m_Palette);
                 fr.SetBitsPerColor(bpp);
+                fr.SetFileClass(m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
                 fr.SetTransparencyMask(this.TransparencyMask);
                 frs.AddFrame(fr);
             }

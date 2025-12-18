@@ -6,7 +6,6 @@ using Nyerguds.Util.UI;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
@@ -21,11 +20,12 @@ namespace CnC64FileConverter.UI
         private const Int32 PALETTE_DIM = 226;
 
         private String m_StartupParamPath;
-        private Boolean m_Loading;
         private List<PaletteDropDownInfo> m_DefaultPalettes;
         private List<PaletteDropDownInfo> m_ReadPalettes;
         private Int32[] m_CustomColors;
         private SupportedFileType m_LoadedFile;
+        private String m_LastOpenedFolder;
+
         private Color m_BackgroundFillColor = Color.Fuchsia;
 
         private SupportedFileType GetShownFile()
@@ -48,9 +48,12 @@ namespace CnC64FileConverter.UI
             this.RefreshPalettes(false, false);
             ContextMenu cmCopyPreview = new ContextMenu();
             MenuItem mniCopy = new MenuItem("Copy");
-            mniCopy.Click += new EventHandler(this.PicImage_CopyPreview);
+            mniCopy.Click += this.PicImage_CopyPreview;
             cmCopyPreview.MenuItems.Add(mniCopy);
             this.picImage.ContextMenu = cmCopyPreview;
+#if DEBUG
+            this.tsmiTestBed.Visible = true;
+#endif
         }
 
         public static String GetTitle(Boolean withAuthor)
@@ -121,67 +124,66 @@ namespace CnC64FileConverter.UI
                 return;
             String path = files[0];
             SupportedFileType[] preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
+            this.m_LastOpenedFolder = Path.GetDirectoryName(path);
             this.LoadFile(path, null, preferredTypes);
         }
 
         private void LoadFile(String path, SupportedFileType selectedType, SupportedFileType[] preferredTypes)
         {
             SupportedFileType oldLoaded = this.m_LoadedFile;
-            this.m_Loading = true;
             Byte[] fileData = null;
+            FileTypeLoadException error = null;
+            Boolean isEmptyFile = false;
             try
             {
-                FileTypeLoadException error = null;
-                Boolean isEmptyFile = false;
                 try
                 {
-                    try
+                    fileData = File.ReadAllBytes(path);
+                    isEmptyFile = fileData.Length == 0;
+                }
+                catch (Exception e)
+                {
+                    error = new FileTypeLoadException("Could not access file!\n\n" + e.Message, e);
+                    this.m_LoadedFile = null;
+                }
+                if (!isEmptyFile && error == null)
+                {
+                    // Load from chosen type.
+                    if (selectedType != null)
                     {
-                        fileData = File.ReadAllBytes(path);
-                        isEmptyFile = fileData.Length == 0;
-                    }
-                    catch (Exception e)
-                    {
-                        error = new FileTypeLoadException("Could not access file!\n\n" + e.Message, e);
-                        this.m_LoadedFile = null;
-                    }
-                    if (!isEmptyFile && error == null)
-                    {
-                        // Load from chosen type.
-                        if (selectedType != null)
+                        try
                         {
-                            try
-                            {
-                                selectedType.LoadFile(fileData, path);
-                                this.m_LoadedFile = selectedType;
-                            }
-                            catch (FileTypeLoadException e)
-                            {
-                                this.m_LoadedFile = null;
-                                e.AttemptedLoadedType = selectedType.ShortTypeName;
-                                error = e;
-                                // autodetect is possible. Set type to null.
-                                if (preferredTypes != null && preferredTypes.Length > 1)
-                                    selectedType = null;
-                            }
+                            selectedType.LoadFile(fileData, path);
+                            this.m_LoadedFile = selectedType;
                         }
-                        //Autodetect logic.
-                        if (selectedType == null)
+                        catch (FileTypeLoadException e)
                         {
-                            List<FileTypeLoadException> loadErrors;
-                            this.m_LoadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, error != null);
-                            if (this.m_LoadedFile != null)
-                                error = null;
-                            else
-                            {
-                                if (error != null)
-                                    loadErrors.Insert(0, error);
-                                String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
-                                String filename = path == null ? String.Empty : (" of \"" + Path.GetFileName(path) + "\"");
-                                MessageBox.Show(this, "File type" + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                return;
-                            }
-                            /*/
+                            this.m_LoadedFile = null;
+                            e.AttemptedLoadedType = selectedType.ShortTypeName;
+                            error = e;
+                            // autodetect is possible. Set type to null.
+                            if (preferredTypes != null && preferredTypes.Length > 1)
+                                selectedType = null;
+                        }
+                    }
+                    //Autodetect logic.
+                    if (selectedType == null)
+                    {
+                        List<FileTypeLoadException> loadErrors;
+                        this.m_LoadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, error != null);
+                        if (this.m_LoadedFile != null)
+                            error = null;
+                        else
+                        {
+                            if (error != null)
+                                loadErrors.Insert(0, error);
+                            String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
+                            String filename = path == null ? String.Empty : (" of \"" + Path.GetFileName(path) + "\"");
+                            MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+                        // Test code. Ignore.
+                        /*/
                             Bitmap bmp = m_LoadedFile.GetBitmap();
                             if (bmp != null)
                             {
@@ -195,79 +197,74 @@ namespace CnC64FileConverter.UI
                                 //oldFile.Dispose();
                             }
                             //*/
-                        }
                     }
                 }
-                catch (Exception ex)
-                {
-                    error = new FileTypeLoadException(ex.Message, ex);
-                    this.m_LoadedFile = null;
-                }
-                List<String> filesChain = null;
-                if (!isEmptyFile && error == null && this.m_LoadedFile.IsFramesContainer && (filesChain = this.m_LoadedFile.GetFilesToLoadMissingData(path)) != null && filesChain.Count > 0)
-                {
-                    const String loadQuestion = "The file \"{0}\" seems to be missing a starting point. Would you like to load it from \"{1}\"{2}?";
-                    const String loadQuestionChain = " (chained through {0})";
-                    String firstPath = filesChain.First();
-                    String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
-                    String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
-                    String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(path), Path.GetFileName(firstPath), chainQuestion);
-                    if (MessageBox.Show(this, loadQuestionFormat, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
-                    {
-                        // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.
-                        filesChain = null;
-                    }
-                    else
-                    {
-                        this.m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
-                    }
-                }
-                if (filesChain == null && (isEmptyFile || error == null))
-                {
-                    SupportedFileType detectSource = this.m_LoadedFile;
-                    if (isEmptyFile && preferredTypes.Length == 1)
-                        detectSource = preferredTypes[0];
-                    SupportedFileType frames = this.CheckForFrames(path, detectSource);
-                    if (ReferenceEquals(frames, detectSource) && isEmptyFile)
-                    {
-                        this.m_LoadedFile = null;
-                        if (detectSource != null)
-                        {
-                            try
-                            {
-                                detectSource.Dispose();
-                            }
-                            catch (Exception)
-                            {
-                                /* ignore */
-                            }
-                        }
-                    }
-                    else
-                        this.m_LoadedFile = frames;
-                }
-                this.AutoSetZoom();
-                this.ReloadUi(true);
-                if (!ReferenceEquals(this.m_LoadedFile, oldLoaded))
-                {
-                    try
-                    {
-                        oldLoaded.Dispose();
-                    }
-                    catch (Exception)
-                    {
-                        /* ignore */
-                    }
-                }
-                if (error != null)
-                    MessageBox.Show(this, "File loading failed: " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                if (this.m_LoadedFile == null && isEmptyFile)
-                    MessageBox.Show(this, "File loading failed: The file is empty!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
-            finally
+            catch (Exception ex)
             {
-                this.m_Loading = false;
+                error = new FileTypeLoadException(ex.Message, ex);
+                this.m_LoadedFile = null;
             }
+            List<String> filesChain = null;
+            if (!isEmptyFile && error == null && this.m_LoadedFile.IsFramesContainer && (filesChain = this.m_LoadedFile.GetFilesToLoadMissingData(path)) != null && filesChain.Count > 0)
+            {
+                const String loadQuestion = "The file \"{0}\" seems to be missing a starting point. Would you like to load it from \"{1}\"{2}?";
+                const String loadQuestionChain = " (chained through {0})";
+                String firstPath = filesChain.First();
+                String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
+                String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
+                String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(path), Path.GetFileName(firstPath), chainQuestion);
+                if (MessageBox.Show(this, loadQuestionFormat, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                {
+                    // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.
+                    filesChain = null;
+                }
+                else
+                {
+                    this.m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
+                }
+            }
+            if (filesChain == null && (isEmptyFile || error == null))
+            {
+                SupportedFileType detectSource = this.m_LoadedFile;
+                if (isEmptyFile && preferredTypes.Length == 1)
+                    detectSource = preferredTypes[0];
+                SupportedFileType frames = this.CheckForFrames(path, detectSource);
+                if (ReferenceEquals(frames, detectSource) && isEmptyFile)
+                {
+                    this.m_LoadedFile = null;
+                    if (detectSource != null)
+                    {
+                        try
+                        {
+                            detectSource.Dispose();
+                        }
+                        catch (Exception)
+                        {
+                            /* ignore */
+                        }
+                    }
+                }
+                else
+                    this.m_LoadedFile = frames;
+            }
+            this.AutoSetZoom();
+            this.ReloadUi(true);
+            if (!ReferenceEquals(this.m_LoadedFile, oldLoaded))
+            {
+                try
+                {
+                    oldLoaded.Dispose();
+                }
+                catch (Exception)
+                {
+                    /* ignore */
+                }
+            }
+            if (error != null)
+                MessageBox.Show(this, "File loading failed: " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (this.m_LoadedFile == null && isEmptyFile)
+                MessageBox.Show(this, "File loading failed: The file is empty!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         /// <summary>
@@ -329,6 +326,7 @@ namespace CnC64FileConverter.UI
             this.lblFrame.Enabled = hasFrames;
             this.numFrame.Enabled = hasFrames;
             this.numFrame.Minimum = -1;
+            Int32 frames = 0;
             if (!hasFrames)
             {
                 this.numFrame.Value = -1;
@@ -339,7 +337,8 @@ namespace CnC64FileConverter.UI
             {
                 if (fromNewFile)
                     this.numFrame.Value = -1;
-                Int32 last = this.m_LoadedFile.Frames.Length - 1;
+                frames = this.m_LoadedFile.Frames.Length;
+                Int32 last = frames - 1;
                 this.numFrame.Maximum = last;
                 this.lblNrOfFrames.Visible = true;
                 this.lblNrOfFrames.Text = "/ " + last;
@@ -357,8 +356,12 @@ namespace CnC64FileConverter.UI
             this.tsmiToHeightMapAdv.Enabled = loadedFile is FileMapWwCc1Pc;
             this.tsmiTo65x65HeightMap.Enabled = hasFile && loadedFile.GetBitmap() != null && loadedFile.Width == 64 && loadedFile.Height == 64;
             // 4 is the supertype; 8 the derivative
+            // Not visible for now. No code for it either.
             this.tsmiTilesetsToFrames.Enabled = loadedFile is FileTilesWwCc1N64Bpp4;
             this.tsmiTilesetsToTilesetFiles.Enabled = loadedFile is FileTilesWwCc1N64Bpp4;
+            this.tsmiCombineShadows.Enabled = hasFrames && frames > 0 && frames % 2 == 0;
+            this.tsmiSplitShadows.Enabled = hasFrames && frames > 0;
+            this.tsmiPasteOnFrames.Enabled = hasFrames && frames > 0;
 
             if (!hasFile)
             {
@@ -476,7 +479,6 @@ namespace CnC64FileConverter.UI
                 if (first != null)
                     frameFileType = first.FileClass;
             }
-
             List<Type> filteredTypes = new List<Type>();
             foreach (Type saveType in saveTypes)
             {
@@ -554,12 +556,10 @@ namespace CnC64FileConverter.UI
         private void TsmiOpen_Click(Object sender, EventArgs e)
         {
             SupportedFileType selectedItem;
-            String openPath = null;
-            if (this.m_LoadedFile != null)
-                openPath = this.m_LoadedFile.LoadedFile;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, SupportedFileType.SupportedOpenTypes, openPath, "images", null, out selectedItem);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, SupportedFileType.SupportedOpenTypes, this.m_LastOpenedFolder, "images", null, out selectedItem);
             if (filename == null)
                 return;
+            this.m_LastOpenedFolder = Path.GetDirectoryName(filename);
             SupportedFileType[] preferredTypes = null;
             if (selectedItem == null)
                 preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filename);
@@ -617,8 +617,6 @@ namespace CnC64FileConverter.UI
             Int32 visibleCenterYNew = Math.Min(newHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
             Int32 viewCenterActualX = (-frameLeftVal + visibleCenterXOld) / prevZoom;
             Int32 viewCenterActualY = (-frameUpVal + visibleCenterYOld) / prevZoom;
-            Int32 viewCenterNewX = (-frameLeftVal + visibleCenterXNew) / prevZoom;
-            Int32 viewCenterNewY = (-frameUpVal + visibleCenterYNew) / prevZoom;
             Int32 frameLeftValNew = visibleCenterXNew - (viewCenterActualX * currentZoom);
             Int32 frameUpValNew = visibleCenterYNew - (viewCenterActualY * currentZoom);
             this.pnlImageScroll.SetDisplayRectLoc(frameLeftValNew, frameUpValNew);
@@ -647,7 +645,7 @@ namespace CnC64FileConverter.UI
                     if (fileLoaded) // && currentPal.Colors.Length != loadedFile.GetColors().Length)
                         pal = loadedFile.GetColors();
                     else
-                        pal = currentPal.Colors;
+                        pal = currentPal != null ? currentPal.Colors : new Color[0];
                     break;
                 default:
                     resetEnabled = false;
@@ -701,77 +699,6 @@ namespace CnC64FileConverter.UI
                 this.ReloadUi(false);
         }
 
-        private void TsmiToHeightMapAdv_Click(Object sender, EventArgs e)
-        {
-            this.GenerateHeightMap(true);
-        }
-
-        private void TsmiToHeightMap_Click(Object sender, EventArgs e)
-        {
-            this.GenerateHeightMap(false);
-        }
-
-        private void GenerateHeightMap(Boolean selectHeightMap)
-        {
-            if (!(this.m_LoadedFile is FileMapWwCc1Pc))
-                return;
-            String loadedPath = this.m_LoadedFile.LoadedFile;
-            String baseFileName = Path.Combine(Path.GetDirectoryName(loadedPath), Path.GetFileNameWithoutExtension(loadedPath));
-            String pngFileName = baseFileName + ".png";
-            Bitmap plateauImage = null;
-            if (selectHeightMap)
-            {
-                SupportedFileType selectedType;
-                //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
-                String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] {typeof (FileImage)}, pngFileName, "images", null, out selectedType);
-                if (filename == null)
-                    return;
-                try
-                {
-                    if (selectedType == null)
-                        selectedType = new FileImage();
-                    Byte[] fileData = File.ReadAllBytes(filename);
-                    selectedType.LoadFile(fileData, filename);
-                    plateauImage = selectedType.GetBitmap();
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + e.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-                if (plateauImage.Width != 64 || plateauImage.Height != 64)
-                {
-                    MessageBox.Show(this, "Height levels image needs to be 64x64!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-            }
-            FileMapWwCc1Pc map = (FileMapWwCc1Pc) this.m_LoadedFile;
-            this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map, plateauImage, null);
-            this.ReloadUi(false);
-        }
-
-        private void TsmiTo65x65HeightMap_Click(Object sender, EventArgs e)
-        {
-            if (this.m_LoadedFile == null || this.m_LoadedFile.Width != 64 || this.m_LoadedFile.Height != 64 || !(this.m_LoadedFile is FileImage))
-                return;
-            String baseFileName = Path.Combine(Path.GetDirectoryName(this.m_LoadedFile.LoadedFile), Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile));
-            String imgFileName = baseFileName + ".img";
-            Bitmap bm = HeightMapGenerator.GenerateHeightMapImage65x65(this.m_LoadedFile.GetBitmap());
-            //Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref imgFileName);
-            FileImgWwN64 file = new FileImgWwN64();
-            file.LoadGrayImage(bm, Path.GetFileName(imgFileName), imgFileName);
-            this.m_LoadedFile = file;
-            this.ReloadUi(false);
-        }
-
-        private void TsmiToPlateaus_Click(Object sender, EventArgs e)
-        {
-            if (!(this.m_LoadedFile is FileMapWwCc1Pc))
-                return;
-            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64((FileMapWwCc1Pc) this.m_LoadedFile, "_lvl");
-            this.ReloadUi(false);
-        }
-
         private void CmbPalettes_SelectedIndexChanged(Object sender, EventArgs e)
         {
             if (this.GetColorStatus() != ColorStatus.External)
@@ -816,7 +743,6 @@ namespace CnC64FileConverter.UI
             {
                 case ColorStatus.Internal:
                     this.GetShownFile().ResetColors();
-                    colors = this.GetShownFile().GetColors();
                     break;
                 case ColorStatus.External:
                     PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
@@ -1074,6 +1000,80 @@ namespace CnC64FileConverter.UI
             External
         }
 
+
+        private void TsmiToHeightMapAdv_Click(Object sender, EventArgs e)
+        {
+            this.GenerateHeightMap(true);
+        }
+
+        private void TsmiToHeightMap_Click(Object sender, EventArgs e)
+        {
+            this.GenerateHeightMap(false);
+        }
+
+        private void GenerateHeightMap(Boolean selectHeightMap)
+        {
+            if (!(this.m_LoadedFile is FileMapWwCc1Pc))
+                return;
+            String loadedPath = this.m_LoadedFile.LoadedFile;
+            String baseFileName = Path.Combine(Path.GetDirectoryName(loadedPath), Path.GetFileNameWithoutExtension(loadedPath));
+            String pngFileName = baseFileName + ".png";
+            Bitmap plateauImage = null;
+            if (selectHeightMap)
+            {
+                SupportedFileType selectedType;
+                //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
+
+                String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] { typeof(FileImage) }, pngFileName, "images", null, out selectedType);
+                this.m_LastOpenedFolder = Path.GetDirectoryName(filename);
+                if (filename == null)
+                    return;
+                if (selectedType == null)
+                    selectedType = new FileImage();
+                try
+                {
+                    Byte[] fileData = File.ReadAllBytes(filename);
+                    selectedType.LoadFile(fileData, filename);
+                    plateauImage = selectedType.GetBitmap();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + e.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (plateauImage.Width != 64 || plateauImage.Height != 64)
+                {
+                    MessageBox.Show(this, "Height levels image needs to be 64x64!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+            FileMapWwCc1Pc map = (FileMapWwCc1Pc)this.m_LoadedFile;
+            this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map, plateauImage, null);
+            this.ReloadUi(false);
+        }
+
+        private void TsmiTo65x65HeightMap_Click(Object sender, EventArgs e)
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Width != 64 || this.m_LoadedFile.Height != 64 || !(this.m_LoadedFile is FileImage))
+                return;
+            String baseFileName = Path.Combine(Path.GetDirectoryName(this.m_LoadedFile.LoadedFile), Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile));
+            String imgFileName = baseFileName + ".img";
+            Bitmap bm = HeightMapGenerator.GenerateHeightMapImage65x65(this.m_LoadedFile.GetBitmap());
+            //Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref imgFileName);
+            FileImgWwN64 file = new FileImgWwN64();
+            file.LoadGrayImage(bm, Path.GetFileName(imgFileName), imgFileName);
+            this.m_LoadedFile = file;
+            this.ReloadUi(false);
+        }
+
+        private void TsmiToPlateaus_Click(Object sender, EventArgs e)
+        {
+            if (!(this.m_LoadedFile is FileMapWwCc1Pc))
+                return;
+            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64((FileMapWwCc1Pc)this.m_LoadedFile, "_lvl");
+            this.ReloadUi(false);
+        }
+
         private void TsmiSplitShadows_Click(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null)
@@ -1091,7 +1091,7 @@ namespace CnC64FileConverter.UI
             }
         }
 
-        private void tsmiCombineShadows_Click(Object sender, EventArgs e)
+        private void TsmiCombineShadows_Click(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null)
                 return;
@@ -1109,15 +1109,49 @@ namespace CnC64FileConverter.UI
             
         }
 
-#if DEBUG
-        private void TestBed()
+        private void TsmiPasteOnFrames_Click(Object sender, EventArgs e)
         {
-            ViewKortExeIcons();
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
+                return;
+            if (this.m_LoadedFile == null)
+                return;
+            try
+            {
+                SupportedFileType oldFile = this.m_LoadedFile;
+                Int32 frames = this.m_LoadedFile.Frames.Length;
+                Int32 maxWidth = this.m_LoadedFile.Frames.Max(fr => fr == null ? 0 : fr.Width);
+                Int32 maxHeight = this.m_LoadedFile.Frames.Max(fr => fr == null ? 0 : fr.Height);
+                FrmPasteOnFrames pasteBox = new FrmPasteOnFrames(frames, maxWidth, maxHeight, this.m_LoadedFile.BitsPerPixel, this.m_LastOpenedFolder);
+                DialogResult dr = pasteBox.ShowDialog(this);
+                this.m_LastOpenedFolder = pasteBox.LastSelectedFolder;
+                if (dr != DialogResult.OK)
+                    return;
+                // Processing code.
+                FileFrames newfile = FileFrames.PasteImageOnFrames(this.m_LoadedFile, pasteBox.Image, pasteBox.Coords, pasteBox.FrameRange, pasteBox.KeepIndices);
+                this.m_LoadedFile = newfile;
+                this.ReloadUi(false);
+                pasteBox.Image.Dispose();
+                oldFile.Dispose();
+            }
+            catch (NotSupportedException ex)
+            {
+                MessageBox.Show(this, ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
         }
 
+        private void TsmiTestBed(Object sender, EventArgs e)
+        {
+#if DEBUG
+            // any test code can be linked in here
+            this.ViewKortExeIcons();
+#endif
+        }
+
+#if DEBUG
         private void ViewKortExeIcons()
         {
-            // any test code can come here
+            // Icons data from inside the King Arthur's K.O.R.T. exe file.
             Byte[] oneBppImage = new Byte[] {
                 0xFF, 0x1F, 0xFF, 0x0F, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFF, 0x00, 0x7F, 0x00, 0x3F, 0x00, 
                 0x1F, 0x00, 0x3F, 0x00, 0xFF, 0x01, 0xFF, 0x01, 0xFF, 0xE0, 0xFF, 0xF0, 0xFF, 0xF8, 0xFF, 0xF8, 
@@ -1146,7 +1180,7 @@ namespace CnC64FileConverter.UI
 
             Color[] palette = new Color[4];
             palette[0] = Color.Black;
-            palette[1] = Color.FromArgb(0, 255, 0, 255);
+            palette[1] = Color.FromArgb(0, Color.Fuchsia);
             palette[2] = Color.White;
             palette[3] = Color.Red;
             ColorPalette pal = BitmapHandler.GetPalette(palette);
@@ -1193,6 +1227,7 @@ namespace CnC64FileConverter.UI
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(framesContainer, "Icon", frameImage, "Icon" + i.ToString("D3") + ".png", -1);
                 frame.SetBitsPerColor(2);
+                frame.SetFileClass(FileClass.Image4Bit);
                 frame.SetColorsInPalette(4);
                 framesContainer.AddFrame(frame);
             }

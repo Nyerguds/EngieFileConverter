@@ -1,15 +1,17 @@
 CnC64FileConverter
 -------------- Created by by Nyerguds (04/04/2017)
 
-This tool allows viewing and saving from and to several file formats found in the Nintendo 64 ROM
-of the Command & Conquer game.
+This tool was originally created to allow viewing and converting image formats found in the
+Nintendo 64 ROM of the Command & Conquer game. Since then, it has evolved into a more general
+modding suite supporting a large range of file formats from classic 90's era games.
 
-The files can be extracted from / inserted into the ROM with the Universal Game Decompressor
-(GEDecompressor), made by SubDrag.
-http://www.goldeneyevault.com/viewfile.php?id=213
 
 Special thanks to Kamuix and Chad1233 for their help in testing this, and to Moon Flower for the
 help in designing the palette manager.
+
+
+If you like what I'm doing, and you have too much money, feel free to donate:
+https://www.paypal.com/donate/?token=ATYlH9LdfgV3n-LXbIKxJh20H9NUwt85u3TECWCY-rvrECEGZ26wqf6sREWk9Cejao9-pG
 
 
 Features:
@@ -30,6 +32,10 @@ Features:
 
 Acknowledgements:
 ----------------
+The study of the C&C64 files was made possible by the Universal Game Decompressor
+(GEDecompressor), made by SubDrag.
+http://www.goldeneyevault.com/viewfile.php?id=213
+
 The PC C&C formats were deciphered using documentation written by Vladan Bato.
 
 The compression code used for handling the CPS and LCW formats was gracefully provided by the
@@ -67,6 +73,10 @@ At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file
 it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
+
+v1.2.19: (03/08/2018 21:20)
+-Loading a VDA animation's initial state from PNG no longer messed up the save logic.
+-Added feature to paste an image on a range of frames.
 
 v1.2.18: (27/07/2018 20:30)
 -Implemented Westwood Dune II Shape (SHP) support.

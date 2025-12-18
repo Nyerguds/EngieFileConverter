@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
 
@@ -195,6 +197,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(framesContainer, currentType, null, currentFrame, -1);
                     frame.SetBitsPerColor(currentType.BitsPerPixel);
+                    frame.SetFileClass(currentType.FileClass);
                     frame.SetColorsInPalette(currentType.ColorsInPalette);
                     framesContainer.AddFrame(frame);
                     continue;
@@ -207,6 +210,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(framesContainer, frameFile, frameFile.GetBitmap(), currentFrame, -1);
                     frame.SetBitsPerColor(frameFile.BitsPerPixel);
+                    frame.SetFileClass(frameFile.FileClass);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);
                     if (framesContainer.m_CommonPalette)
@@ -219,6 +223,129 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
             }
             return framesContainer;
+        }
+
+        /// <summary>
+        /// Pastes an image on a range of frames. Supports all pixel format combinations.
+        /// If both the image to paste and the frame are indexed, and the bpp of the frame is at 
+        /// least as high as that of the paste image, then no palette matching will be performed.
+        /// </summary>
+        /// <param name="framesContainer">SupportedFileType object containing frames.</param>
+        /// <param name="image">Image to paste onto the frames.</param>
+        /// <param name="pasteLocation">Point at which to paste the image.</param>
+        /// <param name="framesRange">Arra containing the indices to paste the image on.</param>
+        /// <param name="keepIndices">If all involved images are indexed, and no overflow can occur, paste bare data indices when handling indexed types rather than matching image colours to a palette.</param>
+        /// <returns></returns>
+        public static FileFrames PasteImageOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
+        {
+            Int32 bpp = Image.GetPixelFormatSize(image.PixelFormat);
+            Color[] imPalette = bpp > 8 ? null : image.Palette.Entries;
+            Boolean[] imPalTrans = imPalette == null ? null : imPalette.Select(c => c.A == 0).ToArray();
+            Boolean[] imTransMask = null;
+            Int32 imWidth = image.Width;
+            Int32 imHeight = image.Height;
+            Byte[] imData = null;
+            Int32 imStride = imWidth;
+            Boolean equalPal = framesContainer.FramesHaveCommonPalette;
+
+            Rectangle pastePos = new Rectangle(pasteLocation, new Size(imWidth, imHeight));
+            String name = String.Empty;
+            if (framesContainer.LoadedFile != null)
+                name = framesContainer.LoadedFile;
+            else if (framesContainer.LoadedFileName != null)
+                name = framesContainer.LoadedFileName;
+            FileFrames newfile = new FileFrames();
+            newfile.SetFileNames(name);
+            newfile.SetCommonPalette(true);
+            newfile.SetBitsPerColor(framesContainer.BitsPerPixel);
+            newfile.SetColorsInPalette(framesContainer.ColorsInPalette);
+            Boolean[] transMask = framesContainer.TransparencyMask;
+            newfile.SetTransparencyMask(transMask);
+            framesRange = framesRange.Distinct().OrderBy(x => x).ToArray();
+            Int32 framesToHandle = framesRange.Length;
+            Int32 nextPasteFrameIndex = 0;
+
+            for (Int32 i = 0; i < framesContainer.Frames.Length; i++)
+            {
+                SupportedFileType frame = framesContainer.Frames[i];
+                Bitmap frBm = frame.GetBitmap();
+                Bitmap newBm;
+                // List is sorted. This is more efficient than "contains" every time.
+                if (nextPasteFrameIndex < framesToHandle && i == framesRange[nextPasteFrameIndex])
+                {
+                    nextPasteFrameIndex++;
+                    Int32 frWidth = frBm.Width;
+                    Int32 freight = frBm.Height;
+
+                    if ((frBm.PixelFormat & PixelFormat.Indexed) == 0)
+                    {
+                        newBm = new Bitmap(frBm.Width, frBm.Height, frBm.PixelFormat);
+                        using (Graphics g = Graphics.FromImage(newBm))
+                        {
+                            g.DrawImage(frBm, 0, 0, frWidth, freight);
+                            g.DrawImage(image, pastePos);
+                        }
+                    }
+                    else
+                    {
+                        Color[] frPalette = frBm.Palette.Entries;
+                        Boolean[] transGuide = null;
+                        Int32 frBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
+                        Int32 frStride;
+                        Byte[] frData = ImageUtils.GetImageData(frBm, out frStride);
+                        frData = ImageUtils.ConvertTo8Bit(frData, frWidth, freight, 0, frBpp, false, ref frStride);
+                        Boolean regenImage = imData == null || !equalPal;
+                        if (bpp <= 8)
+                        {
+                            Boolean keepInd = keepIndices && bpp <= frBpp;
+                            if (regenImage)
+                            {
+                                transGuide = frPalette.Select(col => col.A != 0xFF).ToArray();
+                                imData = ImageUtils.GetImageData(image, out imStride);
+                                imData = ImageUtils.ConvertTo8Bit(imData, imWidth, imHeight, 0, bpp, false, ref imStride);
+                                if (!keepInd)
+                                {
+                                    imTransMask = imData.Select(px => imPalTrans[px]).ToArray();
+                                    imData = ImageUtils.Match8BitDataToPalette(imData, imStride, imHeight, imPalette, frPalette);
+                                }
+                            }
+                            if (keepInd)
+                                transGuide = imPalTrans;
+                        }
+                        else
+                        {
+                            if (regenImage)
+                            {
+                                imData = ImageUtils.GetImageData(image, out imStride, PixelFormat.Format32bppArgb);
+                                // Create 'bit mask' to determine which pieces on the image are transparent and should be ignored for the paste.
+                                Color[] palTrans = new Color[] { Color.Transparent, Color.Gray };
+                                Int32 maskStride = imStride;
+                                Byte[] transMask1 = ImageUtils.Convert32BitToPaletted(imData, imWidth, imHeight, 8, true, palTrans, ref maskStride);
+                                imTransMask = transMask1.Select(b => b == 0).ToArray();
+                                // Get actual image data
+                                imData = ImageUtils.Convert32BitToPaletted(imData, imWidth, imHeight, 8, true, frPalette, ref imStride);
+                            }
+                        }
+                        // Paste using the transparency image mask.
+                        frData = ImageUtils.PasteOn8bpp(frData, frWidth, freight, frStride, imData, imWidth, imHeight, imStride, pastePos, transGuide, true, imTransMask);
+                        frData = ImageUtils.ConvertFrom8Bit(frData, frWidth, freight, frBpp, false, ref frStride);
+                        newBm = ImageUtils.BuildImage(frData, frWidth, freight, frStride, ImageUtils.GetIndexedPixelFormat(frBpp), frPalette, null);
+                    }
+                }
+                else
+                {
+                    newBm = ImageUtils.CloneImage(frBm);
+                }
+                FileImageFrame frameCombined = new FileImageFrame();
+                frameCombined.LoadFileFrame(newfile, frame.ShortTypeDescription, newBm, name, i);
+                frameCombined.SetBitsPerColor(frame.BitsPerPixel);
+                frameCombined.SetFileClass(frame.FileClass);
+                frameCombined.SetColorsInPalette(frame.ColorsInPalette);
+                frameCombined.SetTransparencyMask(transMask);
+                frameCombined.SetExtraInfo(frame.ExtraInfo);
+                newfile.AddFrame(frameCombined);
+            }
+            return newfile;
         }
     }
 }

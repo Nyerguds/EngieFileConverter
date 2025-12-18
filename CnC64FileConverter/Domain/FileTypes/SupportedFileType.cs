@@ -417,6 +417,25 @@ namespace CnC64FileConverter.Domain.FileTypes
             // See which extensions match, and try those first.
             if (preferredTypes == null)
                 preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, path);
+            else if (onlyGivenTypes)
+            {
+                // Try extension-filtering first, then the rest.
+                SupportedFileType[] preferredTypesExt = FileDialogGenerator.IdentifyByExtension(preferredTypes, path);
+                foreach (SupportedFileType typeObj in preferredTypesExt)
+                {
+                    try
+                    {
+                        typeObj.LoadFile(fileData, path);
+                        return typeObj;
+                    }
+                    catch (FileTypeLoadException e)
+                    {
+                        e.AttemptedLoadedType = typeObj.ShortTypeName;
+                        loadErrors.Add(e);
+                    }
+                    preferredTypes = preferredTypes.Where(tp => preferredTypesExt.All(tpe => tpe.GetType() != tp.GetType())).ToArray();
+                }
+            }
             foreach (SupportedFileType typeObj in preferredTypes)
             {
                 try

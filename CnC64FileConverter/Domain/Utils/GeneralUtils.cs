@@ -168,7 +168,7 @@ namespace Nyerguds.Util
         {
             if (String.IsNullOrEmpty(input))
                 return new Int32[0];
-            Char[] trimVals = ",- \t".ToCharArray();
+            Char[] trimVals = ",- \t\r\n".ToCharArray();
             input = input.Trim(trimVals);
             if (input.Length == 0)
                 return new Int32[0];
@@ -188,9 +188,12 @@ namespace Nyerguds.Util
                     if (Int32.TryParse(edRangePart, out num))
                         rangeNumbers.Add(num);
                 }
-                Int32 lowest = rangeNumbers.Min();
-                Int32 highest = rangeNumbers.Max();
-                numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
+                if (rangeNumbers.Count > 0)
+                {
+                    Int32 lowest = rangeNumbers.Min();
+                    Int32 highest = rangeNumbers.Max();
+                    numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
+                }
             }
             return numbers.Distinct().ToArray();
         }

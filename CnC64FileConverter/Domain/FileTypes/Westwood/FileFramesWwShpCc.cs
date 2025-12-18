@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -56,7 +55,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             // OffsetInfo / ShapeFileHeader
             Int32 hdrSize = 0x0E;
             if (fileData.Length < hdrSize)
-                throw new FileTypeLoadException("Not long enough for header.");
+                throw new FileTypeLoadException("File is not long enough for header.");
             UInt16 hdrFrames = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
             //UInt16 hdrXPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
             //UInt16 hdrYPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
@@ -74,11 +73,14 @@ namespace CnC64FileConverter.Domain.FileTypes
             OffsetInfo[] offsets = new OffsetInfo[hdrFrames];
             Dictionary<Int32, Int32> offsetIndices = new Dictionary<Int32, Int32>();
             Int32 offsSize = 8;
-            Int32 fileSize = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, hdrSize + palSize + offsSize * hdrFrames, 3, true);
+            Int32 fileSizeOffs = hdrSize + palSize + offsSize * hdrFrames;
+            if (fileData.Length < hdrSize + palSize + offsSize * (hdrFrames + 2))
+                
+            if (fileSizeOffs + 3 > fileData.Length)
+                throw new FileTypeLoadException("File is not long enough to read the entire frames header!");
+            Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, fileSizeOffs, 3, true);
             if (fileData.Length != fileSize)
                 throw new FileTypeLoadException("File size does not match size value in header!");
-            if (fileData.Length < hdrSize + palSize + offsSize * (hdrFrames + 2))
-                throw new FileTypeLoadException("Header is too small to contain the frames index!");
             // Read palette if flag enabled. No games I know support using it, but, might as well be complete.
             if (m_HasPalette)
             {
@@ -103,6 +105,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Frames decompression
             Int32 curOffs = hdrSize + palSize;
             Int32 frameSize = hdrWidth * hdrHeight;
+            // Read is always safe; we already checked that the header size is inside the file bounds.
             OffsetInfo currentFrame = OffsetInfo.Read(fileData, curOffs);
             if (!frameFormats.Contains(currentFrame.DataFormat) || !frameFormats.Contains(currentFrame.ReferenceFormat))
                 throw new FileTypeLoadException("Cannot parse SHP frame info: in valid frame format.");
@@ -147,7 +150,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                         // Don't actually need this, but I do the integrity checks:
                         refIndex20 = currentFrame.ReferenceOffset;
                         CcShpFrameFormat refFormat = currentFrame.ReferenceFormat;
-                        if ((refFormat != CcShpFrameFormat.XorChainRef) || (refIndex20 >= i || offsets[refIndex20].DataFormat != CcShpFrameFormat.XorBase))
+                        if (i < 2 || refFormat != CcShpFrameFormat.XorChainRef || refIndex20 >= i || offsets[refIndex20].DataFormat != CcShpFrameFormat.XorBase
+                            || (offsets[i - 1].DataFormat != CcShpFrameFormat.XorBase && offsets[i - 1].DataFormat != CcShpFrameFormat.XorChain))
                             throw new FileTypeLoadException("Bad frame reference information for frame " + i + ".");
                         frames[i - 1].CopyTo(frame, 0);
                     }
@@ -182,6 +186,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
+                framePic.SetFileClass(this.FrameInputFileClass);
                 framePic.SetColorsInPalette(this.ColorsInPalette);
                 framePic.SetTransparencyMask(this.TransparencyMask);
                 StringBuilder extraInfo = new StringBuilder("Compression: ");
@@ -293,7 +298,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 Int32 duplicate = framesDup[i];
                 // Currently only doing this for LCW frames since compressed lcw of the same frame data is guaranteed to be the same, which is not true for XOR.
-                // Also, xorchain length of identicals is empty anyway.
                 if (duplicate != -1 && framesIndex[duplicate].DataFormat == CcShpFrameFormat.Lcw)
                 {
                     Int32 origFrameOffs = frameOffsets[duplicate];
@@ -316,6 +320,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 comprXORBaseLen = comprXORBase == null ? Int32.MaxValue : comprXORBase.Length;
                 Int32 comprXORChainLen = comprXORChain == null ? Int32.MaxValue : comprXORChain.Length;
                 Int32 comprMin = Math.Min(Math.Min(comprLCWLen, comprXORBaseLen), comprXORChainLen);
+                // Possible extra optimisation: check all previous entries in framescompr and see if any are identical to the data in any of these 3 methods.
+                // Would take some time, though.
                 if (comprLCWLen == comprMin)
                 {
                     // LCW: new keyframe

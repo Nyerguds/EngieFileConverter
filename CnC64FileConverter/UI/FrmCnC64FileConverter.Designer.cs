@@ -63,6 +63,9 @@
             this.tsmiShadowSplit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiCombineShadows = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSplitShadows = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiAnimation = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiPasteOnFrames = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiTestBed = new System.Windows.Forms.ToolStripMenuItem();
             this.lblFrame = new System.Windows.Forms.Label();
             this.lblNrOfFrames = new System.Windows.Forms.Label();
             this.btnResetPalette = new System.Windows.Forms.Button();
@@ -293,7 +296,9 @@
             this.tsmiCopy,
             this.tsmiHeightMapTools,
             this.tsmiTilesets,
-            this.tsmiShadowSplit});
+            this.tsmiShadowSplit,
+            this.tsmiAnimation,
+            this.tsmiTestBed});
             this.tsmiEdit.Name = "tsmiEdit";
             this.tsmiEdit.Size = new System.Drawing.Size(39, 20);
             this.tsmiEdit.Text = "Edit";
@@ -386,7 +391,7 @@
             this.tsmiCombineShadows.Name = "tsmiCombineShadows";
             this.tsmiCombineShadows.Size = new System.Drawing.Size(172, 22);
             this.tsmiCombineShadows.Text = "Combine shadows";
-            this.tsmiCombineShadows.Click += new System.EventHandler(this.tsmiCombineShadows_Click);
+            this.tsmiCombineShadows.Click += new System.EventHandler(this.TsmiCombineShadows_Click);
             // 
             // tsmiSplitShadows
             // 
@@ -394,6 +399,29 @@
             this.tsmiSplitShadows.Size = new System.Drawing.Size(172, 22);
             this.tsmiSplitShadows.Text = "Split shadows";
             this.tsmiSplitShadows.Click += new System.EventHandler(this.TsmiSplitShadows_Click);
+            // 
+            // tsmiAnimation
+            // 
+            this.tsmiAnimation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiPasteOnFrames});
+            this.tsmiAnimation.Name = "tsmiAnimation";
+            this.tsmiAnimation.Size = new System.Drawing.Size(197, 22);
+            this.tsmiAnimation.Text = "Animation";
+            // 
+            // tsmiPasteOnFrames
+            // 
+            this.tsmiPasteOnFrames.Name = "tsmiPasteOnFrames";
+            this.tsmiPasteOnFrames.Size = new System.Drawing.Size(203, 22);
+            this.tsmiPasteOnFrames.Text = "Paste image on frames...";
+            this.tsmiPasteOnFrames.Click += new System.EventHandler(this.TsmiPasteOnFrames_Click);
+            // 
+            // tsmiTestBed
+            // 
+            this.tsmiTestBed.Name = "tsmiTestBed";
+            this.tsmiTestBed.Size = new System.Drawing.Size(197, 22);
+            this.tsmiTestBed.Text = "Test bed";
+            this.tsmiTestBed.Visible = false;
+            this.tsmiTestBed.Click += new System.EventHandler(this.TsmiTestBed);
             // 
             // lblFrame
             // 
@@ -667,6 +695,9 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiShadowSplit;
         private System.Windows.Forms.ToolStripMenuItem tsmiCombineShadows;
         private System.Windows.Forms.ToolStripMenuItem tsmiSplitShadows;
+        private System.Windows.Forms.ToolStripMenuItem tsmiAnimation;
+        private System.Windows.Forms.ToolStripMenuItem tsmiPasteOnFrames;
+        private System.Windows.Forms.ToolStripMenuItem tsmiTestBed;
     }
 }
 

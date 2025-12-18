@@ -125,6 +125,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                     this.m_MaxWidth = Math.Max(this.m_MaxWidth, frWidth);
                     FileImageFrame framePic = new FileImageFrame();
                     framePic.LoadFileFrame(this, this, bmp, sourcePath, i);
+                    FileClass fc;
+                    switch (Image.GetPixelFormatSize(bmp.PixelFormat))
+                    {
+                        case 1: fc = FileClass.Image1Bit; break;
+                        case 4: fc = FileClass.Image4Bit; break;
+                        case 8: fc = FileClass.Image8Bit; break;
+                        default: fc = FileClass.ImageHiCol; break;
+                    }
+                    framePic.SetFileClass(fc);
                     String extraInfo = "Format: " + type.ToUpper();
                     if (originalPixelFormat != PixelFormat.Undefined)
                         extraInfo += "\nOriginal pixel format: " + Image.GetPixelFormatSize(originalPixelFormat) + " bpp";
@@ -151,6 +160,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                     framePic.LoadFileFrame(this, this, ImageUtils.CloneImage(bm), sourcePath, -1);
                     framePic.SetFileNames(sourcePath);
                     framePic.SetBitsPerColor(this.BitsPerPixel);
+                    FileClass fc;
+                    switch (this.BitsPerPixel)
+                    {
+                        case 1: fc = FileClass.Image1Bit; break;
+                        case 4: fc = FileClass.Image4Bit; break;
+                        case 8: fc = FileClass.Image8Bit; break;
+                        default: fc = FileClass.ImageHiCol; break;
+                    }
+                    framePic.SetFileClass(fc);
                     framePic.SetColorsInPalette(this.ColorsInPalette);
                     framePic.SetTransparencyMask(this.TransparencyMask);
                     //framePic.SetExtraInfo();

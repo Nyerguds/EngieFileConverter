@@ -181,6 +181,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
+                framePic.SetFileClass(this.FrameInputFileClass);
                 framePic.SetColorsInPalette(this.ColorsInPalette);
                 framePic.SetTransparencyMask(this.TransparencyMask);
                 StringBuilder extraInfo = new StringBuilder();
@@ -254,7 +255,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMA"));
             String remapSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
             Boolean remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
-            Int32[] remappedIndices = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(SaveOption.GetSaveOptionValue(saveOptions, "RMS")) : null;
+            Int32[] remappedIndices = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
 
             Int32 frames = fileToSave.Frames.Length;
             Boolean[] remapIndex = new Boolean[frames];
