@@ -6,8 +6,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using EngieFileConverter.Domain.FileTypes;
-using System.Threading;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -62,24 +60,14 @@ namespace Nyerguds.ImageManipulation
                 if (saveFormat.Equals(ImageFormat.Jpeg))
                 {
                     // What a mess just to have non-crappy jpeg. Scratch that; jpeg is always crappy.
-                    ImageCodecInfo jpegEncoder = null;
-                    Guid formatId = ImageFormat.Jpeg.Guid;
-                    foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
-                    {
-                        if (codec.FormatID == formatId)
-                        {
-                            jpegEncoder = codec;
-                            break;
-                        }
-                    }
-                    Encoder qualityEncoder = Encoder.Quality;
+                    ImageCodecInfo jpegEncoder = ImageCodecInfo.GetImageDecoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
                     EncoderParameters encparams = new EncoderParameters(1);
-                    encparams.Param[0] = new EncoderParameter(qualityEncoder, 100L);
+                    encparams.Param[0] = new EncoderParameter(Encoder.Quality, 100L);
                     image.Save(ms, jpegEncoder, encparams);
                 }
                 else if (saveFormat.Equals(ImageFormat.Gif) && image.PixelFormat == PixelFormat.Format4bppIndexed)
                 {
-                    // 4-bit images don't get converted right; they get dumped on the standard windows 256 colour palette. So we convert it manually before the save.
+                    // 4-bit gif images don't get converted right; they get dumped on the standard windows 256 colour palette. So we convert it manually before the save.
                     Int32 stride;
                     Byte[] fourBitData = GetImageData(image, out stride);
                     Byte[] eightBitData = ConvertTo8Bit(fourBitData, image.Width, image.Height, 0, 4, true, ref stride);
@@ -90,7 +78,6 @@ namespace Nyerguds.ImageManipulation
                     BitmapHandler.GetPngImageData(image, 0, false);
                 else
                     image.Save(ms, saveFormat);
-                // Clean up temp image.
                 return ms.ToArray();
             }
         }
@@ -157,7 +144,7 @@ namespace Nyerguds.ImageManipulation
             }
             return bp;
         }
-
+        
         public static Byte[] Convert32bToGray(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, ref Int32 stride)
         {
             if (stride < width * 4)
@@ -1565,8 +1552,8 @@ namespace Nyerguds.ImageManipulation
             {
                 Int32 xOffset = 0;
                 Int32 yOffset = 0;
-                frameImageData = ImageUtils.OptimizeYHeight(frameImageData, frameWidth, ref frameHeight, ref yOffset, true, trimIndex.Value, 0, true);
-                frameImageData = ImageUtils.OptimizeXWidth(frameImageData, ref frameWidth, frameHeight, ref xOffset, true, trimIndex.Value, 0, true);
+                frameImageData = OptimizeYHeight(frameImageData, frameWidth, ref frameHeight, ref yOffset, true, trimIndex.Value, 0, true);
+                frameImageData = OptimizeXWidth(frameImageData, ref frameWidth, frameHeight, ref xOffset, true, trimIndex.Value, 0, true);
                 stride = frameWidth;
             }
             if (frameWidth > 0 && frameHeight > 0)
@@ -1581,7 +1568,7 @@ namespace Nyerguds.ImageManipulation
                     origPf = GetIndexedPixelFormat(matchBpp);
                 }
                 if (origBpp < 8)
-                    frameImageData = ImageUtils.ConvertFrom8Bit(frameImageData, frameWidth, frameHeight, origBpp, true, ref stride);
+                    frameImageData = ConvertFrom8Bit(frameImageData, frameWidth, frameHeight, origBpp, true, ref stride);
                 bmp = BuildImage(frameImageData, frameWidth, frameHeight, stride, origPf, palette, Color.Black);
                 if (!doMatching && origPalette.Entries.Length < palette.Length)
                     bmp.Palette = origPalette;
@@ -1595,7 +1582,7 @@ namespace Nyerguds.ImageManipulation
             Boolean doMatching = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
             if (trimColor.HasValue)
             {
-                section = ImageUtils.GetCropBounds(edImage, trimColor.Value, 0, section);
+                section = GetCropBounds(edImage, trimColor.Value, 0, section);
             }
             if (section.Width > 0 && section.Height > 0)
             {
@@ -1605,7 +1592,7 @@ namespace Nyerguds.ImageManipulation
                     g.DrawImage(edImage, new Rectangle(0, 0, section.Width, section.Height), section, GraphicsUnit.Pixel);
                 if (doMatching)
                 {
-                    Bitmap newBmp = ImageUtils.ConvertToPalette(bmp, matchBpp, matchPalette);
+                    Bitmap newBmp = ConvertToPalette(bmp, matchBpp, matchPalette);
                     bmp.Dispose();
                     bmp = newBmp;
                 }
@@ -1775,5 +1762,6 @@ namespace Nyerguds.ImageManipulation
             }
             return destImage;
         }
+
     }
 }

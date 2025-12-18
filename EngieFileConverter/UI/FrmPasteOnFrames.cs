@@ -10,6 +10,8 @@ using Nyerguds.Util.UI;
 using System.IO;
 using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util;
+using Nyerguds.ImageManipulation;
+using System.Drawing.Imaging;
 
 namespace EngieFileConverter.UI
 {
@@ -24,12 +26,14 @@ namespace EngieFileConverter.UI
         private Bitmap m_Image;
         private Int32 m_Frames; 
         private Int32 m_FramesBpp;
+        private String labelText;
 
         public FrmPasteOnFrames(Int32 frames, Int32 width, Int32 height, Int32 framesBpp, String lastOpenedFolder)
         {
             this.m_Frames = frames;
             this.LastSelectedFolder = lastOpenedFolder;
             this.InitializeComponent();
+            this.labelText = lblImage.Text;
             this.m_FramesBpp = framesBpp;
             this.numCoordsX.Maximum = width - 1;
             this.numCoordsY.Maximum = height- 1;
@@ -75,6 +79,7 @@ namespace EngieFileConverter.UI
                 selectedType.LoadFile(fileData, filename);
                 this.m_Image = selectedType.GetBitmap();
                 this.txtImage.Text = Path.GetFullPath(filename);
+                this.lblImage.Text = this.labelText + " " + selectedType.Width + "×" + selectedType.Height + ", " + selectedType.BitsPerPixel + "bpp";
                 loaded = true;
                 this.btnOK.Enabled = true;
                 Int32 selectedBpp = selectedType.BitsPerPixel;
@@ -97,10 +102,85 @@ namespace EngieFileConverter.UI
                 {
                     this.m_Image = null;
                     this.txtImage.Text = String.Empty;
+                    this.lblImage.Text = this.labelText;
                     this.btnOK.Enabled = false;
                 }
             }
         }
+
+        private void btnClipboard_Click(Object sender, EventArgs e)
+        {
+            GetImageFromClipboard(false);
+        }
+
+        private Boolean GetImageFromClipboard(Boolean failSilently)
+        {
+            DataObject retrievedData = (DataObject)Clipboard.GetDataObject();
+            if (retrievedData == null)
+            {
+                if (!failSilently)
+                    MessageBox.Show(this, "No data on clipboard!", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return false;
+            }
+            Boolean loaded = false;
+            try
+            {
+                FileImage clipImage = new FileImagePng();
+                using (Bitmap clipboardimage = ClipboardImage.GetClipboardImage(retrievedData))
+                {
+                    if (clipboardimage == null)
+                    {
+                        if (!failSilently)
+                            MessageBox.Show(this, "No image data on clipboard!", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        return false;
+                    }
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        clipboardimage.Save(ms, ImageFormat.Png);
+                        clipImage.LoadFile(ms.ToArray(), ".\\image.png");
+                    }
+                }
+                this.m_Image = clipImage.GetBitmap();
+                Int32 selectedBpp = clipImage.BitsPerPixel;
+                this.txtImage.Text = "[From clipboard]";
+                this.lblImage.Text = this.labelText + " " + clipImage.Width + "×" + clipImage.Height + ", " + clipImage.BitsPerPixel + "bpp";
+                loaded = true;
+                this.btnOK.Enabled = true;
+                this.rbtKeepIndices.Enabled = selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
+                if (!this.rbtKeepIndices.Enabled)
+                {
+                    if (this.rbtMatchPalette.Enabled)
+                        this.rbtMatchPalette.Checked = true;
+                    else
+                        this.rbtKeepIndices.Checked = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!failSilently)
+                    MessageBox.Show(this, "Could not load clipboard data:\n\n" + ex.Message, FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;                
+            }
+            finally
+            {
+                if (!loaded)
+                {
+                    this.m_Image = null;
+                    this.txtImage.Text = String.Empty;
+                    this.lblImage.Text = this.labelText;
+                    this.btnOK.Enabled = false;
+                }
+            }
+            return true;
+        }
+
+        protected override Boolean ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.V) && GetImageFromClipboard(true))
+                return true;
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
 
         private void BtnOkClick(Object sender, EventArgs e)
         {

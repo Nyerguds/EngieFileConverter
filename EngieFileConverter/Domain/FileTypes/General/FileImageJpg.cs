@@ -40,12 +40,11 @@ namespace EngieFileConverter.Domain.FileTypes
             using (MemoryStream ms = new MemoryStream())
             {
                 // What a mess just to have non-crappy jpeg. Scratch that; jpeg is always crappy.
-    ImageCodecInfo jpegEncoder = ImageCodecInfo.GetImageDecoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
-    Encoder qualityEncoder = Encoder.Quality;
-    EncoderParameters encparams = new EncoderParameters(1);
-    encparams.Param[0] = new EncoderParameter(qualityEncoder, quality);
-    image.Save(ms, jpegEncoder, encparams);
-    return ms.ToArray();
+                ImageCodecInfo jpegEncoder = ImageCodecInfo.GetImageDecoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
+                EncoderParameters encparams = new EncoderParameters(1);
+                encparams.Param[0] = new EncoderParameter(Encoder.Quality, quality);
+                image.Save(ms, jpegEncoder, encparams);
+                return ms.ToArray();
             }
         }
     }

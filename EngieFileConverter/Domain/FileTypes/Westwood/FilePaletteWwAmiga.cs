@@ -19,7 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
         public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return this.ColorsInPalette / 16; } }
+        public override Int32 Height { get { return (this.ColorsInPalette + 15) / 16; } }
         public override Int32 ColorsInPalette { get { return this.m_Palette.Length; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
@@ -36,8 +36,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Incorrect file size: exceeds 512 bytes.");
             try
             {
+                for (Int32 i = 0; i < len; i+=2)
+                {
+                    if ((fileData[i] & 0xF0) != 0)
+                        throw new FileTypeLoadException("Incorrect data: this is not an Amiga X444 RGB palette.");
+                }
                 Int32 palSize = len / 2;
-                PixelFormatter pf = FileImgWwCps.Format16BitRgbaX444Be;
+                PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
                 this.m_Palette = pf.GetColorPalette(fileData, 0, palSize);
             }
             catch (ArgumentException ex)
@@ -66,7 +71,14 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            throw new NotSupportedException("TODO");
+            Color[] cols = this.CheckInputForColors(fileToSave, true);
+            if (cols.Length % 16 != 0)
+                throw new NotSupportedException("Amiga palettes must be a multiple of 16 colours!");
+            Byte[] outBytes = new Byte[cols.Length * 2];
+            PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
+            for (Int32 i = 0; i < cols.Length; i++)
+                pf.WriteColor(outBytes, i << 1, cols[i]);
+            return outBytes;
         }
 
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)

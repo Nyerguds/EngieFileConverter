@@ -5,6 +5,9 @@ using Nyerguds.Util;
 
 namespace Nyerguds.GameData.Dynamix
 {
+    // Doesn't work yet...
+
+    /*/
     /// <summary>
     /// LZW compression class. Experimental.
     /// </summary>
@@ -117,5 +120,5 @@ namespace Nyerguds.GameData.Dynamix
             return finalCodes;
         }
     }
-
+    //*/
 }

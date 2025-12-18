@@ -12,7 +12,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImgWwCps : SupportedFileType
     {
-        public static readonly PixelFormatter Format16BitRgbaX444Be = new PixelFormatter(2, 0x0000, 0x0F00, 0x00F0, 0x000F, false);
+        public static readonly PixelFormatter Format16BitRgbX444Be = new PixelFormatter(2, 0x0000, 0x0F00, 0x00F0, 0x000F, false);
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         public override Int32 Width { get { return this.m_Width; } }
@@ -139,7 +139,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (paletteLength % 2 != 0)
                             throw new FileTypeLoadException("Bad length for Amiga CPS palette!");
                         Int32 palLen = paletteLength / 2;
-                        palette = Format16BitRgbaX444Be.GetColorPalette(fileData, palStart, palLen);
+                        palette = Format16BitRgbX444Be.GetColorPalette(fileData, palStart, palLen);
                     }
                     else
                     {
@@ -224,7 +224,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 offs = 40000;
                     for (Int32 i = 0; i < 32; i++)
                     {
-                        pal[i] = Format16BitRgbaX444Be.GetColor(imageData, offs);
+                        pal[i] = Format16BitRgbX444Be.GetColor(imageData, offs);
                         offs += 2;
                     }
                     palette = pal;
@@ -344,7 +344,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 palOffset = 40000;
                     for (Int32 i = 0; i < 32; i++)
                     {
-                        UInt16 col = (UInt16)Format16BitRgbaX444Be.GetValueFromColor(palette[i]);
+                        UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
                         ArrayUtils.WriteIntToByteArray(imageDataPlanes, palOffset, 2, false, col);
                         palOffset += 2;
                     }
@@ -411,7 +411,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     palData = new Byte[palLen * 2];
                     for (Int32 i = 0; i < palLen; i++)
                     {
-                        UInt16 col = (UInt16)Format16BitRgbaX444Be.GetValueFromColor(palette[i]);
+                        UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
                         ArrayUtils.WriteIntToByteArray(palData, i * 2, 2, false, col);
                     }
                 }

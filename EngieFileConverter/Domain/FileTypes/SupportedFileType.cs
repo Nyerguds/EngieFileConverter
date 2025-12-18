@@ -150,6 +150,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 //Int32 transMaskLen = transMask == null ? 0 : transMask.Length;
                 // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
                 Int32 paletteLength = Math.Min(maxLen, this.m_LoadedImage == null ? maxLen : this.m_LoadedImage.Palette.Entries.Length);
+                //if (this.ColorsInPalette > 0 && this.ColorsInPalette < paletteLength)
+                //    paletteLength = this.ColorsInPalette;
                 if (palette.Length > paletteLength && palette.Length < maxLen)
                     paletteLength = palette.Length;
                 Color[] pal = new Color[paletteLength];
@@ -296,10 +298,11 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVgs),
             typeof(FileFramesMythosVda),
             typeof(FileImgKotB),
-            typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
             typeof(FilePalette8Bit),
             typeof(FileTblWwPal),
-            //typeof(FilePaletteWwAmiga), // Test
+            typeof(FilePaletteWwAmiga),
+            typeof(FilePaletteWwPsx2),
+            typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.            
         };
 
         private static Type[] m_supportedOpenTypes =
@@ -341,6 +344,8 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosPal),
             typeof(FileFramesMythosVgs),
             typeof(FileFramesMythosVda),
+            typeof(FilePaletteWwAmiga),
+            typeof(FilePaletteWwPsx),
         };
 
         private static Type[] m_supportedSaveTypes =
@@ -387,6 +392,8 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVda),
             typeof(FileFramesMythosPal),
             typeof(FileImgKotB),
+            typeof(FilePaletteWwAmiga),
+            //typeof(FilePaletteWwPsx),
         };
 
 #if DEBUG

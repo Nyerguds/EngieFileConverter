@@ -35,9 +35,12 @@ namespace EngieFileConverter.Domain.FileTypes
             UInt32 idBytes = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true);
             if (idBytes == cpsn)
                 this.LoadFile(fileData, filename, true);
-            else if (idBytes == lzss)
+            else if (idBytes == lzss || (idBytes & 0xFFFFFF) == rnc)
+                throw new FileTypeLoadException("ToonStruck CPS files of the LZSS and RNC types are currently not supported.");
+            /*/
+            else if (idBytes == lzss )
             {
-                // todo 
+                // todo. Still experimental for now.
                 Int32 decompressedSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true);
                 Byte[] rawData = LzssHuffDecoder.LzssDecode(fileData, 8, fileData.Length, decompressedSize);
                 Int32 palSize = decompressedSize - 256000;
@@ -60,7 +63,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.CpsVersion = CpsVersion.Toonstruck;
                 SetExtraInfo();
             }
-            //else if ((idBytes & 0xFFFFFF) == rnc) // todo 
+            else if ((idBytes & 0xFFFFFF) == rnc) { }// todo.
+            //*/
             else
                 throw new FileTypeLoadException("Not a Toonstruck CPS!");
         }

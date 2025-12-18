@@ -624,7 +624,7 @@ namespace EngieFileConverter.UI
             }
             this.btnResetPalette.Enabled = resetEnabled;
             Int32 bpp;
-            if (loadedFile != null && cs != ColorStatus.None)
+            if (loadedFile != null && cs != ColorStatus.None && loadedFile.BitsPerPixel != 0)
             {
                 bpp = loadedFile.BitsPerPixel;
                 // Fix for palettes larger than the colour depth would normally allow (can happen on png)
@@ -1548,13 +1548,113 @@ namespace EngieFileConverter.UI
             if (oldFile != null)
                 oldFile.Dispose();
         }
+
+        private void CreateSierpinskiImage()
+        {
+            FileImage loadImage = new FileImagePng();
+            // Replace this with something creating/loading a bitmap
+            using (Bitmap sierpinskiImage = new Bitmap(800, 600))
+            using(MemoryStream ms = new MemoryStream())
+            {
+                sierpinskiImage.Save(ms, ImageFormat.Png);
+                loadImage.LoadFile(ms.ToArray(), ".\\image.png");
+            }
+            SupportedFileType oldFile = this.m_LoadedFile;
+            this.m_LoadedFile = loadImage;
+            this.AutoSetZoom();
+            this.ReloadUi(true);
+            if (oldFile != null)
+                oldFile.Dispose();
+        }
+
+        private void LoadByteArrayImage()
+        {
+            Byte[] imageBytes = {0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80 };
+            
+            
+            Color[] palette = new Color[256];
+            for (Int32 i = 0; i < palette.Length; i++)
+                palette[i] = Color.FromArgb(i, i, i);
+
+            FileImage loadImage = new FileImagePng();
+            // Replace this with something creating/loading a bitmap
+            using (Bitmap img = ImageUtils.BuildImage(imageBytes, 10, 20, 10, PixelFormat.Format8bppIndexed,palette, null))
+            using (MemoryStream ms = new MemoryStream())
+            {
+                img.Save(ms, ImageFormat.Png);
+                loadImage.LoadFile(ms.ToArray(), ".\\image.png");
+            }
+            SupportedFileType oldFile = this.m_LoadedFile;
+            this.m_LoadedFile = loadImage;
+            this.AutoSetZoom();
+            this.ReloadUi(true);
+            if (oldFile != null)
+                oldFile.Dispose();
+        }
+        private void CombineHue()
+        {
+            String filenameImage = "tank-b.png";
+            String filenameColors = "tank-c.png";
+            if (!File.Exists(filenameImage) || !File.Exists(filenameColors))
+                return;
+            // image data
+            Bitmap im = BitmapHandler.LoadBitmap(filenameImage);
+            // colour data
+            Bitmap col = BitmapHandler.LoadBitmap(filenameColors);
+            if (im.Width != col.Width || im.Height != col.Height)
+                return;
+            Int32 iStride;
+            Byte[] imageData = ImageUtils.GetImageData(im, out iStride, PixelFormat.Format32bppArgb);
+            Int32 cStride;
+            Byte[] colourData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
+            if (imageData.Length != colourData.Length || iStride != cStride)
+                return;
+            for (Int32 i = 0; i < imageData.Length; i+=4)
+            {
+                ColorHSL curPix = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(imageData, i, 4, true));
+                ColorHSL curCol = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(colourData, i, 4, true));
+                ColorHSL newCol = new ColorHSL(curCol.Hue, curCol.Saturation, curPix.Luminosity);
+                UInt32 val = (UInt32)((Color)newCol).ToArgb();
+                ArrayUtils.WriteIntToByteArray(imageData, i, 4, true, val);
+            }
+
+            FileImage loadImage = new FileImagePng();
+            // Replace this with something creating/loading a bitmap
+            using (Bitmap img = ImageUtils.BuildImage(imageData, im.Width, im.Height, iStride, PixelFormat.Format32bppArgb, null, null))
+            using (MemoryStream ms = new MemoryStream())
+            {
+                img.Save(ms, ImageFormat.Png);
+                loadImage.LoadFile(ms.ToArray(), ".\\image.png");
+            }
+            SupportedFileType oldFile = this.m_LoadedFile;
+            this.m_LoadedFile = loadImage;
+            this.AutoSetZoom();
+            this.ReloadUi(true);
+            if (oldFile != null)
+                oldFile.Dispose();
+        }
 #endif
         // I put this at the end here to make generated functions not end up in the #debug piece above.
         private void TsmiTestBed(Object sender, EventArgs e)
         {
 #if DEBUG
             // any test code can be linked in here
-            this.ViewKortExeIcons();
+            //this.ViewKortExeIcons();
+            //this.LoadByteArrayImage();
+            this.CombineHue();
+            //this.CreateSierpinskiImage();
 #endif
         }
     }

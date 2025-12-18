@@ -140,8 +140,9 @@ namespace Nyerguds.GameData.Dynamix
         /// <returns>The run-length encoded data.</returns>
         public static Byte[] LzssEncode(Byte[] buffer)
         {
-            LzssHuffDecoder enc = new LzssHuffDecoder();
-            return null; // enc.Encode(buffer, null, null);
+            throw new NotSupportedException("Sierra/Dynamix LZSS compression is currently not supported.");
+            //LzssHuffDecoder enc = new LzssHuffDecoder();
+            //return null; // enc.Encode(buffer, null, null);
         }
         
         /// <summary>
@@ -151,8 +152,9 @@ namespace Nyerguds.GameData.Dynamix
         /// <returns>The run-length encoded data.</returns>
         public static Byte[] LzwEncode(Byte[] buffer)
         {
-            DynamixLzwEncoder enc= new DynamixLzwEncoder();
-            return enc.Compress(buffer);
+            throw new NotSupportedException("Sierra/Dynamix LZSS compression is currently not supported.");
+            //DynamixLzwEncoder enc= new DynamixLzwEncoder();
+            //return enc.Compress(buffer);
         }
 
         /// <summary>

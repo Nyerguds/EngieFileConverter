@@ -281,7 +281,7 @@
             // tsmiToHeightMap
             // 
             this.tsmiToHeightMap.Name = "tsmiToHeightMap";
-            this.tsmiToHeightMap.Size = new System.Drawing.Size(285, 22);
+            this.tsmiToHeightMap.Size = new System.Drawing.Size(291, 22);
             this.tsmiToHeightMap.Text = "Map to &basic height map image";
             this.tsmiToHeightMap.Visible = false;
             this.tsmiToHeightMap.Click += new System.EventHandler(this.TsmiToHeightMap_Click);
@@ -289,21 +289,21 @@
             // tsmiToPlateaus
             // 
             this.tsmiToPlateaus.Name = "tsmiToPlateaus";
-            this.tsmiToPlateaus.Size = new System.Drawing.Size(285, 22);
+            this.tsmiToPlateaus.Size = new System.Drawing.Size(291, 22);
             this.tsmiToPlateaus.Text = "Map to basic &levels image";
             this.tsmiToPlateaus.Click += new System.EventHandler(this.TsmiToPlateaus_Click);
             // 
             // tsmiToHeightMapAdv
             // 
             this.tsmiToHeightMapAdv.Name = "tsmiToHeightMapAdv";
-            this.tsmiToHeightMapAdv.Size = new System.Drawing.Size(285, 22);
+            this.tsmiToHeightMapAdv.Size = new System.Drawing.Size(291, 22);
             this.tsmiToHeightMapAdv.Text = "Map to &height map using levels";
             this.tsmiToHeightMapAdv.Click += new System.EventHandler(this.TsmiToHeightMapAdv_Click);
             // 
             // tsmiTo65x65HeightMap
             // 
             this.tsmiTo65x65HeightMap.Name = "tsmiTo65x65HeightMap";
-            this.tsmiTo65x65HeightMap.Size = new System.Drawing.Size(285, 22);
+            this.tsmiTo65x65HeightMap.Size = new System.Drawing.Size(291, 22);
             this.tsmiTo65x65HeightMap.Text = "64×64 image to 65×65 height map &image";
             this.tsmiTo65x65HeightMap.Click += new System.EventHandler(this.TsmiTo65x65HeightMap_Click);
             // 
@@ -459,6 +459,7 @@
             // 
             // palColorViewer
             // 
+            this.palColorViewer.AlphaItemCharColor = System.Drawing.Color.Empty;
             this.palColorViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.palColorViewer.AutoSize = true;
             this.palColorViewer.ColorSelectMode = Nyerguds.Util.UI.ColorSelMode.None;
@@ -473,6 +474,7 @@
             this.palColorViewer.Size = new System.Drawing.Size(226, 226);
             this.palColorViewer.TabIndex = 122;
             this.palColorViewer.TransItemBackColor = System.Drawing.Color.Empty;
+            this.palColorViewer.TransItemCharColor = System.Drawing.Color.Transparent;
             this.palColorViewer.ColorLabelMouseDoubleClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseDoubleClick);
             this.palColorViewer.ColorLabelMouseClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseClick);
             // 

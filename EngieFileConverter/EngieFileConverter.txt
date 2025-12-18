@@ -31,6 +31,10 @@ Features:
 
 Acknowledgements:
 ----------------
+Any icons used in the program (except for the Engineer icon) are based on the
+Fugue Icons 16x16 pack by Yusuke Kamiyamane (Copyright (C) 2010)
+http://p.yusukekamiyamane.com/
+
 The study of the C&C64 files was made possible by the Universal Game Decompressor
 (GEDecompressor), made by SubDrag.
 http://www.goldeneyevault.com/viewfile.php?id=213
@@ -73,6 +77,11 @@ Engie File Converter.
 
 
 Engie File Converter versions:
+
+v1.4.3: (22/01/2019 18:47)
+-Simplified internal workings of the palette panel
+-Added support for Playstation and Amiga palettes.
+-Added a "paste from clipboard" button on the Paste on Frames dialog.
 
 v1.4.2: (28/11/2018 12:25)
 -Fixed several issues with CPS and WSA loading.

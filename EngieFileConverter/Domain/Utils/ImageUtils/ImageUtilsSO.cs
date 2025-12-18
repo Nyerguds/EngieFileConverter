@@ -82,36 +82,28 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Checks if a given image contains transparency.
         /// Written for a StackOverflow question.
-        /// https://stackoverflow.com/a/39013496/395685
+        /// https://stackoverflow.com/a/53688608/395685
         /// </summary>
         /// <param name="bitmap">Input bitmap.</param>
         /// <returns>True if pixels were found with an alpha value of less than 255.</returns>
         public static Boolean HasTransparency(Bitmap bitmap)
         {
-            // not an alpha-capable color format. Note that GDI+ indexed images are alpha-capable on the palette.
+            // Not an alpha-capable color format. Note that GDI+ indexed images are alpha-capable on the palette.
             if (((ImageFlags)bitmap.Flags & ImageFlags.HasAlpha) == 0)
                 return false;
             // Indexed format, and no alpha colours in the images palette: immediate pass.
             if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.A == 255))
                 return false;
-            Int32 stride;
-            Byte[] data = ImageUtils.GetImageData(bitmap, out stride, PixelFormat.Format32bppArgb);
-            Int32 height = bitmap.Height;
-            Int32 width = bitmap.Height;
-            Int32 curRowOffs = 0;
-            for (Int32 y = 0; y < height; y++)
-            {
-                // Set offset to first alpha value on current row
-                Int32 curOffs = curRowOffs + 3;
-                for (Int32 x = 0; x < width; x++)
-                {
-                    if (data[curOffs] != 255)
-                        return true;
-                    curOffs += 4;
-                }
-                // Increase row offset
-                curRowOffs += stride;
-            }
+            // Get the byte data 'as 32-bit ARGB'. This offers a converted version of the image data without modifying the original image.
+            BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            Int32 len = bitmap.Height * data.Stride;
+            Byte[] bytes = new Byte[len];
+            Marshal.Copy(data.Scan0, bytes, 0, len);
+            bitmap.UnlockBits(data);
+            // Check the alpha bytes in the data. Since the data is little-endian, the actual byte order is [BB GG RR AA]
+            for (Int32 i = 3; i < len; i += 4)
+                if (bytes[i] != 255)
+                    return true;
             return false;
         }
 
@@ -753,5 +745,37 @@ namespace Nyerguds.ImageManipulation
             return BlobDetection.FindBlobs(dataBw, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
         }
 
+        /// <summary>
+        /// From https://stackoverflow.com/q/52900883/395685
+        /// </summary>
+        public static Bitmap GetSierpinski(Int32 width, Int32 height)
+        {
+            Int32 len = height * width;
+            Point p1 = new Point(0, 0);
+            Point p2 = new Point(width, 0);
+            Point p3 = new Point(width / 2, height);
+            Random r = new Random();
+            Point p = new Point(r.Next(0, width), r.Next(0, width));
+            Byte[] data = new Byte[len];
+            for (Int64 i = 0; i < len; i++)
+            {
+                Point tp;
+                switch (r.Next(0, 3))
+                {
+                    case 0:
+                        tp = new Point((p1.X + p.X) / 2, (p1.Y + p.Y) / 2);
+                        break;
+                    case 1:
+                        tp = new Point((p2.X + p.X) / 2, (p2.Y + p.Y) / 2);
+                        break;
+                    default:
+                        tp = new Point((p3.X + p.X) / 2, (p3.Y + p.Y) / 2);
+                        break;
+                }
+                data[tp.Y * width + tp.X] = 1;
+                p = tp;
+            }
+            return BuildImage(data, width, height, width, PixelFormat.Format8bppIndexed, new[] { Color.Black, Color.White }, Color.Black);
+        }
     }
 }

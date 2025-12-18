@@ -24,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Dynamix BMP sprites file"; } }
 
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
-        protected String[] savecompressionTypes = new String[] { "None", "RLE", "LZSS" };
+        protected String[] savecompressionTypes = new String[] { "None", "RLE" };
         //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
         public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
@@ -287,11 +287,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
                 throw new NotSupportedException("Unknown compression type " + compressionType);
-
-            // Remove this if LZW actually gets implemented
-            if (compressionType == 2)
-                throw new NotSupportedException("LZW compression is currently not supported!");
-
+            
             // write save logic for frames
             PixelFormat pf = PixelFormat.Undefined;
             Int32 bpp = 0;
@@ -351,7 +347,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 UInt32 dataLenBin = (UInt32)binData.Length;
                 if (compressionType != 0) 
                 {
-                    Byte[] dataCompr = compressionType == 1 ? DynamixCompression.RleEncode(binData) : DynamixCompression.LzwEncode(binData);
+                    // TODO find and implement the other types... eventually.
+                    Byte[] dataCompr = DynamixCompression.RleEncode(binData);
                     if (dataCompr.Length < dataLenBin)
                     {
                         binData = dataCompr;

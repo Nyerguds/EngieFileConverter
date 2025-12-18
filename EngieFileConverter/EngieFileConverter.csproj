@@ -69,6 +69,8 @@
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
     <Compile Include="Domain\FileTypes\IG\FileFramesFntD2k.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwPsx2.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwPsx.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwAmiga.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwFntV3V4.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpLol1.cs" />
@@ -360,6 +362,7 @@
     <Content Include="cnc64logo.png" />
     <Content Include="engie.png" />
     <None Include="engie.ico" />
+    <Content Include="Resources\clipboard-image.png" />
     <Content Include="Resources\IniHandler.dll" />
     <Content Include="Resources\Microsoft.WindowsAPICodePack.dll" />
     <Content Include="Resources\Microsoft.WindowsAPICodePack.Shell.dll" />
