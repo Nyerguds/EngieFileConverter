@@ -17,6 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected SupportedFileType[] m_FramesList;
         protected Boolean m_CommonPal;
 
+        public override String IdCode { get { return "WwCpsAmi4"; } }
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
         public override Boolean FramesHaveCommonPalette { get { return this.m_CommonPal; } }
@@ -27,7 +28,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood Amiga Frames CPS"; } }
         public override String[] FileExtensions { get { return new String[] { "cps" }; } }
         public override String ShortTypeDescription { get { return "Westwood Amiga Frames CPS File"; } }
-        public override Boolean NeedsPalette { get { return !this.HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -43,9 +43,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imageData = GetImageData(fileData, 0, filename, true, false, out compression, out palette, out cpsVersion);
             this.CompressionType = compression;
             this.CpsVersion = cpsVersion;
-            this.HasPalette = true;
             if (palette == null)
                 throw new FileTypeLoadException("Cannot identify palette!");
+            this.m_LoadedPalette = filename;
             this.m_Palette = palette;
             Int32 images = this.m_Palette.Length / 32;
             Int32 frWidth = 160;

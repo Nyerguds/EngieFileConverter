@@ -83,20 +83,26 @@ namespace Nyerguds.Util.UI.SaveOptions
                 return;
             try
             {
-                // Remove any line breaks.
-                textbox.Tag = editing;
-                Int32 caret = textbox.SelectionStart;
-                Int32 len1 = textbox.Text.Length;
-                Char[] text = textbox.Text.Replace("\n", String.Empty).Replace("\r", String.Empty).ToCharArray();
-                Int32 txtLen = text.Length;
                 if (m_AllowedMask != null)
+                {
+                    // Remove any line breaks.
+                    textbox.Tag = editing;
+                    Int32 caret = textbox.SelectionStart;
+                    Char[] text = textbox.Text.ToCharArray();
+                    Int32 txtLen = text.Length;
+                    Int32 caretSubtract = 0;
                     for (Int32 i = 0; i < txtLen; ++i)
+                    {
                         if (!this.m_AllowedMask.Contains(text[i]))
+                        {
                             text[i] = '\0';
-                textbox.Text = new String(text).Replace("\0", String.Empty);
-                Int32 len2 = textbox.Text.Length;
-                textbox.SelectionStart = Math.Min(caret - (len1 - len2), textbox.Text.Length);
-
+                            if (i < caret)
+                                caretSubtract++;
+                        }
+                    }
+                    textbox.Text = new String(text).Replace("\0", String.Empty);
+                    textbox.SelectionStart = Math.Min(Math.Max(0, caret - caretSubtract), textbox.Text.Length);
+                }
                 // Update controller
                 if (this.Info == null)
                     return;

@@ -26,19 +26,41 @@ namespace EngieFileConverter.UI
 
         private SupportedFileType m_File;
         private Boolean m_Loading;
+        private Boolean m_DontMatch;
 
-        public FrmFramesToPal(SupportedFileType origFile, PaletteDropDownInfo[] palettes)
+        public FrmFramesToPal(SupportedFileType origFile, PaletteDropDownInfo[] palettes, Boolean nomatch)
         {
             this.m_Loading = true;
             this.m_File = origFile;
+            this.m_DontMatch = nomatch;
             if (origFile == null)
                 throw new ArgumentNullException("origFile");
             this.m_allPalettes = palettes ?? new PaletteDropDownInfo[0];
             this.InitializeComponent();
+            if (m_DontMatch)
+            {
+                this.Text = "Change palette";
+                this.lblMatchPalette.Text = "Palette:";
+                this.btnConvert.Text = "Set palette";
+            }
             Boolean hasFrames = origFile.IsFramesContainer;
             this.numCurFrame.Maximum = hasFrames ? origFile.Frames.Length - 1 : 0;
             this.cmbPalType.DataSource = new String[] {"1-bit", "4-bit", "8-bit"};
-            this.cmbPalType.SelectedIndex = 2;
+            Int32 selectedIndex;
+            switch (origFile.BitsPerPixel)
+            {
+                case 1:
+                    selectedIndex = 0;
+                    break;
+                case 4:
+                    selectedIndex = 1;
+                    break;
+                default:
+                    selectedIndex = 2;
+                    break;
+            }
+            this.cmbPalType.SelectedIndex = selectedIndex;
+            this.cmbPalType.Enabled = !m_DontMatch;
             this.m_Loading = false;
             this.UpdateUiInfo();
             this.pzpFramePreview.AutoSetZoom(GetListToAutoSetZoom(m_File));
@@ -57,7 +79,7 @@ namespace EngieFileConverter.UI
                 SupportedFileType curFrame = m_File.IsFramesContainer ? m_File.Frames[(Int32)numCurFrame.Value] : m_File;
 
                 PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
-                if(pdd == null)
+                if (pdd == null)
                     return;
                 Bitmap image = curFrame.GetBitmap();
                 Image oldImage = this.pzpFramePreview.Image;
@@ -71,6 +93,7 @@ namespace EngieFileConverter.UI
                     }
                     return;
                 }
+                // Update palette control. First checks if the preview needs to be updated, to avoid unnecessary UI refreshes.
                 Int32 matchBpp = pdd.BitsPerPixel;
                 Color[] matchPalette = pdd.Colors;
                 Color[] loadedColors = this.palPreviewPal.Palette;
@@ -87,8 +110,18 @@ namespace EngieFileConverter.UI
                 }
                 if (!match)
                     PalettePanel.InitPaletteControl(pdd.BitsPerPixel, this.palPreviewPal, matchPalette, 200);
-                Bitmap[] result = ImageUtils.ImageToFrames(image, image.Width, image.Height, null, null, matchBpp, matchPalette, 0, 0);
-                Bitmap bmp = result.Length > 0 ? result[0] : null;
+                // Update preview.
+                Bitmap bmp;
+                if (m_DontMatch)
+                {
+                    bmp = ImageUtils.CloneImage(image);
+                    bmp.Palette = ImageUtils.GetPalette(matchPalette);
+                }
+                else
+                {
+                    Bitmap[] result = ImageUtils.ImageToFrames(image, image.Width, image.Height, null, null, matchBpp, matchPalette, 0, 0);
+                    bmp = result.Length > 0 ? result[0] : null;
+                }
                 this.pzpFramePreview.Image = bmp;
                 if (oldImage != null)
                 {

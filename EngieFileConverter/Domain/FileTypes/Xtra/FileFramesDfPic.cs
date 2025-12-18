@@ -101,9 +101,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frame == null || frame.GetBitmap() == null)
                     throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
                 if (frame.Width != 320 || frame.Height != 200)
-                    throw new ArgumentException(ERR_320x200, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_DIMENSIONS, 320, 200), "fileToSave");
             }
             const Int32 palSize = 0x300;
             Int32 frameSize = this.Width * this.Height;

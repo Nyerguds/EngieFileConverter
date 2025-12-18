@@ -253,7 +253,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
             FileImgIgcDmp dmp = fileToSave as FileImgIgcDmp;
             if (fileToSave.Width == 640 || fileToSave.Height == 400 && dmp != null && dmp.Combined)
                 throw new ArgumentException("To re-save a combined image, split the image into four 320x200 frames and save the frames as separate .dmp files, with the palette saved into the first (the '-tl') file.", "fileToSave");

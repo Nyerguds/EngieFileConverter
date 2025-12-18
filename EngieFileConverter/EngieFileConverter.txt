@@ -38,13 +38,19 @@ http://p.yusukekamiyamane.com/
 
 The study of the C&C64 files was made possible by the Universal Game Decompressor
 (GEDecompressor), made by SubDrag.
-http://www.goldeneyevault.com/viewfile.php?id=213
+https://web.archive.org/web/20160304175234/www.goldeneyevault.com/viewfile.php?id=213
 
 The PC C&C formats were deciphered using documentation written by Vladan Bato.
 
 The compression code used for handling the CPS and LCW formats was gracefully provided by the
 people of the Chronoshift (formerly RA++) project. OmniBlade has been particularly helpful.
 https://github.com/TheAssemblyArmada/Chronoshift
+
+The LZW compression used in the Westwood Studios game files uses the basic algorithm as described
+on Mark Nelson's website: https://marknelson.us/posts/1989/10/01/lzw-data-compression.html
+The used LZW code in this tool is based on the C# translation by Pedro Villarreal:
+https://github.com/pevillarreal/LzwCompressor
+Its code is released under the MIT license, which can be found on its GitHub repository.
 
 The Dynamix LZW decompression code was converted from the C++ code of VOGONS.org user tikalat's
 "midi tools v4". It contains no license but I assume the fact he included the code implies that
@@ -54,6 +60,7 @@ https://www.vogons.org/viewtopic.php?p=273448#p273448
 
 The Dynamix LZSHuff decompression was identified thanks to NewRisingSun in that same thread:
 https://www.vogons.org/viewtopic.php?p=306003#p306003
+https://web.archive.org/web/20200611023054/people.cs.umu.se/isak/snippets/lzhuf.c
 
 The K.O.R.T. image format was decoded thanks to documentation included in the K.O.R.T. savegame
 editor written by David Eriksson, aka Edison of 2GooD:
@@ -80,6 +87,8 @@ The Interactive Girls Club bit mask compression was figured out thanks to CTPAX-
 The bulk of the research on the Dynamix SCN/OFF format was done by user Knt47 of the VOGONS.org
 forums and Shikadi modding wiki.
 
+The "All Dogs Go To Heaven" format was figured out by Levellass.
+
 
 Version history:
 ---------------
@@ -89,6 +98,12 @@ Engie File Converter.
 
 
 Engie File Converter versions:
+
+v1.5.6: (17/08/2021 01:46 CET)
+-Added tool to change an indexed image's fixed palette.
+-Added the archive/tileset format from "All Dogs Go To Heaven".
+-Fixed a bug in the handling of text with line breaks in save options.
+-Fixed feedback from .Net's ArgumentException type so it shows only the proper message.
 
 v1.5.5: (04/05/2021 20:41 CET)
 -Fixed handling of AdventureSoft VGA format; apparently not all files start with an empty frame.

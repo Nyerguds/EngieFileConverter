@@ -64,12 +64,14 @@
     <Compile Include="Domain\FileData\EmotionalPictures\PppCompression.cs" />
     <Compile Include="Domain\FileData\IGC\IgcBitMaskCompression.cs" />
     <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
+    <Compile Include="Domain\FileData\Penguin\PenguinCompression.cs" />
     <Compile Include="Domain\FileData\Westwood\House.cs" />
     <Compile Include="Domain\FileData\Westwood\OverlayTd.cs" />
     <Compile Include="Domain\FileData\Westwood\StructInfo.cs" />
     <Compile Include="Domain\FileTypes\General\FileFramesInt33Cursor.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosRmm.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosLbv.cs" />
+    <Compile Include="Domain\FileTypes\Penguin\FileFramesDogsDb.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpBr.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgJmx.cs" />

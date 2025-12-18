@@ -23,14 +23,17 @@ namespace EngieFileConverter.UI
         public String LastSelectedFolder { get; private set; }
         public Boolean KeepIndices { get; private set; }
 
-        private Bitmap m_Image;
         private Int32 m_Frames;
         private Int32 m_FramesBpp;
         private String labelText;
+        private Int32 m_PasteAreaWidth;
+        private Int32 m_PasteAreaHeight;
 
         public FrmPasteOnFrames(Int32 frames, Int32 width, Int32 height, Int32 framesBpp, String lastOpenedFolder)
         {
             this.m_Frames = frames;
+            this.m_PasteAreaWidth = width;
+            this.m_PasteAreaHeight = height;
             this.LastSelectedFolder = lastOpenedFolder;
             this.InitializeComponent();
             this.labelText = lblImage.Text;
@@ -53,19 +56,11 @@ namespace EngieFileConverter.UI
 
         private void BtnSelectImageClick(Object sender, EventArgs e)
         {
-            Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
-            List<Type> filteredTypes = new List<Type>();
-            Int32 nrOfSaveTypes = saveTypes.Length;
-            for (Int32 i = 0; i < nrOfSaveTypes; ++i)
-            {
-                Type saveType = saveTypes[i];
-                SupportedFileType tmpsft = (SupportedFileType) Activator.CreateInstance(saveType);
-                if ((tmpsft.InputFileClass & FileClass.Image) != 0)
-                    filteredTypes.Add(saveType);
-            }
-            Type[] autoImageTypes = filteredTypes.Intersect(SupportedFileType.AutoDetectTypes).ToArray();
+            Type[] openTypes = SupportedFileType.SupportedOpenTypes;
+            SupportedFileType[] sft = openTypes.Select(ft => new FileDialogItem<SupportedFileType>(ft).ItemObject).Where(ft => (ft.InputFileClass & FileClass.Image) != 0).ToArray();
+            List<Type> filteredTypes = sft.Select(ft => ft.GetType()).ToList();
             SupportedFileType selectedType;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), autoImageTypes, this.LastSelectedFolder, "images", null, true, out selectedType);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), openTypes, this.LastSelectedFolder, "images", null, true, out selectedType);
             if (filename == null)
                 return;
             this.LastSelectedFolder = Path.GetDirectoryName(filename);
@@ -73,9 +68,9 @@ namespace EngieFileConverter.UI
             try
             {
                 Byte[] fileData = File.ReadAllBytes(filename);
+                // "*.*" was selected.
                 if (selectedType == null)
                 {
-                    SupportedFileType[] sft = filteredTypes.Select(ft => new FileDialogItem<SupportedFileType>(ft).ItemObject).ToArray();
                     List<FileTypeLoadException> loadErrors;
                     selectedType = SupportedFileType.LoadFileAutodetect(fileData, filename, sft, true, out loadErrors);
                     if (selectedType == null)
@@ -84,13 +79,17 @@ namespace EngieFileConverter.UI
                         MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
+                    loaded = true;
                 }
-                selectedType.LoadFile(fileData, filename);
-                this.m_Image = selectedType.GetBitmap();
+                if (!loaded)
+                    selectedType.LoadFile(fileData, filename);
+                this.Image = ImageUtils.CloneImage(selectedType.GetBitmap());
                 this.txtImage.Text = Path.GetFullPath(filename);
                 this.lblImage.Text = this.labelText + " " + selectedType.Width + "×" + selectedType.Height + ", " + selectedType.BitsPerPixel + "bpp";
                 loaded = true;
                 this.btnOK.Enabled = true;
+                this.btnCenterX.Enabled = true;
+                this.btnCenterY.Enabled = true;
                 Int32 selectedBpp = selectedType.BitsPerPixel;
                 this.rbtKeepIndices.Enabled = m_FramesBpp <= 8 && selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
                 if (!this.rbtKeepIndices.Enabled)
@@ -107,12 +106,20 @@ namespace EngieFileConverter.UI
             }
             finally
             {
+                if (selectedType != null)
+                    selectedType.Dispose();
                 if (!loaded)
                 {
-                    this.m_Image = null;
+                    if (this.Image != null)
+                    {
+                        this.Image.Dispose();
+                        this.Image = null;
+                    }
                     this.txtImage.Text = String.Empty;
                     this.lblImage.Text = this.labelText;
                     this.btnOK.Enabled = false;
+                    this.btnCenterX.Enabled = false;
+                    this.btnCenterY.Enabled = false;
                 }
             }
         }
@@ -148,11 +155,13 @@ namespace EngieFileConverter.UI
                         clipImage.LoadFile(ms.ToArray(), ".\\image.png");
                     }
                 }
-                this.m_Image = clipImage.GetBitmap();
+                this.Image = clipImage.GetBitmap();
                 Int32 selectedBpp = clipImage.BitsPerPixel;
                 this.txtImage.Text = "[From clipboard]";
                 this.lblImage.Text = this.labelText + " " + clipImage.Width + "×" + clipImage.Height + ", " + clipImage.BitsPerPixel + "bpp";
                 this.btnOK.Enabled = true;
+                this.btnCenterX.Enabled = true;
+                this.btnCenterY.Enabled = true;
                 this.rbtKeepIndices.Enabled = selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
                 if (!this.rbtKeepIndices.Enabled)
                 {
@@ -170,12 +179,13 @@ namespace EngieFileConverter.UI
             }
             finally
             {
-                if (this.m_Image == null)
+                if (this.Image == null)
                 {
-                    this.m_Image = null;
                     this.txtImage.Text = String.Empty;
                     this.lblImage.Text = this.labelText;
                     this.btnOK.Enabled = false;
+                    this.btnCenterX.Enabled = false;
+                    this.btnCenterY.Enabled = false;
                 }
             }
             return true;
@@ -186,6 +196,20 @@ namespace EngieFileConverter.UI
             if (keyData == (Keys.Control | Keys.V) && GetImageFromClipboard(true))
                 return true;
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void btnCenterX_Click(object sender, EventArgs e)
+        {
+            if (this.Image == null)
+                return;
+            numCoordsX.Value = Math.Min(Math.Max(0, (this.m_PasteAreaWidth - this.Image.Width) / 2), numCoordsX.Maximum);
+        }
+
+        private void btnCenterY_Click(object sender, EventArgs e)
+        {
+            if (this.Image == null)
+                return;
+            numCoordsY.Value = Math.Min(Math.Max(0, (this.m_PasteAreaHeight - this.Image.Height) / 2), numCoordsY.Maximum);
         }
 
         private void TextBoxShortcuts(Object sender, KeyEventArgs e)
@@ -222,9 +246,7 @@ namespace EngieFileConverter.UI
                 e.Handled = true;
             }
         }
-
-
-
+        
         private void BtnOkClick(Object sender, EventArgs e)
         {
             if (txtFrames.Text.Trim(",- \r\n\t".ToCharArray()).Length == 0)
@@ -240,7 +262,6 @@ namespace EngieFileConverter.UI
             }
             this.FrameRange = frameRange;
             this.Coords = new Point((Int32) this.numCoordsX.Value, (Int32) this.numCoordsY.Value);
-            this.Image = this.m_Image;
             this.KeepIndices = this.rbtKeepIndices.Checked;
             this.DialogResult = DialogResult.OK;
             this.Close();

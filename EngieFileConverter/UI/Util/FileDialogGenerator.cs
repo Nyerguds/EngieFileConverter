@@ -68,7 +68,10 @@ namespace Nyerguds.Util.UI
                 ofd.Filter = GetFileFilterForOpen<T>(items, generalItems, generaltypedesc, generaltypeExt, out correspondingObjects);
                 //ofd.FilterIndex = 1; // "all supported files". One-based for some fucked up reason.
                 //"Westwood font files (*.fnt)|*.fnt|All Files (*.*)|*.*";
-                ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
+                Boolean isFolder;
+                try { isFolder = (File.GetAttributes(currentPath) & FileAttributes.Directory) != 0; }
+                catch { isFolder = false; }
+                ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : isFolder ? Path.GetFullPath(currentPath) : Path.GetDirectoryName(currentPath);
                 //ofd.FilterIndex
                 DialogResult res = ofd.ShowDialog(owner);
                 if (res != DialogResult.OK)

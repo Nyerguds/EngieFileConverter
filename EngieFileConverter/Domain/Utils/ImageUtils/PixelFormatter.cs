@@ -13,20 +13,20 @@ namespace Nyerguds.ImageManipulation
     /// </summary>
     public class PixelFormatter
     {
-        /// <summary>Standard PixelFormatter for .Net's big-endian 32-bit RGBA format.</summary>
-        public static PixelFormatter Format32BitArgbBe = new PixelFormatter(4, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
+        /// <summary>Standard PixelFormatter for .Net's little-endian 32-bit RGBA format.</summary>
+        public static PixelFormatter Format32BitArgbLe = new PixelFormatter(4, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
 
-        /// <summary>Standard PixelFormatter for .Net's big-endian 24-bit RGB format.</summary>
-        public static PixelFormatter Format24BitRgbBe = new PixelFormatter(3, 0x00000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
+        /// <summary>Standard PixelFormatter for .Net's little-endian 24-bit RGB format.</summary>
+        public static PixelFormatter Format24BitRgbLe = new PixelFormatter(3, 0x00000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
 
-        /// <summary>Standard PixelFormatter for .Net's big-endian 16-bit RGBA format with 1-bit transparency.</summary>
-        public static PixelFormatter Format16BitArgb1555Be = new PixelFormatter(2, 0x8000, 0x7C00, 0x03E0, 0x001F, true);
+        /// <summary>Standard PixelFormatter for .Net's little-endian 16-bit RGBA format with 1-bit transparency.</summary>
+        public static PixelFormatter Format16BitArgb1555Le = new PixelFormatter(2, 0x8000, 0x7C00, 0x03E0, 0x001F, true);
 
-        /// <summary>Standard PixelFormatter for .Net's big-endian 16-bit RGB format with 5-bit components.</summary>
-        public static PixelFormatter Format16BitRgb555Be = new PixelFormatter(2, 0x0000, 0x7C00, 0x03E0, 0x001F, true);
+        /// <summary>Standard PixelFormatter for .Net's little-endian 16-bit RGB format with 5-bit components.</summary>
+        public static PixelFormatter Format16BitRgb555Le = new PixelFormatter(2, 0x0000, 0x7C00, 0x03E0, 0x001F, true);
 
-        /// <summary>Standard PixelFormatter for .Net's big-endian 16-bit RGB format with 6-bit green.</summary>
-        public static PixelFormatter Format16BitRgb565Be = new PixelFormatter(2, 0x0000, 0xF800, 0x07E0, 0x001F, true);
+        /// <summary>Standard PixelFormatter for .Net's little-endian 16-bit RGB format with 6-bit green.</summary>
+        public static PixelFormatter Format16BitRgb565Le = new PixelFormatter(2, 0x0000, 0xF800, 0x07E0, 0x001F, true);
 
         public Int32 BytesPerPixel
         {

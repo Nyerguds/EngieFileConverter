@@ -34,7 +34,7 @@ namespace EngieFileConverter.UI
             //this.ViewInt33MouseCursors();
             //this.MatrixImage();
             //this.LoadByteArrayImage();
-            //this.CombineHue();
+            this.CombineHue();
             //this.CreateSierpinskiImage();
             //this.ColorPsx();
             //this.ExpandRAMap();
@@ -62,7 +62,11 @@ namespace EngieFileConverter.UI
             //this.ConvertToIcons();
             //this.ViewSTrisHidden();
             //this.Ikegami();
-            this.SplitTwoColor();
+            //this.SplitTwoColor();
+            //this.LoadToClip();
+            //this.ReplaceImagePalette();
+            //this.AutoRemapPalette();
+            //this.SwapColors();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -191,7 +195,7 @@ namespace EngieFileConverter.UI
                 using (BinaryReader br = new BinaryReader(ms))
                 {
                     ms.Position = 64 * i;
-                    for (Int32 j = 0; j < 32; j++)
+                    for (Int32 j = 0; j < 32; ++j)
                     {
                         if (j == 16)
                             sb.Append('\n');
@@ -222,8 +226,8 @@ namespace EngieFileConverter.UI
                 Int32 fullHeight4 = fullHeight * 4;
                 Int32 fullStride4 = fullStride * 4;
                 Byte[] fullImage4 = new Byte[fullStride4 * fullHeight4];
-                for (Int32 y = 0; y < fullHeight4; y++)
-                    for (Int32 x = 0; x < fullWidth4; x++)
+                for (Int32 y = 0; y < fullHeight4; ++y)
+                    for (Int32 x = 0; x < fullWidth4; ++x)
                         fullImage4[y * fullStride4 + x] = fullImage[y / 4 * fullStride + x / 4];
                 fullImage4 = ImageUtils.ConvertFrom8Bit(fullImage4, fullWidth4, fullHeight4, 4, true, ref fullStride4);
                 composite = ImageUtils.BuildImage(fullImage4, fullWidth4, fullHeight4, fullStride4, PixelFormat.Format4bppIndexed, palette, Color.Empty);
@@ -278,8 +282,8 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null)
                 return;
             String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String filenameImage = "Sheppard_alpha_adj.png";
-            String filenameColors = "Sheppard_remast.jpg";
+            String filenameImage = "nukesilo_nocol.png";
+            String filenameColors = "nukesilo_rlt_resize.jpg";
             String pathImage = Path.Combine(path, filenameImage);
             String pathColors = Path.Combine(path, filenameColors);
             if (!File.Exists(pathImage) || !File.Exists(pathColors))
@@ -428,7 +432,7 @@ namespace EngieFileConverter.UI
                 {
                     buffDec = PppCompression.DecompressPppRle(buff);
                 }
-                catch (ArgumentException a)
+                catch (ArgumentException)
                 {
                     continue;
                 }
@@ -960,7 +964,7 @@ namespace EngieFileConverter.UI
             Byte[] imgData2 = new Byte[width * height];
             Int32 readLineOffs = 0;
             Int32 writeLineOffs = 0;
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 readOffs = readLineOffs;
                 Int32 readOffsEnd = readLineOffs + width * 2;
@@ -1056,10 +1060,10 @@ namespace EngieFileConverter.UI
             Int32 lineOffset = 0;
             const Int32 threshold = 160;
             const Int32 thresholdBlack = 5;
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 offset = lineOffset;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     Byte b1r = img1RedBytes[offset];
                     Byte b2b = img2BlackBytes[offset];
@@ -1098,9 +1102,9 @@ namespace EngieFileConverter.UI
             String[] files = Directory.GetFiles(patternsFolder);
             foreach (String imagePath in files)
                 images.Add(new Bitmap(imagePath));
-            Int32 width = images.First().Width; //all images in list have the same width so i take the first
+            Int32 width = images.First().Width; //all images in list have the same width so I take the first
             Int32 height = 0;
-            for (Int32 i = 0; i < images.Count; i++) //the list has 300 images. I have to get 36 that contains the captcha separated into pieces
+            for (Int32 i = 0; i < images.Count; ++i) //the list has 300 images.
             {
                 height += images[i].Height;
             }
@@ -1110,7 +1114,7 @@ namespace EngieFileConverter.UI
             {
 
                 height = 0;
-                for (Int32 i = 0; i < images.Count; i++)
+                for (Int32 i = 0; i < images.Count; ++i)
                 {
                     Bitmap image = images[i];
                     image.SetResolution(72, 72);
@@ -1150,7 +1154,7 @@ namespace EngieFileConverter.UI
             if (!File.Exists(palFile) || !File.Exists(imgFile))
                 return;
             Byte[] palB = File.ReadAllBytes(palFile);
-            for (Int32 i = 0; i < palB.Length; i++)
+            for (Int32 i = 0; i < palB.Length; ++i)
                 if (palB[i] != 0x0D && palB[i] != 0x0A && palB[i] != 0x20 && (palB[i] < '0' || palB[i] > '9'))
                     return;
             String palT = Encoding.ASCII.GetString(palB);
@@ -1184,7 +1188,7 @@ namespace EngieFileConverter.UI
             //Bitmap ikegami = ImageUtils.BuildImage(graphic, 8, 56, 1, PixelFormat.Format1bppIndexed, new Color[] { Color.Black, Color.White }, null);
             Byte[] conv1 = ImageUtils.ConvertTo8Bit(graphic, 8, 56, 0, 1, false);
             Byte[] conv2 = new Byte[conv1.Length];
-            for (int i = 0; i < conv1.Length; i++)
+            for (int i = 0; i < conv1.Length; ++i)
                 conv2[(56 * (i%8)) + i / 8] = conv1[i];
             //Bitmap ikegami = ImageUtils.BuildImage(conv2, 56, 8, 56, PixelFormat.Format8bppIndexed, new Color[] { Color.Black, Color.White }, null);
             Byte[] conv3 = ImageUtils.ConvertFrom8Bit(conv2, 56, 8, 1, true);
@@ -1204,6 +1208,260 @@ namespace EngieFileConverter.UI
             this.LoadTestFile(newBm);
         }
 
+        private void LoadToClip()
+        {
+            Byte[] dibdata = new Byte[]
+            {
+                // header
+                0x28, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                // palette
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00,
+                0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x80, 0x00, 0x00, 0x80, 0x80, 0x80, 0x00,
+                0xC0, 0xc0, 0xc0, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00,
+                0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00,
+                // XOR mask
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x88, 0x88, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x07, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x07, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x07, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x07, 0xFF, 0x88, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x7F, 0xF8, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x7F, 0x80, 0x07, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x07, 0xF8, 0x00, 0x07, 0xFF, 0x7F, 0xF7, 0xF8, 0x0F, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x07, 0x70, 0x00, 0x07, 0xF8, 0x0F, 0x80, 0xF8, 0x0F, 0x80, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x0F, 0x80, 0xF8, 0x07, 0x70, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x0F, 0x80, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x0F, 0x80, 0x77, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x07, 0x70, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x77, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                // AND mask
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xF8, 0x1F, 0xFF,
+                0xFF, 0xF0, 0x0F, 0xFF,
+                0xFF, 0xF0, 0x0F, 0xFF,
+                0xFF, 0xE0, 0x03, 0xFF,
+                0xFF, 0xc0, 0x03, 0xFF,
+                0xFF, 0x80, 0x01, 0xFF,
+                0xFF, 0x80, 0x01, 0xFF,
+                0xFF, 0x00, 0x01, 0xFF,
+                0xFF, 0x00, 0x00, 0xFF,
+                0xFE, 0x00, 0x00, 0xFF,
+                0xFE, 0x00, 0x00, 0xFF,
+                0xFc, 0x00, 0x00, 0xFF,
+                0xFc, 0x20, 0x00, 0xFF,
+                0xF8, 0x60, 0x00, 0xFF,
+                0xF8, 0xE0, 0x00, 0xFF,
+                0xFF, 0xE0, 0x01, 0xFF,
+                0xFF, 0xE0, 0x07, 0xFF,
+                0xFF, 0xE0, 0x0F, 0xFF,
+                0xFF, 0xE0, 0x7F, 0xFF,
+                0xFF, 0xE1, 0xFF, 0xFF,
+                0xFF, 0xE1, 0xFF, 0xFF,
+                0xFF, 0xE1, 0xFF, 0xFF,
+                0xFF, 0xE1, 0xFF, 0xFF,
+                0xFF, 0xF3, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF
+            };
+            PixelFormat pf;
+            Bitmap cursorImage = DibHandler.ImageFromDib(dibdata, 0, 0, true, false, out pf);
+            this.LoadTestFile(cursorImage);
+        }
+
+        private void ReplaceImagePalette()
+        {
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || this.m_LoadedFile is FileFrames || this.m_LoadedFile.BitsPerPixel != 8)
+                return;
+            String filename = this.m_LoadedFile.LoadedFile;
+            if (filename == null)
+                return;
+            Color[] newPalette = new Color[0x100];
+            using (Bitmap bm = new Bitmap(1, 1, PixelFormat.Format8bppIndexed))
+            {
+                for (Int32 i = 0; i < 0x100; ++i)
+                {
+                    Color c = bm.Palette.Entries[i];
+                    newPalette[i] = Color.FromArgb(c.R, c.G, c.B);
+                }
+            }
+            Int32 stride;
+            Int32 width;
+            Int32 height;
+            Color[] curPalette;
+            Byte[] imageData;
+            // This 'using' block is kept small; extract the data and then dispose everything.
+            using (Bitmap image = ImageUtils.CloneImage(m_LoadedFile.GetBitmap()))
+            //using (Bitmap image = new Bitmap(filename))
+            {
+                if (image.PixelFormat != PixelFormat.Format8bppIndexed)
+                    return;
+                width = image.Width;
+                height = image.Height;
+                curPalette = image.Palette.Entries;
+                imageData = ImageUtils.GetImageData(image, out stride);
+            }
+            // Make remap table to translate from old palette indices to new ones.
+            Byte[] match = new Byte[curPalette.Length];
+            for (Int32 i = 0; i < curPalette.Length; ++i)
+                match[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(curPalette[i], newPalette);
+            // Go over the actual pixels in the image data and replace the colours.
+            Int32 currentLineOffset = 0;
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 offset = currentLineOffset;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    // Replace index with index of the closest match found before for that colour.
+                    imageData[offset] = match[imageData[offset]];
+                    // Increase offset on this line
+                    offset++;
+                }
+                // Increase to start of next line
+                currentLineOffset += stride;
+            }
+            /*/
+            using (Bitmap newbm = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, newPalette, Color.Black))
+            {
+                // Old bitmap is already disposed, so there is no issue saving to the same filename now
+                newbm.Save(filename, ImageFormat.Bmp);
+            }
+            //*/
+            Bitmap newbm = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, newPalette, Color.Black);
+            this.LoadTestFile(newbm);
+        }
+
+        private void AutoRemapPalette()
+        {
+            if (this.m_LoadedFile == null || !(this.m_LoadedFile is FileFrames) || this.m_LoadedFile.Frames.Length < 2
+                || this.m_LoadedFile.Frames.Any(f => f.BitsPerPixel != 8) || this.m_LoadedFile.Frames[0].Width != this.m_LoadedFile.Frames[1].Width
+                || this.m_LoadedFile.Frames[0].Height != this.m_LoadedFile.Frames[1].Height)
+                return;
+            Int32 width = this.m_LoadedFile.Frames[0].Width;
+            Int32 height = this.m_LoadedFile.Frames[0].Height;
+            Byte[] imgBeta= ImageUtils.GetImageData(this.m_LoadedFile.Frames[0].GetBitmap(), true);
+            Byte[] imgFinl = ImageUtils.GetImageData(this.m_LoadedFile.Frames[1].GetBitmap(), true);
+            Dictionary<Byte, List<Int32>> differentIndices = new Dictionary<Byte, List<Int32>>();
+            Dictionary<Int32, Int32> matchedIndices = new Dictionary<Int32, Int32>();
+            Int32 lineOffset = 0;
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 offset = lineOffset;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    Byte indexBeta = imgBeta[offset];
+                    Byte indexFinl = imgFinl[offset];
+                    Int32 dictVal = indexBeta | (indexFinl << 16);
+                    if (matchedIndices.ContainsKey(dictVal))
+                        matchedIndices[dictVal]++;
+                    else
+                    {
+                        matchedIndices[dictVal] = 1;
+                        if (!differentIndices.ContainsKey(indexBeta))
+                            differentIndices[indexBeta] = new List<Int32>();
+                        differentIndices[indexBeta].Add(dictVal);
+                    }
+                    offset++;
+                }
+                lineOffset += width;
+            }
+            Byte[] indices = differentIndices.Keys.OrderBy(x => x).ToArray();
+            Byte[] fullPaletteRemap = new Byte[0x100];
+            Int32[] fullPaletteRemapAmount = new Int32[0x100];
+            Boolean[] alreadyMatched = new Boolean[0x100];
+            for (Int32 i = 0; i < indices.Length; ++i)
+            {
+                Byte indexBeta = indices[i];
+                List<Int32> differentMatches = differentIndices[indexBeta];
+                Int32 maxAmount = 0;
+                Int32 maxIndex = -1;
+                foreach (Int32 matchId in differentMatches)
+                {
+                    Int32 amount = matchedIndices[matchId];
+                    if (amount > maxAmount)
+                    {
+                        maxAmount = amount;
+                        maxIndex = (matchId >> 16 & 0xFF);
+                    }
+                }
+                if (maxIndex == -1)
+                    continue;
+                // end result: most occurring match for this beta index
+                // Use only most occurring one.
+                if (fullPaletteRemapAmount[maxIndex] < maxAmount)
+                {
+                    fullPaletteRemap[indexBeta] = (Byte)maxIndex;
+                    fullPaletteRemapAmount[indexBeta] = maxAmount;
+                    alreadyMatched[indexBeta] = true;
+                }
+            }
+            for (Int32 i = 0; i < 0x100; ++i)
+            {
+                if (!alreadyMatched[i])
+                    fullPaletteRemap[i] = 0x01;
+            }
+            for (Int32 i = 0; i < imgBeta.Length; i++)
+            {
+                imgBeta[i] = fullPaletteRemap[imgBeta[i]];
+            }
+            Bitmap newBm = ImageUtils.BuildImage(imgBeta, width, height, width, PixelFormat.Format8bppIndexed, this.m_LoadedFile.Frames[1].GetColors(), null);
+            this.LoadTestFile(newBm);
+        }
+
+        private void SwapColors()
+        {
+            Bitmap loadedBm;
+            if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel <= 8)
+                return;
+            Int32 stride;
+            Byte[] imgData = ImageUtils.GetImageData(loadedBm, out stride);
+            Int32 skipsize = m_LoadedFile.BitsPerPixel / 8;
+            Int32 height = loadedBm.Height;
+            Int32 width = loadedBm.Width;
+            //ARGB = [BB GG RR AA]
+            Int32 linePtr = 0;
+            for (Int32 y = 0; y < height; y++)
+            {
+                Int32 ptr = linePtr;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    Byte blue = imgData[ptr];
+                    Byte red = imgData[ptr+2];
+                    imgData[ptr] = red;
+                    imgData[ptr + 2] = blue;
+                    ptr += skipsize;
+                }
+                linePtr += stride;
+            }
+            Bitmap newBm = ImageUtils.BuildImage(imgData, width, height, stride, loadedBm.PixelFormat, null, null);
+            this.LoadTestFile(newBm);
+
+
+        }
         
     }
 }

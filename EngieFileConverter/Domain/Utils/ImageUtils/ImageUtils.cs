@@ -91,7 +91,7 @@ namespace Nyerguds.ImageManipulation
 
         public static Int32 GetClassicStride(Int32 width, Int32 bitsLength)
         {
-            return ((GetMinimumStride(width, bitsLength) + 3) / 4) * 4;
+            return (((((bitsLength * width) + 7) / 8) + 3) / 4) * 4;
         }
 
         public static PixelFormat GetIndexedPixelFormat(Int32 bpp)
@@ -515,17 +515,14 @@ namespace Nyerguds.ImageManipulation
                 if (palette == null)
                     palette = new Color[0];
                 ColorPalette pal = newImage.Palette;
-                Int32 palLen = pal.Entries.Length;
-                Int32 paletteLength = palette.Length;
-                for (Int32 i = 0; i < palLen; ++i)
-                {
-                    if (i < paletteLength)
-                        pal.Entries[i] = palette[i];
-                    else if (defaultColor.HasValue)
+                Int32 palLenNew = pal.Entries.Length;
+                Int32 minLen = Math.Min(palLenNew, palette.Length);
+                for (Int32 i = 0; i < minLen; ++i)
+                    pal.Entries[i] = palette[i];
+                // Fill in remainder with default if needed.
+                if (palLenNew > palette.Length && defaultColor.HasValue)
+                    for (Int32 i = palette.Length; i < palLenNew; ++i)
                         pal.Entries[i] = defaultColor.Value;
-                    else
-                        break;
-                }
                 // Palette property getter creates a copy, so the newly filled in palette
                 // is not actually referenced in the image until you set it again explicitly.
                 newImage.Palette = pal;

@@ -327,7 +327,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
-                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
                 width = Math.Max(width, frame.Width);
                 height = Math.Max(height, frame.Height);
                 if (width > 255 || height > 255)

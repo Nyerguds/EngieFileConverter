@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Nyerguds.FileData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
@@ -25,12 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
         protected String[] savecompressionTypes = new String[] { "None", "RLE" /*, "LZW", "LZSS" */};
         public override Int32 BitsPerPixel { get { return this.m_bpp; } }
-        public override Boolean NeedsPalette { get { return !this.m_loadedPalette; } }
-
-        /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
-        public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
-        // The SetColors function takes care of this. Return true to negate the automatic effect of IsFramescontainer.
-        public override Boolean FramesHaveCommonPalette { get { return true; } }
+        public override Boolean NeedsPalette { get { return this.m_loadedPalette == null; } }
 
         /// <summary>
         /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames.
@@ -40,9 +35,8 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return false; } }
         public Boolean IsMa8 { get; private set; }
 
-        protected Boolean m_loadedPalette;
+        protected String m_loadedPalette;
         protected Int32 m_bpp = 8;
-        private SupportedFileType[] m_FramesList;
 
         public override void SetColors(Color[] palette, SupportedFileType updateSource)
         {
@@ -75,7 +69,8 @@ namespace EngieFileConverter.Domain.FileTypes
             DynamixChunk scrChunk = DynamixChunk.ReadChunk(fileData, "SCR");
             if (scrChunk == null || scrChunk.Address != 0)
                 throw new FileTypeLoadException("File does not start with an SCR chunk!");
-            String firstChunk = new String(new Char[] {(Char)fileData[0x08], (Char)fileData[0x09], (Char)fileData[0x0A], (Char)fileData[0x0B]});
+
+            String firstChunk = Encoding.ASCII.GetString(fileData, 8, 4);
             Int32 width = 320;
             Int32 height = 200;
             if ("DIM:".Equals(firstChunk))
@@ -90,24 +85,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("SCR files with VQT section are currently not supported.");
             if (sourcePath != null)
             {
-                String output = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
-                String palName = output + ".pal";
-                if (File.Exists(palName))
-                {
-                    try
-                    {
-                        FilePaletteDyn palDyn = new FilePaletteDyn();
-                        Byte[] palData = File.ReadAllBytes(palName);
-                        palDyn.LoadFile(palData, palName);
-                        this.m_Palette = palDyn.GetColors();
-                        this.m_loadedPalette = true;
-                        this.LoadedFileName += "/PAL";
-                    }
-                    catch
-                    {
-                        /* ignore */
-                    }
-                }
+                FilePaletteDyn palDyn = CheckForPalette<FilePaletteDyn>(sourcePath);
+                if (palDyn != null)
+                    this.m_loadedPalette = palDyn.LoadedFile;
             }
             this.ExtraInfo = String.Empty;
             DynamixChunk dimChunk = DynamixChunk.ReadChunk(scrChunk.Data, "DIM");
@@ -167,7 +147,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "bin.bin", bindata);
-            Byte[] fullData = null;
+            Byte[] fullData;
             PixelFormat pf;
 
             if (vgadata == null)
@@ -269,7 +249,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // collapse stride should not be needed since this type only handles widths divisible by 8, but whatevs.
             Byte[] data = ImageUtils.GetImageData(image, out stride, true);
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
-                throw new ArgumentException(String.Format(ERR_UNKN_COMPR, compressionType), "saveOptions");
+                throw new ArgumentException(String.Format(ERR_UNKN_COMPR_X, compressionType), "saveOptions");
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)

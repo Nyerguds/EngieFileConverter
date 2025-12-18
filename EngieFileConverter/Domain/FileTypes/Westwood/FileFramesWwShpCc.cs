@@ -452,7 +452,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frame == null || frame.GetBitmap() == null)
                     throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;

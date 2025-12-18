@@ -262,7 +262,7 @@ namespace Nyerguds.ImageManipulation
             Boolean[] dontMatch = excludedindices == null ? null : new Boolean[palLength];
             if (excludedindices != null)
                 foreach (Int32 val in excludedindices)
-                    if (val > 0 && val < palLength)
+                    if (val >= 0 && val < palLength)
                         dontMatch[val] = true;
             Int32 colorMatch = 0;
             Int32 leastDistance = Int32.MaxValue;

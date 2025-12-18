@@ -84,6 +84,7 @@
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorPalette = new Nyerguds.Util.UI.PalettePanel();
             this.pzpImage = new Nyerguds.Util.UI.PixelZoomPanel();
+            this.tsmiSetDifferentPal = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             this.SuspendLayout();
@@ -340,6 +341,7 @@
             // 
             this.tsmiMatchToPalette.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiMatchToPal,
+            this.tsmiSetDifferentPal,
             this.tsmiChangeTo24BitRgb,
             this.tsmiChangeTo32BitArgb});
             this.tsmiMatchToPalette.Name = "tsmiMatchToPalette";
@@ -350,21 +352,21 @@
             // 
             this.tsmiMatchToPal.Name = "tsmiMatchToPal";
             this.tsmiMatchToPal.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
-            this.tsmiMatchToPal.Size = new System.Drawing.Size(210, 22);
+            this.tsmiMatchToPal.Size = new System.Drawing.Size(227, 22);
             this.tsmiMatchToPal.Text = "Match to &palette...";
             this.tsmiMatchToPal.Click += new System.EventHandler(this.TsmiMatchToPalette_Click);
             // 
             // tsmiChangeTo24BitRgb
             // 
             this.tsmiChangeTo24BitRgb.Name = "tsmiChangeTo24BitRgb";
-            this.tsmiChangeTo24BitRgb.Size = new System.Drawing.Size(210, 22);
+            this.tsmiChangeTo24BitRgb.Size = new System.Drawing.Size(227, 22);
             this.tsmiChangeTo24BitRgb.Text = "Change to 24-bit &RGB";
             this.tsmiChangeTo24BitRgb.Click += new System.EventHandler(this.TsmiChangeTo24BitRgb_Click);
             // 
             // tsmiChangeTo32BitArgb
             // 
             this.tsmiChangeTo32BitArgb.Name = "tsmiChangeTo32BitArgb";
-            this.tsmiChangeTo32BitArgb.Size = new System.Drawing.Size(210, 22);
+            this.tsmiChangeTo32BitArgb.Size = new System.Drawing.Size(227, 22);
             this.tsmiChangeTo32BitArgb.Text = "Change to 32 bit &ARGB";
             this.tsmiChangeTo32BitArgb.Click += new System.EventHandler(this.TsmiChangeTo32BitArgb_Click);
             // 
@@ -614,6 +616,14 @@
             this.pzpImage.ZoomFactor = 1;
             this.pzpImage.ZoomFactorMinimum = -10;
             // 
+            // tsmiSetDifferentPal
+            // 
+            this.tsmiSetDifferentPal.Name = "tsmiSetDifferentPal";
+            this.tsmiSetDifferentPal.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
+            this.tsmiSetDifferentPal.Size = new System.Drawing.Size(227, 22);
+            this.tsmiSetDifferentPal.Text = "Set different palette...";
+            this.tsmiSetDifferentPal.Click += new System.EventHandler(this.TsmiSetDifferentoPalette_Click);
+            // 
             // FrmFileConverter
             // 
             this.AllowDrop = true;
@@ -716,6 +726,7 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiMatchToPal;
         private System.Windows.Forms.ToolStripMenuItem tsmiChangeTo32BitArgb;
         private System.Windows.Forms.ToolStripMenuItem tsmiChangeTo24BitRgb;
+        private System.Windows.Forms.ToolStripMenuItem tsmiSetDifferentPal;
     }
 }
 

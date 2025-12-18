@@ -5,6 +5,7 @@ using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 using Nyerguds.Util.Ui;
 using System.Drawing;
+using System.Globalization;
 using EngieFileConverter.UI;
 
 namespace Nyerguds.Util.UI.SaveOptions
@@ -82,7 +83,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             // Update controller
             if (this.Info == null)
                 return;
-            this.Info.SaveData = this.numValue.Value.ToString();
+            this.Info.SaveData = this.numValue.Value.ToString(CultureInfo.InvariantCulture);
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

@@ -46,12 +46,12 @@ namespace EngieFileConverter.Domain.FileTypes
         protected static String[] SaveCompressionTypes = new String[] { "None", "RLE" };
 
         //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
-        public override Boolean NeedsPalette { get { return !this.m_loadedPalette; } }
+        public override Boolean NeedsPalette { get { return this.m_loadedPalette == null; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         public override Int32 BitsPerPixel { get { return this.m_bpp; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
-        protected Boolean m_loadedPalette;
+        protected String m_loadedPalette;
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return ArrayUtils.CloneArray(this.m_FramesList); } }
@@ -72,8 +72,8 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             this.LoadFromFileData(fileData, filename, false);
             this.SetFileNames(filename);
-            if (m_loadedPalette)
-                this.LoadedFileName += "/PAL";
+            if (m_loadedPalette != null)
+                this.LoadedFileName += "/" + Path.GetExtension(m_loadedPalette).TrimStart('.');
         }
 
         public override Boolean ColorsChanged()
@@ -96,24 +96,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Bad header size: INF chunk is not long enough.");
             if (sourcePath != null)
             {
-                String output = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
-                String palName = output + ".pal";
-                if (File.Exists(palName))
-                {
-                    try
-                    {
-                        FilePaletteDyn palDyn = new FilePaletteDyn();
-                        Byte[] palData = File.ReadAllBytes(palName);
-                        palDyn.LoadFile(palData, palName);
-                        this.m_Palette = palDyn.GetColors();
-                        PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
-                        this.m_loadedPalette = true;
-                    }
-                    catch
-                    {
-                        /* ignore */
-                    }
-                }
+                FilePaletteDyn palDyn = CheckForPalette<FilePaletteDyn>(sourcePath);
+                if (palDyn != null)
+                    this.m_loadedPalette = palDyn.LoadedFile;
             }
             Int32[] widths = new Int32[frames];
             Int32[] heights = new Int32[frames];
@@ -193,7 +178,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException(ex.Message, ex);
+                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex), ex);
                 }
                 this.m_bpp = eightBitFound ? 8 : 4;
                 pf = eightBitFound ? PixelFormat.Format8bppIndexed : PixelFormat.Format4bppIndexed;
@@ -209,7 +194,6 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (binChunk == null)
                         throw new FileTypeLoadException("Cannot find BIN chunk!");
                     this.InternalType = DynBmpInternalType.Ma8;
-
                 }
                 if (binChunk.Data.Length == 0)
                     throw new FileTypeLoadException("Empty BIN chunk!");
@@ -253,7 +237,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 this.ExtraInfo += "\n" + compressionStr;
             }
-            if (!this.m_loadedPalette)
+            if (this.m_loadedPalette == null)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, this.TransparencyMask, false);
             else if (this.m_bpp == 4 && this.m_Palette.Length > 16)
             {
@@ -281,7 +265,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetFileClass(this.m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
-                frame.SetNeedsPalette(!this.m_loadedPalette);
+                frame.SetNeedsPalette(this.m_loadedPalette == null);
                 this.m_FramesList[i] = frame;
             }
             if (matrix != null && frames > 0)
@@ -436,7 +420,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (nrOfFrames == 0)
                 throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
             if (saveType == DynBmpInternalType.Unknown)
-                throw new ArgumentException(String.Format(ERR_UNKN_COMPR, String.Empty).TrimEnd(' ', '\"'), "saveType");
+                throw new ArgumentException(ERR_UNKN_COMPR, "saveType");
             // write save logic for frames
             PixelFormat pf = PixelFormat.Undefined;
             Int32 bpp = 0;
@@ -455,7 +439,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     pf = bm.PixelFormat;
                     if (pf != PixelFormat.Format4bppIndexed && pf != PixelFormat.Format8bppIndexed)
-                        throw new ArgumentException(ERR_4BPP_8BPP_INPUT, "fileToSave");
+                        throw new ArgumentException(ERR_INPUT_4BPP_8BPP, "fileToSave");
                     bpp = Image.GetPixelFormatSize(pf);
                 }
                 else if (pf != bm.PixelFormat)
@@ -519,7 +503,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         case DynBmpInternalCompression.Lzss:
                             throw new ArgumentException(String.Format("Compression type \"{0}\" is not implemented.", CompressionTypes[(Int32)compressionType]), "compressionType");
                         default:
-                            throw new ArgumentException(String.Format(ERR_UNKN_COMPR, compressionType), "compressionType");
+                            throw new ArgumentException(String.Format(ERR_UNKN_COMPR_X, compressionType), "compressionType");
                     }
                     dataChunk = new DynamixChunk(isMa8 ? "MA8" : "BIN", binCompression, binDataLen, binData);
                     chunks.Add(dataChunk);
@@ -586,7 +570,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         case DynBmpInternalCompression.Lzss:
                             throw new ArgumentException(String.Format("Compression type \"{0}\" is not implemented.", CompressionTypes[(Int32)compressionType]), "compressionType");
                         default:
-                            throw new ArgumentException(String.Format(ERR_UNKN_COMPR, compressionType), "compressionType");
+                            throw new ArgumentException(String.Format(ERR_UNKN_COMPR_X, compressionType), "compressionType");
                     }
                     dataChunk = new DynamixChunk("BIN", binCompression, binDataLen, binData);
                     chunks.Add(dataChunk);

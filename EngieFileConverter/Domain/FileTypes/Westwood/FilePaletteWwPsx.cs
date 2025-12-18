@@ -98,7 +98,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 remainingHeight -= 16;
             }
             Byte[] fileData2 = ArrayUtils.CloneArray(fileData);
-            PixelFormatter.ReorderBits(fileData2, 16, this.m_Height, 32, pf, PixelFormatter.Format16BitArgb1555Be);
+            PixelFormatter.ReorderBits(fileData2, 16, this.m_Height, 32, pf, PixelFormatter.Format16BitArgb1555Le);
             Bitmap fullImage = ImageUtils.BuildImage(fileData2, 16, this.m_Height, 32, PixelFormat.Format16bppArgb1555, null, null);
             this.m_LoadedImage = fullImage;
             this.ExtraInfo = "Contains " + nrOfPalettes + " color palette" + (nrOfPalettes != 1 ? "s" : String.Empty);

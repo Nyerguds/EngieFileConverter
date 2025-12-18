@@ -21,7 +21,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width = 320;
         protected Int32 m_Height = 200;
-        public Boolean HasPalette { get; protected set; }
         public Int32 CompressionType { get; protected set; }
         public CpsVersion CpsVersion { get; protected set; }
         protected String[] compressionTypes = new String[] { "No compression", "LZW-12", "LZW-14", "RLE", "LCW" };
@@ -31,8 +30,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood CPS"; } }
         public override String[] FileExtensions { get { return new String[] {"cps"}; } }
         public override String ShortTypeDescription { get { return "Westwood CPS File"; } }
-        public override Boolean NeedsPalette { get { return !this.HasPalette; } }
+        public override Boolean NeedsPalette { get { return m_LoadedPalette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
+        protected String m_LoadedPalette = null;
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -64,6 +64,8 @@ namespace EngieFileConverter.Domain.FileTypes
             this.CompressionType = compression;
             this.CpsVersion = cpsVersion;
             String externalPalette = null;
+            this.SetFileNames(filename);
+            SupportedFileType pal = null;
             if (palette == null && filename != null)
             {
                 String palName = Path.GetFileNameWithoutExtension(filename) + ".pal";
@@ -71,27 +73,24 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileInfo palInfo = new FileInfo(palettePath);
                 if (cpsVersion == CpsVersion.Pc && palInfo.Exists && palInfo.Length == 0x300)
                 {
-                    try
+                    pal = CheckForPalette<FilePalette6Bit>(filename);
+                    if (pal != null)
                     {
-                        palette = ColorUtils.ReadFromSixBitPaletteFile(palettePath);
-                        externalPalette = palName;
+                        palette = pal.GetColors();
+                        externalPalette = pal.LoadedFile;
                     }
-                    catch (ArgumentException) { }
                 }
-                else if (cpsVersion == CpsVersion.AmigaEob1 || cpsVersion == CpsVersion.AmigaEob2 && palInfo.Exists && palInfo.Length == 0x64)
+                else if ((cpsVersion == CpsVersion.AmigaEob1 || cpsVersion == CpsVersion.AmigaEob2) && palInfo.Exists && palInfo.Length == 0x40)
                 {
-                    try
+                    pal = CheckForPalette<FilePaletteWwAmiga>(filename);
+                    if (pal != null)
                     {
-                        FilePaletteWwAmiga amigaPal = new FilePaletteWwAmiga();
-                        Byte[] palBytes = File.ReadAllBytes(palettePath);
-                        amigaPal.LoadFile(palBytes, palettePath);
-                        palette = amigaPal.GetColors();
-                        externalPalette = palName;
+                        palette = pal.GetColors();
+                        externalPalette = pal.LoadedFile;
                     }
-                    catch (FileTypeLoadException) { }
                 }
             }
-            this.HasPalette = palette != null;
+            this.m_LoadedPalette = pal != null ? pal.LoadedFile : (palette != null ? (filename ?? String.Empty): null);
             if (palette != null)
             {
                 Int32 palLen = palette.Length;
@@ -113,8 +112,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Cannot construct image from read data!", e);
             }
-            this.SetExtraInfo(externalPalette);
-            this.SetFileNames(filename);
+            this.SetExtraInfo(Path.GetFileName(externalPalette));
         }
 
         /// <summary>
@@ -182,7 +180,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException("Could not load CPS palette: " + ex.Message, ex);
+                    throw new FileTypeLoadException("Could not load CPS palette: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
                 }
             }
             else
@@ -280,14 +278,15 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected void SetExtraInfo(String externalPalette)
         {
-            Boolean isAmiga = this.CpsVersion == CpsVersion.AmigaEob1 || this.CpsVersion == CpsVersion.AmigaEob2;
+            Boolean amigaV1 = this.CpsVersion == CpsVersion.AmigaEob1;
+            Boolean amigaV2 = this.CpsVersion == CpsVersion.AmigaEob2;
+            Boolean isAmiga = amigaV1 || amigaV2;
             Boolean isToon = this.CpsVersion == CpsVersion.Toonstruck;
-            Boolean amigaPal1 = this.HasPalette && this.CpsVersion == CpsVersion.AmigaEob1;
-            Boolean amigaPal2 = this.HasPalette && this.CpsVersion == CpsVersion.AmigaEob2;
             String compression = this.CompressionType == 5 ? "LZSS" : this.compressionTypes[this.CompressionType];
             this.ExtraInfo = "Version: " + (isAmiga ? "Amiga" : isToon ? "Toonstruck" : "PC")
                              + "\nCompression: " + compression
-                             + (externalPalette != null ? ("\nPalette loaded from " + externalPalette.ToUpperInvariant()) : ("\nIncludes palette: " + (this.HasPalette ? "Yes" + (amigaPal1 ? " (EOB 1)" : (amigaPal2 ? " (EOB 2)" : String.Empty)) : "No")));
+                             + (externalPalette != null ? ("\nPalette loaded from " + externalPalette) : 
+                                ("\nIncludes palette: " + (!this.NeedsPalette ? "Yes" + (amigaV1 ? " (EOB 1)" : (amigaV2 ? " (EOB 2)" : String.Empty)) : "No")));
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)

@@ -22,11 +22,17 @@ namespace Nyerguds.FileData.NullSoft
     /// make a count value of 1 (11000001b) then the display value of 192 (or higher) (makes a 2 byte
     /// entry).
     /// </summary>
-    public class PcxCompression
+    public static class PcxCompression
     {
         public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset)
         {
-            List<Byte> c0Bytes = new List<Byte>();
+            Boolean zeroRepeatsFound;
+            return RleDecode(buffer, startOffset, endOffset, scanlineSize, planes, height, out offset, out zeroRepeatsFound);
+        }
+
+        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset, out Boolean zeroRepeatsFound)
+        {
+            zeroRepeatsFound = false;
             Int32 outputSize = planes * scanlineSize * height;
             offset = startOffset ?? 0;
             UInt32 end = (UInt32)buffer.LongLength;
@@ -47,6 +53,7 @@ namespace Nyerguds.FileData.NullSoft
                     {
                         amount = 1;
                         val = 0xc0;
+                        zeroRepeatsFound = true;
                     }
                     else
                         val = buffer[offset++];

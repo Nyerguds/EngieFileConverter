@@ -72,9 +72,9 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 frameData = IgcBitMaskCompression.BitMaskDecompress(frameDataUncompr, width, height);
             }
-            catch (ArgumentException e)
+            catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Bit mask decompression failed: " + e.Message, e);
+                throw new FileTypeLoadException("Bit mask decompression failed: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
             }
             this.m_LoadedImage = ImageUtils.BuildImage(frameData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
         }
@@ -85,7 +85,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
             if (fileToSave.Width > 320 || fileToSave.Height > 200)
                 throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
 

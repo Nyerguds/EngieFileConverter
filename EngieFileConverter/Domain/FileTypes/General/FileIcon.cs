@@ -116,7 +116,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         bmp = this.GetBmp<FileImageBmp>(frameData);
                     else
                     {
-                        bmp = DibHandler.ImageFromDib(frameData, 0, 0, true, out originalPixelFormat);
+                        bmp = DibHandler.ImageFromDib(frameData, 0, 0, true, false, out originalPixelFormat);
                         if (bmp != null)
                             type = "dib";
                     }
@@ -211,7 +211,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 opts.Add(new SaveOption("PIX", SaveOptionType.Boolean, "Use pixel zoom for larger images", "0"));
             }
             // The character filter specifically disallows "-", so no actual ranges can be given.
-            opts.Add(new SaveOption("SIZ", SaveOptionType.String, "Included sizes: (Comma separated, max 256)", "0123456789, ", "16, 24, 32, 48, 64, 96, 128, 192, 256"));
+            opts.Add(new SaveOption("SIZ", SaveOptionType.String, "Included sizes: (Comma separated, max 256)", "0123456789, " + Environment.NewLine, "16, 24, 32, 48, 64, 96, 128, 192, 256"));
             return opts.ToArray();
         }
 

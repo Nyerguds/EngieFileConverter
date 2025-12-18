@@ -29,9 +29,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             return new SaveOption[]
             {
-                new SaveOption("IGI", SaveOptionType.String, "Exclude these color indices from the matching process", "0123456789;, ", String.Empty),
+                new SaveOption("IGI", SaveOptionType.String, "Exclude these color indices from the matching process", "0123456789;, " + Environment.NewLine, String.Empty),
                 new SaveOption("DUP", SaveOptionType.Boolean, "Duplicate on excluded indices", String.Empty),
-                new SaveOption("IGM", SaveOptionType.String, "Prohibit matching to these color indices", "0123456789;, ", String.Empty)
+                new SaveOption("IGM", SaveOptionType.String, "Prohibit matching to these color indices", "0123456789;, " + Environment.NewLine, String.Empty)
             };
         }
 

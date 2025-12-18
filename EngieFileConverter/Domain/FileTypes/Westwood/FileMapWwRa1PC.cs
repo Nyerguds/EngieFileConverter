@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Nyerguds.FileData.Westwood;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -19,7 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return "Red Alert map file"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "mrp", "ini" }; } }
+        public override String[] FileExtensions { get { return new String[] { "mpr", "ini" }; } }
         public override Int32 Width { get { return this.width; } }
         public override Int32 Height { get { return this.height; } }
         public override Int32 BitsPerPixel { get { return 0; } }
@@ -80,26 +81,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 readPtr += 4;
                 Byte[] dest = new Byte[8192];
                 Int32 readPtr2 = readPtr;
-                Int32 decompressed = Nyerguds.FileData.Westwood.WWCompression.LcwDecompress(compressedMap, ref readPtr2, dest, 0);
+                Int32 decompressed = WWCompression.LcwDecompress(compressedMap, ref readPtr2, dest, 0);
                 Array.Copy(dest, 0, mapFile, writePtr, decompressed);
                 readPtr += length;
                 writePtr += decompressed;
             }
             return mapFile;
-            /*/
-            // Align from 24 to 32 bit
-            Byte[] mapFile2 = new Byte[128 * 128 * 16];
-            writePtr = 0;
-            for (Int32 i = 0; i < mapFile.Length; i += 3)
-            {
-                writePtr += 8;
-                mapFile2[writePtr++] = mapFile[i];
-                mapFile2[writePtr++] = mapFile[i + 1];
-                mapFile2[writePtr++] = mapFile[i + 2];
-                writePtr += 5;
-            }
-            File.WriteAllBytes("SCA01EA_expanded16.BIN", mapFile2);
-            //*/
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

@@ -6,10 +6,41 @@ namespace Nyerguds.FileData.Compression
     /// <summary>
     /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website:
     /// https://marknelson.us/posts/1989/10/01/lzw-data-compression.html
-    /// Based on the C# translation by Github user pevillarreal: https://github.com/pevillarreal/LzwCompressor
+    /// Based on the C# translation by Pedro Villarreal:
+    /// https://github.com/pevillarreal/LzwCompressor
+    /// Pedro Villarreal's code is released under the MIT license:
+    /// 
+    /// ==============================================================================
+    /// 
+    /// MIT License
+    ///
+    /// Copyright (c) 2019 Pedro Villarreal
+    /// 
+    /// Permission is hereby granted, free of charge, to any person obtaining a copy
+    /// of this software and associated documentation files (the "Software"), to deal
+    /// in the Software without restriction, including without limitation the rights
+    /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    /// copies of the Software, and to permit persons to whom the Software is
+    /// furnished to do so, subject to the following conditions:
+    /// 
+    /// The above copyright notice and this permission notice shall be included in all
+    /// copies or substantial portions of the Software.
+    /// 
+    /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    /// SOFTWARE.
+    /// 
+    /// ==============================================================================
+    /// 
     /// The code was adapted by Maarten Meuris aka Nyerguds:
     /// -Fixes the 7-bit filter caused by using an ASCII stream reader (an issue later fixed on the original repository)
-    /// -Uses byte arrays as input and output, and uses an enum to switch to different supported bit lengths.
+    /// -Uses byte arrays as input and output.
+    /// -Added support for 12 and 13 bit, with an enum for the different supported bit lengths. different values for
+    ///  TABLE_SIZE taken from https://marknelson.us/assets/1989-10-01-lzw-data-compression/lzw_nelson.cpp
     /// </summary>
     public class LzwCompression
     {
@@ -41,7 +72,7 @@ namespace Nyerguds.FileData.Compression
             this.HASHING_SHIFT = this.BITS - 8; // hash bit to use with the hasing algorithm to find correct index
             this.MAX_VALUE = (1 << this.BITS) - 1; // max value allowed based on max bits
             this.MAX_CODE = this.MAX_VALUE - 1; // max code possible
-            // TABLE_SIZE must be bigger than the maximum allowed by maxbits and prime
+            // TABLE_SIZE must be bigger than the maximum allowed by maxbits, and prime
             switch (bitSize)
             {
                 case LzwSize.Size12Bit:
@@ -59,7 +90,10 @@ namespace Nyerguds.FileData.Compression
             this.append_character = new Int32[this.TABLE_SIZE]; // character table
         }
 
-        private void Initialize() // used to blank  out bit buffer incase this class is called to comprss and decompress from the same instance
+        /// <summary>
+        /// Used to blank out the bit buffer, in case this class is called to compress and decompress from the same instance.
+        /// </summary>
+        private void Initialize()
         {
             this.input_bit_buffer = 0;
             this.input_bit_count = 0;

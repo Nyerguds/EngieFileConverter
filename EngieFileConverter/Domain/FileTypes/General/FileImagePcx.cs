@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public virtual Boolean CanSave { get { return false; } }
+        public override Boolean CanSave { get { return false; } }
 
         public override FileClass FileClass
         {
@@ -96,7 +96,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //UInt16 vDpi = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 14); // Vertical Resolution of image in DPI
             Byte numPlanes = fileData[65]; // Number of color planes
             UInt16 bytesPerLine = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 66); // Number of bytes to allocate for a scanline plane.  MUST be an EVEN number.  Do NOT calculate from Xmax-Xmin.
-            UInt16 paletteInfo = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 68); // How to interpret palette- 1 = Color/BW, 2 = Grayscale (ignored in PB IV/ IV +)
+            UInt16 paletteInfo = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 68); // How to interpret palette: 1 = Color/BW, 2 = Grayscale (ignored in PB IV/ IV Plus)
             //UInt16 hscreenSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 70); // Horizontal screen size in pixels. New field found only in PB IV/IV Plus
             //UInt16 vscreenSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 72); // Vertical screen size in pixels. New field found only in PB IV/IV Plus
 
@@ -105,11 +105,12 @@ namespace EngieFileConverter.Domain.FileTypes
             UInt32 fileEnd = (UInt32)fileData.Length;
             Int32 stride = numPlanes * bytesPerLine;
             UInt32 endOfData;
+            Boolean zeroRepeatsFound = false;
             Byte[] imageData;
 
             //Boolean exceedsLines = false;
             if (usesRLE)
-                imageData = PcxCompression.RleDecode(fileData, 128, null, bytesPerLine, numPlanes, height, out endOfData);
+                imageData = PcxCompression.RleDecode(fileData, 128, null, bytesPerLine, numPlanes, height, out endOfData, out zeroRepeatsFound);
             else
             {
                 Int32 fullSize = stride * height;
@@ -144,6 +145,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     extraInfo.Append("Unknown version");
                     break;
             }
+            if (zeroRepeatsFound)
+                extraInfo.Append("\nNon-standard repeat commands of length 0 found!");
             if (!usesRLE)
                 extraInfo.Append("\nNo RLE compression");
             //else if (exceedsLines)
@@ -163,10 +166,22 @@ namespace EngieFileConverter.Domain.FileTypes
             if (version >= 5 && nrOfcolors <= 0x100)
             {
                 // detect palette: first check behind data, then check end of file, and if those two are the same but the byte before it doesn't match 0C, accept it anyway.
-                if (endOfData + 1 + palsize <= fileEnd && fileData[endOfData] == 0x0C)
+                Int32 behindData = (endOfData + 1 + palsize <= fileEnd) ? (Int32)endOfData : -1;
+                Int32 fromEnd = (fileEnd - palsize - 1 > 0) ? (Int32)(fileEnd - palsize - 1) : -1;
+
+                if (behindData != -1 && fileData[behindData] == 0x0C)
+                {
                     palOffset = (Int32)endOfData + 1;
-                else if (fileData[fileEnd - palsize - 1] == 0x0C)
+                    if (behindData == fromEnd)
+                        extraInfo.Append("\nPalette found behind data, at end of file.");
+                    else
+                        extraInfo.Append("\nPalette found behind data.");
+                }
+                else if (fromEnd != -1 && fileData[fromEnd] == 0x0C)
+                {
                     palOffset = (Int32)fileEnd - palsize;
+                    extraInfo.Append("\nPalette found behind data.");
+                }
                 else if (this.m_BitsPerPixel == 8 && endOfData + 1 == fileEnd - palsize)
                 {
                     palOffset = (Int32)endOfData + 1;
@@ -175,6 +190,9 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else if (paletteInfo != 2 && m_ColorsInPalette > 16)
                 throw new FileTypeLoadException("No palette found for indexed image with more than 16 colors!");
+            Boolean usesHeaderPal = palOffset == 16;
+            if (usesHeaderPal && m_ColorsInPalette > 16)
+                m_ColorsInPalette = 16;
             if (numPlanes == 1)
             {
                 switch (bitsPerPlane)
@@ -190,7 +208,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         else if (version <= 3 || (version == 4 && paletteInfo != 1))
                             this.m_Palette = new[] {Color.Black, Color.White};
                         else
-                            this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, palOffset, nrOfcolors);
+                            this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, palOffset, m_ColorsInPalette);
                         break;
                     case 2:
                         pf = PixelFormat.Format4bppIndexed;
@@ -238,7 +256,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (paletteInfo != 0)
                         extraInfo.Append(" (v4 palette handling)");
                 }
-                else if (version == 0 || version == 3 && numPlanes < 8 || palOffset == -1)
+                else if ((version == 0 || version == 3) && (numPlanes < 8))
                     this.m_Palette = PaletteUtils.GetEgaPalette(bitsPerPlane * numPlanes);
                 else
                     this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, palOffset, m_ColorsInPalette);
@@ -251,7 +269,15 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (pf == PixelFormat.Undefined)
                 throw new FileTypeLoadException("Unsupported for now.");
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, stride, pf, this.m_Palette, Color.Empty);
+            if (this.m_BitsPerPixel == 8 && usesHeaderPal)
+            {
+                extraInfo.Append("\nNo palette found for indexed image with more than 16 colors! Reverting to 16-colour palette.");
+                Color[] palette = new Color[256];
+                for (Int32 i = 0; i < 0x100; i+=0x10)
+                    Array.Copy(m_Palette, 0, palette, i, 0x10);
+                m_Palette = palette;
+            }
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, stride, pf, this.m_Palette, Color.Black);
             //if (hDpi != 0 && vDpi != 0 && !(hDpi == width && vDpi == height))
             //    m_LoadedImage.SetResolution(hDpi, vDpi);
             if (nrOfcolors < 0x100 && nrOfcolors != (1 << Image.GetPixelFormatSize(pf)))
@@ -261,11 +287,11 @@ namespace EngieFileConverter.Domain.FileTypes
 
         private Color[] LoadPaletteCga(Byte[] fileData, Int32 index, UInt16 paletteInfo, Int32 bitsPerPixel)
         {
-            /* Get the CGA background color */
-            Byte cgaBackgroundColor = (Byte)(fileData[index] >> 4);   // 0 to 15
+            /* Get the explicitly defined color */
+            Byte cgaDefinedColor = (Byte)(fileData[index] >> 4);   // 0 to 15
             /* Get the CGA foreground palette */
             if (bitsPerPixel == 1)
-                return PaletteUtils.GetCgaPalette(cgaBackgroundColor, false, false, false, bitsPerPixel);
+                return PaletteUtils.GetCgaPalette(cgaDefinedColor, false, false, false, bitsPerPixel);
 
             Boolean cgaPaletteValue;
             Boolean cgaIntensityValue;
@@ -294,7 +320,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 cgaPaletteValue = ((val & 0x40) >> 6) == 1;
                 cgaIntensityValue = ((val & 0x20) >> 5) == 1;
             }
-            return PaletteUtils.GetCgaPalette(cgaBackgroundColor, cgaColorBurstEnable, cgaPaletteValue, cgaIntensityValue, bitsPerPixel);
+            return PaletteUtils.GetCgaPalette(cgaDefinedColor, cgaColorBurstEnable, cgaPaletteValue, cgaIntensityValue, bitsPerPixel);
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)

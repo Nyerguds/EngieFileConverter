@@ -93,7 +93,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         return null;
                     }
                     // VDA files always have a palette.
-                    if (!testFile.m_PaletteSet)
+                    if (testFile.m_LoadedPalette == null)
                         return null;
                     Int32 badPalMatches = 0;
                     Color[] testPal = testFile.GetColors();
@@ -395,7 +395,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
-                frame.SetNeedsPalette(!this.m_PaletteSet);
+                frame.SetNeedsPalette(this.m_LoadedPalette == null);
                 // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                 frame.SetColors(this.m_Palette, this);
                 frame.SetFileClass(this.FrameInputFileClass);
@@ -433,7 +433,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     //imageData = null;
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
-                    frame.SetNeedsPalette(!this.m_PaletteSet);
+                    frame.SetNeedsPalette(this.m_LoadedPalette == null);
                     // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                     frame.SetColors(this.m_Palette, this);
                     frame.SetFileClass(this.FrameInputFileClass);
@@ -790,9 +790,9 @@ namespace EngieFileConverter.Domain.FileTypes
                         else if (compressionType == 2)
                             compressedBytes = MythosCompression.CollapsedTransparencyEncode(chunk.ImageData, TransparentIndex, chunk.ImageRect.Width, 8);
                     }
-                    catch (OverflowException ex)
+                    catch (ArgumentException ex)
                     {
-                        throw new ArgumentException(ex.Message, "fileToSave", ex);
+                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex), "fileToSave", ex);
                     }
                     if (compressedBytes != null && compressedBytes.Length < chunk.ImageData.Length)
                     {
@@ -842,9 +842,9 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType sft = frames[i];
                 if (sft.BitsPerPixel != 8)
-                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
                 if (sft.Width != 320 || sft.Height != 200)
-                    throw new ArgumentException(ERR_320x200, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_DIMENSIONS, 320, 200), "fileToSave");
                 if (palette == null || palette.Length == 0)
                     palette = sft.GetColors();
             }

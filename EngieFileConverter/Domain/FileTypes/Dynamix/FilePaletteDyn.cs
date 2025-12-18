@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Failed to load file as palette: " + ex.Message, ex);
+                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
             }
             this.m_Palette = palette;
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
@@ -70,7 +70,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
             Color[] palEntries = fileToSave.GetColors();
             if (palEntries == null || palEntries.Length == 0)
                 throw new ArgumentException(ERR_NO_COL, "fileToSave");

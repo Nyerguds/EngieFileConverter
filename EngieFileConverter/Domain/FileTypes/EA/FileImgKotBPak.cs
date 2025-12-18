@@ -179,7 +179,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (image.PixelFormat != PixelFormat.Format4bppIndexed)
-                throw new ArgumentException(ERR_4BPP_INPUT, "fileToSave");
+                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 4), "fileToSave");
             width = image.Width;
             height = image.Height;
             if (width * height / 2 > UInt16.MaxValue)

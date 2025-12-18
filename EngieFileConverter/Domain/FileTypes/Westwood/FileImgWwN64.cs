@@ -116,7 +116,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Array.Copy(fileData, hdrDataOffset, imageData, 0, Math.Min(fileData.Length - hdrDataOffset, imageDataSize));
                 if (this.HdrColorFormat == 2)
                 {
-                    PixelFormatter.ReorderBits(imageData, hdrWidth, hdrHeight, stride, Format16BitRgba5551Be, PixelFormatter.Format16BitArgb1555Be);
+                    PixelFormatter.ReorderBits(imageData, hdrWidth, hdrHeight, stride, Format16BitRgba5551Be, PixelFormatter.Format16BitArgb1555Le);
                 }
                 if (hdrPaletteOffset != 0)
                 {
@@ -210,7 +210,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                     imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppArgb1555, true);
-                PixelFormatter.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555Be, Format16BitRgba5551Be);
+                PixelFormatter.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555Le, Format16BitRgba5551Be);
             }
             else
                 imageData = ImageUtils.GetImageData(image, out stride, true);

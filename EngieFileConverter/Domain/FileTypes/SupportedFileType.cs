@@ -26,13 +26,13 @@ namespace EngieFileConverter.Domain.FileTypes
         protected static readonly String ERR_EMPTY_FRAMES = "This format can't handle empty frames.";
         protected static readonly String ERR_FRAMES_DIFF = "This format needs all its frames to be the same size.";
         protected static readonly String ERR_FRAMES_BPPDIFF = "All frames must have the same color depth.";
-        protected static readonly String ERR_1BPP_INPUT = "This format needs 1bpp input.";
-        protected static readonly String ERR_4BPP_INPUT = "This format needs 4bpp input.";
-        protected static readonly String ERR_8BPP_INPUT = "This format needs 8bpp input.";
-        protected static readonly String ERR_4BPP_8BPP_INPUT = "This format needs 4bpp or 8bpp input.";
+        protected static readonly String ERR_INPUT_XBPP = "This format needs {0}bpp input.";
+        protected static readonly String ERR_INPUT_4BPP_8BPP = "This format needs 4bpp or 8bpp input.";
+        protected static readonly String ERR_INPUT_DIMENSIONS = "This format needs {0}x{1} input.";
         protected static readonly String ERR_NO_COL = "The given input contains no colors.";
-        protected static readonly String ERR_UNKN_COMPR = "Unknown compression type \"{0}\".";
-        protected static readonly String ERR_320x200 = "This format needs 320x200 input.";
+        protected static readonly String ERR_UNKN_COMPR_ = "Unknown compression type";
+        protected static readonly String ERR_UNKN_COMPR = ERR_UNKN_COMPR_ + ".";
+        protected static readonly String ERR_UNKN_COMPR_X = ERR_UNKN_COMPR_ + " \"{0}\".";
 
         #endregion
         /// <summary>Main image in this loaded file. Can be left as null for an empty frame or the main entry of a frames container.</summary>
@@ -312,6 +312,73 @@ namespace EngieFileConverter.Domain.FileTypes
             return cols;
         }
 
+        /// <summary>
+        /// Finds an accompanying palette with the same filename, loads it into m_Palette, and adds "/.pal" to the loaded filename.
+        /// </summary>
+        /// <typeparam name="T">Type of the file to load for the palette.</typeparam>
+        /// <param name="inputPath">Input path of the file</param>
+        /// <returns>The palette, or null if none was found.</returns>
+        protected T CheckForPalette<T>(String inputPath) where T : SupportedFileType, new()
+        {
+            T palette = null;
+
+            String outputPath = Path.GetDirectoryName(inputPath);
+            String palName = Path.GetFileNameWithoutExtension(inputPath) + ".pal";
+            String[] files = Directory.GetFiles(outputPath, palName);
+            if (files.Length > 0)
+            {
+                try
+                {
+                    String palFile = files[0];
+                    palette = new T();
+                    Byte[] palData = File.ReadAllBytes(palFile);
+                    palette.LoadFile(palData, palFile);
+                    this.m_Palette = palette.GetColors();
+                    this.LoadedFileName += "/" + (Path.GetExtension(palFile) ?? String.Empty).TrimStart('.');
+                }
+                catch
+                {
+                    /* ignore */
+                }
+            }
+            return palette;
+        }
+
+        /// <summary>
+        /// Checks if this is either a single image, or a frames type where all images have the same bpp value,
+        /// and returns the found bpp, or -1 if there's no single value. This operation ignores null-frames,
+        /// but will return -1 if all frames are null frames.
+        /// </summary>
+        /// <returns></returns>
+        public Int32 GetGlobalBpp()
+        {
+            Int32 bpp;
+            if (!this.IsFramesContainer)
+            {
+                bpp = this.BitsPerPixel;
+            }
+            else
+            {
+                SupportedFileType[] frames = this.Frames;
+                Int32 len = frames.Length;
+                bpp = -1;
+                for (Int32 i = 0; i < len; ++i)
+                {
+                    SupportedFileType frame = frames[i];
+                    if (frame == null)
+                        continue;
+                    if (bpp == -1)
+                        bpp = frame.BitsPerPixel;
+                    else if (bpp != frame.BitsPerPixel)
+                    {
+                        bpp = -1;
+                        break;
+                    }
+                }
+            }
+            return bpp;
+        }
+
         private static Type[] m_autoDetectTypes =
         {
             typeof(FileImagePng),
@@ -335,9 +402,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesFntD2k),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
-#if DEBUG
             typeof(FileImgWwMhwanh), // Experimental
-#endif
             typeof(FileMapWwCc1Pc),
             typeof(FileMapWwCc1N64),
             typeof(FileMapWwCc1PcFromIni),
@@ -345,6 +410,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileTilesWwCc1N64Bpp4),
             typeof(FileTilesWwCc1N64Bpp8),
             typeof(FileTilesetWwCc1PC),
+            typeof(FileFramesDogsDb),
             typeof(FileFramesAdvVga),
             typeof(FileImgKort),
             typeof(FileFramesKortBmp),
@@ -415,6 +481,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePaletteWwCc1N64Pa8),
             typeof(FilePaletteWwCc1N64Pa4),
             typeof(FileTblWwPal),
+            typeof(FileFramesDogsDb),
             typeof(FileFramesAdvVga),
             typeof(FileFramesAdvIco),
             typeof(FileFramesDynBmp),
@@ -469,6 +536,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImgWwCpsToon),
             typeof(FileFramesWwCpsAmi4),
             typeof(FileTilesetWwCc1PC),
+            typeof(FileFramesDogsDb),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
             typeof(FilePaletteWwCc1N64Pa4),

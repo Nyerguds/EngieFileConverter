@@ -42,7 +42,7 @@ namespace EngieFileConverter.Domain.FileTypes
             try
             {
                 if (headerSize == 40)
-                    this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14, headerEnd);
+                    this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14, headerEnd, true);
                 else if (headerSize == 124)
                     this.m_LoadedImage = DibHandler.ImageFromDib5(fileData, 14, headerEnd, false);
                 else

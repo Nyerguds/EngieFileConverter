@@ -275,13 +275,13 @@ namespace EngieFileConverter.Domain.FileTypes
 
             return new SaveOption[]
             {
-                new SaveOption("VER", SaveOptionType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape? "0" : "1"),
+                new SaveOption("VER", SaveOptionType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape ? "0" : "1"),
                 // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
                 new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, ", remapped, new SaveEnableFilter("RMA", true, "1")),
+                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, " + Environment.NewLine, remapped, new SaveEnableFilter("RMA", true, "1")),
                 new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "1"),
-                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCA", false, "0"))
+                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, " + Environment.NewLine, uncompressed, new SaveEnableFilter("NCA", false, "0"))
             };
         }
 
@@ -507,7 +507,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frame == null || frame.GetBitmap() == null)
                     throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
             }
             return frames;
         }

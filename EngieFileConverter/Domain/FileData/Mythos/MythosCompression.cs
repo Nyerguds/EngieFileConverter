@@ -86,7 +86,7 @@ namespace Nyerguds.FileData.Mythos
         public static Byte[] FlagRleEncode(Byte[] buffer, Byte flag, Int32 lineWidth, Int32 headerSize)
         {
             if (headerSize + 3 >= 0x10000)
-                throw new OverflowException("Header too big!");
+                throw new ArgumentException("Header too big!", "headerSize");
             UInt32 outLen = (UInt32)(0x10000 - headerSize - 3);
             Byte[] bufferOut = new Byte[outLen];
             UInt32 len = (UInt32) buffer.Length;
@@ -97,7 +97,7 @@ namespace Nyerguds.FileData.Mythos
             while (inPtr < len)
             {
                 if (outLen == outPtr)
-                    throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+                    throw new ArgumentException("Compressed data is too big to be stored as Mythos compressed format!", "buffer");
                 Byte cur = buffer[inPtr];
                 // only one pixel required to write a repeat code if the value is the flag.
                 UInt32 requiredRepeat = (UInt32) (cur == flag ? 1 : 3);
@@ -114,7 +114,7 @@ namespace Nyerguds.FileData.Mythos
                     UInt32 repeat = inPtr - start;
                     // check buffer overflow
                     if (outLen <= outPtr + 3)
-                        throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+                        throw new ArgumentException("Compressed data is too big to be stored as Mythos compressed format!", "buffer");
                     // write code
                     bufferOut[outPtr++] = flag;
                     // Add value to repeat
@@ -134,7 +134,7 @@ namespace Nyerguds.FileData.Mythos
             Array.Copy(bufferOut, 0, finalOut, 3, outPtr);
             outPtr += 3 + (UInt32) headerSize;
             if (outPtr > UInt16.MaxValue)
-                throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+                throw new ArgumentException("Compressed data is too big to be stored as Mythos compressed format!", "buffer");
             // Store size in first two bytes.
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);
@@ -238,7 +238,7 @@ namespace Nyerguds.FileData.Mythos
         public static Byte[] CollapsedTransparencyEncode(Byte[] buffer, Byte transparentIndex, Int32 lineWidth, Int32 headerSize)
         {
             if (headerSize + 3 >= 0x10000)
-                throw new OverflowException("Header too big!");
+                throw new ArgumentException("Header too big!", "headerSize");
             UInt32 outLen = (UInt32)(0x10000 - headerSize - 3);
             Byte[] bufferOut = new Byte[outLen];
             UInt32 len = (UInt32) buffer.Length;
@@ -250,7 +250,7 @@ namespace Nyerguds.FileData.Mythos
             while (inPtr < len)
             {
                 if (outLen == outPtr)
-                    throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+                    throw new ArgumentException("Compressed data is too big to be stored as Mythos compressed format!", "buffer");
                 Byte cur = buffer[inPtr];
                 Boolean isTrans = cur == transparentIndex;
                 if (writingTransparency && isTrans)
@@ -275,7 +275,7 @@ namespace Nyerguds.FileData.Mythos
                     bufferOut[outPtr++] = copySize;
                     // Boundary checking
                     if (outLen < outPtr + copySize)
-                        throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+                        throw new ArgumentException("Compressed data is too big to be stored as Mythos compressed format!", "buffer");
                     // Write uncollapsed data
                     Array.Copy(buffer, start, bufferOut, outPtr, copySize);
                     outPtr += copySize;
@@ -305,7 +305,7 @@ namespace Nyerguds.FileData.Mythos
             Array.Copy(bufferOut, 0, finalOut, 3, outPtr);
             outPtr += 3 + (UInt32) headerSize;
             if (outPtr > UInt16.MaxValue)
-                throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+                throw new ArgumentException("Compressed data is too big to be stored as Mythos compressed format!", "buffer");
             // Store size in first two bytes.
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);

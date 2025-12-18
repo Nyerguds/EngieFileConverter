@@ -11,16 +11,6 @@ namespace Nyerguds.ImageManipulation
     /// </summary>
     public static class PaletteUtils
     {
-        public static ColorPalette GetColorPalette(Color[] colors, PixelFormat pf)
-        {
-            ColorPalette cp;
-            using (Bitmap bm = new Bitmap(1, 1, pf))
-                cp = bm.Palette;
-            Int32 len = Math.Min(cp.Entries.Length, colors.Length);
-            for (Int32 i = 0; i < len; ++i)
-                cp.Entries[i] = colors[i];
-            return cp;
-        }
 
         /// <summary>
         /// The standard EGA/CGA palette.
@@ -67,19 +57,20 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
-        public static Color[] GetCgaPalette(Byte backgroundColor, Boolean colorBurst, Boolean palette, Boolean intensity, Int32 bitsPerPixel)
+        public static Color[] GetCgaPalette(Byte definedColor, Boolean colorBurst, Boolean palette, Boolean intensity, Int32 bitsPerPixel)
         {
-            if (backgroundColor > 15)
-                throw new ArgumentException("CGA palette values only go up to 15!", "backgroundColor");
+            if (definedColor > 15)
+                throw new ArgumentException("CGA palette values only go up to 15!", "definedColor");
             Color[] pal = new Color[1 << bitsPerPixel];
-            pal[0] = EgaPalette[backgroundColor];
             if (bitsPerPixel == 1)
             {
-                pal[1] = EgaPalette[0];
+                pal[0] = EgaPalette[0];
+                pal[1] = EgaPalette[definedColor];
                 return pal;
             }
             if (bitsPerPixel != 2)
                 throw new ArgumentException("CGA palette can only be 1bpp or 2bpp!","bitsPerPixel");
+            pal[0] = EgaPalette[definedColor];
             Int32 paletteNr = colorBurst ? (palette ? 1 : 0) : 2;
             Byte[] colors = CgaPalettes[paletteNr];
             Int32 intensityAdd = intensity ? 8 : 0;

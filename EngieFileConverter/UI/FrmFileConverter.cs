@@ -129,10 +129,40 @@ namespace EngieFileConverter.UI
             String[] files = (String[]) e.Data.GetData(DataFormats.FileDrop);
             if (files.Length == 0)
                 return;
-            String path = files[0];
-            SupportedFileType[] preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
-            this.m_LastOpenedFolder = Path.GetDirectoryName(path);
-            this.LoadFile(files, null, preferredTypes);
+            List<String> filesList = new List<String>();
+            String basePath = null;
+            String firstFoundFolder = null;
+            Int32 foldersFound = 0;
+            for (Int32 i = 0; i < files.Length; i++)
+            {
+                String path = files[i];
+                try
+                {
+                    if ((File.GetAttributes(path) & FileAttributes.Directory) != 0)
+                    {
+                        if (firstFoundFolder == null)
+                            firstFoundFolder = Path.GetFullPath(path);
+                        filesList.AddRange(Directory.GetFiles(path));
+                        foldersFound++;
+                    }
+                    else
+                    {
+                        filesList.Add(path);
+                        basePath = Path.GetDirectoryName(path);
+                    }
+                }
+                catch
+                {
+                    continue; 
+                }
+            }
+            if (filesList.Count == 0)
+                return;
+            if (basePath == null && firstFoundFolder != null)
+                basePath = foldersFound == 1 ? firstFoundFolder : Path.GetDirectoryName(firstFoundFolder);
+            SupportedFileType[] preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filesList[0]);
+            this.m_LastOpenedFolder = basePath;
+            this.LoadFile(filesList.ToArray(), null, preferredTypes);
         }
 
         private void LoadFile(String[] paths, SupportedFileType selectedType, SupportedFileType[] preferredTypes)
@@ -423,6 +453,8 @@ namespace EngieFileConverter.UI
             this.tsmiImageToPalette4Bit.Enabled = hasShownImage;
             this.tsmiImageToPalette8Bit.Enabled = hasShownImage;
             this.tsmiMatchToPal.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0;
+            int globalBpp = !hasFile ? -1 : this.m_LoadedFile.GetGlobalBpp();
+            this.tsmiSetDifferentPal.Enabled = globalBpp != -1 && globalBpp <= 8;
             this.tsmiChangeTo24BitRgb.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0 && this.m_LoadedFile.BitsPerPixel != 24;
             this.tsmiChangeTo32BitArgb.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0 && this.m_LoadedFile.BitsPerPixel != 32;
 
@@ -689,8 +721,9 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
+                String msg = GeneralUtils.RecoverArgExceptionMessage(ex);
                 String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
-                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
+                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(msg) ? "." : ":\n" + msg);
                 MessageBox.Show(this, message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -740,8 +773,9 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
+                String msg = GeneralUtils.RecoverArgExceptionMessage(ex);
                 String message = "Error saving " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
-                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
+                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(msg) ? "." : ":\n" + msg);
                 this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch (NotImplementedException)
@@ -1413,7 +1447,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             
@@ -1563,7 +1597,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Int32 ind;
@@ -1599,7 +1633,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Int32 ind;
@@ -1637,7 +1671,8 @@ namespace EngieFileConverter.UI
                     Bitmap image = pasteBox.Image;
                     if (dr != DialogResult.OK)
                     {
-                        image.Dispose();
+                        if (image != null)
+                            image.Dispose();
                         return;
                     }
                     Point pastePoint = pasteBox.Coords;
@@ -1654,7 +1689,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1741,7 +1776,7 @@ namespace EngieFileConverter.UI
                 }
                 catch (ArgumentException ex)
                 {
-                    MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 Int32 coordX;
@@ -1758,7 +1793,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1876,7 +1911,7 @@ namespace EngieFileConverter.UI
             allPalettes.AddRange(this.m_ReadPalettes);
             Color[] matchPalette;
             Int32 matchBpp;
-            using (FrmFramesToPal toPal = new FrmFramesToPal(fileToEdit, allPalettes.ToArray()))
+            using (FrmFramesToPal toPal = new FrmFramesToPal(fileToEdit, allPalettes.ToArray(), false))
             {
                 DialogResult dr = toPal.ShowDialog(this);
                 this.pzpImage.CustomColors = toPal.CustomColors;
@@ -1890,6 +1925,38 @@ namespace EngieFileConverter.UI
             {   //Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
                 new Func<SupportedFileType>(()=> this.MatchToPalette(fileToEdit, matchBpp, matchPalette)),
                 true, true, "Matching to palette"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
+        }
+
+        private void TsmiSetDifferentoPalette_Click(Object sender, EventArgs e)
+        {
+            SupportedFileType fileToEdit = this.m_LoadedFile;
+            if (fileToEdit == null || (fileToEdit.FileClass & (FileClass.Image | FileClass.FrameSet)) == 0)
+                return;
+            Int32 bpp = fileToEdit.GetGlobalBpp();
+            if (bpp == -1 || bpp > 8)
+            {
+                MessageBox.Show(this, "This function only supports indexed types.", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            List<PaletteDropDownInfo> allPalettes = new List<PaletteDropDownInfo>();
+            allPalettes.AddRange(this.m_DefaultPalettes);
+            allPalettes.AddRange(this.m_ReadPalettes);
+            Color[] matchPalette;
+            using (FrmFramesToPal setPal = new FrmFramesToPal(fileToEdit, allPalettes.ToArray(), true))
+            {
+                DialogResult dr = setPal.ShowDialog(this);
+                this.pzpImage.CustomColors = setPal.CustomColors;
+                if (dr != DialogResult.OK)
+                    return;
+                matchPalette = setPal.MatchPalette;
+            }
+
+            Object[] arrParams =
+            {   //Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> this.SetToPalette(fileToEdit, matchPalette)),
+                false, false, "Setting different palette"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
             this.m_ProcessingThread.Start(arrParams);
@@ -1935,6 +2002,42 @@ namespace EngieFileConverter.UI
             }
         }
 
+        private SupportedFileType SetToPalette(SupportedFileType fileToEdit, Color[] newPalette)
+        {
+            Int32 bpp = fileToEdit.GetGlobalBpp();
+            if (bpp <= 0 || bpp > 8)
+                return null;
+            FileFrames framesFile = fileToEdit as FileFrames;
+            if (framesFile != null)
+            {
+                framesFile.SetCommonPalette(true);
+                framesFile.SetBitsPerPixel(bpp);
+                framesFile.SetColors(newPalette);
+                return framesFile;
+            }
+            Int32 frames = fileToEdit.Frames.Length;
+            FileFrames newFile = new FileFrames(fileToEdit);
+            newFile.SetFileNames(fileToEdit.LoadedFile);
+            newFile.SetCommonPalette(true);
+            newFile.SetBitsPerPixel(bpp);
+            newFile.SetPalette(newPalette);
+            for (Int32 i = 0; i < frames; ++i)
+            {
+                FileImageFrame newFrame = new FileImageFrame();
+                newFile.AddFrame(newFrame);
+                SupportedFileType frame = fileToEdit.Frames[i];
+                if (frame == null)
+                    continue;
+                newFrame.SetFileNames(frame.LoadedFile);
+                Bitmap image = frame.GetBitmap();
+                if (image == null)
+                    continue;
+                newFrame.LoadFile(ImageUtils.CloneImage(frame.GetBitmap()), frame.LoadedFile);
+            }
+            newFile.SetColors(newPalette);
+            return newFile;
+        }
+
         private void TsmiExtract4BitPalClick(Object sender, EventArgs e)
         {
             SupportedFileType shownFile = this.GetShownFile();
@@ -1963,7 +2066,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + ex.Message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Color[] col;
@@ -2125,7 +2228,8 @@ namespace EngieFileConverter.UI
             if (!this.pzpImage.Enabled)
                 this.pzpImage.Enabled = true;
             this.ReloadUi(asNew);
-            if (oldFile != null)
+            // Don't dispose if the object is the same.
+            if (oldFile != null && oldFile != newFile)
             {
                 try { oldFile.Dispose(); }
                 catch { /*ignore*/ }

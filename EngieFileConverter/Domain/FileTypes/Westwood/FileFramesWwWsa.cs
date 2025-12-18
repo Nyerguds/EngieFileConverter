@@ -371,9 +371,9 @@ namespace EngieFileConverter.Domain.FileTypes
                         this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, paletteOffset, 0x100);
                     PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                 }
-                catch (ArgumentException e)
+                catch (ArgumentException ex)
                 {
-                    throw new HeaderParseException("Error loading color palette: " + e.Message, e);
+                    throw new HeaderParseException("Error loading color palette: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
                 }
             }
             if (this.m_Palette == null)
@@ -735,7 +735,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frame == null || frame.GetBitmap() == null)
                     throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;

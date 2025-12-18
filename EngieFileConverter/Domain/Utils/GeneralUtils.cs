@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -23,7 +24,6 @@ namespace Nyerguds.Util
             }
             return true;
         }
-
 
         /// <summary>
         /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is 1
@@ -249,6 +249,21 @@ namespace Nyerguds.Util
             if (comparer.Compare(value, max) > 0) return max;
             if (comparer.Compare(value, min) < 0) return min;
             return value;
+        }
+
+        /// <summary>
+        /// ArgumentException messes with the ToString, and dumps its own extra (localised) bit of text with the argument onto the end of the message.
+        /// This uses serialisation to retrieve the original internal message of the exception without added junk.
+        /// </summary>
+        /// <param name="argex">The ArgumentException to retrieve the message from</param>
+        /// <returns>The actual message given when the ArgumentException was created.</returns>
+        public static String RecoverArgExceptionMessage(ArgumentException argex)
+        {
+            if (argex == null)
+                return null;
+            SerializationInfo info = new SerializationInfo(typeof(ArgumentException), new FormatterConverter());
+            argex.GetObjectData(info, new StreamingContext(StreamingContextStates.Clone));
+            return info.GetString("Message");
         }
 
     }

@@ -204,9 +204,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 new SaveOption("NCM", SaveOptionType.Boolean, "Don't compress separate frames (might give better overall compression)", "0"),
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped.", "1"),
                 new SaveOption("RMU", SaveOptionType.Boolean, "Treat as remapped unit (apply remapping to all frames except the remap table itself at index #16)", null, probablyRemappedUnit ? "1" : "0", new SaveEnableFilter("RMT", false, "1")),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, ", remapped, new SaveEnableFilter("RMU", true, "1")),
+                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, " + Environment.NewLine, remapped, new SaveEnableFilter("RMU", true, "1")),
                 new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "0", "1", new SaveEnableFilter("NCM", true, "1")),
-                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, ", uncompressed, new SaveEnableFilter("NCM", true, "1"), new SaveEnableFilter("NCA", true, "1"))
+                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, " + Environment.NewLine, uncompressed, new SaveEnableFilter("NCM", true, "1"), new SaveEnableFilter("NCA", true, "1"))
             };
         }
 

@@ -83,7 +83,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
             Int32 width = fileToSave.Width;
             Int32 height = fileToSave.Height;
             if (width > 0xFFFF || height > 0xFFFF)
