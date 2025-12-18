@@ -127,7 +127,10 @@ Engie File Converter.
 
 Engie File Converter versions:
 
-v1.5.14 (01/07/2022 23:40 CET)
+v1.5.15 (04/07/2024 20:00 CET)
+-Fixed a crash when loading embedded palettes from certain file formats.
+
+v1.5.14 (01/07/2024 23:40 CET)
 -Added fixes in palette detection system that could crash on the Mythos VDA format.
 -Added visualisation/analysis support for the levels of HeroQuest (1991).
 

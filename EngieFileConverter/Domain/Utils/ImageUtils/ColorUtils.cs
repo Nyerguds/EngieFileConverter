@@ -144,7 +144,7 @@ namespace Nyerguds.ImageManipulation
             Int32 fullLen = colors * 3;
             if (start + fullLen > paletteData.Length)
                 throw new ArgumentException(Invalid6bit);
-            for (Int32 i = 0; i < fullLen; ++i)
+            for (Int32 i = start; i < fullLen; ++i)
             {
                 if (paletteData[i] > 0x3F)
                     throw new ArgumentException(Invalid6bit, "paletteData");

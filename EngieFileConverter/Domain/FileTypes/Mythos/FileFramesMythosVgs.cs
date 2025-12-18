@@ -187,7 +187,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (compare.SequenceEqual(Encoding.ASCII.GetBytes(PAL_IDENTIFIER)) && imageData[PAL_IDENTIFIER.Length] == 0x1A)
                     {
                         // Palette found! Extract palette and skip frame so it doesn't get added to the list.
-                        this.m_Palette = ColorUtils.ReadSixBitPalette(imageData, PAL_IDENTIFIER.Length + 1);
+                        try
+                        {
+                            this.m_Palette = ColorUtils.ReadSixBitPalette(imageData, PAL_IDENTIFIER.Length + 1);
+                        }
+                        catch (ArgumentException e)
+                        {
+                            throw new FileTypeLoadException(e.Message, e);
+                        }
                         PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, transMask);
                         this.m_LoadedPalette = sourcePath;
                         this.ExtraInfo =  "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame.";

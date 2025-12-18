@@ -124,11 +124,6 @@ namespace EngieFileConverter.Domain.FileTypes
         private static readonly string iconQuestion =" XX |   X| XX |    | X  ";
 
         // Staircase icons
-        // Original 6x6 stair icons = maybe stretch somehow?
-        //private static readonly String iconSt1 = "      | XXXXX| XXX  | X XXX| X X X| X X X";
-        //private static readonly String iconSt2 = " X X X| X X X| X X X| X X X| X X X| XXXXX";
-        //private static readonly String iconSt3 = "      |XXXXXX|     X|     X|XX   X| XXX X";
-        //private static readonly String iconSt4 = " X XXX| X X X| X X X| X X X| X X X|XXXXXX";
         private static readonly String iconSt1 = "            |            |  XXXXXXXXXX|  XXXXXXXXXX|  XXXXXX    |  XXXXXX    |  XX  XXXXXX|  XX  XXXXXX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX";
         private static readonly String iconSt2 = "  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XX  XX  XX|  XXXXXXXXXX|  XXXXXXXXXX";
         private static readonly String iconSt3 = "            |            |XXXXXXXXXXXX|XXXXXXXXXXXX|          XX|          XX|          XX|          XX|XXXX      XX|XXXX      XX|  XXXXXX  XX|  XXXXXX  XX";
