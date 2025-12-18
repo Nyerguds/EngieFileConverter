@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Ini;
 
@@ -11,7 +10,9 @@ namespace Nyerguds.Util.UI
 {
     public class PaletteDropDownInfo
     {
-        private const String INI_SECTION = "Palette";
+        public const String PALINISECTION = "Palette";
+        public const String PALINIKEY8BIT = "IsEightBit";
+        public const String PALINIKEYSINGLE = "IsSinglePalette";
 
         public String Name { get; set; }
         public Color[] Colors { get; set; }
@@ -70,24 +71,40 @@ namespace Nyerguds.Util.UI
             return name;
         }
 
+        public static List<PaletteDropDownInfo> LoadSubPalettesInfoFromPalette(String filename, Boolean listAll, Boolean prefixIndex, Boolean suffixSource)
+        {
+            FileInfo file = new FileInfo(filename);
+            return LoadSubPalettesInfoFromPalette(file, listAll, prefixIndex, suffixSource);
+        }
+
         public static List<PaletteDropDownInfo> LoadSubPalettesInfoFromPalette(FileInfo file, Boolean listAll, Boolean prefixIndex, Boolean suffixSource)
         {
             List<PaletteDropDownInfo> palettes = new List<PaletteDropDownInfo>();
             try
             {
-                if (file.Length != 0x300)
+                if (!file.Exists || file.Length != 0x300)
                     return palettes;
-                // Treat as C&C 6-bit colour palette
-                Color[] fullPal = ColorUtils.ReadFromSixBitPaletteFile(file.FullName);
-
                 String bareName = file.Name;
                 String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
-                if (File.Exists(inipath))
+                Boolean iniExists = File.Exists(inipath);
+                IniFile paletteConfig = new IniFile(inipath);
+                // Eight bit: if ini exists, and data is specifically identified as 8-bit
+                Boolean ini8BitKeyExists = false;
+                Boolean isEightBit = iniExists && paletteConfig.GetBoolValue(PALINISECTION, PALINIKEY8BIT, false, out ini8BitKeyExists);
+                Byte[] palBytes = File.ReadAllBytes(file.FullName);
+                // ...or if no ini exists but the data contains values higher than 6-bit allows.
+                if ((!iniExists || !ini8BitKeyExists) && palBytes.Any(b => b > 0x3F))
+                    isEightBit = true;
+                // Single palette: if there is either no ini (old 6-bit palette) or the ini specifically says it's a single palette.
+                Boolean isSinglePal = !iniExists || paletteConfig.GetBoolValue(PALINISECTION, PALINIKEYSINGLE, false);
+                // Read the palette as 8-bit or as 6-bit, as determined above.
+                Color[] fullPal = isEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPaletteAsEightBit(palBytes);
+                if (!isSinglePal)
                 {
-                    IniFile paletteConfig = new IniFile(inipath);
+                    // Read multiple 16-colour palettes
                     for (Int32 i = 0; i < 16; ++i)
                     {
-                        String name = paletteConfig.GetStringValue(INI_SECTION, i.ToString(), null);
+                        String name = paletteConfig.GetStringValue(PALINISECTION, i.ToString(), null);
                         Boolean hasName = !String.IsNullOrEmpty(name);
                         if (!hasName)
                             name = null;
@@ -97,14 +114,12 @@ namespace Nyerguds.Util.UI
                             continue;
                         Color[] subPalette = new Color[16];
                         Array.Copy(fullPal, i * 16, subPalette, 0, 16);
-                        //subPalette[0] = Color.FromArgb(0x00, subPalette[0]);
                         palettes.Add(new PaletteDropDownInfo(name, 4, subPalette, bareName, i, prefixIndex, suffixSource));
                     }
                 }
                 else
                 {
-                    // add as one 256 colour palette
-                    //fullPal[0] = Color.FromArgb(0x00, fullPal[0]);
+                    // Add as one single 256 colour palette
                     palettes.Add(new PaletteDropDownInfo(bareName, 8, fullPal, bareName, 0, false, false));
                 }
             }

@@ -237,8 +237,8 @@ namespace EngieFileConverter.UI
             composite.Palette = ImageUtils.GetPalette(palette);
             framesContainer.SetCompositeFrame(composite);
             framesContainer.SetBitsPerPixel(2);
-            framesContainer.SetPalette(palette);
             framesContainer.SetCommonPalette(true);
+            framesContainer.SetPalette(palette);
             this.LoadTestFile(framesContainer);
         }
 
@@ -1200,7 +1200,7 @@ namespace EngieFileConverter.UI
             Bitmap image;
             if (shownFile == null || (image = shownFile.GetBitmap()) == null)
                 return;
-            Bitmap newBm = ImageUtilsSO.ReduceToTwoMostUsedColors(image);
+            Bitmap newBm = ImageUtilsSO.ReduceToTwoColorFade(image, true, true);
             this.LoadTestFile(newBm);
         }
 

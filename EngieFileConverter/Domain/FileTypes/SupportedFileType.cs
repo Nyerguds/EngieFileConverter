@@ -29,6 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected static readonly String ERR_1BPP_INPUT = "This format needs 1bpp input.";
         protected static readonly String ERR_4BPP_INPUT = "This format needs 4bpp input.";
         protected static readonly String ERR_8BPP_INPUT = "This format needs 8bpp input.";
+        protected static readonly String ERR_4BPP_8BPP_INPUT = "This format needs 4bpp or 8bpp input.";
         protected static readonly String ERR_NO_COL = "The given input contains no colors.";
         protected static readonly String ERR_UNKN_COMPR = "Unknown compression type \"{0}\".";
         protected static readonly String ERR_320x200 = "This format needs 320x200 input.";
@@ -218,7 +219,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     this.m_BackupPalette = GetColorsInternal();
                 this.m_Palette = newPalette;
                 if (this.m_LoadedImage != null)
-                    this.m_LoadedImage.Palette = ImageUtils.GetPalette(newPalette);
+                {
+                    try
+                    {
+                        this.m_LoadedImage.Palette = ImageUtils.GetPalette(newPalette);
+                    }
+                    catch { }
+                }
             }
             if (this.IsFramesContainer && !this.FramesHaveCommonPalette)
                 return;

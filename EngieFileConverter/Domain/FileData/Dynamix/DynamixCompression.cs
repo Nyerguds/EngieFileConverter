@@ -191,7 +191,7 @@ namespace Nyerguds.FileData.Dynamix
             Int32 outPtr = 0;
             Int32 bufLen = inPtrEnd - inPtr;
             // Force it to 4 if it's not 8 to avoid illegal values.
-            if(bpp != 8)
+            if (bpp != 8)
                 bpp = 4;
             if (bufLen == 0)
                 return bufferOut;
@@ -205,7 +205,7 @@ namespace Nyerguds.FileData.Dynamix
             while (true)
             {
                 if (inPtr >= inPtrEnd)
-                    throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "No \"end of data\" marker found when decompressing SCN data!"), "buffer");
+                    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "No \"end of data\" marker found when decompressing SCN data!"), "buffer");
                 Int32 curLine1 = outPtr / width;
                 lastCommandPtr = inPtr;
                 Byte code = buffer[inPtr++];
@@ -226,7 +226,7 @@ namespace Nyerguds.FileData.Dynamix
                             arg2 = (buffer[inPtr++] & 0x3F);
                         arg = (arg2 == -1) ? arg : (arg2 << 6) | arg;
                         if (arg > width)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "line skip command with value larger than image width."), "buffer");
+                            throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "line skip command with value larger than image width."), "buffer");
                         outPtr += width - arg;
                         break;
                     case 1: // skip pixels. This does not use joined commands. If larger than 63 it will  just have multiple commands.
@@ -236,35 +236,35 @@ namespace Nyerguds.FileData.Dynamix
                             outPtr += arg;
                         break;
                     case 2: // repeat pixels
-                        if (addValue == 0xFF)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "repeat command not supported for empty images."), "buffer");
+                        //if (addValue == 0xFF)
+                        //    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "repeat command not supported for empty images."), "buffer");
                         if (inPtr >= inPtrEnd)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "can't read pixel to repeat."), "buffer");
+                            throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "can't read pixel to repeat."), "buffer");
                         Byte repeatByte = (Byte) (buffer[inPtr++] + addValue);
                         if (repeatByte > 0x0F && bpp == 4)
                             bpp = 8;
                         Int32 repEnd = outPtr + arg;
                         if (repEnd > decompressedSize)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "repeat command attempted to write outside output buffer."), "buffer");
+                            throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "repeat command attempted to write outside output buffer."), "buffer");
                         for (; outPtr < repEnd; outPtr++)
                             bufferOut[outPtr] = repeatByte;
                         break;
                     case 3: // copy pixels
-                        if (addValue == 0xFF)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "copy command not supported for empty images."), "buffer");
+                        //if (addValue == 0xFF)
+                        //    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "copy command not supported for empty images."), "buffer");
                         if (arg == 0)
                             break;
                         Int32 stride = ((arg * 4) + 7) / 8;
                         Int32 skippedBytes = stride;
                         if (inPtr + stride > inPtrEnd)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "input buffer too small to read full copy command."), "buffer");
+                            throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "input buffer too small to read full copy command."), "buffer");
                         Byte[] toWrite = ImageUtils.ConvertTo8Bit(buffer, arg, 1, inPtr, 4, true, ref stride);
                         inPtr += skippedBytes;
                         if (outPtr + arg > decompressedSize)
-                            throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "copy command attempted to write outside output buffer."), "buffer");
+                            throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "copy command attempted to write outside output buffer."), "buffer");
                         for (Int32 i = 0; i < arg && outPtr < decompressedSize; i++)
                         {
-                            Byte copyByte = (Byte)(toWrite[i] + addValue);
+                            Byte copyByte = (Byte) (toWrite[i] + addValue);
                             if (copyByte > 0x0F && bpp == 4)
                                 bpp = 8;
                             bufferOut[outPtr++] = copyByte;
@@ -277,16 +277,16 @@ namespace Nyerguds.FileData.Dynamix
                 // Checking if the encoding obeys the "no line wraparound" rules. There are three criteria that need to be true before it is allowed to fail:
                 // - The line number progressed
                 // - The command is not 0
-                // - The write pointer crossed over the end of the line
+                // - * The write pointer crossed over the end of the line
                 //    -OR-
-                //   It ended up exactly at the end of the line, and there is no image end on the next command, and there is no line skip on the next command.
+                //   * It ended up exactly at the end of the line, and there is no image end on the next command, and there is no line skip on the next command.
                 if (curLine2 > curLine1 && command != 0 && (outPtr % width != 0 || (inPtr != inPtrEnd && buffer[inPtr] != 0x40 && (buffer[inPtr] >> 6) != 0)))
-                    throw new ArgumentException(BuildScnErr(dataStart, lastCommandPtr, "Illegal line wrap detected!"), "buffer");
+                    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "Illegal line wrap detected."), "buffer");
             }
             return bpp == 8 ? bufferOut : ImageUtils.ConvertFrom8Bit(bufferOut, width, height, bpp, true);
         }
 
-        private static String BuildScnErr(Int32 dataStart, Int32 lastCommandPtr, String message)
+        private static String BuildScnDecodeErr(Int32 dataStart, Int32 lastCommandPtr, String message)
         {
             return "Bad data in SCN chunk [section 0x" + dataStart.ToString("X") + ", offset 0x" + lastCommandPtr.ToString("X") + "]: " + message;
         }
@@ -303,21 +303,33 @@ namespace Nyerguds.FileData.Dynamix
         public static Byte[] ScnEncode(Byte[] buffer, Int32 width, Int32 height, Int32 bpp, Boolean addFinalLineWrap)
         {
             // Maximum amount of identical pixels that will be stored in a non-repeat command.
+            // This is 2 bytes, which would be the same length when saved as a repeat command or as part of an existing copy range.
             const Int32 maxNonRepeat = 4;
+            // The maximum line skip that can be stored is the combined 6-bit values of two skip commands, so, 12 bits.
+            const Int32 maxWidth = (1 << 12) - 1;
+            if (width > maxWidth)
+                throw new ArgumentException("SCN compression can't handle widths greater than " + maxWidth + ".", "width");
 
             Byte[] buffer8Bit = bpp == 8 ? buffer : ImageUtils.ConvertTo8Bit(buffer, width, height, 0, bpp, true);
             Byte maxVal = 0;
             Byte minVal = 0xFF;
+            Boolean allEmpty = true;
             for (Int32 i = 0; i < buffer8Bit.Length; i++)
             {
                 Byte curVal = buffer8Bit[i];
-                if (curVal != 0 && curVal < minVal)
+                if (curVal == 0)
+                    continue;
+                allEmpty = false;
+                if (curVal < minVal)
                     minVal = curVal;
-                if (curVal != 0 && curVal < maxVal)
+                if (curVal < maxVal)
                     maxVal = curVal;
             }
-            if (maxVal - minVal > 0xF)
+            if (allEmpty)
+                minVal = 0xFF;
+            else if (maxVal - minVal > 0xF)
                 throw new ArgumentException("The non-0 data in the given image is not limited to a range of 16 consecutive values!", "buffer");
+
             // Can't be arsed to calculate worst case. This should be fine.
             Byte[] outbuffer = new Byte[buffer8Bit.Length * 3];
             Int32 inPtr = 0;
@@ -337,10 +349,13 @@ namespace Nyerguds.FileData.Dynamix
                     currentRepeat++;
                     inPtr++;
                 }
+                Byte? nextVal = inPtr < nextLineOffs ? buffer8Bit[inPtr] : (Byte?) null;
                 if (curVal != 0)
                 {
-                    // Repeat: written in one chunk.
-                    if (currentRepeat >= maxNonRepeat)
+                    // Repeat: written in one chunk. Either if the threshold value for not saving as copy is reached,
+                    // or if the following part is a 00 and it's more than one byte to write it as copy.
+                    // This will prevent "A A A" from being written as "C3 AA A0" rather than "83 0A".
+                    if (currentRepeat >= maxNonRepeat || (currentRepeat > 2 && (!nextVal.HasValue || nextVal.Value == 0)))
                     {
                         while (currentRepeat >= maxNonRepeat)
                         {
@@ -359,6 +374,7 @@ namespace Nyerguds.FileData.Dynamix
                         // Optimisation: take non-repeating bytes using an uneven amount as maximum. If this results in an even final amount of bytes,
                         // then any such uneven ranges ended up compensating for the spare dangling nibbles of the rest of the range.
                         Int32 lookPtr = GetNonRepeatingRange(buffer8Bit, startPtr, curVal, nextLineOffs, maxNonRepeat + 1);
+                        // Not even: take non-repeating normally.
                         if (lookPtr - startPtr > maxNonRepeat && (lookPtr - startPtr) % 2 != 0)
                             lookPtr = GetNonRepeatingRange(buffer8Bit, startPtr, curVal, nextLineOffs, maxNonRepeat);
                         Int32 length = lookPtr - startPtr;
@@ -380,17 +396,18 @@ namespace Nyerguds.FileData.Dynamix
                     while (currentRepeat > 0)
                     {
                         Int32 writeAmount = Math.Min(currentRepeat, 0x3F);
-                        outbuffer[outPtr++] = (Byte)(writeAmount | 0x40);
+                        outbuffer[outPtr++] = (Byte) (writeAmount | 0x40);
                         currentRepeat -= writeAmount;
                     }
                 }
+                // No "else": after anything that's written, it is checked if line ends need to be placed.
                 if (inPtr >= nextLineOffs)
                 {
                     if (inPtr == inPtrEnd)
                         break;
                     Int32 linesToAdd = 1;
                     // Line skip: 00 command. In case more than one line is skipped, this needs to align itself to the point
-                    // at or before where the data restarts on the next non-empty line .
+                    // at or before where the data restarts on the next non-empty line.
 
                     // Three cases:
                     // - Current line ends on zero: (meaning, amount of repeated zeroes is already stored in 'currentRepeat')
@@ -457,9 +474,9 @@ namespace Nyerguds.FileData.Dynamix
                         // Current is non-zero, next one is non-zero. Write a line skip that spans the entire image width.
                         toSubtract = width;
                     }
-                    outbuffer[outPtr++] = (Byte)(toSubtract & 0x3F);
+                    outbuffer[outPtr++] = (Byte) (toSubtract & 0x3F);
                     if (toSubtract > 0x3F)
-                        outbuffer[outPtr++] = (Byte)((toSubtract >> 6) & 0x3F);
+                        outbuffer[outPtr++] = (Byte) ((toSubtract >> 6) & 0x3F);
                     for (Int32 i = 1; i < linesToAdd; i++)
                         outbuffer[outPtr++] = 0x00;
                     nextLineOffs += width * linesToAdd;

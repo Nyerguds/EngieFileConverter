@@ -1,129 +1,264 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Nyerguds.Util;
 
 namespace Nyerguds.FileData.Dynamix
 {
-    // Doesn't work yet...
-
-    /*/
     /// <summary>
-    /// LZW compression class. Experimental.
+    /// LZW compression class. Currently untested.
     /// </summary>
     public class DynamixLzwEncoder
     {
-        private List<Byte[]> dictKeys = new List<Byte[]>();
-        private List<Int32> dictCodes = new List<Int32>();
 
+        private Byte[] _codeCur = new Byte[256];
+        private Int32 _codeSize;
+        private Int32 _codeLen;
 
-        private Int32 GetCode(Byte[] sequence)
+        private struct DictTableEntry
         {
-            Int32 seqLen = sequence.Length;
-            if (seqLen == 1)
-                return sequence[0];
-            // 256 is not used; it's the "reset" code.
-            Int32 dicKeyCount = this.dictKeys.Count;
-            for (Int32 i = 257; i < dicKeyCount; ++i)
+            public Byte[] Str; // Byte[256];
+            public Byte Len;
+        }
+
+        private DictTableEntry[] dict_table = new DictTableEntry[0x4000];
+
+        private UInt32 _dictSize;
+        private UInt32 _dictMax;
+        private Boolean _dictFull;
+
+        private UInt32 FindLzwCode(Byte[] data_in, Int32 start, Int32 dataEnd)
+        {
+            // 1-byte code
+            UInt32 findLast = data_in[start];
+            UInt32 findLen = 2;
+            while (start + (findLen - 1) < dataEnd)
             {
-                Byte[] check = this.dictKeys[i];
-                Int32 checkLen = check.Length;
-                if (seqLen != checkLen)
-                    continue;
-                Boolean noMatch = false;
-                for (Int32 bi = 0; bi < checkLen; ++bi)
+                UInt32 lcv;
+                // AGI LZW uses SS:SP stack - limit code size
+                if (findLen >= 16) break;
+                Boolean hit = false;
+                for (lcv = 0x102; lcv < this._dictSize; lcv++)
                 {
-                    if (sequence[bi] == check[bi])
+                    // check lengths
+                    if (dict_table[lcv].Len != findLen)
                         continue;
-                    noMatch = true;
-                    break;
+                    // compare strings
+                    int lcv2;
+                    for (lcv2 = 0; lcv2 < dict_table[lcv].Len; lcv2++)
+                        if (dict_table[lcv].Str[lcv2] != data_in[start + lcv2])
+                            break;
+                    // match! no extra entry needed
+                    if (lcv2 == dict_table[lcv].Len && lcv2 > 0)
+                    {
+                        hit = true;
+                        break;
+                    }
                 }
-                if (noMatch)
-                    continue;
-                return i;
-            }
-            return -1;
-        }
-
-        private Boolean ContainsCode(Byte[] sequence)
-        {
-            return this.GetCode(sequence) != -1;
-        }
-
-        public DynamixLzwEncoder()
-        {
-            for (Int32 i = 0; i < 256; ++i)
-            {
-                this.dictKeys.Add(new Byte[] { (Byte)i });
-                this.dictCodes.Add(i);
-            }
-            // Reset code
-            this.dictKeys.Add(null);
-            this.dictCodes.Add(256);
-        }
-
-        public Byte[] Compress(Byte[] buffer)
-        {
-            Int32 codeLen = 9;
-            Int32 bitIndex = 0;
-            Int32 outbuffSize = buffer.Length * 2;
-            Byte[] outbuff = new Byte[outbuffSize];
-            Int32 addedSize = 0;
-            Int32 buffLen = buffer.Length;
-            for (Int32 i = 0; i < buffLen; ++i)
-            {
-                Byte b = buffer[i];
-                // increase code length to amount of bits needed by intCode.
-                ArrayUtils.WriteBitsToByteArray(outbuff, bitIndex, codeLen, b);
-                bitIndex += codeLen;
-                if (((i + addedSize + 1) % 24) != 23)
-                    continue;
-                ArrayUtils.WriteBitsToByteArray(outbuff, bitIndex, codeLen, 0x100);
-                bitIndex += codeLen;
-                addedSize++;
-            }
-            Int32 bufSize = (bitIndex + 7) / 8;
-            Byte[] outbuf2 = new Byte[bufSize];
-            Array.Copy(outbuff, outbuf2, bufSize);
-            return outbuf2;
-        }
-
-
-        public Int32[] CompressToInts(Byte[] buffer)
-        {
-            Byte[] match = new Byte[0];
-            Int32[] compressed = new Int32[(buffer.Length * 2) / 3];
-            Int32 index = 0;
-            Int32 buffLen = buffer.Length;
-            for (Int32 i = 0; i < buffLen; ++i)
-            {
-                Byte b = buffer[i];
-                Int32 oldLen = match.Length;
-                Byte[] nextMatch = new Byte[oldLen + 1];
-                nextMatch[oldLen] = b;
-                if (this.ContainsCode(nextMatch))
-                    match = nextMatch;
-                else
+                // expand search
+                if (hit)
                 {
-                    Int32 code = this.GetCode(match);
-                    // Add current code to list
-                    compressed[index++]= this.dictCodes[code];
-                    // new sequence; add it to the dictionary
-                    this.dictKeys.Add(nextMatch.ToArray());
-                    this.dictCodes.Add(this.dictCodes.Count);
-                    match = new Byte[] { b };
+                    findLast = lcv;
+                    findLen++;
+                    continue;
+                }
+                break;
+            }
+            return findLast;
+        }
+
+        private void LzwReset()
+        {
+            this.dict_table = new DictTableEntry[0x4000];
+            for (int lcv = 0; lcv < 256; lcv++)
+            {
+                DictTableEntry dte = new DictTableEntry();
+                dte.Len = 1;
+                dte.Str = new Byte[256];
+                dte.Str[0] = (Byte) lcv;
+                dict_table[lcv] = dte;
+            }
+            // 00-FF = ASCII
+            // 100 = reset
+            // 101 = stop
+            this._dictSize = 0x102;
+            this._dictMax = 0x200;
+            this._dictFull = false;
+            // start = 9 bit codes
+            this._codeSize = 9;
+            this._codeLen = 0;
+        }
+
+        public Byte[] LzwEncode(Byte[] data, Int32 dataStart, Int32 dataEnd, Boolean prefixSize)
+        {
+            LzwBuffer outBuffer = new LzwBuffer();
+            if (dataStart < 0)
+                dataStart = 0;
+            if (dataEnd < 0)
+                dataEnd = data.Length;
+            // ------------------------------------------
+            // ------------------------------------------
+            Int32 lcv = dataStart;
+            while (lcv < dataEnd)
+            {
+                // send reset
+                if (lcv == 0)
+                {
+                    this.LzwReset();
+                    outBuffer.PackBitsRight(this._codeSize, 0x100);
+                }
+                // send reset - LZW stack too large
+                if (this._codeLen >= 255)
+                {
+                    this.LzwReset();
+                    outBuffer.PackBitsRight(this._codeSize, 0x100);
+                }
+                UInt32 new_code = this.FindLzwCode(data, lcv, dataEnd);
+                outBuffer.PackBitsRight(this._codeSize, new_code);
+                // expand string
+                this._codeCur[this._codeLen++] = dict_table[new_code].Str[0];
+                lcv += dict_table[new_code].Len;
+                // -----------------------------------------------
+                // -----------------------------------------------
+                // add to dictionary: 2+ bytes only
+                if (this._codeLen >= 2)
+                {
+                    UInt32 lcv1;
+                    if (this._dictFull == false)
+                    {
+                        // check full condition
+                        if (this._dictSize == this._dictMax && this._codeSize == 12)
+                        {
+                            this._dictFull = true;
+                            lcv1 = this._dictSize;
+                        }
+                        else
+                            lcv1 = this._dictSize++;
+                        // expand dictionary (adaptive LZW)
+                        if (this._dictSize == this._dictMax && this._codeSize < 12)
+                        {
+                            this._dictMax *= 2;
+                            this._codeSize++;
+                        }
+                        // add new entry
+                        for (UInt32 lcv2 = 0; lcv2 < this._codeLen; lcv2++)
+                        {
+                            dict_table[lcv1].Str[lcv2] = this._codeCur[lcv2];
+                            dict_table[lcv1].Len++;
+                        }
+                    }
+                    // reset running code!
+                    for (lcv1 = 0; lcv1 < dict_table[new_code].Len; lcv1++)
+                        this._codeCur[lcv1] = dict_table[new_code].Str[lcv1];
+                    this._codeLen = dict_table[new_code].Len;
+                    // send reset code
+                    if (this._dictSize == this._dictMax && this._codeSize == 12)
+                    {
+                        outBuffer.PackBitsRight(this._codeSize, 0x100);
+                        this.LzwReset();
+                    }
                 }
             }
-            // write remaining output if necessary
-            if (match.Length > 0)
+            outBuffer.PackBitsRight(this._codeSize, 0x101);
+            outBuffer.FlushBitsRight();
+            // ------------------------------------------
+            // ------------------------------------------
+            return outBuffer.GetBuffer(prefixSize, dataEnd - dataStart);
+        }
+
+        private class LzwBuffer
+        {
+            private Byte[] buffer;
+            private UInt32 curVal;
+            private Int32 curBits;
+            private UInt32 curSize;
+
+            public LzwBuffer()
             {
-                Int32 code = this.GetCode(match);
-                compressed[index++] = this.dictCodes[code];
+                this.ResetFileBits();
             }
-            Int32[] finalCodes = new Int32[index];
-            Array.Copy(compressed, 0, finalCodes, 0, index);
-            return finalCodes;
+
+            private void ResetFileBits()
+            {
+                this.buffer = new Byte[16 * 0x100000];
+                this.curVal = 0;
+                this.curBits = 0;
+                this.curSize = 0;
+            }
+
+            public Byte[] GetBuffer(Boolean addSize, Int32 origSize)
+            {
+                Byte[] outBuf = new Byte[addSize ? this.curSize + 4 : this.curSize];
+                if (addSize)
+                {
+                    outBuf[0] = (Byte) ((origSize >> 00) & 0xFF);
+                    outBuf[1] = (Byte) ((origSize >> 08) & 0xFF);
+                    outBuf[2] = (Byte) ((origSize >> 16) & 0xFF);
+                    outBuf[3] = (Byte) ((origSize >> 24) & 0xFF);
+                }
+                Array.Copy(this.buffer, 0, outBuf, addSize ? 4 : 0, this.curSize);
+                return outBuf;
+            }
+
+            public void PackBitsLeft(Int32 bits, UInt32 val)
+            {
+                while (bits-- != 0)
+                {
+                    if (curBits == 8)
+                    {
+                        curBits = 0;
+                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                    }
+                    curVal <<= 1;
+                    curVal |= ((val >> bits) & 1);
+                    curBits++;
+                }
+            }
+
+            public void PackBitsRight(Int32 bits, UInt32 val)
+            {
+                while (bits-- != 0)
+                {
+                    if (curBits == 8)
+                    {
+                        curBits = 0;
+                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                    }
+                    curVal >>= 1;
+                    curVal |= ((val & 1) << 7);
+                    val >>= 1;
+                    curBits++;
+                }
+            }
+
+            public void FlushBitsLeft()
+            {
+                while (curBits > 0)
+                {
+                    if (curBits == 8)
+                    {
+                        curBits = 0;
+                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                        break;
+                    }
+                    curVal <<= 1;
+                    curVal |= 0;
+                    curBits++;
+                }
+            }
+
+            public void FlushBitsRight()
+            {
+                while (curBits > 0)
+                {
+                    if (curBits == 8)
+                    {
+                        curBits = 0;
+                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                        break;
+                    }
+                    curVal >>= 1;
+                    curVal |= 0;
+                    curBits++;
+                }
+            }
         }
     }
-    //*/
 }

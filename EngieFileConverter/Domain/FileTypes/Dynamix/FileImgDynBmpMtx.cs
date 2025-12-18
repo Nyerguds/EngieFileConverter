@@ -45,12 +45,12 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 List<Int32> matchingWidths = new List<Int32>();
-                blockWidth = fullWidth;
+                blockWidth = (fullWidth + 7 / 8) * 8;
                 while (blockWidth > 7)
                 {
-                    if (fullWidth % blockWidth == 0 && (fullWidth % 8 == 0))
+                    if (fullWidth % blockWidth == 0)
                         matchingWidths.Add(blockWidth);
-                    blockWidth--;
+                    blockWidth -= 8;
                 }
                 blockWidth = matchingWidths.Count == 0 ? 8 : matchingWidths.Min();
                 List<Int32> matchingHeights = new List<Int32>();
@@ -67,7 +67,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SaveOption[] opts = new SaveOption[is4bpp ? 3 : 4];
             Int32 opt = 0;
             if (!is4bpp)
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", "0");
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "BIN / VGA,MA8", "0");
             opts[opt++] = new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString());
             opts[opt++] = new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString());
             opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", SaveCompressionTypes), "1");
@@ -86,9 +86,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 height = image.Height;
             Int32 saveTypeInt;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveTypeInt);
-            DynBmpSaveType saveType = saveTypeInt == 0 ? DynBmpSaveType.VgaBin : DynBmpSaveType.Ma8;
-            Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            DynBmpInternalType saveType = saveTypeInt == 0 ? DynBmpInternalType.BinVga : DynBmpInternalType.Ma8;
+            Int32 compression;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compression);
+            DynBmpInternalCompression compressionType = (DynBmpInternalCompression)compression;
             Int32 blockWidth;
             Int32 blockHeight;
             if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
@@ -186,7 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 fr.SetFileClass(m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
                 frs.AddFrame(fr);
             }
-            // Call SaveToBmpChunk to turn into normal bmp
+            // Call SaveToChunks to turn into normal bmp
             List<DynamixChunk> imageChunks = this.SaveToChunks(frs, saveType, compressionType);
             // Fill matrix data
             DynamixChunk mtxChunk = new DynamixChunk("MTX", frameMatrixFinal);

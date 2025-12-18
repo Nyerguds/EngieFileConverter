@@ -28,6 +28,8 @@ namespace EngieFileConverter.UI
         private const String PROG_NAME = "Engie File Converter";
         private const String PROG_AUTHOR = "Created by Nyerguds";
         private const Int32 PALETTE_DIM = 226;
+        // TODO make configurable?
+        private readonly String m_PalettePath = Path.GetDirectoryName(Application.ExecutablePath);
 
         private String[] m_StartupParamPath;
         private List<PaletteDropDownInfo> m_DefaultPalettes;
@@ -150,7 +152,7 @@ namespace EngieFileConverter.UI
                 return null;
             String path = paths[0];
             if (paths.Length > 1)
-                return LoadMultiple(paths, selectedType, preferredTypes);
+                return this.LoadMultiple(paths, selectedType, preferredTypes);
             SupportedFileType loadedFile = null;
             Byte[] fileData = null;
             FileTypeLoadException error = null;
@@ -346,7 +348,7 @@ namespace EngieFileConverter.UI
 
         private void AutoSetZoom()
         {
-            pzpImage.AutoSetZoom(GetListToAutoSetZoom(this.m_LoadedFile));
+            this.pzpImage.AutoSetZoom(GetListToAutoSetZoom(this.m_LoadedFile));
         }
 
         private static Bitmap[] GetListToAutoSetZoom(SupportedFileType file)
@@ -398,7 +400,7 @@ namespace EngieFileConverter.UI
             SupportedFileType shownFile = this.GetShownFile();
             Boolean hasFile = shownFile != null;
             Boolean hasShownImage = hasFile && shownFile.GetBitmap() != null;
-            Boolean hasPal = GetColorStatus() != ColorStatus.None;
+            Boolean hasPal = this.GetColorStatus() != ColorStatus.None;
             Int32 shownBpp = hasPal && shownFile != null? shownFile.BitsPerPixel : -1;
             Boolean canExportFrames = this.m_LoadedFile != null && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0;
 
@@ -420,7 +422,9 @@ namespace EngieFileConverter.UI
             this.tsmiExtract4BitPal.Enabled = hasPal && shownBpp == 8;
             this.tsmiImageToPalette4Bit.Enabled = hasShownImage;
             this.tsmiImageToPalette8Bit.Enabled = hasShownImage;
-            this.tsmiMatchToPalette.Enabled = hasFile && (m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0;
+            this.tsmiMatchToPal.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0;
+            this.tsmiChangeTo24BitRgb.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0 && this.m_LoadedFile.BitsPerPixel != 24;
+            this.tsmiChangeTo32BitArgb.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0 && this.m_LoadedFile.BitsPerPixel != 32;
 
             // C&C64 toolsets
             this.tsmiToHeightMap.Enabled = shownFile is FileMapWwCc1Pc;
@@ -506,8 +510,7 @@ namespace EngieFileConverter.UI
         public List<PaletteDropDownInfo> LoadExtraPalettes()
         {
             List<PaletteDropDownInfo> palettes = new List<PaletteDropDownInfo>();
-            String appFolder = Path.GetDirectoryName(Application.ExecutablePath);
-            FileInfo[] files = new DirectoryInfo(appFolder).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
+            FileInfo[] files = new DirectoryInfo(m_PalettePath).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
             Int32 filesLength = files.Length;
             for (Int32 i = 0; i < filesLength; ++i)
                 palettes.AddRange(PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(files[i], false, false, true));
@@ -761,7 +764,7 @@ namespace EngieFileConverter.UI
 
         private void SaveFocus(Control ctrl)
         {
-            if (m_Loading || m_BusyStatusLabel != null || !ctrl.ContainsFocus)
+            if (this.m_Loading || this.m_BusyStatusLabel != null || !ctrl.ContainsFocus)
                 return;
             this.m_FocusedControl = ctrl;
             foreach (Control control in ctrl.Controls)
@@ -986,7 +989,7 @@ namespace EngieFileConverter.UI
                     return;
             }
             PaletteDropDownInfo palInfo;
-            using (FrmManagePalettes palSave = new FrmManagePalettes(currentPal.BitsPerPixel))
+            using (FrmManagePalettes palSave = new FrmManagePalettes(currentPal.BitsPerPixel, this.m_PalettePath))
             {
                 palSave.Icon = this.Icon;
                 palSave.Title = GetTitle();
@@ -1616,7 +1619,7 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null)
                 return;
             Boolean singleImage = (this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0) && this.m_LoadedFile.GetBitmap() != null;
-            if (!singleImage && m_LoadedFile.Frames.Length == 0)
+            if (!singleImage && this.m_LoadedFile.Frames.Length == 0)
                 return;
             this.SaveFocus(this);
             try
@@ -1795,13 +1798,13 @@ namespace EngieFileConverter.UI
 
         private void TsmiChangeTo24BitRgb_Click(Object sender, EventArgs e)
         {
-            SupportedFileType fileToEdit = m_LoadedFile;
+            SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & FileClass.Image | FileClass.FrameSet) == 0)
                 return;
             Int32 matchBpp = 24;
             Object[] arrParams =
             {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
-                new Func<SupportedFileType>(()=> ChangeToRgb(fileToEdit, matchBpp)),
+                new Func<SupportedFileType>(()=> this.ChangeToRgb(fileToEdit, matchBpp)),
                 true, true, "Changing to 24bpp RGB"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
@@ -1810,13 +1813,13 @@ namespace EngieFileConverter.UI
 
         private void TsmiChangeTo32BitArgb_Click(Object sender, EventArgs e)
         {
-            SupportedFileType fileToEdit = m_LoadedFile;
+            SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & FileClass.Image | FileClass.FrameSet) == 0)
                 return;
             Int32 matchBpp = 32;
             Object[] arrParams =
             {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
-                new Func<SupportedFileType>(()=> ChangeToRgb(fileToEdit, matchBpp)),
+                new Func<SupportedFileType>(()=> this.ChangeToRgb(fileToEdit, matchBpp)),
                 true, true, "Changing to 32bpp ARGB"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
@@ -1865,7 +1868,7 @@ namespace EngieFileConverter.UI
 
         private void TsmiMatchToPalette_Click(Object sender, EventArgs e)
         {
-            SupportedFileType fileToEdit = m_LoadedFile;
+            SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & FileClass.Image | FileClass.FrameSet) == 0)
                 return;
             List<PaletteDropDownInfo> allPalettes = new List<PaletteDropDownInfo>();
@@ -1885,7 +1888,7 @@ namespace EngieFileConverter.UI
 
             Object[] arrParams =
             {   //Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
-                new Func<SupportedFileType>(()=> MatchToPalette(fileToEdit, matchBpp, matchPalette)),
+                new Func<SupportedFileType>(()=> this.MatchToPalette(fileToEdit, matchBpp, matchPalette)),
                 true, true, "Matching to palette"
             };
             this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
@@ -1935,7 +1938,7 @@ namespace EngieFileConverter.UI
         private void TsmiExtract4BitPalClick(Object sender, EventArgs e)
         {
             SupportedFileType shownFile = this.GetShownFile();
-            if(shownFile == null || shownFile.BitsPerPixel != 8 || GetColorStatus() == ColorStatus.None)
+            if(shownFile == null || shownFile.BitsPerPixel != 8 || this.GetColorStatus() == ColorStatus.None)
                 return;
             this.SaveFocus(this);
 
@@ -1996,7 +1999,7 @@ namespace EngieFileConverter.UI
         private void ManagePalettes(Boolean fourBit)
         {
             this.SaveFocus(this);
-            using (FrmManagePalettes palSave = new FrmManagePalettes(fourBit ? 4 : 8))
+            using (FrmManagePalettes palSave = new FrmManagePalettes(fourBit ? 4 : 8, this.m_PalettePath))
             {
                 palSave.Icon = this.Icon;
                 palSave.Title = GetTitle();

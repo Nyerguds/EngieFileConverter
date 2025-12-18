@@ -20,7 +20,7 @@ https://www.paypal.com/donate/?business=nyerguds@gmail.com&currency_code=EUR
 
 Features:
 --------
--Supports opening and saving all classic image types (png/gif/bmp/jpg), and a load of game formats.
+-Supports opening and saving all classic image types (png/gif/bmp/jpg) and a load of game formats.
 -Gives a visual representation of the loaded file, with zoom and adjustable background color.
 -Can display and edit the file's color palette, if it has one.
 -Can save opened files as any compatible supported format.
@@ -47,8 +47,9 @@ people of the Chronoshift (formerly RA++) project. OmniBlade has been particular
 https://github.com/TheAssemblyArmada/Chronoshift
 
 The Dynamix LZW decompression code was converted from the C++ code of VOGONS.org user tikalat's
-Midi Tools. It contains no license but I assume the fact he included the code implies that he
-doesn't mind it being useful to more people.
+"midi tools v4". It contains no license but I assume the fact he included the code implies that
+he doesn't mind it being useful to more people. The license on the attachment on the forum says
+"Fair use/fair dealing exception"; not really a license meant for posting your own code under.
 https://www.vogons.org/viewtopic.php?p=273448#p273448
 
 The Dynamix LZSHuff decompression was identified thanks to NewRisingSun in that same thread:
@@ -88,6 +89,13 @@ Engie File Converter.
 
 
 Engie File Converter versions:
+
+v1.5.4: (21/03/2021 20:30 CET)
+-Added support for saving completely transparent Dynamix BMP of the SCN type.
+-Fixed incorrect loading of 16-colour palettes for Dynamix BMP files.
+-Changed standard palette save format to 8-bit rather than 6-bit. When opening the palette editor,
+ 6-bit palettes will be converted to 8-bit, with an accompanying ini file to confirm its format.
+-Fixed issue that corrupted the loaded file when using the "change palette" dialog.
 
 v1.5.3: (31/01/2021 00:40 CET)
 -Polished save options of Dune II and Lands of Lore 1 SHP files.

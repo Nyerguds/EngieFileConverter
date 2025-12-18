@@ -12,13 +12,12 @@ namespace Nyerguds.Util.UI
     public partial class FrmManagePalettes : Form
     {
         private const String CREATENEW = "Create new...";
-        private const String INISECTION = "Palette";
 
         private Int32 bpp;
         private Int32 nrOfColorsPerPal;
         private Int32 nrOfSubPalettes;
         private PaletteDropDownInfo paletteToSave;
-        private readonly String appPath = Path.GetDirectoryName(Application.ExecutablePath);
+        private String paletteSavePath;
         private Boolean immediateSave = false;
         private Dictionary<String, List<PaletteDropDownInfo>> subPalettes;
         private List<String> removedPalettes;
@@ -38,9 +37,10 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        public FrmManagePalettes(Int32 bpp)
+        public FrmManagePalettes(Int32 bpp, String paletteSavePath)
         {
             this.InitializeComponent();
+            this.paletteSavePath = paletteSavePath;
             this.bpp = bpp;
             this.nrOfColorsPerPal = 1 << bpp;
             this.nrOfSubPalettes = 256 / this.nrOfColorsPerPal;
@@ -53,7 +53,7 @@ namespace Nyerguds.Util.UI
         {
             this.cmbPalettes.Items.Clear();
             this.subPalettes = new Dictionary<String, List<PaletteDropDownInfo>>();
-            FileInfo[] files = new DirectoryInfo(this.appPath).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
+            FileInfo[] files = new DirectoryInfo(this.paletteSavePath).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
             Int32 filesLength = files.Length;
             for (Int32 i = 0; i < filesLength; ++i)
             {
@@ -61,29 +61,16 @@ namespace Nyerguds.Util.UI
                 if (file.Length != 0x300)
                     continue;
                 String name = file.Name;
-                try
-                {
-                    // Attempt to read as palette. Data is not actually used; this is just a premiminary check.
-                    ColorUtils.ReadSixBitPaletteFile(file.FullName);
-                }
-                catch (ArgumentException) { continue; }
-                String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(name)) + ".ini";
-                Boolean iniExists = File.Exists(inipath);
-                List<PaletteDropDownInfo> currentSubPals;
-                if (this.bpp == 4 && iniExists)
-                {
-                    currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
-                    this.TrimSubPalettes(currentSubPals);
-                }
-                else if (this.bpp == 8 && !iniExists)
-                {
-                    currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
-                }
-                else
-                {
+                List<PaletteDropDownInfo> currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
+                if (currentSubPals.Count == 0)
                     continue;
+                Int32 curBpp = currentSubPals[0].BitsPerPixel;
+                if (this.bpp == curBpp)
+                {
+                    this.subPalettes.Add(name, currentSubPals);
+                    if (this.bpp == 4)
+                        this.TrimSubPalettes(currentSubPals);
                 }
-                this.subPalettes.Add(name, currentSubPals);
             }
             foreach (String key in this.subPalettes.Keys)
                 this.cmbPalettes.Items.Add(key);
@@ -148,7 +135,7 @@ namespace Nyerguds.Util.UI
             }
             if (!newPaletteName.EndsWith(".pal"))
                 newPaletteName += ".pal";
-            String newPath = Path.Combine(this.appPath, newPaletteName);
+            String newPath = Path.Combine(this.paletteSavePath, newPaletteName);
             List<PaletteDropDownInfo> newPalInfo;
             Int32 existingpos = this.subPalettes.Keys.ToList().IndexOf(newPaletteName);
             if (existingpos != -1)
@@ -158,7 +145,7 @@ namespace Nyerguds.Util.UI
                 return;
             }
             String barePalName = newPaletteName.Substring(0, newPaletteName.Length - 4);
-            String iniPath = Path.Combine(this.appPath, barePalName + ".ini");
+            String iniPath = Path.Combine(this.paletteSavePath, barePalName + ".ini");
             Boolean iniExists = File.Exists(iniPath);
             if (File.Exists(newPath))
             {
@@ -411,7 +398,7 @@ namespace Nyerguds.Util.UI
                     this.DialogResult = DialogResult.None;
                     return;
                 }
-                FileInfo palfile = new FileInfo(Path.Combine(this.appPath, palette));
+                FileInfo palfile = new FileInfo(Path.Combine(this.paletteSavePath, palette));
                 if (palfile.Exists && palfile.Length == 0x300 && !currentPal.Colors.All(c => c.IsEmpty))
                 {
                     MessageBoxButtons mbb = this.immediateSave ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo;
@@ -449,9 +436,24 @@ namespace Nyerguds.Util.UI
             foreach (String palName in this.subPalettes.Keys)
             {
                 Color[] thisFullPal;
-                FileInfo pfile = new FileInfo(Path.Combine(this.appPath, palName));
+                FileInfo pfile = new FileInfo(Path.Combine(this.paletteSavePath, palName));
+                Boolean is8bpp = this.bpp == 8;
+
+                String bareName = pfile.Name;
+                String inipath = Path.Combine(pfile.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
+                Boolean iniExists = File.Exists(inipath);
+                IniFile paletteConfig = new IniFile(inipath);
                 if (pfile.Exists && pfile.Length == 0x300)
-                    thisFullPal = ColorUtils.ReadFromSixBitPaletteFile(pfile.FullName);
+                {
+                    // Eight bit: if ini exists, and data is specifically identified as 8-bit
+                    Boolean origIsEightBit = iniExists && paletteConfig.GetBoolValue(PaletteDropDownInfo.PALINISECTION, PaletteDropDownInfo.PALINIKEY8BIT, false);
+                    Byte[] palBytes = File.ReadAllBytes(pfile.FullName);
+                    // ...or if no ini exists but the data contains values higher than 6-bit allows.
+                    if (!iniExists && palBytes.Any(b => b > 0x3F))
+                        origIsEightBit = true;
+                    // Read the palette as 8-bit or as 6-bit, as determined above.
+                    thisFullPal = origIsEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPaletteAsEightBit(palBytes);
+                }
                 else
                     thisFullPal = Enumerable.Repeat(Color.Black, 256).ToArray();
                 List<PaletteDropDownInfo> subPals = this.subPalettes[palName];
@@ -469,31 +471,26 @@ namespace Nyerguds.Util.UI
                 }
                 if (skip)
                     continue;
-                ColorUtils.WriteSixBitPaletteFile(thisFullPal, pfile.FullName);
-                String iniPath = Path.Combine(this.appPath, palName.Substring(0, palName.Length - 4)) + ".ini";
-                if (this.bpp == 8)
+                ColorUtils.WriteEightBitPaletteFile(thisFullPal, pfile.FullName, true);
+                paletteConfig.WriteBackMode = WriteMode.WRITE_ALL;
+                paletteConfig.ClearSectionKeys(PaletteDropDownInfo.PALINISECTION);
+                paletteConfig.SetBoolValue(PaletteDropDownInfo.PALINISECTION, PaletteDropDownInfo.PALINIKEYSINGLE, is8bpp);
+                paletteConfig.SetBoolValue(PaletteDropDownInfo.PALINISECTION, PaletteDropDownInfo.PALINIKEY8BIT, true);
+                if (!is8bpp)
                 {
-                    if (File.Exists(iniPath))
-                        File.Delete(iniPath);
-                }
-                else
-                {
-                    IniFile inifile = new IniFile(iniPath);
-                    inifile.WriteBackMode = WriteMode.WRITE_ALL;
-                    inifile.ClearSectionKeys(INISECTION);
                     for (Int32 i = 0; i < this.nrOfSubPalettes; ++i)
                     {
                         PaletteDropDownInfo subPal = subPals.Find(x => x.Entry == i);
                         if (subPal != null)
-                            inifile.SetStringValue(INISECTION, i.ToString(), subPal.Name);
+                            paletteConfig.SetStringValue(PaletteDropDownInfo.PALINISECTION, i.ToString(), subPal.Name);
                     }
-                    inifile.WriteIni();
                 }
+                paletteConfig.WriteIni();
             }
             foreach (String pal in this.removedPalettes)
             {
-                String palFile = Path.Combine(this.appPath, pal);
-                String iniFile = Path.Combine(this.appPath, pal.Substring(0, pal.Length - 4)) + ".ini";
+                String palFile = Path.Combine(this.paletteSavePath, pal);
+                String iniFile = Path.Combine(this.paletteSavePath, pal.Substring(0, pal.Length - 4)) + ".ini";
                 File.Delete(palFile);
                 File.Delete(iniFile);
             }

@@ -1377,19 +1377,23 @@ namespace Nyerguds.ImageManipulation
             }
         }
 #endif
+
         /// <summary>
         /// Written for https://stackoverflow.com/q/65844918/395685
-        /// Finds the two most prominent colors in an image, changes all pixels in the image
-        /// to the closest match of those two colors, and returns the result as 8-bit image
-        /// with white as the most prominent color, and black as the secondary color.
+        /// Finds the two most prominent colors in an image, and uses them as extremes
+        /// for matching all pixels on the image to a palette fading between the two.
         /// </summary>
         /// <param name="image">Image to reduce.</param>
+        /// <param name="substitutePalette">Substitute final palette with grayscale.</param>
+        /// <param name="bgWhite">If changed to grayscale, true if the background should be the white colour. If not, it will be the black one.</param>
         /// <returns>
-        /// An 8-bit image with the image content of the input reduced to its two most prominently
-        /// occurring colours, with these colours replaced with white and black respectively.
+        /// An 8-bit image with the image content of the input reduced to grayscale,
+        /// with the found two most found colours as black and white.
         /// </returns>
-        public static Bitmap ReduceToTwoMostUsedColors(Bitmap image)
+        public static Bitmap ReduceToTwoColorFade(Bitmap image, Boolean substitutePalette, Boolean bgWhite)
         {
+            if (!substitutePalette)
+                bgWhite = false;
             // Get data out of the image, using LockBits and Marshal.Copy
             Int32 width = image.Width;
             Int32 height = image.Height;
@@ -1403,12 +1407,11 @@ namespace Nyerguds.ImageManipulation
             Marshal.Copy(sourceData.Scan0, imgBytes, 0, imgBytes.Length);
             image.UnlockBits(sourceData);
             // Make color population histogram
-            Int32 offset = 0;
             Int32 lineOffset = 0;
-            Dictionary<Int32, Int32> histogram = new Dictionary<Int32, Int32>();
+            Dictionary<UInt32, Int32> histogram = new Dictionary<UInt32, Int32>();
             for (Int32 y = 0; y < height; y++)
             {
-                offset = lineOffset;
+                Int32 offset = lineOffset;
                 for (Int32 x = 0; x < width; x++)
                 {
                     // Optional check: only handle if not mostly-transparent
@@ -1416,7 +1419,7 @@ namespace Nyerguds.ImageManipulation
                     {
                         // Get color values from bytes, without alpha.
                         // Little-endian: UInt32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
-                        Int32 val = (imgBytes[offset + 2] << 16) | (imgBytes[offset + 1] << 8) | imgBytes[offset + 0];
+                        UInt32 val = (UInt32)((0xFF << 24) | (imgBytes[offset + 2] << 16) | (imgBytes[offset + 1] << 8) | imgBytes[offset + 0]);
                         if (histogram.ContainsKey(val))
                             histogram[val] = histogram[val] + 1;
                         else
@@ -1427,44 +1430,62 @@ namespace Nyerguds.ImageManipulation
                 lineOffset += stride;
             }
             // Sort the histogram. This requires System.Linq
-            KeyValuePair<Int32, Int32>[] histoSorted = histogram.OrderByDescending(c => c.Value).ToArray();
-            // Technically these colors will be transparent when built like this, since their 
-            // alpha is 0, but we won't use them directly as colors anyway.
+            KeyValuePair<UInt32, Int32>[] histoSorted = histogram.OrderByDescending(c => c.Value).ToArray();
             // Since we filter on alpha, getting a result is not 100% guaranteed.
-            Color colBackgr = histoSorted.Length < 1 ? Color.Black : Color.FromArgb(histoSorted[0].Key);
+            Color colBackgr = histoSorted.Length < 1 ? Color.Black : Color.FromArgb((Int32)histoSorted[0].Key);
             // if less than 2 colors, just default it to the same.
-            Color colContent = histoSorted.Length < 2 ? colBackgr : Color.FromArgb(histoSorted[1].Key);
-            // Make a new palette out of these colors for feeding into GetClosestPaletteIndexMatch later
-            Color[] matchPal = new Color[] { colBackgr, colContent };
+            Color colContent = histoSorted.Length < 2 ? colBackgr : Color.FromArgb((Int32)histoSorted[1].Key);
+            // Make a new 256-colour palette, making a fade between these two colours, for feeding into GetClosestPaletteIndexMatch later
+            Color[] matchPal = new Color[0x100];
+            Color toBlack = bgWhite ? colContent : colBackgr;
+            Color toWhite = bgWhite ? colBackgr : colContent;
+            Int32 rFirst = toBlack.R;
+            Int32 gFirst = toBlack.G;
+            Int32 bFirst = toBlack.B;
+            Double rDif = (toBlack.R - toWhite.R) / 255.0;
+            Double gDif = (toBlack.G - toWhite.G) / 255.0;
+            Double bDif = (toBlack.B - toWhite.B) / 255.0;
+            for (Int32 i = 0; i < 0x100; i++)
+                matchPal[i] = Color.FromArgb(
+                    Math.Min(0xFF, Math.Max(0, rFirst - (Int32)Math.Round(rDif * i, MidpointRounding.AwayFromZero))),
+                    Math.Min(0xFF, Math.Max(0, gFirst - (Int32)Math.Round(gDif * i, MidpointRounding.AwayFromZero))),
+                    Math.Min(0xFF, Math.Max(0, bFirst - (Int32)Math.Round(bDif * i, MidpointRounding.AwayFromZero))));
+            // Ensure start and end point are correct, and not mangled by small rounding errors.
+            matchPal[0x00] = toBlack;
+            matchPal[0xFF] = toWhite;
+            // Small extra: ignore duplicates of the highest colour, to ensure that
+            // all matches of the highest colour itself actually end up on index 0xFF.
+            List<Int32> ignoreIndices = new List<Int32>();
+            for (Int32 i = 0; i < 0xFF; i++)
+                if (matchPal[i] == toWhite)
+                    ignoreIndices.Add(i);
             // The 8-bit stride is simply the width in this case.
             Int32 stride8Bit = width;
             // Make 8-bit array to store the result
             Byte[] imgBytes8Bit = new Byte[stride8Bit * height];
-            // Reset offsets for a new loop through the image data
-            offset = 0;
+            // Reset offset for a new loop through the image data
             lineOffset = 0;
             // Make new offset vars for a loop through the 8-bit image data
-            Int32 offset8Bit = 0;
             Int32 lineOffset8Bit = 0;
             for (Int32 y = 0; y < height; y++)
             {
-                offset = lineOffset;
-                offset8Bit = lineOffset8Bit;
+                Int32 offset = lineOffset;
+                Int32 offset8Bit = lineOffset8Bit;
                 for (Int32 x = 0; x < width; x++)
                 {
-                    Byte toWrite;
+                    Int32 toWrite;
                     // If transparent, revert to background color.
-                    if (imgBytes[3] <= 0x7F)
+                    if (imgBytes[offset + 3] <= 0x7F)
                     {
-                        toWrite = 0;
+                        toWrite = bgWhite ? 0xFF : 0x00;
                     }
                     else
                     {
                         Color col = Color.FromArgb(imgBytes[offset + 2], imgBytes[offset + 1], imgBytes[offset + 0]);
-                        toWrite = (Byte)ColorUtils.GetClosestPaletteIndexMatch(col, matchPal, null);
+                        toWrite = ColorUtils.GetClosestPaletteIndexMatch(col, matchPal, ignoreIndices);
                     }
                     // Write the found color index to the 8-bit byte array.
-                    imgBytes8Bit[offset8Bit] = toWrite;
+                    imgBytes8Bit[offset8Bit] = (Byte)toWrite;
                     offset += 4;
                     offset8Bit++;
                 }
@@ -1483,14 +1504,20 @@ namespace Nyerguds.ImageManipulation
             for (Int32 y = 0; y < height; ++y)
                 Marshal.Copy(imgBytes8Bit, y * stride8Bit, new IntPtr(scan0 + y * targetStride), newDataWidth);
             newBm.UnlockBits(targetData);
+            // Set final image palette to grayscale fade.
             // 'Image.Palette' makes a COPY of the palette when accessed.
             // So copy it out, modify it, then copy it back in.
             ColorPalette pal = newBm.Palette;
-            pal.Entries[0] = Color.White;
-            pal.Entries[1] = Color.Black;
-            // Clear the rest of the palette (not really needed)
-            for (Int32 i = 2; i < 0x100; i++)
-                pal.Entries[i] = Color.Black;
+            if (substitutePalette)
+            {
+                for (Int32 i = 0; i < 0x100; i++)
+                    pal.Entries[i] = Color.FromArgb(i, i, i);
+            }
+            else
+            {
+                for (Int32 i = 0; i < 0x100; i++)
+                    pal.Entries[i] = matchPal[i];
+            }
             newBm.Palette = pal;
             return newBm;
         }

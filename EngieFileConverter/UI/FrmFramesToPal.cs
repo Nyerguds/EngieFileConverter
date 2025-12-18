@@ -166,8 +166,6 @@ namespace EngieFileConverter.UI
             {
                 if (this.components != null)
                     this.components.Dispose();
-                if (this.m_File != null)
-                    this.m_File.Dispose();
             }
             base.Dispose(disposing);
         }

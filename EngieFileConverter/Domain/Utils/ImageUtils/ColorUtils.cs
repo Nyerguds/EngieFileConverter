@@ -255,16 +255,23 @@ namespace Nyerguds.ImageManipulation
         /// <param name="colorPalette">The palette of available colours to match</param>
         /// <param name="excludedindices">List of palette indices that are specifically excluded from the search.</param>
         /// <returns>The index on the palette of the colour that is the closest to the given colour.</returns>
-        public static Int32 GetClosestPaletteIndexMatch(Color col, Color[] colorPalette, List<Int32> excludedindices)
+        public static Int32 GetClosestPaletteIndexMatch(Color col, Color[] colorPalette, IEnumerable<Int32> excludedindices = null)
         {
+            Int32 palLength = colorPalette.Length;
+            // Much more efficient than performing List.Contains() on every iteration.
+            Boolean[] dontMatch = excludedindices == null ? null : new Boolean[palLength];
+            if (excludedindices != null)
+                foreach (Int32 val in excludedindices)
+                    if (val > 0 && val < palLength)
+                        dontMatch[val] = true;
             Int32 colorMatch = 0;
             Int32 leastDistance = Int32.MaxValue;
             Int32 red = col.R;
             Int32 green = col.G;
             Int32 blue = col.B;
-            for (Int32 i = 0; i < colorPalette.Length; ++i)
+            for (Int32 i = 0; i < palLength; ++i)
             {
-                if (excludedindices != null && excludedindices.Contains(i))
+                if (dontMatch != null && dontMatch[i])
                     continue;
                 Color paletteColor = colorPalette[i];
                 Int32 redDistance = paletteColor.R - red;
