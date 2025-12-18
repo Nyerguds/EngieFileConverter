@@ -55,6 +55,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             try
             {
                 m_LoadedImage = BitmapHandler.LoadBitmap(filename, out m_ColsInPal);
+                LoadedFileName = filename;
             }
             catch (Exception ex)
             {

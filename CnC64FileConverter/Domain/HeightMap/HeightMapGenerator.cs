@@ -229,7 +229,7 @@ namespace CnC64FileConverter.Domain.HeightMap
                 HeightTerrainType htt = simpleMap[y * 64 + mapStartX];
                 if (htt == HeightTerrainType.Rock)
                     htt = HeightTerrainType.Clear;
-                for (Int32 x = 0; x < mapStartX - 1; x++)
+                for (Int32 x = 0; x < mapStartX; x++)
                     simpleMap[y * 64 + x] = htt;
                 // duplicate rightmost cell of inner map to right edge
                 htt = simpleMap[y * 64 + mapEndX - 1];

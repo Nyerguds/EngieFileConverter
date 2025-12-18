@@ -32,8 +32,14 @@ At that point, it became the CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
 
+v1.0.5: (07/04/2017 21:21)
+-Fixed a bug that prevented full clearing of the left map edge
+-Fixed a minor bug in the terrain type definitions.
+-When an ini file dropped into the program it will check if a map can be found for it.
+-UI options now get disabled when not applicable.
+
 v1.0.4: (07/04/2017 17:32)
--The Converted 65x65 height maps will immediately be loaded in the program as paletteless IMG
+-The converted 65x65 height maps will immediately be loaded in the program as paletteless IMG
  format, so they can more easily be saved into that format.
 
 v1.0.3: (07/04/2017 15:30)

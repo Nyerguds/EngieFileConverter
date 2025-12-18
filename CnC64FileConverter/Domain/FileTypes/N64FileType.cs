@@ -28,6 +28,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// <summary>Amount of colors in the palette.</summary>
         public virtual Int32 ColorsInPalette { get { return this.FileHasPalette ? m_LoadedImage.Palette.Entries.Length : 0; } }
         public virtual N64FileType PreferredExportType { get { return new FileImagePng(); } }
+        public virtual String LoadedFileName { get; protected set; }
         
         public abstract void LoadImage(Byte[] fileData);
         public abstract void LoadImage(String filename);
@@ -73,6 +74,8 @@ namespace CnC64FileConverter.Domain.ImageFile
             typeof(FileImgN64),
             typeof(FileMapN64),
             typeof(FileMapPc),
+            typeof(FileMapPcFromIni),
+            typeof(FileMapN64FromIni),
             typeof(FileImagePng),
             typeof(FileImageBmp),
             typeof(FileImageGif),

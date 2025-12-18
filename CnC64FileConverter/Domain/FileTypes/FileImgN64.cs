@@ -69,6 +69,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         {
             Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData);
+            LoadedFileName = filename;
         }
 
         public override Int32 GetBitsPerColor()

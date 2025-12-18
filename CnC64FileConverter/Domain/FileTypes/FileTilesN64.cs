@@ -60,6 +60,8 @@ namespace CnC64FileConverter.Domain.ImageFile
                 throw new FileTypeLoadException("Could not load tilesets palette file: " + ex.Message, ex);
             }
             LoadData(dataFile, palIndexFile, this.Palette);
+            String baseFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename));
+            LoadedFileName = baseFilename + "." + ExtData + "/" + ExtPalIndex + "/" + ExtPalFile;
         }
 
         public override void SaveAsThis(N64FileType fileToSave, String savePath)

@@ -31,6 +31,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override void LoadImage(String filename)
         {
             m_LoadedImage = ReadN64MapAsImage(filename);
+            LoadedFileName = filename;
         }
 
         public override void SaveAsThis(N64FileType fileToSave, String savePath)
@@ -41,14 +42,14 @@ namespace CnC64FileConverter.Domain.ImageFile
                 throw new NotSupportedException();
         }
         
-        private Bitmap ReadN64MapAsImage(String filename)
+        protected Bitmap ReadN64MapAsImage(String filename)
         {
             Theater theater = GetTheaterFromIni(filename, (Theater)0xFF);
             Byte[] fileData = File.ReadAllBytes(filename);
             return ReadN64MapAsImage(fileData, theater, filename);
         }
 
-        private Bitmap ReadN64MapAsImage(Byte[] fileData, Theater theater, String sourceFile)
+        protected Bitmap ReadN64MapAsImage(Byte[] fileData, Theater theater, String sourceFile)
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
@@ -63,6 +64,26 @@ namespace CnC64FileConverter.Domain.ImageFile
             N64MapData = fileData;
             PCMapData = IdentifyTheaterAndConvert(fileData, ref theater, true, sourceFile);
             return ReadMapAsImage(PCMapData, theater);
+        }
+    }
+
+    public class FileMapN64FromIni : FileMapN64
+    {
+        /// <summary>Possible file extensions for this file type.</summary>
+        public override String[] FileExtensions { get { return new String[] { "ini" }; } }
+        /// <summary>Very short code name for this type.</summary>
+        public override String ShortTypeName { get { return "N64MapIni"; } }
+
+        public override void LoadImage(String filename)
+        {
+            String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".map";
+            if (!File.Exists(mapFilename))
+                throw new FileTypeLoadException("No .map file found for this ini file.");
+            DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(filename));
+            FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".map");
+            if (fi2.Length == 1)
+                mapFilename = fi2[0].FullName;
+            base.LoadImage(mapFilename);
         }
     }
 }

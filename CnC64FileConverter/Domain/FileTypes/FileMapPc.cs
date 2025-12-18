@@ -89,6 +89,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override void LoadImage(String filename)
         {
             m_LoadedImage = ReadMapAsImage(filename, (Theater)0xFF);
+            LoadedFileName = filename;
         }
 
         public override Int32 GetBitsPerColor()
@@ -235,5 +236,27 @@ namespace CnC64FileConverter.Domain.ImageFile
             return map.GetAsBytes();
         }
     }
+
+    public class FileMapPcFromIni : FileMapPc
+    {
+        /// <summary>Possible file extensions for this file type.</summary>
+        public override String[] FileExtensions { get { return new String[] { "ini" }; } }
+        /// <summary>Very short code name for this type.</summary>
+        public override String ShortTypeName { get { return "N64MapIni"; } }
+
+        public override void LoadImage(String filename)
+        {
+            String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".bin";
+            if (!File.Exists(mapFilename))
+                throw new FileTypeLoadException("No .bin file found for this ini file.");
+            DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(filename));
+            FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".bin");
+            if (fi2.Length == 1)
+                mapFilename = fi2[0].FullName;
+            base.LoadImage(mapFilename);
+        }
+
+    }
+
     
 }

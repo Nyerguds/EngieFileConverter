@@ -71,7 +71,8 @@ namespace CnC64FileConverter.UI
                         try
                         {
                             selectedType.LoadImage(path);
-                            m_LoadedFile = selectedType;
+                            this.m_LoadedFile = selectedType;
+                            this.m_Filename = selectedType.LoadedFileName;
                         }
                         catch (FileTypeLoadException e)
                         {
@@ -83,7 +84,11 @@ namespace CnC64FileConverter.UI
                     {
                         List<FileTypeLoadException> loadErrors;
                         this.m_LoadedFile = N64FileType.LoadImageAutodetect(path, possibleTypes, out loadErrors);
-                        if (this.m_LoadedFile == null)
+                        if (this.m_LoadedFile != null)
+                        {
+                            this.m_Filename = this.m_LoadedFile.LoadedFileName;
+                        }
+                        else
                         {
                             String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
                             MessageBox.Show(this, "File type could not be identified. Errors returned by all attempts:\n\n" + errors, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -96,7 +101,7 @@ namespace CnC64FileConverter.UI
                     error = ex.Message;
                     this.m_LoadedFile = null;
                 }
-                ReloadUi(error);
+                ReloadUi();
                 if (error != null)
                     MessageBox.Show(this, "Image loading failed" + (error == null ? "." : ": " + error), this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
@@ -106,8 +111,14 @@ namespace CnC64FileConverter.UI
             }
         }
                 
-        private void ReloadUi(String error)
+        private void ReloadUi()
         {
+            tsmiSave.Enabled = m_LoadedFile != null;
+            tsmiExport.Enabled = m_LoadedFile != null;
+            tsmiToHeightMap.Enabled = m_LoadedFile is FileMapPc;
+            tsmiToPlateaus.Enabled = m_LoadedFile is FileMapPc;
+            tsmiToHeightMapAdv.Enabled = m_LoadedFile is FileMapPc;
+            tsmiTo65x65HeightMap.Enabled = m_LoadedFile is FileImage;
             if (m_LoadedFile == null)
             {
                 String emptystr = "---";
@@ -119,8 +130,6 @@ namespace CnC64FileConverter.UI
                 lblValColorsInPal.Text = emptystr;
                 picImage.Image = null;
                 RefreshImage();
-                tsmiSave.Enabled = false;
-                tsmiExport.Enabled = false;
                 PalettePanel.InitPaletteControl(8, palettePanel1, new Color[0], 226);
                 return;
             }
@@ -133,9 +142,6 @@ namespace CnC64FileConverter.UI
             lblValColorsInPal.Text = m_LoadedFile.ColorsInPalette + (!m_LoadedFile.FileHasPalette && m_LoadedFile.ColorsInPalette != 0 ? " (0 in header)" : String.Empty);
             picImage.Image = m_LoadedFile.GetBitmap();
             RefreshImage();
-            Boolean loadOk = m_LoadedFile.GetBitmap() != null;
-            tsmiSave.Enabled = loadOk;
-            tsmiExport.Enabled = loadOk;
             if (m_LoadedFile.FileHasPalette)
                 PalettePanel.InitPaletteControl(m_LoadedFile.GetBitsPerColor(), palettePanel1, m_LoadedFile.GetColors(), 226);
             else
@@ -146,6 +152,8 @@ namespace CnC64FileConverter.UI
         {
             if (m_Filename != null)
                 LoadImage(m_Filename, null, null);
+            else
+                ReloadUi();
         }
 
         private void BtnSave_Click(object sender, EventArgs e)
@@ -282,7 +290,7 @@ namespace CnC64FileConverter.UI
                 IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
                 this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map.Map, mapInfo, plateauImage);
                 this.m_Filename = pngFileName;
-                ReloadUi(null);
+                ReloadUi();
             }
         }
 
@@ -298,7 +306,7 @@ namespace CnC64FileConverter.UI
                 file.LoadImage(bm);
                 this.m_LoadedFile = file;
                 this.m_Filename = imgFileName;
-                ReloadUi(null);
+                ReloadUi();
             }
         }
 
@@ -313,7 +321,7 @@ namespace CnC64FileConverter.UI
                 IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
                 this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64(map.Map, mapInfo);
                 this.m_Filename = plateauFileName;
-                ReloadUi(null);
+                ReloadUi();
             }
         }
     }

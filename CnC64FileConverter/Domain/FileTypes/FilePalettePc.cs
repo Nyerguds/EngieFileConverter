@@ -53,6 +53,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         {
             Byte[] fileData = File.ReadAllBytes(filename);
             LoadImage(fileData);
+            LoadedFileName = filename;
         }
 
         public override Color[] GetColors()
