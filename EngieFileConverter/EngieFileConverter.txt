@@ -74,6 +74,10 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.3.4: (23/08/2018 18:40)
+-Improved the radar colour options for Tiberian Sun SHP files.
+-Added support for Amiga CPS files. The multi-palette types are handled as frames.
+
 v1.3.3: (21/08/2018 12:20)
 -Fixed scaling issue on images with custom DPI setting.
 -Added automatic maximum zoom boundary to avoid memory corruption in PictureBox.

@@ -136,8 +136,6 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public virtual void SetColors(Color[] palette, SupportedFileType updateSource)
         {
-            if (this.IsFramesContainer && !this.FramesHaveCommonPalette)
-                return;
             if (ReferenceEquals(updateSource, this))
                 return;
             if (palette == null || palette.Length == 0)
@@ -178,6 +176,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     this.m_LoadedImage.Palette = imagePal;
                 }
             }
+            if (this.IsFramesContainer && !this.FramesHaveCommonPalette)
+                return;
             // Logic if this is a frame: call for a colour replace in the parent so all frames get affected.
             // Skip this step if the FrameParent is the source, since that means some other frame already started this.
             if (this.FrameParent != null && !ReferenceEquals(this.FrameParent, updateSource) && this.FrameParent.FramesHaveCommonPalette)
@@ -258,6 +258,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImage),
             typeof(FileIcon),
             typeof(FileImgWwCps),
+            typeof(FileFramesWwCpsAmi4),
             typeof(FileFramesWwWsa),
             typeof(FileFramesWwShpD2),
             typeof(FileFramesWwShpCc),
@@ -296,10 +297,11 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImage),
             typeof(FileIcon),
             typeof(FileImgWwCps),
-            typeof(FileFramesWwWsa),
             typeof(FileFramesWwShpD2),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwWsa),
+            typeof(FileFramesWwCpsAmi4),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
             typeof(FileMapWwCc1N64),
@@ -340,13 +342,14 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileIcon),
             typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
-            typeof(FileImgWwCps),
-            typeof(FileFramesWwWsa),
-            typeof(FileImgWwLcw),
             typeof(FileFramesWwShpD2),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwWsa),
+            typeof(FileImgWwCps),
+            typeof(FileFramesWwCpsAmi4),
             typeof(FileTilesetWwCc1PC),
+            typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
             typeof(FilePaletteWwCc1N64Pa4),
             typeof(FilePaletteWwCc1N64Pa8),

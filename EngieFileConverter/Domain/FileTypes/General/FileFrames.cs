@@ -189,7 +189,8 @@ namespace EngieFileConverter.Domain.FileTypes
             framesContainer.BaseType = currentType.ShortTypeName;
             Color[] pal = currentType.GetColors();
             // 'common palette' logic is started by setting it to True when there is a palette.
-            framesContainer.SetCommonPalette(pal != null && currentType.ColorsInPalette > 0);
+            Boolean commonPalette = pal != null && currentType.ColorsInPalette > 0;
+            Boolean nullPalette = currentType.ColorsInPalette == 0 || pal == null;
             foreach (String currentFrame in frameNames)
             {
                 if (new FileInfo(currentFrame).Length == 0)
@@ -214,14 +215,23 @@ namespace EngieFileConverter.Domain.FileTypes
                     frame.SetFileClass(frameFile.FileClass);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);
-                    if (framesContainer.FramesHaveCommonPalette)
-                        framesContainer.SetCommonPalette(frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors()));
+                    if (commonPalette)
+                        commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
+                    if (nullPalette)
+                        nullPalette = frameFile.ColorsInPalette == 0 || frameFile.GetColors() == null;
                 }
                 catch (FileTypeLoadException)
                 {
                     // One of the files in the sequence cannot be loaded as the same type. Abort.
                     return null;
                 }
+            }
+            framesContainer.SetCommonPalette(commonPalette || nullPalette);
+            if (framesContainer.FramesHaveCommonPalette)
+            {
+                framesContainer.SetBitsPerColor(currentType.BitsPerPixel);
+                framesContainer.SetColorsInPalette(currentType.ColorsInPalette);
+                framesContainer.SetColors(currentType.GetColors());
             }
             return framesContainer;
         }

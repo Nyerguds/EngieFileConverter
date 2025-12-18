@@ -34,7 +34,7 @@ namespace Nyerguds.ImageManipulation
         /// <summary>Maximum value for each component (A,R,G,B)</summary>
         private UInt32[] maxChan = new UInt32[4];
         /// <summary>Defaults for each component (A,R,G,B)</summary>
-        private UInt32[] defaultsChan = new UInt32[4];
+        private Byte[] defaultsChan = new Byte[4] {255, 0, 0, 0};
         /// <summary>True to read the input bytes as little-endian.</summary>
         private Boolean littleEndian;
 
@@ -92,25 +92,21 @@ namespace Nyerguds.ImageManipulation
             this.multipliers[(Int32) ColorComponent.Alpha] = alphaMultiplier >= 0 ? alphaMultiplier : MakeMultiplier(alphaBits);
             this.limitMasks[(Int32) ColorComponent.Alpha] = maskAlpha;
             this.maxChan[(Int32) ColorComponent.Alpha] = MakeMaxVal(alphaBits);
-            this.defaultsChan[(Int32) ColorComponent.Alpha] = this.maxChan[(Int32) ColorComponent.Alpha];
 
             this.bitsAmounts[(Int32) ColorComponent.Red] = redBits;
             this.multipliers[(Int32) ColorComponent.Red] = redMultiplier >= 0 ? redMultiplier : MakeMultiplier(redBits);
             this.limitMasks[(Int32) ColorComponent.Red] = maskRed;
             this.maxChan[(Int32) ColorComponent.Red] = MakeMaxVal(redBits);
-            this.defaultsChan[(Int32) ColorComponent.Red] = 0;
 
             this.bitsAmounts[(Int32) ColorComponent.Green] = greenBits;
             this.multipliers[(Int32) ColorComponent.Green] = greenMultiplier >= 0 ? greenMultiplier : MakeMultiplier(greenBits);
             this.limitMasks[(Int32) ColorComponent.Green] = maskGreen;
             this.maxChan[(Int32) ColorComponent.Green] = MakeMaxVal(greenBits);
-            this.defaultsChan[(Int32) ColorComponent.Green] = 0;
 
             this.bitsAmounts[(Int32) ColorComponent.Blue] = blueBits;
             this.multipliers[(Int32) ColorComponent.Blue] = blueMultiplier >= 0 ? blueMultiplier : MakeMultiplier(blueBits);
             this.limitMasks[(Int32) ColorComponent.Blue] = maskBlue;
             this.maxChan[(Int32) ColorComponent.Blue] = MakeMaxVal(blueBits);
-            this.defaultsChan[(Int32) ColorComponent.Blue] = 0;
         }
 
         /// <summary>
@@ -162,31 +158,27 @@ namespace Nyerguds.ImageManipulation
         {
             this.bytesPerPixel = bytesPerPixel;
             this.littleEndian = littleEndian;
-            UInt32 maxValAlpha = MakeMaxVal(alphaBits);
+            UInt32 maxValAlpha = alphaBits == 0 ? 255 : MakeMaxVal(alphaBits);
 
             this.bitsAmounts[(Int32) ColorComponent.Alpha] = alphaBits;
             this.multipliers[(Int32) ColorComponent.Alpha] = alphaMultiplier >= 0 ? alphaMultiplier : MakeMultiplier(alphaBits);
             this.limitMasks[(Int32) ColorComponent.Alpha] = MakeMask(alphaBits, alphaShift);
             this.maxChan[(Int32) ColorComponent.Alpha] = maxValAlpha;
-            this.defaultsChan[(Int32) ColorComponent.Alpha] = maxValAlpha;
 
             this.bitsAmounts[(Int32) ColorComponent.Red] = redBits;
             this.multipliers[(Int32) ColorComponent.Red] = redMultiplier >= 0 ? redMultiplier : MakeMultiplier(redBits);
             this.limitMasks[(Int32) ColorComponent.Red] = MakeMask(redBits, redShift);
             this.maxChan[(Int32) ColorComponent.Red] = MakeMaxVal(redBits);
-            this.defaultsChan[(Int32) ColorComponent.Red] = 0;
 
             this.bitsAmounts[(Int32) ColorComponent.Green] = greenBits;
             this.multipliers[(Int32) ColorComponent.Green] = greenMultiplier >= 0 ? greenMultiplier : MakeMultiplier(greenBits);
             this.limitMasks[(Int32) ColorComponent.Green] = MakeMask(greenBits, greenShift);
             this.maxChan[(Int32) ColorComponent.Green] = MakeMaxVal(greenBits);
-            this.defaultsChan[(Int32) ColorComponent.Green] = 0;
 
             this.bitsAmounts[(Int32) ColorComponent.Blue] = blueBits;
             this.multipliers[(Int32) ColorComponent.Blue] = blueMultiplier >= 0 ? blueMultiplier : MakeMultiplier(blueBits);
             this.limitMasks[(Int32) ColorComponent.Blue] = MakeMask(blueBits, blueShift);
             this.maxChan[(Int32) ColorComponent.Blue] = MakeMaxVal(blueBits);
-            this.defaultsChan[(Int32) ColorComponent.Blue] = 0;
         }
 
         /// <summary>
@@ -367,6 +359,8 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The read color component, adjust to /256 fraction.</returns>
         private Byte GetChannelFromValue(UInt32 readValue, ColorComponent type)
         {
+            if (this.bitsAmounts[(Int32)type] == 0)
+                return defaultsChan[(Int32)type];
             UInt32 val = this.GetRawChannelFromValue(readValue, type);
             Double valD = (val*this.multipliers[(Int32) type]);
             return (Byte) Math.Min(255, Math.Round(valD, MidpointRounding.AwayFromZero));

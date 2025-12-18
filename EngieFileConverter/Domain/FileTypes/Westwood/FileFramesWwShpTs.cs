@@ -90,7 +90,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frmDataOffset != 0 && (frmX + frmWidth > hdrWidth || frmY + frmHeight > hdrHeight || frmReserved != 0
                                            || (usesRle && frmDataOffset + frmHeight * 2 > fileData.Length) || (!usesRle && frmDataOffset + frmWidth * frmHeight > fileData.Length)))
                     throw new FileTypeLoadException("Illegal values in frame header!");
-
                 Byte[] fullFrame = new Byte[fullFrameSize];
                 Int32 frameBytes;
                 if (frmDataOffset == 0)
@@ -150,26 +149,34 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 height;
             Color[] palette;
             PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
-            /*/
-            // Experiment. Ignore.
-            Boolean adjust = palette != null && palette.Length > 0;
-            if (adjust)
+            SupportedFileType[] frames = fileToSave.Frames;
+            Int32 frameLen = frames.Length;
+            Boolean evenFrames = frameLen % 2 == 0;
+            Boolean hasShadow = evenFrames;
+            if (hasShadow)
             {
-                foreach (Color c in palette)
+                for (Int32 i = frameLen / 2; i < frameLen; i++)
                 {
-                    if (c.R % 4 == 0 && c.G % 4 == 0 && c.B % 4 == 0)
-                        continue;
-                    adjust = false;
-                    break;
+                    Int32 stride;
+                    Byte[] data = ImageUtils.GetImageData(frames[i].GetBitmap(), out stride, true);
+                    if (data.Any(x => x > 1))
+                    {
+                        hasShadow = false;
+                        break;
+                    }
                 }
             }
-            //*/
-            SaveOption[] opts = new SaveOption[3];//adjust ? 4 : 3];
-            opts[0] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
-            opts[1] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
-            opts[2] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable unit when calculating average colour (ignore remap range)", "0");
-            //if (adjust)
-            //    opts[3] = new SaveOption("AJC", SaveOptionType.Boolean, "Fix the palette's 6-bit colours to save the average frame colour", null, "0", new SaveEnableFilter("REM", false, "1"));
+            Int32 nrOfOpts = 3;
+            if (evenFrames)
+                nrOfOpts++;
+            SaveOption[] opts = new SaveOption[nrOfOpts];
+            Int32 opt = 0;
+            opts[opt++] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
+            opts[opt++] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
+            //opts[opt++] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable when calculating average colour (ignores hue of remap pixels)", "0");
+            opts[opt++] = new SaveOption("TIB", SaveOptionType.Boolean, "Average colour calculation: treat remap as tiberium", null, "0"); // "(treats remap as green instead of ignoring hue)", new SaveEnableFilter("REM", false, "1"));
+            if (evenFrames)
+                opts[opt] = new SaveOption("SHD", SaveOptionType.Boolean, "Average colour calculation: Ignore shadow frames", null, hasShadow ? "1" : "0");
             return opts;
         }
 
@@ -181,54 +188,35 @@ namespace EngieFileConverter.Domain.FileTypes
             PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean align = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "ALI"));
-            Boolean ignoreRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "REM"));
-            Boolean adjustColors = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "AJC"));
+            //Boolean adjustForRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "REM"));
+            Boolean asTib = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TIB"));
+            Boolean hasShadow = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "SHD"));
+            SupportedFileType[] frames = fileToSave.Frames;
 
-            // Fix for 6-bit colour palettes: stretch the 0-252 ranges out over the full 0-255.
-            if (adjustColors)
-            {
-                PixelFormatter sixBittoEight = new PixelFormatter(3, 0x00, 0x00003F, 0x003F00, 0x3F0000, true);
-                Color[] newpal = new Color[palette.Length];
-                Byte[] colArr = new Byte[3];
-                for (Int32 i = 0; i < palette.Length; i++)
-                {
-                    Color col = palette[i];
-                    colArr[0] = (Byte) (col.R / 4);
-                    colArr[1] = (Byte) (col.G / 4);
-                    colArr[2] = (Byte) (col.B / 4);
-                    newpal[i] = sixBittoEight.GetColor(colArr, 0);
-                }
-                palette = newpal;
-            }
-            Int32 frames = fileToSave.Frames.Length;
+            Int32 nrOfFrames = frames.Length;
+            Int32 shadowLimit = nrOfFrames / 2;
             const Int32 hdrSize = 0x08;
             Byte[] header = new Byte[hdrSize];
             ArrayUtils.WriteIntToByteArray(header, 2, 2, true, (UInt16) width);
             ArrayUtils.WriteIntToByteArray(header, 4, 2, true, (UInt16) height);
-            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16) frames);
+            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16) nrOfFrames);
             const Int32 frameHdrSize = 0x18;
-            Byte[] frameHeaders = new Byte[frames * frameHdrSize];
+            Byte[] frameHeaders = new Byte[nrOfFrames * frameHdrSize];
 
-            UInt32[] frameOffsets = new UInt32[frames];
-            Byte[][] framesDataCropped = trimDuplicates ? new Byte[frames][] : null;
-            Byte[][] framesDataCompressed = new Byte[frames][];
-            Byte[] framesDataCompressedFlags = trimDuplicates ? new Byte[frames] : null;
-            Color[] framesDataColors = trimDuplicates ? new Color[frames] : null;
+            UInt32[] frameOffsets = new UInt32[nrOfFrames];
+            Byte[][] framesDataCropped = trimDuplicates ? new Byte[nrOfFrames][] : null;
+            Byte[][] framesDataCompressed = new Byte[nrOfFrames][];
+            Byte[] framesDataCompressedFlags = trimDuplicates ? new Byte[nrOfFrames] : null;
+            Color[] framesDataColors = trimDuplicates ? new Color[nrOfFrames] : null;
 
             Int32 frameHeaderOffset = 0;
-            UInt32 frameDataOffset = (UInt32) (hdrSize + frameHdrSize * frames);
+            UInt32 frameDataOffset = (UInt32) (hdrSize + frameHdrSize * nrOfFrames);
             if (align && frameDataOffset % 8 > 0)
                 frameDataOffset += 8 - (frameDataOffset % 8);
             Byte[] dummy = trimDuplicates ? new Byte[0] : null;
-                        Boolean[] avgColIgnore = new Boolean[0x100];
-            avgColIgnore[0] = true;
-            if (ignoreRemap)
-                for (Int32 i = 16; i < 32; i++)
-                    avgColIgnore[i] = true;
-
-            for (Int32 i = 0; i < fileToSave.Frames.Length; i++)
+            for (Int32 i = 0; i < nrOfFrames; i++)
             {
-                SupportedFileType frame = fileToSave.Frames[i];
+                SupportedFileType frame = frames[i];
                 Bitmap bm = frame.GetBitmap();
                 Int32 stride;
                 Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
@@ -267,8 +255,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    // get average colour, ignoring zero and possibly remap range
-                    col = this.GetAverageColor(imageData, palette, avgColIgnore);
+                    // get average colour, ignoring zero and compensating for remap range.
+                    if (hasShadow && i >= shadowLimit)
+                        col = Color.Empty;
+                    else
+                        col = this.GetAverageColor(imageData, palette, asTib, asTib);
                     // compress stuff here
                     // No whitespace in image: store raw
                     if (imageData.All(b => b != 0))
@@ -318,18 +309,22 @@ namespace EngieFileConverter.Domain.FileTypes
         private void PerformPreliminarychecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height, out Color[] palette)
         {
             // Preliminary checks
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.Frames;
+            if (!fileToSave.IsFramesContainer || frames == null)
             {
                 FileFrames frameSave = new FileFrames();
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
+                frames = new SupportedFileType[] { fileToSave };
             }
-            if (fileToSave.Frames.Length == 0)
+            if (frames.Length == 0)
                 throw new NotSupportedException("No frames found in source data!");
             width = -1;
             height = -1;
             palette = null;
-            foreach (SupportedFileType frame in fileToSave.Frames)
+            foreach (SupportedFileType frame in frames)
             {
                 if (frame == null)
                     throw new NotSupportedException("SHP can't handle empty frames!");
@@ -347,33 +342,88 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        private Color GetAverageColor(Byte[] imageData, Color[] palette, Boolean[] ignoreRange)
+        private Color GetAverageColor(Byte[] imageData, Color[] palette, Boolean adjustForRemap, Boolean forTiberium)
         {
             Int32[] colCount = new Int32[256];
-            Int32 pixCount = 0;
+            // All pixels
+            Int32 pixCount1 = 0;
+            // All non-remap pixels
+            Int32 pixCount2 = 0;
+            // Remap colours for tiberium.
+            Byte[] tibGr = {0xF8, 0xE4, 0xDC, 0xD0, 0xC4, 0xB8, 0xA8, 0x98, 0x88, 0x74, 0x64, 0x50, 0x3C, 0x28, 0x10, 0x00};
+            Byte[] tibNonGr = {0x38, 0x28, 0x20, 0x18, 0x18, 0x10, 0x08, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            Boolean[] remapRange = new Boolean[0x100];
+            remapRange[0] = true;
+            if (adjustForRemap)
+                for (Int32 i = 16; i < 32; i++)
+                    remapRange[i] = true;
             foreach (Byte b in imageData)
             {
-                if (ignoreRange[b])
+                if (b == 0)
                     continue;
-                pixCount++;
+                pixCount1++;
+                if (!remapRange[b])
+                    pixCount2++;
                 colCount[b]++;
             }
-            if (pixCount == 0)
+            // No colour, or this is a shadow frame.
+            if (pixCount1 == 0 || pixCount1 == colCount[1])
                 return Color.Empty;
-            Int64 allR = 0;
-            Int64 allG = 0;
-            Int64 allB = 0;
-            for (Int32 palCol = 0; palCol < 256; palCol++)
+
+            // For remap, this should give the average overall luminosity,
+            // with the average hue and saturation of the non-remap pixels.
+            // All pixels
+            Int64 allR1 = 0;
+            Int64 allG1 = 0;
+            Int64 allB1 = 0;
+            // All non-remap pixels
+            Int64 allR2 = 0;
+            Int64 allG2 = 0;
+            Int64 allB2 = 0;
+            for (Int32 palCol = 1; palCol < 256; palCol++)
             {
-                if (ignoreRange[palCol])
-                    continue;
                 Color c = palette[palCol];
                 Int32 amount = colCount[palCol];
-                allR += c.R * amount;
-                allG += c.G * amount;
-                allB += c.B * amount;
+                if (amount == 0)
+                    continue;
+                if (remapRange[palCol])
+                {
+                    // Remap: 'gray' values of 15 -> 255 in steps of 16.
+                    if (forTiberium)
+                    {
+                        Int32 tibIndex = palCol - 16;
+                        allR1 += tibNonGr[tibIndex] * amount;
+                        allG1 += tibGr[tibIndex] * amount;
+                        allB1 += tibNonGr[tibIndex] * amount;
+                    }
+                    else
+                    {
+                        Int32 grayMul = (((palCol - 15) * 16) - 1) * amount;
+                        allR1 += grayMul;
+                        allG1 += grayMul;
+                        allB1 += grayMul;
+                    }
+                }
+                else
+                {
+                    // Add to both.
+                    Int32 rMul = c.R * amount;
+                    Int32 gMul = c.G * amount;
+                    Int32 bMul = c.B * amount;
+                    allR1 += rMul;
+                    allG1 += gMul;
+                    allB1 += bMul;
+                    allR2 += rMul;
+                    allG2 += gMul;
+                    allB2 += bMul;
+                }
             }
-            return Color.FromArgb((Byte) (allR / pixCount), (Byte) (allG / pixCount), (Byte) (allB / pixCount));
+            Color all = Color.FromArgb((Byte)(allR1 / pixCount1), (Byte)(allG1 / pixCount1), (Byte)(allB1 / pixCount1));
+            if (pixCount2 == 0 || (adjustForRemap && forTiberium))
+                return all;
+            ColorHSL nonRemap = Color.FromArgb((Byte)(allR2 / pixCount2), (Byte)(allG2 / pixCount2), (Byte)(allB2 / pixCount2));
+            ColorHSL hslAll = (ColorHSL)all;
+            return new ColorHSL(nonRemap.Hue, nonRemap.Saturation, hslAll.Luminosity);
         }
 
         public static void PreCheckSplitShadows(SupportedFileType file, Byte sourceShadowIndex, Byte destShadowIndex, Boolean forCombine)
