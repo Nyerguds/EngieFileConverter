@@ -65,7 +65,7 @@ namespace Nyerguds.Ini
         protected Boolean m_TrimValues = DEFAULT_TRIMVALUES;
 
         protected String m_FilePath;
-        protected String m_FileContents = null;
+        protected String m_FileContents;
 
         #endregion
 
@@ -560,7 +560,7 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value.</returns>
         public String GetStringValue(String sectionName, String key, String defaultValue)
         {
-            Boolean rb = true;
+            Boolean rb;
             return GetStringValue(sectionName, key, defaultValue, out rb);
         }
 
@@ -600,7 +600,7 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed</returns>
         public Int32 GetIntValue(String sectionName, String key, Int32 defaultValue)
         {
-            Boolean rb = true;
+            Boolean rb;
             return GetIntValue(sectionName, key, defaultValue, out rb);
         }
 
@@ -650,7 +650,7 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Char GetCharValue(String sectionName, String key, Char defaultValue)
         {
-            Boolean rb = true;
+            Boolean rb;
             return GetCharValue(sectionName, key, defaultValue, out rb);
         }
 
@@ -699,7 +699,7 @@ namespace Nyerguds.Ini
         /// <param name="defaultValue">The default value to return in case the key was not found</param>
         public Boolean GetBoolValue(String sectionName, String key, Boolean defaultValue)
         {
-            Boolean rb = true;
+            Boolean rb;
             return GetBoolValue(sectionName, key, defaultValue, out rb);
         }
 
@@ -1004,7 +1004,7 @@ namespace Nyerguds.Ini
             List<String> text = new List<String>();
             try
             {
-                String input = null;
+                String input;
                 while ((input = stream.ReadLine()) != null)
                 {
                     // fix for UTF8 with BOM read on UTF8 without BOM.

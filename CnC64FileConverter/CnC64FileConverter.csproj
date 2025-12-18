@@ -112,6 +112,7 @@
     <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
     <Compile Include="Domain\GameData\Westwood\WestwoodRle.cs" />
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
+    <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
     <Compile Include="HeightMap\HeightMapGenerator.cs" />
     <Compile Include="HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />

@@ -83,7 +83,7 @@ namespace Nyerguds.ImageManipulation
                     }
                     loadedImage.Palette = pal;
                 }
-                return ImageUtils.CloneImage(loadedImage, null);
+                return ImageUtils.CloneImage(loadedImage);
             }
         }
 

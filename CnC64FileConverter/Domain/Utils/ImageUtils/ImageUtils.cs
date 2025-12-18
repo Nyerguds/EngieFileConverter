@@ -323,35 +323,29 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The cloned image</returns>
         public static Bitmap CloneImage(Bitmap sourceImage)
         {
-            return CloneImage(sourceImage, null);
-        }
-
-        /// <summary>
-        /// Clones an image object to free it from any backing resources.
-        /// This function can also cut a specific piece out of the original image.
-        /// Code taken from http://stackoverflow.com/a/3661892/ with some extra fixes.
-        /// </summary>
-        /// <param name="sourceImage">The image to clone</param>
-        /// <param name="sourceRect">Piece to cut out of the original image.</param>
-        /// <returns>The cloned image</returns>
-        public static Bitmap CloneImage(Bitmap sourceImage, Rectangle? sourceRect)
-        {
-            Rectangle rect;
-            if (sourceRect.HasValue)
-                rect = sourceRect.Value;
-            else
-                rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
-            if (rect.X + rect.Width > rect.Width || rect.Y + rect.Height > sourceImage.Height)
-                throw new IndexOutOfRangeException("Cutout size for image is larger than image!");
+            Rectangle rect = new Rectangle(0, 0, sourceImage.Width, sourceImage.Height);
             Bitmap targetImage = new Bitmap(rect.Width, rect.Height, sourceImage.PixelFormat);
             BitmapData sourceData = sourceImage.LockBits(rect, ImageLockMode.ReadOnly, sourceImage.PixelFormat);
-            BitmapData targetData = targetImage.LockBits(new Rectangle(0, 0, targetImage.Width, targetImage.Height), ImageLockMode.WriteOnly, targetImage.PixelFormat);
-            CopyMemory(targetData.Scan0, sourceData.Scan0, sourceData.Stride * sourceData.Height, 1024, 1024);
+            BitmapData targetData = targetImage.LockBits(rect, ImageLockMode.WriteOnly, targetImage.PixelFormat);
+            Int32 actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * rect.Width) + 7) / 8;
+            Int32 h = sourceImage.Height;
+            Int32 origStride = sourceData.Stride;
+            Int32 targetStride = targetData.Stride;
+            Byte[] imageData = new Byte[actualDataWidth];
+            IntPtr sourcePos = sourceData.Scan0;
+            IntPtr destPos = targetData.Scan0;
+            for (Int32 y = 0; y < h; y++)
+            {
+                Marshal.Copy(sourcePos, imageData, 0, actualDataWidth);
+                Marshal.Copy(imageData, 0, destPos, actualDataWidth);
+                sourcePos = new IntPtr(sourcePos.ToInt64() + origStride);
+                destPos = new IntPtr(destPos.ToInt64() + targetStride);
+            }
             targetImage.UnlockBits(targetData);
             sourceImage.UnlockBits(sourceData);
             // For indexed images, restore the palette. This is not linking to a referenced
             // object in the original image; the getter creates a new object when called.
-            if ((sourceImage.PixelFormat & System.Drawing.Imaging.PixelFormat.Indexed) != 0)
+            if ((sourceImage.PixelFormat & PixelFormat.Indexed) != 0)
                 targetImage.Palette = sourceImage.Palette;
             return targetImage;
         }
@@ -396,7 +390,7 @@ namespace Nyerguds.ImageManipulation
             Int32 sourcePos = startPos;
             IntPtr destPos = target;
             Int32 minStride = Math.Min(origStride, targetStride);
-            while (length >= targetStride)
+            while (length >= origStride)
             {
                 Marshal.Copy(bytes, sourcePos, destPos, minStride);
                 length -= origStride;
@@ -408,28 +402,7 @@ namespace Nyerguds.ImageManipulation
                 Marshal.Copy(bytes, sourcePos, destPos, length);
             }
         }
-
-        private static void CopyMemory(IntPtr target, IntPtr source, Int32 length, Int32 origStride, Int32 targetStride)
-        {
-            IntPtr sourcePos = source;
-            IntPtr destPos = target;
-            Int32 minStride = Math.Min(origStride, targetStride);
-            Byte[] imageData = new Byte[targetStride];
-            while (length >= minStride && length > 0)
-            {
-                Marshal.Copy(sourcePos, imageData, 0, minStride);
-                Marshal.Copy(imageData, 0, destPos, targetStride);
-                length -= origStride;
-                sourcePos = new IntPtr(sourcePos.ToInt64() + origStride);
-                destPos = new IntPtr(destPos.ToInt64() + targetStride);
-            }
-            if (length > 0)
-            {
-                Marshal.Copy(sourcePos, imageData, 0, length);
-                Marshal.Copy(imageData, 0, destPos, length);
-            }
-        }
-
+        
         /// <summary>
         /// Checks if a given image contains transparency.
         /// </summary>

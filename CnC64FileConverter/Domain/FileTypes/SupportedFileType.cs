@@ -36,7 +36,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Height of the file (if applicable). Normally the same as GetBitmap().Height</summary>
         public virtual Int32 Height { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Height; } }
         /// <summary>Amount of colors in the palette that is contained inside the image. 0 if the image itself does not contain a palette, even if it generates one.</summary>
-        public virtual Int32 ColorsInPalette { get { return this.m_LoadedImage == null? 0 : m_LoadedImage.Palette.Entries.Length; } }
+        public virtual Int32 ColorsInPalette { get { return this.m_LoadedImage == null ? 0 : m_LoadedImage.Palette.Entries.Length; } }
         /// <summary>Full path of the loaded file.</summary>
         public String LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
@@ -184,6 +184,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
+            typeof(FileImage),
             typeof(FileImgWwCps),
             typeof(FileFramesWwWsa),
             typeof(FileImgWwLcw),

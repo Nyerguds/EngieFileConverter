@@ -33,7 +33,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// </summary>
         public override Boolean IsFramesContainer { get { return false; } }
         public Boolean IsMa8 { get; private set; }
-        
+                
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Bitmap img = fileToSave.GetBitmap();

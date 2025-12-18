@@ -87,12 +87,12 @@ namespace CnC64FileConverter.UI
             return palettes;
         }
 
-        private void PicImage_CopyPreview(object sender, EventArgs e)
+        private void PicImage_CopyPreview(Object sender, EventArgs e)
         {
             this.CopyToClipboard();
         }
 
-        private void tsmiCopy_Click(object sender, EventArgs e)
+        private void tsmiCopy_Click(Object sender, EventArgs e)
         {
             this.CopyToClipboard();
         }
@@ -106,13 +106,13 @@ namespace CnC64FileConverter.UI
             ClipboardImage.SetClipboardImage(image, bm, null);
         }
 
-        private void Frm_DragEnter(object sender, DragEventArgs e)
+        private void Frm_DragEnter(Object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 e.Effect = DragDropEffects.Copy;
         }
 
-        private void Frm_DragDrop(object sender, DragEventArgs e)
+        private void Frm_DragDrop(Object sender, DragEventArgs e)
         {
             String[] files = (String[])e.Data.GetData(DataFormats.FileDrop);
             if (files.Length != 1)
@@ -192,6 +192,7 @@ namespace CnC64FileConverter.UI
                     else
                         m_LoadedFile = frames;
                 }
+                AutoSetZoom();
                 ReloadUi(true);
                 if (error != null)
                     MessageBox.Show(this, "File loading failed: " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -226,6 +227,40 @@ namespace CnC64FileConverter.UI
                 return fr;
             return currentType;
         }
+
+        private void AutoSetZoom()
+        {
+            if (m_LoadedFile == null)
+                return;
+            Boolean hasFrames = m_LoadedFile != null && m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0;
+            // Set image invisible to remove scrollbars.
+            this.picImage.Visible = false;
+            Int32 maxWidth = this.pnlImageScroll.ClientSize.Width;
+            Int32 maxHeight = this.pnlImageScroll.ClientSize.Height;
+            Int32 minZoomFactor = Int32.MaxValue;
+            if (!hasFrames)
+            {
+                minZoomFactor = GetZoomFactor(m_LoadedFile.GetBitmap(), maxWidth, maxHeight);
+            }
+            else if (m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0)
+            {
+                foreach (SupportedFileType frame in m_LoadedFile.Frames)
+                {
+                    Int32 zoomFactor = GetZoomFactor(frame.GetBitmap(), maxWidth, maxHeight);
+                    minZoomFactor = Math.Min(zoomFactor, minZoomFactor);
+                }
+            }
+            if (minZoomFactor == Int32.MaxValue)
+                minZoomFactor = 1;
+            this.numZoom.EnteredValue = minZoomFactor;
+        }
+
+        private Int32 GetZoomFactor(Bitmap image, Int32 maxWidth, Int32 maxHeight)
+        {
+            // Calculate maximum zoom factor
+            return image == null ? 1 : Math.Max(1, Math.Min(maxWidth/image.Width, maxHeight/image.Height));
+        }
+
 
         private void ReloadUi(Boolean fromNewFile)
         {
@@ -299,8 +334,18 @@ namespace CnC64FileConverter.UI
             this.lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColours + " in file)" : String.Empty);
             this.lblValInfo.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ExtraInfo);
             this.cmbPalettes.Enabled = needsPalette;
-            this.picImage.Image = loadedFile.GetBitmap();
-            this.RefreshPalettes(false, false);
+            Bitmap image = loadedFile.GetBitmap();
+            this.picImage.Image = image;
+            if (needsPalette)
+                this.RefreshPalettes(false, false);
+            else
+            {
+                // Shows text on the disabled control.
+                this.cmbPalettes.DataSource = null;
+                this.cmbPalettes.Items.Clear();
+                this.cmbPalettes.Items.Add(GetColorStatus() == ColorStatus.Internal? "Inbuilt palette" : "None");
+                this.cmbPalettes.SelectedIndex = 0;
+            }
             if (needsPalette && fromNewFile)
             {
                 this.CmbPalettes_SelectedIndexChanged(null, null);
@@ -318,12 +363,12 @@ namespace CnC64FileConverter.UI
             if (loadedFile == null)
                 return ColorStatus.None;
             Color[] cols = loadedFile.GetColors();
+            // High-colored image.
             if (cols == null || cols.Length == 0)
                 return ColorStatus.None;
-            if (cols.Length != loadedFile.ColorsInPalette)
+            // Indexed image without internal palette.
+            if (cols.Length != 0 && loadedFile.ColorsInPalette == 0)
                 return ColorStatus.External;
-            if (loadedFile.ColorsInPalette == 0)
-                return ColorStatus.None;
             return ColorStatus.Internal;
         }
 
@@ -346,7 +391,7 @@ namespace CnC64FileConverter.UI
             return palettes;
         }
 
-        private void FrmCnC64FileConverter_Shown(object sender, EventArgs e)
+        private void FrmCnC64FileConverter_Shown(Object sender, EventArgs e)
         {
             if (this.m_StartupParamPath != null)
                 this.LoadFile(this.m_StartupParamPath, null, null);
@@ -354,12 +399,12 @@ namespace CnC64FileConverter.UI
                 this.ReloadUi(true);
         }
 
-        private void TsmiSave_Click(object sender, EventArgs e)
+        private void TsmiSave_Click(Object sender, EventArgs e)
         {
             this.Save(false);
         }
 
-        private void TsmiSaveFrames_Click(object sender, EventArgs e)
+        private void TsmiSaveFrames_Click(Object sender, EventArgs e)
         {
             this.Save(true);
         }
@@ -419,7 +464,7 @@ namespace CnC64FileConverter.UI
                 if (saveOptions != null && saveOptions.Length > 0)
                 {
                     SaveOptionInfo soi = new SaveOptionInfo();
-                    soi.Name = "Extra save options for " + selectedItem.ShortTypeDescription;
+                    soi.Name = GeneralUtils.DoubleFirstAmpersand("Extra save options for " + selectedItem.ShortTypeDescription);
                     soi.Properties = saveOptions;
                     FrmExtraOptions extraopts = new FrmExtraOptions();
                     extraopts.Init(soi);
@@ -454,12 +499,12 @@ namespace CnC64FileConverter.UI
             }
         }
 
-        private void TsmiExit_Click(object sender, EventArgs e)
+        private void TsmiExit_Click(Object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void TsmiOpen_Click(object sender, EventArgs e)
+        private void TsmiOpen_Click(Object sender, EventArgs e)
         {
             SupportedFileType selectedItem;
             String openPath = null;
@@ -491,7 +536,7 @@ namespace CnC64FileConverter.UI
             this.LoadFile(filename, selectedItem, possibleTypes);
         }
 
-        private void NumZoom_ValueChanged(object sender, EventArgs e)
+        private void NumZoom_ValueChanged(Object sender, EventArgs e)
         {
             this.RefreshImage();
         }
@@ -540,12 +585,12 @@ namespace CnC64FileConverter.UI
             this.palColorViewer.MaxColors = pal.Length;
         }
 
-        private void PicImage_Click(object sender, EventArgs e)
+        private void PicImage_Click(Object sender, EventArgs e)
         {
             this.pnlImageScroll.Focus();
         }
 
-        private void LblTransparentColorVal_Click(object sender, EventArgs e)
+        private void LblTransparentColorVal_Click(Object sender, EventArgs e)
         {
             ColorDialog cdl = new ColorDialog();
             cdl.Color = this.m_BackgroundFillColor;
@@ -562,17 +607,17 @@ namespace CnC64FileConverter.UI
             }
         }
 
-        private void numFrame_ValueChanged(object sender, EventArgs e)
+        private void numFrame_ValueChanged(Object sender, EventArgs e)
         {
             if (m_LoadedFile != null && m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0)
                 ReloadUi(false);
         }
 
-        private void TsmiToHeightMapAdv_Click(object sender, EventArgs e)
+        private void TsmiToHeightMapAdv_Click(Object sender, EventArgs e)
         {
             GenerateHeightMap(true);
         }
-        private void TsmiToHeightMap_Click(object sender, EventArgs e)
+        private void TsmiToHeightMap_Click(Object sender, EventArgs e)
         {
             GenerateHeightMap(false);
         }
@@ -615,7 +660,7 @@ namespace CnC64FileConverter.UI
             this.ReloadUi(false);
         }
 
-        private void TsmiTo65x65HeightMap_Click(object sender, EventArgs e)
+        private void TsmiTo65x65HeightMap_Click(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Width != 64 || this.m_LoadedFile.Height != 64 || !(this.m_LoadedFile is FileImage))
                 return;
@@ -629,7 +674,7 @@ namespace CnC64FileConverter.UI
             this.ReloadUi(false);
         }
 
-        private void TsmiToPlateaus_Click(object sender, EventArgs e)
+        private void TsmiToPlateaus_Click(Object sender, EventArgs e)
         {
             if (!(this.m_LoadedFile is FileMapWwCc1Pc))
                 return;
@@ -637,7 +682,7 @@ namespace CnC64FileConverter.UI
             this.ReloadUi(false);
         }
 
-        private void CmbPalettes_SelectedIndexChanged(object sender, EventArgs e)
+        private void CmbPalettes_SelectedIndexChanged(Object sender, EventArgs e)
         {
             if(this.GetColorStatus() != ColorStatus.External)
                 return;
@@ -665,7 +710,7 @@ namespace CnC64FileConverter.UI
             this.RefreshColorControls();
         }
 
-        private void BtnResetPalette_Click(object sender, EventArgs e)
+        private void BtnResetPalette_Click(Object sender, EventArgs e)
         {
             ColorStatus cs = this.GetColorStatus();
             if (cs == ColorStatus.None)
@@ -698,7 +743,7 @@ namespace CnC64FileConverter.UI
             this.RefreshColorControls();
         }
 
-        private void BtnSavePalette_Click(object sender, EventArgs e)
+        private void BtnSavePalette_Click(Object sender, EventArgs e)
         {
             ColorStatus cs = this.GetColorStatus();
             if (cs == ColorStatus.None)
@@ -786,7 +831,7 @@ namespace CnC64FileConverter.UI
             }
         }
 
-        private void PalColorViewer_ColorLabelMouseDoubleClick(object sender, PaletteClickEventArgs e)
+        private void PalColorViewer_ColorLabelMouseDoubleClick(Object sender, PaletteClickEventArgs e)
         {
             SupportedFileType loadedFile = this.GetShownFile();
             if (e.Button != System.Windows.Forms.MouseButtons.Left)

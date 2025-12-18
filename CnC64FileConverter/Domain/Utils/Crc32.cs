@@ -37,8 +37,8 @@ namespace Nyerguds.Util
         private static UInt32[] FillTable()
         {
             const UInt32 poly = 0xEDB88320;
-            UInt32[] table = new UInt32[256];
-            for (UInt32 i = 0; i < table.Length; ++i)
+            UInt32[] fillTable = new UInt32[256];
+            for (UInt32 i = 0; i < fillTable.Length; ++i)
             {
                 UInt32 temp = i;
                 for (Int32 j = 8; j > 0; --j)
@@ -48,9 +48,9 @@ namespace Nyerguds.Util
                     else
                         temp >>= 1;
                 }
-                table[i] = temp;
+                fillTable[i] = temp;
             }
-            return table;
+            return fillTable;
         }
     }
 }

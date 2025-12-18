@@ -35,39 +35,61 @@ namespace Nyerguds.Util.UI
 
         protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
         {
+            Boolean handled = false;
             if (!e.Shift && !e.Control && !e.Alt)
             {
+                handled = true;
                 switch (e.KeyValue)
                 {
-                    case (Int32)System.Windows.Forms.Keys.Down:
-                        if (this.VerticalScroll.Visible)
-                            this.VerticalScroll.Value = Math.Min(this.VerticalScroll.Maximum, this.VerticalScroll.Value + 50);
+                    case (Int32)Keys.Down:
+                        this.ScrollVertical(50);
                         break;
-                    case (Int32)System.Windows.Forms.Keys.PageDown:
-                        if (this.VerticalScroll.Visible)
-                            this.VerticalScroll.Value = Math.Min(this.VerticalScroll.Maximum, this.VerticalScroll.Value + this.ClientRectangle.Height);
+                    case (Int32)Keys.PageDown:
+                        this.ScrollVertical(this.ClientRectangle.Height);
                         break;
-                    case (Int32)System.Windows.Forms.Keys.Up:
-                        if (this.VerticalScroll.Visible)
-                            this.VerticalScroll.Value = Math.Max(this.VerticalScroll.Minimum, this.VerticalScroll.Value - 50);
+                    case (Int32)Keys.Up:
+                        this.ScrollVertical(-50);
                         break;
-                    case (Int32)System.Windows.Forms.Keys.PageUp:
-                        if (this.VerticalScroll.Visible)
-                            this.VerticalScroll.Value = Math.Max(this.VerticalScroll.Minimum, this.VerticalScroll.Value - this.ClientRectangle.Height);
+                    case (Int32)Keys.PageUp:
+                        this.ScrollVertical(-this.ClientRectangle.Height);
                         break;
-                    case (Int32)System.Windows.Forms.Keys.Right:
-                        if (this.HorizontalScroll.Visible)
-                            this.HorizontalScroll.Value = Math.Min(this.HorizontalScroll.Maximum, this.HorizontalScroll.Value + 50);
+                    case (Int32)Keys.Right:
+                        this.ScrollHorizontal(50);
                         break;
-                    case (Int32)System.Windows.Forms.Keys.Left:
-                        if (this.HorizontalScroll.Visible)
-                            this.HorizontalScroll.Value = Math.Max(this.HorizontalScroll.Minimum, this.HorizontalScroll.Value - 50);
+                    case (Int32)Keys.Left:
+                        this.ScrollHorizontal(-50);
+                        break;
+                    default:
+                        handled = false;
+                        break;
+                }
+            }
+            else if (e.Shift)
+            {
+                handled = true;
+                // Shift+pgup/pgdn to scroll vertically.
+                switch (e.KeyValue)
+                {
+                    case (Int32)Keys.PageDown:
+                        this.ScrollHorizontal(this.ClientRectangle.Height);
+                        break;
+                    case (Int32)Keys.PageUp:
+                        this.ScrollHorizontal(-this.ClientRectangle.Height);
+                        break;
+                    default:
+                        handled = false;
                         break;
                 }
                 this.PerformLayout();
                 this.Invalidate();
             }
-            base.OnPreviewKeyDown(e);
+            if (handled)
+            {
+                this.PerformLayout();
+                this.Invalidate();
+            }
+            else
+                base.OnPreviewKeyDown(e);
         }
 
         protected override void OnScroll(ScrollEventArgs se)
@@ -79,15 +101,44 @@ namespace Nyerguds.Util.UI
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
+            Keys k = Control.ModifierKeys;
             HandledMouseEventArgs args = e as HandledMouseEventArgs;
             if (args != null)
                 args.Handled = true;
             HandledMouseEventArgs arg = new HandledMouseEventArgs(e.Button, e.Clicks, e.X, e.Y, e.Delta);
             if (MouseScroll != null)
                 MouseScroll(this, arg);
-            if (!arg.Handled)
-                base.OnMouseWheel(e);
+            if (arg.Handled)
+                return;
+            if ((k & Keys.Shift) != 0)
+            {
+                ScrollHorizontal(-1 * e.Delta);
+                return;
+            }
+            base.OnMouseWheel(e);
+            
         }
+
+        protected void ScrollVertical(Int32 delta)
+        {
+            if (!this.VScroll)
+                return;
+            Rectangle clientRectangle = this.ClientRectangle;
+            Int32 num = -this.DisplayRectangle.Y;
+            Int32 val2 = -(clientRectangle.Height - this.DisplayRectangle.Height);
+            this.SetDisplayRectLocation(this.DisplayRectangle.X, -Math.Min(Math.Max(num + delta, 0), val2));
+        }
+
+        protected void ScrollHorizontal(Int32 delta)
+        {
+            if (!this.HScroll)
+                return;
+            Rectangle clientRectangle = this.ClientRectangle;
+            Int32 num = -this.DisplayRectangle.X;
+            Int32 val2 = -(clientRectangle.Width - this.DisplayRectangle.Width);
+            this.SetDisplayRectLocation(-Math.Min(Math.Max(num + delta, 0), val2), this.DisplayRectangle.Y);
+        }
+
 
         protected override void OnResize(EventArgs eventargs)
         {

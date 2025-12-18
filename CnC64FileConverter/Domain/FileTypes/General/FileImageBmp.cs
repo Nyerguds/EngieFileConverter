@@ -1,4 +1,5 @@
 ﻿using System;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -16,6 +17,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             get { return new String[] { "bmp" }; }
         }
+
+        protected override void CheckSpecificFileType(String filename)
+        {
+            CheckSpecificFileType(filename, "bmp");
+        }
+
 
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions

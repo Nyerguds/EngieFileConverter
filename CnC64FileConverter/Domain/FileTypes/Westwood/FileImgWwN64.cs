@@ -58,6 +58,9 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
+            // If it is a hi-colour image, return empty
+            if ((fileToSave.FileClass & FileClass.ImageHiCol) != 0)
+                return new SaveOption[0];
             // If it is a non-image format which does contain colours, offer to save with palette
             Boolean hasColors = fileToSave != null && (fileToSave is FileImage || fileToSave.ColorsInPalette != 0);
             return new SaveOption[]

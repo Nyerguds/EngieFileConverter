@@ -149,7 +149,7 @@ namespace Nyerguds.GameData.Dynamix
             return rle.RleEncodeData(buffer);
         }
 
-        /// <summary>Switches index 00 and FF on indexed image data, to compensate for this oddity in the MA8 chunks.</summary>
+        /// <summary>Siwtches index 00 and FF on indexed image data, to compensate for this oddity in the MA8 chunks.</summary>
         /// <param name="imageData">Image data to process.</param>
         public static void SwitchBackground(Byte[] imageData)
         {

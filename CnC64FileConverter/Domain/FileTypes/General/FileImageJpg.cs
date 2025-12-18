@@ -29,6 +29,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             get { return new String[] { ShortTypeDescription, ShortTypeDescription }; }
         }
 
+        protected override void CheckSpecificFileType(String filename)
+        {
+            this.CheckSpecificFileType(filename, "jpg");
+        }
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             return new SaveOption[]

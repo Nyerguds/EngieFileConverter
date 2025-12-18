@@ -22,6 +22,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             get { return new String[] { "gif" }; }
         }
+
+        protected override void CheckSpecificFileType(String filename)
+        {
+            this.CheckSpecificFileType(filename, "gif");
+        }
+
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
         {

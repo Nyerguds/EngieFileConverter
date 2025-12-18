@@ -57,7 +57,14 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
-v1.2.7: (15/11/2017 7:36)
+v1.2.8: (25/01/2018 18:50)
+-Added vertical image scrolling with shift + scrollwheel.
+-Image types that can natevely be opened by the .Net framework bu are not specifically supported
+ (like .tif) will now open as general type "Image".
+-The disabled palette dropdown will now correctly display the reason why it is disabled.
+-When loading a file, the zoom factor will automatically adjust to the loaded image.
+
+v1.2.7: (15/11/2017 07:36)
 -Fixed background handling in MA8 chunk data by switching index 00 and FF on the image.
 
 v1.2.6: (15/11/2017 14:32)

@@ -98,6 +98,22 @@ namespace Nyerguds.Util.GameData
         /// <param name="buffer">Buffer to decode.</param>
         /// <param name="startOffset">Start offset in buffer.</param>
         /// <param name="endOffset">End offset in buffer.</param>
+        /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
+        /// <returns>A byte array of the given output size, filled with the decompressed data.</returns>
+        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Boolean abortOnError)
+        {
+            T rle = new T();
+            Byte[] bufferOut = null;
+            rle.RleDecodeData(buffer, null, null, ref bufferOut, abortOnError);
+            return bufferOut;
+        }
+
+        /// <summary>
+        /// Decodes RLE-encoded data.
+        /// </summary>
+        /// <param name="buffer">Buffer to decode.</param>
+        /// <param name="startOffset">Start offset in buffer.</param>
+        /// <param name="endOffset">End offset in buffer.</param>
         /// <param name="decompressedSize">The expected size of the decompressed data.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
         /// <returns>A byte array of the given output size, filled with the decompressed data.</returns>
@@ -113,7 +129,7 @@ namespace Nyerguds.Util.GameData
         /// <param name="buffer">Buffer to decode.</param>
         /// <param name="startOffset">Start offset in buffer.</param>
         /// <param name="endOffset">End offset in buffer.</param>
-        /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
+        /// <param name="bufferOut">Output array. Determines the maximum that can be decoded. If the given object is null it will be filled automatically.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
         /// <returns>The amount of written bytes in bufferOut.</returns>
         public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, ref Byte[] bufferOut, Boolean abortOnError)
@@ -174,11 +190,6 @@ namespace Nyerguds.Util.GameData
                 bufferOut = new Byte[bufLenOrig * 4];
             UInt32 maxOutLen = autoExpand? UInt32.MaxValue : (UInt32)bufferOut.Length;
             Boolean error = false;
-
-            // RLE implementation:
-            // highest bit set = followed by range of repeating bytes
-            // highest bit not set = followed by range of non-repeating bytes
-            // In both cases, the "code" specifies the amount of bytes; either to repeat, or to copy.
 
             while (inPtr < inPtrEnd && outPtr < maxOutLen)
             {
@@ -258,10 +269,7 @@ namespace Nyerguds.Util.GameData
             // Some implementations also use these values as indicators for reading a larger value to repeat or copy.
             UInt32 maxRepeat = this.MaxRepeatValue;
             UInt32 maxCopy = this.MaxCopyValue;
-            // Standard RLE implementation:
-            // highest bit set = followed by range of repeating bytes
-            // highest bit not set = followed by range of non-repeating bytes
-            // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
+
             UInt32 len = (UInt32)buffer.Length;
             UInt32 detectedRepeat = 0;
             while (inPtr < len)

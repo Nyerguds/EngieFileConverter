@@ -64,6 +64,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(String filename)
         {
+            CheckSpecificFileType(filename);
             try
             {
                 m_LoadedImage = BitmapHandler.LoadBitmap(filename);
@@ -73,6 +74,18 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Failed to load file as image!", ex);
             }
+        }
+
+        protected virtual void CheckSpecificFileType(String filename)
+        {
+
+        }
+
+        protected void CheckSpecificFileType(String filename, String type)
+        {
+            String mimeType = MimeTypeDetector.GetMimeTypeFromExtension(type)[1];
+            if (!mimeType.Equals(MimeTypeDetector.GetMimeType(filename)[1], StringComparison.InvariantCultureIgnoreCase))
+                throw new FileTypeLoadException("This is not a "+ type +" image!");
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
