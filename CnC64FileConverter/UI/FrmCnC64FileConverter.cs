@@ -1081,7 +1081,7 @@ namespace CnC64FileConverter.UI
             try
             {
                 SupportedFileType oldFile = this.m_LoadedFile;
-                this.m_LoadedFile = FileFramesWwShpCc.SplitShadows(this.m_LoadedFile, 4, 4);
+                this.m_LoadedFile = FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, 4, 1);
                 this.ReloadUi(true);
                 oldFile.Dispose();
             }
@@ -1093,9 +1093,20 @@ namespace CnC64FileConverter.UI
 
         private void tsmiCombineShadows_Click(Object sender, EventArgs e)
         {
-#if DEBUG
-            TestBed();
-#endif
+            if (this.m_LoadedFile == null)
+                return;
+            try
+            {
+                SupportedFileType oldFile = this.m_LoadedFile;
+                this.m_LoadedFile = FileFramesWwShpTs.CombineShadows(this.m_LoadedFile, 1, 4);
+                this.ReloadUi(true);
+                oldFile.Dispose();
+            }
+            catch (NotSupportedException ex)
+            {
+                MessageBox.Show(this, ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            
         }
 
 #if DEBUG

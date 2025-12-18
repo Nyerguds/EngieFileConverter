@@ -69,6 +69,7 @@
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosPal.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpTs.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTblWwPal.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpCc.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwWsa.cs" />
@@ -78,6 +79,7 @@
     <Compile Include="Domain\GameData\Mythos\MythosCompression.cs" />
     <Compile Include="Domain\GameData\RleCompression.cs" />
     <Content Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
+    <Compile Include="Domain\GameData\Westwood\WestwoodRleZero.cs" />
     <Compile Include="Domain\GameData\Westwood\WWCompression.cs" />
     <Compile Include="Domain\FileTypes\General\FileImageFrame.cs" />
     <Compile Include="Domain\FileTypes\General\FileFrames.cs" />

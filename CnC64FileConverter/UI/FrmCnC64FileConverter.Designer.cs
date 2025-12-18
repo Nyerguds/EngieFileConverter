@@ -386,7 +386,6 @@
             this.tsmiCombineShadows.Name = "tsmiCombineShadows";
             this.tsmiCombineShadows.Size = new System.Drawing.Size(172, 22);
             this.tsmiCombineShadows.Text = "Combine shadows";
-            this.tsmiCombineShadows.Visible = false;
             this.tsmiCombineShadows.Click += new System.EventHandler(this.tsmiCombineShadows_Click);
             // 
             // tsmiSplitShadows

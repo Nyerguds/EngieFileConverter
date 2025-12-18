@@ -82,7 +82,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             this.LoadFile(image, null);
             this.FrameParent = parent;
-            this.m_BaseType = typeParent.ShortTypeName;
+            this.m_BaseType = typeParent is FileFrames ? null : typeParent.ShortTypeName;
             this.sourcePath = filename;
             // Set to -1 if it's actually loading from a frame file, so the automatic number adding is skipped.
             this.frameName = frameNumber >= 0 ? frameNumber.ToString("D5") : null;

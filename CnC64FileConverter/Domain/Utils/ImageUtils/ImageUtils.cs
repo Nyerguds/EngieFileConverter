@@ -766,11 +766,11 @@ namespace Nyerguds.ImageManipulation
         /// Pastes 8-bit data on an 8-bit image. Note that the source data
         /// is copied before the operation, so it is not modified.
         /// </summary>
-        /// <param name="sourceFileData">Byte data of the image that is pasted on.</param>
-        /// <param name="sourceWidth">Width of the image that is pasted on.</param>
-        /// <param name="sourceHeight">Height of the image that is pasted on.</param>
-        /// <param name="sourceStride">Stride of the image that is pasted on.</param>
-        /// <param name="pasteFileData">Byte data of the image to paste.</param>
+        /// <param name="destData">Byte data of the image that is pasted on.</param>
+        /// <param name="destWidth">Width of the image that is pasted on.</param>
+        /// <param name="destHeight">Height of the image that is pasted on.</param>
+        /// <param name="destStride">Stride of the image that is pasted on.</param>
+        /// <param name="pasteData">Byte data of the image to paste.</param>
         /// <param name="pasteWidth">Width of the image to paste.</param>
         /// <param name="pasteHeight">Height of the image to paste.</param>
         /// <param name="pasteStride">Stride of the image to paste.</param>
@@ -778,21 +778,21 @@ namespace Nyerguds.ImageManipulation
         /// <param name="transparencyGuide">Colour palette of the images, to determine which colours should be treated as transparent. Use null for no transparency.</param>
         /// <param name="modifyOrig">True to modify the original array rather than returning a copy.</param>
         /// <returns>A new Byte array with the combined data, and the same stride as the source image.</returns>
-        public static Byte[] PasteOn8bpp(Byte[] sourceFileData, Int32 sourceWidth, Int32 sourceHeight, Int32 sourceStride,
-            Byte[] pasteFileData, Int32 pasteWidth, Int32 pasteHeight, Int32 pasteStride,
+        public static Byte[] PasteOn8bpp(Byte[] destData, Int32 destWidth, Int32 destHeight, Int32 destStride,
+            Byte[] pasteData, Int32 pasteWidth, Int32 pasteHeight, Int32 pasteStride,
             Rectangle targetPos, Boolean[] transparencyGuide, Boolean modifyOrig)
         {
             if (targetPos.Width != pasteWidth || targetPos.Height != pasteHeight)
-                pasteFileData = CopyFrom8bpp(pasteFileData, pasteWidth, pasteHeight, pasteStride, new Rectangle(0, 0, targetPos.Width, targetPos.Height));
+                pasteData = CopyFrom8bpp(pasteData, pasteWidth, pasteHeight, pasteStride, new Rectangle(0, 0, targetPos.Width, targetPos.Height));
             Byte[] finalFileData;
             if (modifyOrig)
             {
-                finalFileData = sourceFileData;
+                finalFileData = destData;
             }
             else
             {
-                finalFileData = new Byte[sourceFileData.Length];
-                Array.Copy(sourceFileData, finalFileData, sourceFileData.Length);
+                finalFileData = new Byte[destData.Length];
+                Array.Copy(destData, finalFileData, destData.Length);
             }
             Boolean[] isTransparent = new Boolean[256];
             if (transparencyGuide != null)
@@ -801,17 +801,17 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 i = 0; i < len; i++)
                     isTransparent[i] = transparencyGuide[i];
             }
-            Int32 maxY = Math.Min(sourceHeight - targetPos.Y, targetPos.Height);
-            Int32 maxX = Math.Min(sourceWidth - targetPos.X, targetPos.Width);
+            Int32 maxY = Math.Min(destHeight - targetPos.Y, targetPos.Height);
+            Int32 maxX = Math.Min(destWidth - targetPos.X, targetPos.Width);
             for (Int32 y = 0; y < maxY; y++)
             {
                 for (Int32 x = 0; x < maxX; x++)
                 {
                     Int32 indexSource = y * pasteStride + x;
-                    Byte data = pasteFileData[indexSource];
+                    Byte data = pasteData[indexSource];
                     if (!isTransparent[data])
                     {
-                        Int32 indexDest = (targetPos.Y + y) * sourceStride + targetPos.X + x;
+                        Int32 indexDest = (targetPos.Y + y) * destStride + targetPos.X + x;
                         // This will always get a new index
                         finalFileData[indexDest] = data;
                     }
