@@ -1,0 +1,69 @@
+CnC64FileConverter
+-------------- Created by by Nyerguds (19/11/2016)
+
+This tool allows viewing and saving from and to several file formats found in the Nintendo 64 ROM
+of the Command & Conquer game.
+
+The files can be extracted from / inserted into the ROM with the Universal Game Decompressor
+(GEDecompressor), made by SubDrag.
+http://www.goldeneyevault.com/viewfile.php?id=213
+
+
+Features:
+--------
+-Supports both opening and saving all classic image types (png/gif/bmp/jpg), the N64's IMG format,
+ and game maps and color palettes of both the PC and N64 versions of the game.
+-Gives a visual representation of the loaded file, with zoom and adjustable background color.
+-Can display the file's color palette, if it has one.
+-Can save opened files as any supported format, though some conversions are obviously impossible;
+ high-colour images can't be saved as palette, and only maps can be saved as maps.
+-Preserves the color palette when saving 4-bit and 8-bit paletted images.
+-Supports drag & drop for opening files
+-Can be used as command line converter with the following syntax:
+    CnC64FileConverter.exe infile.img outfile.png
+
+
+Version history:
+---------------
+This tool stated as the CnC64ImageViewer, but later got expanded to a full conversion suite.
+At that point, it becameto CnC64FileConverter v1.0.
+
+CnC64FileConverter versions:
+
+v1.0: (04/04/2017 22:33)
+-Removed img type debug info (internal data size) from the user interface.
+-Can now open normal images (png/gif/bmp/jpg).
+-Can now open both PC and N64 format C&C maps, visualizing them as 64x64 image with terrain types,
+ and allowing saving as the other type (or as image).
+-Added code to correctly open paletted png images that contain transparency.
+-Added code to correctly open and save paletted png images with incomplete colour palettes.
+-Added theater detection for maps. If there's an ini, it'll read it from that.
+-Added support for PC and N64 color palettes.
+-Added support for saving N64 IMG format, and specifically paletteless greyscale IMG.
+-Added read support for terrain tiles; the're triplets of DA4/ND4/PA4 or DA8/ND8/PA8 files.
+
+CnC64ImageViewer versions:
+
+v1.2.2: (03/02/2017 08:00)
+-Fixed a crash in the zooming panel arrow keys scrolling.
+
+v1.2.1: (20/11/2016 16:00)
+-Added error checking and feedback on failure to load.
+-Optimized palette viewer, and added an indicator for transparency.
+-Version number is shown on the title bar.
+-Fixed a bug in the viewer that made it shift the image slightly up.
+
+v1.2: (19/11/2016 17:21)
+-Identified last unknown value in the header as part of the "number of colors" value.
+-Added palette viewer.
+-Added icon.
+
+v1.1: (19/11/2016 14:35)
+-Tool now shows the full header data and other file info.
+-Implemented zoom on the viewer.
+-Transparency colour in the viewer can be customized.
+-Added classic Open / Save buttons with dialogs.
+
+v1.0: (19/11/2016 01:04)
+-Very rudimentary decoder and viewer.
+-Double-clicking an image saved it to disk as png in folder of origin.

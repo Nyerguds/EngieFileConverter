@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{75423176-29BC-40D8-9D33-829E157F0824}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CnC64FileConverter</RootNamespace>
+    <AssemblyName>CnC64FileConverter</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>cnc64logo.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PresentationCore" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Domain\FileTypes\FileImgN64Gray.cs" />
+    <Compile Include="Domain\FileTypes\FileTilesN64.cs" />
+    <Compile Include="Domain\FileTypes\FilePaletteN64.cs" />
+    <Compile Include="Domain\Utils\ArrayUtils.cs" />
+    <Compile Include="Domain\Utils\ColorUtils.cs" />
+    <Compile Include="Domain\CCTypes\SixBitColor.cs" />
+    <Compile Include="Domain\FileTypeBroadcaster.cs" />
+    <Compile Include="Domain\Utils\Crc32.cs" />
+    <Compile Include="Domain\Utils\GeneralUtils.cs" />
+    <Compile Include="Domain\FileTypes\FileImageJpg.cs" />
+    <Compile Include="Domain\FileTypes\FileImageBmp.cs" />
+    <Compile Include="Domain\FileTypes\FileImageGif.cs" />
+    <Compile Include="Domain\FileTypes\FileImagePng.cs" />
+    <Compile Include="Domain\FileTypes\FileMapN64.cs" />
+    <Compile Include="Domain\FileTypes\FilePalettePc.cs" />
+    <Compile Include="Domain\FileTypes\FileMapPc.cs" />
+    <Compile Include="Domain\FileTypes\N64FileType.cs" />
+    <Compile Include="Domain\Utils\ImageUtils.cs" />
+    <Compile Include="Domain\FileTypes\FileImage.cs" />
+    <Compile Include="Domain\FileTypes\FileImgN64.cs" />
+    <Compile Include="Domain\Utils\BitmapHandler.cs" />
+    <Compile Include="Domain\CCTypes\CnCMap.cs" />
+    <Compile Include="Domain\CCTypes\MapConversion.cs" />
+    <Compile Include="Domain\TileInfo.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="UI\EnhNumericUpDown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\FileDialogGenerator.cs" />
+    <Compile Include="UI\PalettePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\PalettePanel.designer.cs">
+      <DependentUpon>PalettePanel.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\PixelBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\FrmCnC64FileConverter.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FrmCnC64FileConverter.Designer.cs">
+      <DependentUpon>FrmCnC64FileConverter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CnC64ImgConverter.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UI\SelectablePanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <EmbeddedResource Include="UI\FrmCnC64FileConverter.resx">
+      <DependentUpon>FrmCnC64FileConverter.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="UI\PalettePanel.resx">
+      <DependentUpon>PalettePanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <None Include="Resources\th_desert.nms" />
+    <None Include="Resources\th_temperate.nms" />
+    <None Include="Resources\tilesets.ini" />
+    <None Include="Resources\tilesets2.ini" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="CnC64FileConverter.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="cnc64logo.ico" />
+    <Content Include="cnc64logo.png" />
+    <Content Include="Resources\IniHandler.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nyerguds.Ini\IniHandler.csproj">
+      <Project>{925c0b51-e256-4a5c-8b01-f46aa90982d5}</Project>
+      <Name>IniHandler</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>copy /y "$(ProjectDir)..\Nyerguds.Ini\$(OutDir)IniHandler.dll" "$(ProjectDir)Resources"</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

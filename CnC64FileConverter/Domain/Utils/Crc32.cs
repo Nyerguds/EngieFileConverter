@@ -1,0 +1,61 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CnC64FileConverter.Domain.Utils
+{
+    /// <summary>
+    /// From http://www.sanity-free.org/12/crc32_implementation_in_csharp.html
+    /// </summary>
+    public class Crc32
+    {
+        private static UInt32[] table = FillTable();
+
+        public static UInt32 ComputeChecksum(Byte[] bytes)
+        {
+            return ComputeChecksum(bytes, 0, bytes.Length);
+        }
+
+        public static UInt32 ComputeChecksum(Byte[] bytes, Int32 start, Int32 length)
+        {
+            UInt32 crc = 0xFFFFFFFF;
+            Int32 end = start + length;
+            for (Int32 i = start; i < end; ++i)
+            {
+                Byte index = (Byte)(((crc) & 0xFF) ^ bytes[i]);
+                crc = (UInt32)((crc >> 8) ^ table[index]);
+            }
+            return ~crc;
+        }
+
+        public static Byte[] ComputeChecksumBytes(Byte[] bytes)
+        {
+            return BitConverter.GetBytes(ComputeChecksum(bytes));
+        }
+
+        private static UInt32[] FillTable()
+        {
+            UInt32 poly = 0xedb88320;
+            UInt32[] table = new UInt32[256];
+            UInt32 temp = 0;
+            for (UInt32 i = 0; i < table.Length; ++i)
+            {
+                temp = i;
+                for (Int32 j = 8; j > 0; --j)
+                {
+                    if ((temp & 1) == 1)
+                    {
+                        temp = (UInt32)((temp >> 1) ^ poly);
+                    }
+                    else
+                    {
+                        temp >>= 1;
+                    }
+                }
+                table[i] = temp;
+            }
+            return table;
+        }
+    }
+}
