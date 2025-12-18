@@ -8,7 +8,8 @@ The files can be extracted from / inserted into the ROM with the Universal Game 
 (GEDecompressor), made by SubDrag.
 http://www.goldeneyevault.com/viewfile.php?id=213
 
-Special thanks to Kamuix and Chad1233 for their help in testing this.
+Special thanks to Kamuix and Chad1233 for their help in testing this, and to Moon Flower for the
+help in designing the palette manager.
 
 Features:
 --------
@@ -31,6 +32,11 @@ This tool stated as the CnC64ImageViewer, but later got expanded to a full conve
 At that point, it became the CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
+
+v1.0.7: (01/05/2017 19:43)
+-Added an option to copy the image to the clipboard.
+-Added palette support for paletteless file formats.
+-Added the ability to open C&C template (tileset) files.
 
 v1.0.6: (07/04/2017 22:34)
 -fixed bug in the file open logic that prevented opening certain types through the menus.

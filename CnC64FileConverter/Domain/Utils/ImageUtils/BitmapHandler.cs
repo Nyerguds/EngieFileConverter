@@ -1,4 +1,4 @@
-﻿using CnC64FileConverter.Domain.Utils;
+﻿using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -132,14 +132,14 @@ namespace Nyerguds.ImageManipulation
                             Byte[] imageData = ImageUtils.GetImageData(newBitmap, out stride);
                             return ImageUtils.BuildImage(imageData, newBitmap.Width, newBitmap.Height, stride, newBitmap.PixelFormat, colpal, System.Drawing.Color.Empty);
                         }
-                        else
-                            return newBitmap;
+                        return newBitmap;
                     }                    
                 }
             }
             using (MemoryStream ms = new MemoryStream(data))
             {
                 loadedImage = new Bitmap(ms);
+                ms.Close();
                 paletteLength = loadedImage.Palette.Entries.Length;
             }
             return ImageUtils.CloneImage(loadedImage);
@@ -153,10 +153,23 @@ namespace Nyerguds.ImageManipulation
         /// <param name="paletteLength">Actual length of the palette.</param>
         public static void SaveAsPng(Bitmap image, String filename, Int32 paletteLength)
         {
-            String tempFileName = filename;
-            if (!tempFileName.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
-                tempFileName += ".png";
-            Byte[] data = ImageUtils.GetSavedImageData(image, ref tempFileName);
+            Byte[] data = GetPngImageData(image, paletteLength);
+            File.WriteAllBytes(filename, data);
+        }
+
+        /// <summary>
+        /// Saves as png, reducing the palette to the given length.
+        /// </summary>
+        /// <param name="image">Image to save</param>
+        /// <param name="paletteLength">Actual length of the palette. Use 0 to ignore.</param>
+        public static Byte[] GetPngImageData(Bitmap image, Int32 paletteLength)
+        {
+            Byte[] data;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                image.Save(ms, ImageFormat.Png);
+                data = ms.ToArray();
+            }
             Int32 cols = image.Palette.Entries.Length;
             if (paletteLength != 0 && cols > 0 && cols > paletteLength)
             {
@@ -210,10 +223,10 @@ namespace Nyerguds.ImageManipulation
                     data = newData;
                 }
             }
-            File.WriteAllBytes(filename, data);
+            return data;
         }
 
-        private static System.Drawing.Bitmap BitmapFromSource(BitmapSource bitmapsource)
+        private static Bitmap BitmapFromSource(BitmapSource bitmapsource)
         {
             using (MemoryStream outStream = new MemoryStream())
             {
@@ -222,7 +235,9 @@ namespace Nyerguds.ImageManipulation
                 BitmapFrame bmf = BitmapFrame.Create(bitmapsource);
                 enc.Frames.Add(bmf);
                 enc.Save(outStream);
-                return new System.Drawing.Bitmap(outStream);
+                Bitmap bm = new System.Drawing.Bitmap(outStream);
+                outStream.Close();
+                return bm;
             }
         }
 

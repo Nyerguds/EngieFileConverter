@@ -1,11 +1,7 @@
 ﻿using Nyerguds.ImageManipulation;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImagePng : FileImage
     {

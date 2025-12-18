@@ -1,6 +1,5 @@
 ﻿using CnC64FileConverter.Domain;
-using CnC64FileConverter.Domain.ImageFile;
-using CnC64FileConverter.Domain.Utils;
+using CnC64FileConverter.Domain.FileTypes;
 using CnC64FileConverter.UI;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
@@ -81,7 +80,6 @@ namespace CnC64FileConverter
                 N64FileType[] possibleTypesInput = FileDialogGenerator.IdentifyByExtension<N64FileType>(N64FileType.AutoDetectTypes, inputFull);
                 N64FileType[] possibleTypesOutput = FileDialogGenerator.IdentifyByExtension<N64FileType>(N64FileType.SupportedSaveTypes, outputFull);
 
-                String ext = Path.GetExtension(inputFull).ToUpperInvariant().Trim('.');
                 List<FileTypeLoadException> loadErrors;
                 N64FileType inputImage = N64FileType.LoadImageAutodetect(inputFull,possibleTypesInput, out loadErrors);
                 if (inputImage == null)
@@ -110,12 +108,22 @@ namespace CnC64FileConverter
                         }
                         try
                         {
-                            outputType.SaveAsThis(inputImage, outputFull);
+                            if (inputImage is FileTilesN64Bpp4)
+                            {
+                                ((FileTilesN64Bpp4)inputImage).ConvertToTiles(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output), outputType);
+                            }
+                            else
+                                outputType.SaveAsThis(inputImage, outputFull);
                         }
-                        catch (NotSupportedException)
+                        catch (NotSupportedException ex)
                         {
                             if (hasconsole && showFeedback)
-                                Console.WriteLine("Cannot save type " + inputImage.ShortTypeName + " as type " + outputType.ShortTypeName + ".");
+                            {
+                                Boolean hasMessage = !String.IsNullOrEmpty(ex.Message);
+                                Console.WriteLine("Cannot save type " + inputImage.ShortTypeName + " as type " + outputType.ShortTypeName + (hasMessage ? ":" : "."));
+                                if (hasMessage)
+                                    Console.WriteLine(ex.Message);
+                            }
                             return 1;
                         }
                     }

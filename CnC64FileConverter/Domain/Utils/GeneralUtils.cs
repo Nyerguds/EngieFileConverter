@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
-namespace CnC64FileConverter.Domain.Utils
+namespace Nyerguds.Util
 {
     public class GeneralUtils
     {

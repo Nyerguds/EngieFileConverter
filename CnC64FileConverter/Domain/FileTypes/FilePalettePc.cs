@@ -2,14 +2,12 @@
 using Nyerguds.CCTypes;
 using Nyerguds.Util;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FilePalettePc : N64FileType
     {
@@ -19,8 +17,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override String ShortTypeDescription { get { return "PC C&C palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions {  get { return new String[]{ "pal" }; } }
-        
-        public override Boolean FileHasPalette { get { return true; } }
+
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
         public override Int32 ColorsInPalette { get { return 256; } }
@@ -28,7 +25,7 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         protected Color[] m_palette;
 
-        public override void LoadImage(Byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             if (fileData.Length != 768)
                 throw new FileTypeLoadException("Incorrect file size.");
@@ -49,11 +46,11 @@ namespace CnC64FileConverter.Domain.ImageFile
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_palette, Color.Black);
         }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadImage(fileData);
-            LoadedFileName = filename;
+            this.LoadFile(fileData);
+            SetFileNames(filename);
         }
 
         public override Color[] GetColors()
@@ -61,13 +58,30 @@ namespace CnC64FileConverter.Domain.ImageFile
             return m_palette;
         }
 
+        public override void SetColors(Color[] palette)
+        {
+            if (m_BackupPalette == null)
+                m_BackupPalette = GetColors();
+            m_palette = palette;
+            // update image
+            base.SetColors(palette);
+        }
+
+        public override Boolean ColorsChanged()
+        {
+            // assume there's no palette, or no backup was ever made
+            if (m_BackupPalette == null)
+                return false;
+            return !m_palette.SequenceEqual(m_BackupPalette);
+        }
+
         public override void SaveAsThis(N64FileType fileToSave, String savePath)
         {
-            if (fileToSave.GetBitsPerColor() != 8)
-                throw new NotSupportedException();
+            if (fileToSave.BitsPerColor != 8)
+                throw new NotSupportedException(String.Empty);
             Color[] palEntries = fileToSave.GetColors();
             if (palEntries == null || palEntries.Length == 0)
-                throw new NotSupportedException();
+                throw new NotSupportedException(String.Empty);
             Color[] cols = new Color[256];
             for(Int32 i = 0; i < cols.Length; i++)
             {

@@ -16,27 +16,30 @@ namespace Nyerguds.ImageManipulation
             return Color.FromArgb((Byte)((argb & 0xff000000) >> 0x18), (Byte)((argb & 0xff0000) >> 0x10), (Byte)((argb & 0xff00) >> 0x08), (Byte)(argb & 0xff));
         }
 
-        public static Color[] GenerateGrayPalette(Int32 bpp)
+        public static Color GetVisibleBorderColor(Color color)
         {
-            // No palette in file, but paletted color format. Generate grayscale palette.
-            Int32 palSize = 1 << bpp;
-            // Ignore original value here.
-            Color[] paletteData = new Color[palSize * 4];
-            Int32 steps = 255 / (palSize - 1);
-            for (Int32 i = 0; i < palSize; i++)
+            float sat = color.GetSaturation();
+            float bri = color.GetBrightness();
+            if (color.GetSaturation() < .16)
             {
-                Int32 offs = i * 4;
-                Byte grayval = (Byte)Math.Min(255, Math.Round((Double)i * steps, MidpointRounding.AwayFromZero));
-                paletteData[i] = Color.FromArgb(grayval, grayval, grayval);
-
+                // this color is gray
+                if (color.GetBrightness() < .5)
+                    return Color.White;
+                else
+                    return Color.Black;
             }
-            return paletteData;
+            else return GetInvertedColor(color);
+        }
+
+        public static Color GetInvertedColor(Color color)
+        {
+            return Color.FromArgb((Int32)(0x00FFFFFFu ^ (UInt32)color.ToArgb()));
         }
 
         public static Boolean HasGrayPalette(Bitmap image)
         {
             Int32 grayPfs = Math.Min(8, Image.GetPixelFormatSize(image.PixelFormat));
-            Color[] grayPalette = ColorUtils.GenerateGrayPalette(grayPfs);
+            Color[] grayPalette = PaletteUtils.GenerateGrayPalette(grayPfs, false, false);
 
             PixelFormat pf = image.PixelFormat;
             if (pf != PixelFormat.Format1bppIndexed && pf != PixelFormat.Format4bppIndexed && pf != PixelFormat.Format8bppIndexed)

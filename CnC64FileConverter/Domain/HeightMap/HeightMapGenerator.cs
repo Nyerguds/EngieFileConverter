@@ -8,7 +8,8 @@ using System.Linq;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
-using CnC64FileConverter.Domain.ImageFile;
+using System.IO;
+using CnC64FileConverter.Domain.FileTypes;
 
 namespace CnC64FileConverter.Domain.HeightMap
 {
@@ -20,21 +21,27 @@ namespace CnC64FileConverter.Domain.HeightMap
         private const Int32 WATER_HEIGHT_DIFF = -0x20;
         private static readonly Color[] LEVEL_COLORS = Enumerable.Range(0, 5).Select(x => Color.FromArgb(Math.Min(0xFF, BASE_HEIGHT * x), Math.Min(0xFF, BASE_HEIGHT * x), Math.Min(0xFF, BASE_HEIGHT * x))).ToArray();
 
-        public static FileImagePng GeneratePlateauImage64x64(CnCMap mapFile, IniFile mapInfo)
+        public static FileImagePng GeneratePlateauImage64x64(FileMapPc mapFile, String suffix)
         {
-            return GenerateHeightMapImage64x64(mapFile, mapInfo, null, true);
+            return GenerateHeightMapImage64x64(mapFile, null, true, suffix);
         }
 
-        public static FileImagePng GenerateHeightMapImage64x64(CnCMap mapFile, IniFile mapInfo, Bitmap plateauLevelsImage)
+        public static FileImagePng GenerateHeightMapImage64x64(FileMapPc mapFile, Bitmap plateauLevelsImage, String suffix)
         {
-            return GenerateHeightMapImage64x64(mapFile, mapInfo, plateauLevelsImage, false);
+            return GenerateHeightMapImage64x64(mapFile, plateauLevelsImage, false, suffix);
         }
 
-        private static FileImagePng GenerateHeightMapImage64x64(CnCMap mapFile, IniFile mapInfo, Bitmap plateauLevelsImage, Boolean forPlateau)
+        private static FileImagePng GenerateHeightMapImage64x64(FileMapPc map, Bitmap plateauLevelsImage, Boolean forPlateau, String returnNameSuffix)
         {
+            String loadedPath = map.LoadedFile;
+            String baseFileName = Path.Combine(Path.GetDirectoryName(loadedPath), Path.GetFileNameWithoutExtension(loadedPath));
+            String iniFileName = baseFileName + ".ini";
+            String pngFileName = baseFileName + (returnNameSuffix ?? String.Empty) + ".png";
+            IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
+            
             if (forPlateau)
                 plateauLevelsImage = null;
-            HeightTerrainType[] simpleMap = MapConversion.SimplifyMap(mapFile);
+            HeightTerrainType[] simpleMap = MapConversion.SimplifyMap(map.Map);
 
             Int32 mapStartX = 1;
             Int32 mapStartY = 1;
@@ -61,7 +68,7 @@ namespace CnC64FileConverter.Domain.HeightMap
                 if (plateauLevelsImage.Width != 64 || plateauLevelsImage.Height != 64)
                     throw new NotSupportedException("Plateau levels image needs to be 64x64!");
                 Int32 plateauStride;
-                Byte[] plateauData = ImageUtils.GetImageData(ImageUtils.PaintOn32bpp(plateauLevelsImage), out plateauStride);
+                Byte[] plateauData = ImageUtils.GetImageData(ImageUtils.PaintOn32bpp(plateauLevelsImage, Color.Black), out plateauStride);
                 eightBitPlateauData = ImageUtils.Convert32BitToPaletted(plateauData, plateauLevelsImage.Width, plateauLevelsImage.Height, 8, LEVEL_COLORS, ref plateauStride);
                 ReducePlateaus(eightBitPlateauData, simpleMap, 0, 0, 64, 64);
                 ReducePlateausEnh(eightBitPlateauData, simpleMap, 0, 0, 64, 64);
@@ -81,7 +88,6 @@ namespace CnC64FileConverter.Domain.HeightMap
                 {
                     case HeightTerrainType.Clear:
                     case HeightTerrainType.Road:
-                    default:
                         break;
                     case HeightTerrainType.Water:
                         if (!forPlateau)
@@ -106,21 +112,20 @@ namespace CnC64FileConverter.Domain.HeightMap
                 }
                 heightMapData[i] = (Byte)Math.Min(Math.Max(0, val), 255);
             }
-            Color[] palette = ColorUtils.GenerateGrayPalette(8);
+            Color[] palette = PaletteUtils.GenerateGrayPalette(8, false, false);
             if (forPlateau)
             {
                 heightMapData = ImageUtils.Match8BitDataToPalette(heightMapData, 64, 64, palette, LEVEL_COLORS);
                 palette = LEVEL_COLORS;
             }
-            FileImagePng returnImg = new FileImagePng();
             Bitmap bm = ImageUtils.BuildImage(heightMapData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Empty);
-            returnImg.LoadImage(bm, palette.Length);
+            FileImagePng returnImg = new FileImagePng();
+            returnImg.LoadImage(bm, palette.Length, pngFileName);
             return returnImg;
         }
 
         private static void ReducePlateaus(Byte[] eightBitPlateauData, HeightTerrainType[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
         {
-            Boolean[] reduce = new Boolean[eightBitPlateauData.Length];
             for (Int32 y = mapStartY; y < mapEndY; y++)
             {
                 for (Int32 x = mapStartX; x < mapEndX; x++)
@@ -134,17 +139,15 @@ namespace CnC64FileConverter.Domain.HeightMap
 
         private static void ReducePlateausEnh(Byte[] eightBitPlateauData, HeightTerrainType[] simpleMap, Int32 mapStartX, Int32 mapStartY, Int32 mapEndX, Int32 mapEndY)
         {
-            Byte[] heightsAround;
-            HeightTerrainType[] typesAround;
             Boolean[] reduce = new Boolean[eightBitPlateauData.Length];
             for (Int32 y = mapStartY; y < mapEndY; y++)
             {
                 for (Int32 x = mapStartX; x < mapEndX; x++)
                 {
                     Int32 height = eightBitPlateauData[y * 64 + x];
-                    heightsAround = GetNeighbouringTypes(eightBitPlateauData, x, y, mapStartX, mapStartY, mapEndX, mapEndY, (Byte)1, (Byte)0xFF);
+                    Byte[] heightsAround = GetNeighbouringTypes(eightBitPlateauData, x, y, mapStartX, mapStartY, mapEndX, mapEndY, (Byte)1, (Byte)0xFF);
                     HeightTerrainType type = simpleMap[y * 64 + x];
-                    typesAround = GetNeighbouringTypes(simpleMap, x, y, mapStartX, mapStartY, mapEndX, mapEndY, HeightTerrainType.Clear, HeightTerrainType.Unused);
+                    HeightTerrainType[] typesAround = GetNeighbouringTypes(simpleMap, x, y, mapStartX, mapStartY, mapEndX, mapEndY, HeightTerrainType.Clear, HeightTerrainType.Unused);
                     // 0 1 2
                     // 3   4
                     // 5 6 7
@@ -261,7 +264,7 @@ namespace CnC64FileConverter.Domain.HeightMap
         {
             if (heightMap64x64.Width != 64 || heightMap64x64.Height != 64)
                 throw new NotSupportedException("Can only convert 64x64 images!");
-            heightMap64x64 = ImageUtils.ConvertToGrayscale(heightMap64x64);
+            heightMap64x64 = ImageUtils.ConvertToPalettedGrayscale(heightMap64x64);
             //Bitmap heightMap62x62 = ImageUtils.CloneImage(heightMap64x64, 1, 1, 62, 62);
             Bitmap bp = new Bitmap(65, 65, PixelFormat.Format32bppArgb);
             using (Graphics gr = Graphics.FromImage(bp))

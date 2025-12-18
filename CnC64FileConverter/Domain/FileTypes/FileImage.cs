@@ -1,13 +1,9 @@
 ﻿using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Linq;
-using System.Text;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImage : N64FileType
     {
@@ -28,17 +24,28 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override Int32 ColorsInPalette { get { return m_ColsInPal; } }
         public override N64FileType PreferredExportType { get { return new FileImgN64(); } }
 
+        public override Color[] GetColors()
+        {
+            if (m_LoadedImage == null)
+                return new Color[0];
+            Color[] col1 = m_LoadedImage.Palette.Entries;
+            Color[] col2 = new Color[m_ColsInPal];
+            Array.Copy(col1, col2, Math.Min(col1.Length, ColorsInPalette));
+            return col2;
+        }
+
         protected Int32 m_ColsInPal;
 
         public FileImage() { }
 
-        public void LoadImage(Bitmap image, Int32 colors)
+        public void LoadImage(Bitmap image, Int32 colors, String displayfilename)
         {
             m_LoadedImage = image;
             m_ColsInPal = colors;
+            LoadedFileName = displayfilename;
         }
         
-        public override void LoadImage(Byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             try
             {
@@ -50,12 +57,12 @@ namespace CnC64FileConverter.Domain.ImageFile
             }
         }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             try
             {
                 m_LoadedImage = BitmapHandler.LoadBitmap(filename, out m_ColsInPal);
-                LoadedFileName = filename;
+                 SetFileNames(filename);
             }
             catch (Exception ex)
             {

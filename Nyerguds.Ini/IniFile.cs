@@ -884,7 +884,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>
-        /// Removes a section from the ini file, and marks it for deletion on the next rewrite.
+        /// Clears a section's keys.
         /// </summary>
         /// <param name="sectionName">The name of the section</param>
         public void ClearSectionKeys(String sectionName)

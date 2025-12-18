@@ -60,7 +60,6 @@ namespace Nyerguds.Util.UI
             palPanel.Palette = palette;
         }
 
-
         [Description("Frame size. This is completely determined by the padding, label size, and padding between the labels, and can't be modified."), Category("Palette panel")]
         [DefaultValue(typeof(Size), "320, 320")]
         public new Size Size
@@ -412,17 +411,21 @@ namespace Nyerguds.Util.UI
             Boolean HasColor = m_Palette != null;
             Boolean newPalette = m_ColorLabels == null;
             Int32 rows = m_MaxColors / this.m_ColorTableWidth + ((m_MaxColors % this.m_ColorTableWidth > 0) ? 1 : 0);
-            if (!newPalette && m_ColorLabels.Length != m_MaxColors)
-            {
-                foreach (Label colorLabel in m_ColorLabels)
-                {
-                    this.Controls.Remove(colorLabel);
-                    colorLabel.Dispose();
-                }
-                newPalette = true;
-            }
             if (newPalette)
                 m_ColorLabels = new Label[m_MaxColors];
+            else
+            {
+                for (Int32 i = this.m_MaxColors; i < m_ColorLabels.Length; i++)
+                {
+                    Label colorLabel = this.m_ColorLabels[i];
+                    this.Controls.Remove(colorLabel);
+                    colorLabel.Dispose();
+                    this.m_ColorLabels[i] = null;
+                }
+                Label[] newLabels = new Label[m_MaxColors];
+                Array.Copy(this.m_ColorLabels, newLabels, Math.Min(this.m_ColorLabels.Length, m_MaxColors));
+                this.m_ColorLabels = newLabels;
+            }
             for (Int32 y = 0; y < rows; y++)
             {
                 for (Int32 x = 0; x < this.m_ColorTableWidth; x++)
@@ -448,14 +451,15 @@ namespace Nyerguds.Util.UI
                         selectThis = m_SelectedIndicesList.Contains(index);
                     else
                         selectThis = m_SelectedIndicesArr.Contains(index);
-                    if (newPalette)
+                    if (this.m_ColorLabels[index] == null)
+                    {
                         this.m_ColorLabels[index] = this.GenerateLabel(x, y, col, emptyCol, transparentCol, selectThis);
+                        this.Controls.Add(m_ColorLabels[index]);
+                    }
                     else
                         this.SetLabelProperties(this.m_ColorLabels[index], x, y, col, emptyCol, transparentCol, selectThis);
                     if (m_ShowColorToolTips)
                         this.SetColorToolTip(index, emptyCol, transparentCol);
-                    if (newPalette) 
-                        this.Controls.Add(m_ColorLabels[index]);
                 }
             }
             if (!m_ShowColorToolTips)
@@ -473,10 +477,9 @@ namespace Nyerguds.Util.UI
                 Int32 filterIndex;
                 if (index < m_Remap.Length && (filterIndex = m_Remap[index]) >= 0 && filterIndex < m_Palette.Length)
                     return m_Palette[filterIndex];
-                else
-                    return Color.Empty;
+                return Color.Empty;
             }
-            else if (index < m_Palette.Length)
+            if (index < m_Palette.Length)
                 return m_Palette[index];
             return Color.Empty;
         }
@@ -710,7 +713,6 @@ namespace Nyerguds.Util.UI
             this.Index = index;
             this.Color = color;
         }
-
     }
 
     /// <summary>
@@ -730,18 +732,13 @@ namespace Nyerguds.Util.UI
             set
             {
                 if (value == null)
-                {
-                    value = "";
-                }
-
-                if (text != value)
-                {
-                    text = value;
-                    Refresh();
-                    OnTextChanged(EventArgs.Empty);
-                }
+                    value = String.Empty;
+                if (this.text == value)
+                    return;
+                this.text = value;
+                this.Refresh();
+                this.OnTextChanged(EventArgs.Empty);
             }
         }
     }
-
 }

@@ -1,13 +1,10 @@
 ﻿using Nyerguds.CCTypes;
 using Nyerguds.Util;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileMapN64 : FileMapPc
     {        
@@ -21,17 +18,17 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         public FileMapN64() { }
 
-        public override void LoadImage(Byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
             m_LoadedImage = ReadN64MapAsImage(fileData, (Theater)0xFF, null);
         }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             m_LoadedImage = ReadN64MapAsImage(filename);
-            LoadedFileName = filename;
+            SetFileNames(filename);
         }
 
         public override void SaveAsThis(N64FileType fileToSave, String savePath)
@@ -39,7 +36,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             if (fileToSave is FileMapPc)
                 File.WriteAllBytes(savePath, ((FileMapPc)fileToSave).N64MapData);
             else
-                throw new NotSupportedException();
+                throw new NotSupportedException(String.Empty);
         }
         
         protected Bitmap ReadN64MapAsImage(String filename)
@@ -74,7 +71,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "N64MapIni"; } }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".map";
             if (!File.Exists(mapFilename))
@@ -83,7 +80,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".map");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            base.LoadImage(mapFilename);
+            base.LoadFile(mapFilename);
         }
     }
 }

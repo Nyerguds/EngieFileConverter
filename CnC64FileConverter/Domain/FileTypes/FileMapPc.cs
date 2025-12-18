@@ -3,17 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
-using Nyerguds.ImageManipulation;
 using System.Text.RegularExpressions;
 using Nyerguds.Util;
 using Nyerguds.CCTypes;
-using CnC64FileConverter.Domain.Utils;
+using Nyerguds.ImageManipulation;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileMapPc : N64FileType
     {
@@ -63,12 +59,11 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override String ShortTypeDescription { get { return "PC C&C map file"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "bin" }; } }
-        /// <summary>Is this file format treated as an image with a color palette?</summary>
-        public override Boolean FileHasPalette { get { return false; } }
         public override Int32 Width { get { return 64; } }
         public override Int32 Height { get { return 64; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override N64FileType PreferredExportType { get { return new FileMapN64(); } }
+        public override Int32 BitsPerColor { get { return 0; } }
 
         public Byte[] PCMapData { get; protected set; }
         public Byte[] N64MapData { get; protected set; }
@@ -78,7 +73,7 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         public FileMapPc() { }
         
-        public override void LoadImage(Byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             this.PCMapData = fileData;
             Theater theater = (Theater)0xFF;
@@ -86,17 +81,12 @@ namespace CnC64FileConverter.Domain.ImageFile
             m_LoadedImage = ReadMapAsImage(fileData, theater);
         }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             m_LoadedImage = ReadMapAsImage(filename, (Theater)0xFF);
-            LoadedFileName = filename;
+            SetFileNames(filename);
         }
-
-        public override Int32 GetBitsPerColor()
-        {
-            return 0;
-        }
-
+        
         public override Color[] GetColors()
         {
             return null;
@@ -107,7 +97,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             if (fileToSave is FileMapPc)
                 File.WriteAllBytes(savePath, ((FileMapPc)fileToSave).PCMapData);
             else
-                throw new NotSupportedException();
+                throw new NotSupportedException(String.Empty);
         }
 
         protected Bitmap ReadMapAsImage(String filename, Theater theater)
@@ -244,7 +234,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "N64MapIni"; } }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".bin";
             if (!File.Exists(mapFilename))
@@ -253,7 +243,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".bin");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            base.LoadImage(mapFilename);
+            base.LoadFile(mapFilename);
         }
 
     }

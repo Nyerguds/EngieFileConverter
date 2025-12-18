@@ -1,15 +1,12 @@
 ﻿using Nyerguds.ImageManipulation;
-using Nyerguds.CCTypes;
 using Nyerguds.Util;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FilePaletteN64 : N64FileType
     {
@@ -19,16 +16,14 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override String ShortTypeDescription { get { return "N64 C&C palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
-        
-        public override Boolean FileHasPalette { get { return true; } }
         public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return 16; } }
-        public override Int32 ColorsInPalette { get { return m_palette.Length; } }
+        public override Int32 Height { get { return ColorsInPalette / 16; } }
+        public override Int32 ColorsInPalette { get { return m_palette == null? 0 : m_palette.Length; } }
         public override N64FileType PreferredExportType { get { return new FilePalettePc(); } }
 
         protected Color[] m_palette;
 
-        public override void LoadImage(Byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             Int32 len = fileData.Length;
             // Test on full 16-colour lines (16 x 3 bytes)
@@ -45,20 +40,37 @@ namespace CnC64FileConverter.Domain.ImageFile
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + ex.Message, ex);
             }
-            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_palette, Color.Empty);
+            Byte[] imageData = Enumerable.Range(0, Width*Height).Select(x => (Byte)x).ToArray();
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, Width, Height, 16, PixelFormat.Format8bppIndexed, this.m_palette, Color.Empty);
         }
 
-        public override void LoadImage(String filename)
+        public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadImage(fileData);
-            LoadedFileName = filename;
+            this.LoadFile(fileData);
+            SetFileNames(filename);
         }
 
         public override Color[] GetColors()
         {
-            return m_palette;
+            return m_palette.ToArray();
+        }
+
+        public override void SetColors(Color[] palette)
+        {
+            if (m_BackupPalette == null)
+                m_BackupPalette = GetColors();
+            m_palette = palette;
+            // update image
+            base.SetColors(palette);
+        }
+
+        public override Boolean ColorsChanged()
+        {
+            // assume there's no palette, or no backup was ever made
+            if (m_BackupPalette == null)
+                return false;
+            return !m_palette.SequenceEqual(m_BackupPalette);
         }
 
         public override void SaveAsThis(N64FileType fileToSave, String savePath)
@@ -95,7 +107,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override String ShortTypeDescription { get { return "N64 C&C 8-bit palette file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
 
-        public override void LoadImage(Byte[] fileData)
+        public override void LoadFile(Byte[] fileData)
         {
             // test on colour triplets
             if (fileData.Length != 768)

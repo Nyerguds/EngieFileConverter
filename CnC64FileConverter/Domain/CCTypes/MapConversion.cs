@@ -1,5 +1,4 @@
-﻿using CnC64FileConverter.Domain.Utils;
-using Nyerguds.Ini;
+﻿using Nyerguds.Ini;
 using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
@@ -139,14 +138,11 @@ namespace Nyerguds.CCTypes
                             n64MapValues.Clear();
                             throw new ApplicationException("File contains duplicate entries!");
                         }
+                        if (reverseValues.ContainsKey(PCcell.Value))
+                            errorMessages.Add(String.Format("Value {0} - {1} - PC value {1} already mapped on N64 value {2}", N64cell.ToString(), PCcell.ToString(), reverseValues[PCcell.Value].ToString()));
                         else
-                        {
-                            if (reverseValues.ContainsKey(PCcell.Value))
-                                errorMessages.Add(String.Format("Value {0} - {1} - PC value {1} already mapped on N64 value {2}", N64cell.ToString(), PCcell.ToString(), reverseValues[PCcell.Value].ToString()));
-                            else
-                                reverseValues.Add(PCcell.Value, N64cell);
-                            n64MapValues.Add(N64cell.Value, PCcell);
-                        }
+                            reverseValues.Add(PCcell.Value, N64cell);
+                        n64MapValues.Add(N64cell.Value, PCcell);
                     }
                 }
             }

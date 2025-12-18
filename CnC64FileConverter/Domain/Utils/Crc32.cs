@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CnC64FileConverter.Domain.Utils
+namespace Nyerguds.Util
 {
     /// <summary>
     /// From http://www.sanity-free.org/12/crc32_implementation_in_csharp.html

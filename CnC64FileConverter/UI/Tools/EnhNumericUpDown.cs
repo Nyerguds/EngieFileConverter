@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -35,7 +36,7 @@ namespace Nyerguds.Util.UI
         /// Last validated entered value.
         /// </summary>
         [Category("Data")]
-        [DefaultValue(true)]
+        [DefaultValue(0)]
         [Description("The last validated value of the EnhNumericUpDownControl.")]
         public Decimal EnteredValue
         {
@@ -61,18 +62,35 @@ namespace Nyerguds.Util.UI
 
         private void EnhNumericUpDown_TextChanged(object sender, EventArgs e)
         {
-            if (!Regex.IsMatch(this.Text, "^\\d*$"))
+            Boolean allowminus = this.Minimum < 0;
+            if (Regex.IsMatch(this.Text, allowminus ? "^-?\\d*$" : "^\\d*$"))
+                return;
+            // something snuck in, probably with ctrl+v. Remove it.
+            System.Media.SystemSounds.Beep.Play();
+            StringBuilder text = new StringBuilder();
+            String txt = this.Text;
+            Boolean hasMinus = txt.StartsWith("-");
+            Int32 firstIllegalChar = 0;
+            for (Int32 i = 0; i < txt.Length; i++)
             {
-                // something snuck in, probably with ctrl+v. Remove it.
-                System.Media.SystemSounds.Beep.Play();
-                String text = Regex.Replace(this.Text, "[^\\d]+", String.Empty);
-                Int32 value;
-                if (Int32.TryParse(text, out value))
+                Char c = txt[i];
+                if ((c < '0' || c > '9') && (!allowminus || i > 0 || c != '-'))
                 {
-                    value = Math.Max((Int32)this.Minimum, Math.Min((Int32)this.Maximum, value));
-                    this.Text = value.ToString();
+                    if (firstIllegalChar == 0)
+                        firstIllegalChar = i;
+                    continue;
                 }
+                text.Append(c);
             }
+            Int32 value;
+            if (Int32.TryParse(text.ToString(), out value))
+            {
+                value = Math.Max((Int32)this.Minimum, Math.Min((Int32)this.Maximum, value));
+                // will trigger this function again, but that's okay, it'll immediately fail the regex and abort.
+                this.Text = value.ToString();
+            }
+            this.Select(firstIllegalChar,0);
+            
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)

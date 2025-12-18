@@ -4,10 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 
-namespace CnC64FileConverter.Domain.ImageFile
+namespace CnC64FileConverter.Domain.FileTypes
 {
     public abstract class N64FileType : FileTypeBroadcaster
     {
@@ -19,34 +19,87 @@ namespace CnC64FileConverter.Domain.ImageFile
         public abstract String[] FileExtensions { get; }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public virtual String[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.ShortTypeDescription, this.FileExtensions.Length).ToArray(); } }
-        /// <summary>Is this file format treated as an image with a color palette?</summary>
-        public virtual Boolean FileHasPalette { get { return m_LoadedImage == null? false : m_LoadedImage.PixelFormat == PixelFormat.Format8bppIndexed || m_LoadedImage.PixelFormat == PixelFormat.Format4bppIndexed; } }
         /// <summary>Width of the file (if applicable). Normally the same as GetBitmap().Width</summary>
         public virtual Int32 Width { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Width; } }
         /// <summary>Height of the file (if applicable). Normally the same as GetBitmap().Height</summary>
         public virtual Int32 Height { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Height; } }
-        /// <summary>Amount of colors in the palette.</summary>
-        public virtual Int32 ColorsInPalette { get { return this.FileHasPalette ? m_LoadedImage.Palette.Entries.Length : 0; } }
+        /// <summary>Amount of colors in the palette that is contained inside the image. 0 if the image itself does not contain a palette, even if it generates one.</summary>
+        public virtual Int32 ColorsInPalette { get { return this.m_LoadedImage == null? 0 : m_LoadedImage.Palette.Entries.Length; } }
+        /// <summary>Type for quick-converting this type.</summary>
         public virtual N64FileType PreferredExportType { get { return new FileImagePng(); } }
-        public virtual String LoadedFileName { get; protected set; }
-        
-        public abstract void LoadImage(Byte[] fileData);
-        public abstract void LoadImage(String filename);
-        public abstract void SaveAsThis(N64FileType fileToSave, String savePath);
+        /// <summary>Full path of the loaded file.</summary>
+        public String LoadedFile { get; protected set; }
+        /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
+        public String LoadedFileName { get; protected set; }
+        public virtual Int32 BitsPerColor { get { return m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(m_LoadedImage.PixelFormat); } }
 
-        public virtual Int32 GetBitsPerColor()
+        /// <summary>Sub-frames inside this file.</summary>
+        public virtual N64FileType[] Frames { get { return null; } }
+        
+        public abstract void LoadFile(Byte[] fileData);
+        public abstract void LoadFile(String filename);
+        public abstract void SaveAsThis(N64FileType fileToSave, String savePath);
+        protected Color[] m_BackupPalette = null;
+
+
+        protected void SetFileNames(String path)
         {
-            return m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(m_LoadedImage.PixelFormat);
+            LoadedFile = path;
+            LoadedFileName = Path.GetFileName(path);
         }
 
         public virtual Color[] GetColors()
         {
-            if (!this.FileHasPalette)
+            if (m_LoadedImage == null)
                 return new Color[0];
-            Color[] col1 = m_LoadedImage.Palette.Entries;
-            Color[] col2 = new Color[ColorsInPalette];
-            Array.Copy(col1, col2, Math.Min(col1.Length, ColorsInPalette));
-            return col2;
+            return m_LoadedImage.Palette.Entries.ToArray();
+        }
+
+        public virtual void SetColors(Color[] palette)
+        {
+            if (palette == null || palette.Length == 0)
+                return;
+            // Override this in types that don't have a palette, like grayscale N64 images.
+            // This function should only be called from UI "if (BitsPerColor != 0 && !FileHasPalette)"
+            if (this.BitsPerColor == 0)
+                throw new NotSupportedException("This image does not support palettes.");
+            // Not gonna execute this check, since this basic function can't actually set the palette.
+            // else if (this.FileHasPalette)
+            Int32 pfs = Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat);
+            if (pfs > 8 || (this.m_LoadedImage.PixelFormat & PixelFormat.Indexed) == 0
+                || this.m_LoadedImage.Palette.Entries.Length == 0)
+                throw new NotSupportedException("This image has no palette.");
+            ColorPalette cp = this.m_LoadedImage.Palette;
+            if (m_BackupPalette == null)
+                m_BackupPalette = GetColors();
+            for (Int32 i = 0; i < cp.Entries.Length; i++)
+            {
+                if (palette.Length > i)
+                    cp.Entries[i] = palette[i];
+                else
+                    cp.Entries[i] = Color.Empty;
+            }
+            m_LoadedImage.Palette = cp;
+        }
+
+        public virtual void ResetColors()
+        {
+            SetColors(m_BackupPalette);
+        }
+
+        public virtual Boolean ColorsChanged()
+        {
+            if (this.BitsPerColor == 0)
+                return false;
+            Int32 pfs = Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat);
+            if (pfs > 8 || (this.m_LoadedImage.PixelFormat & PixelFormat.Indexed) == 0
+                || this.m_LoadedImage.Palette.Entries.Length == 0)
+                return false;
+            Color[] cols = GetColors();
+            // assume there's no palette, or no backup was ever made
+            if (cols == null || m_BackupPalette == null)
+                return false;
+            return !GetColors().SequenceEqual(m_BackupPalette);
         }
 
         public virtual Bitmap GetBitmap()
@@ -64,6 +117,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             typeof(FileImage),
             typeof(FileTilesN64Bpp4),
             typeof(FileTilesN64Bpp8),
+            typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64),
         };
@@ -82,6 +136,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             typeof(FileImageJpg),
             typeof(FileTilesN64Bpp4),
             typeof(FileTilesN64Bpp8),
+            typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64Pa8),
             typeof(FilePaletteN64Pa4),
@@ -97,6 +152,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
+            typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64Pa4),
             typeof(FilePaletteN64Pa8),
@@ -120,7 +176,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             {
                 try
                 {
-                    typeObj.LoadImage(path);
+                    typeObj.LoadFile(path);
                     return typeObj;
                 }
                 catch (FileTypeLoadException e)
@@ -152,7 +208,7 @@ namespace CnC64FileConverter.Domain.ImageFile
                     continue;
                 try
                 {
-                    objInstance.LoadImage(path);
+                    objInstance.LoadFile(path);
                     return objInstance;
                 }
                 catch (FileTypeLoadException e)
