@@ -31,11 +31,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
-            Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
-            return SaveToBytesAsThis(fileToSave, compressionType, true);
+            return SaveToBytesAsThis(fileToSave, saveOptions, true);
         }
 
     }

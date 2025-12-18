@@ -669,39 +669,6 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        public static Byte[] Change8BitStride(Byte[] source, Int32 origStride, Int32 height, Int32 targetStride, Boolean fromLeft, Byte backColor)
-        {
-            Int32 sourcePos = 0;
-            Int32 destPos = 0;
-            Int32 minStride = Math.Min(origStride, targetStride);
-            Int32 length = source.Length;
-            Int32 targetSize = height * targetStride;
-            Byte[] target = new Byte[targetSize];
-            if (backColor != 0)
-                for (Int32 i = 0; i < targetSize; i++)
-                    target[i] = backColor;
-            Int32 diff = origStride - targetStride;
-            while (length >= origStride && length > 0)
-            {
-                Int32 sourcePos1 = sourcePos;
-                Int32 destPos1 = destPos;
-                if (fromLeft)
-                {
-                    if (diff > 0)
-                        sourcePos1 += diff;
-                    else
-                        destPos1 -= diff;
-                }
-                Array.Copy(source, sourcePos1, target, destPos1, minStride);
-                length -= origStride;
-                sourcePos += origStride;
-                destPos += targetStride;
-            }
-            if (length > 0)
-                Array.Copy(source, sourcePos, target, destPos, length);
-            return target;
-        }
-
         /// <summary>
         /// Copies a piece out of an 8-bit image. The stride of the output will always equal the width.
         /// </summary>
@@ -1115,20 +1082,73 @@ namespace Nyerguds.ImageManipulation
             return buffer;
         }
 
-        public static Byte[] ChangeHeight(Byte[] buffer, Int32 stride, Int32 height, Int32 newHeight, Boolean fromTop, Byte backColor)
+        /// <summary>
+        /// Changes the stride of the given image data.
+        /// </summary>
+        /// <param name="buffer">Source byte array.</param>
+        /// <param name="origStride">Original stride</param>
+        /// <param name="height">Height of the image</param>
+        /// <param name="targetStride">Target stride</param>
+        /// <param name="fromLeft">True to add/remove bytes at the left side instead of the right.</param>
+        /// <param name="fillValue">Byte value used to fill any added space.</param>
+        /// <returns>The adjusted array, with the target stride.</returns>
+        public static Byte[] ChangeStride(Byte[] buffer, Int32 origStride, Int32 height, Int32 targetStride, Boolean fromLeft, Byte fillValue)
         {
-            if (height == newHeight)
+            Int32 sourcePos = 0;
+            Int32 destPos = 0;
+            Int32 minStride = Math.Min(origStride, targetStride);
+            Int32 length = buffer.Length;
+            Int32 targetSize = height * targetStride;
+            Byte[] target = new Byte[targetSize];
+            if (fillValue != 0)
+                for (Int32 i = 0; i < targetSize; i++)
+                    target[i] = fillValue;
+            Int32 diff = origStride - targetStride;
+            while (length >= origStride && length > 0)
+            {
+                Int32 sourcePos1 = sourcePos;
+                Int32 destPos1 = destPos;
+                if (fromLeft)
+                {
+                    if (diff > 0)
+                        sourcePos1 += diff;
+                    else
+                        destPos1 -= diff;
+                }
+                Array.Copy(buffer, sourcePos1, target, destPos1, minStride);
+                length -= origStride;
+                sourcePos += origStride;
+                destPos += targetStride;
+            }
+            if (length > 0)
+                Array.Copy(buffer, sourcePos, target, destPos, length);
+            return target;
+        }
+
+        /// <summary>
+        /// Changes the height of the given image data.
+        /// </summary>
+        /// <param name="buffer">Source byte array.</param>
+        /// <param name="stride">Stride of the image.</param>
+        /// <param name="origHeight">Original height of the image.</param>
+        /// <param name="targetHeight">Target height.</param>
+        /// <param name="fromTop">True to add/remove bytes at the top instead of the bottom.</param>
+        /// <param name="fillValue">Byte value used to fill any added space.</param>
+        /// <returns>The adjusted array, with the target height.</returns>
+        public static Byte[] ChangeHeight(Byte[] buffer, Int32 stride, Int32 origHeight, Int32 targetHeight, Boolean fromTop, Byte fillValue)
+        {
+            if (origHeight == targetHeight)
                 return buffer;
-            Int32 newSize = stride * newHeight;
+            Int32 newSize = stride * targetHeight;
             Byte[] newData = new Byte[newSize];
-            if (backColor != 0)
-                for (Int32 i = stride * height; i < newSize; i++)
-                    newData[i] = backColor;
+            if (fillValue != 0)
+                for (Int32 i = stride * origHeight; i < newSize; i++)
+                    newData[i] = fillValue;
             Int32 readOffset = 0;
             Int32 writeOffset = 0;
             if (fromTop)
             {
-                Int32 hdiff = newHeight - height;
+                Int32 hdiff = targetHeight - origHeight;
                 if (hdiff < 0)
                     readOffset = (-hdiff) * stride;
                 else

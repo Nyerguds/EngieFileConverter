@@ -27,7 +27,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW" };
         protected String[] savecompressionTypes = new String[] { "None", "RLE" };
-        protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)", "RLE" };
+        //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
         public override Int32 ColorsInPalette { get { return m_loadedPalette ? this.m_Palette.Length : 0; } }
         public override Int32 BitsPerColor { get { return m_bpp; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
@@ -41,13 +41,20 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Boolean m_IsMatrixImage = false;
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return m_IsMatrixImage; } }
+        public Boolean IsMa8 { get; private set; }
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            return new SaveOption[]
+            Boolean is4bpp = fileToSave.BitsPerColor == 4;
+            SaveOption[] opts = new SaveOption[is4bpp ? 1 : 2];
+            Int32 opt = 0;
+            if (!is4bpp)
             {
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString()),
-            };
+                Int32 saveType = fileToSave is FileFramesDynBmp && ((FileFramesDynBmp)fileToSave).IsMa8 ? 1 : 0;
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
+            }
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString());
+            return opts;
         }
 
         public override void LoadFile(Byte[] fileData)
@@ -123,9 +130,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("This is not a matrix-type image.");
             if (matrix == null && asMatrixImage)
                 throw new FileTypeLoadException("This is a matrix-type image.");
-
-            //if (compressed)
-            //    throw new FileTypeLoadException("BMP files with VQT section are currently not supported.");
             Byte[] fullData = null;
             PixelFormat pf;
             if (vqt || scn)
@@ -138,23 +142,30 @@ namespace CnC64FileConverter.Domain.FileTypes
             else
             {
                 DynamixChunk binChunk = DynamixChunk.ReadChunk(mainChunk.Data, "BIN");
+                this.IsMa8 = false;
                 if (binChunk == null)
-                    throw new FileTypeLoadException("Cannot find BIN chunk!");
+                {
+                    binChunk = DynamixChunk.ReadChunk(mainChunk.Data, "MA8");
+                    if (binChunk == null)
+                        throw new FileTypeLoadException("Cannot find BIN chunk!");
+                    this.IsMa8 = true;
+                }
                 if (binChunk.Data.Length == 0)
                     throw new FileTypeLoadException("Empty BIN chunk!");
                 Int32 compressionType = binChunk.Data[0];
                 if (compressionType < 3)
-                    ExtraInfo = "Compression: BIN:" + this.compressionTypes[compressionType];
+                    this.ExtraInfo = "Compression: " + (this.IsMa8 ? "MA8" : "BIN") + ":" + this.compressionTypes[compressionType];
                 else
                     throw new FileTypeLoadException("Unknown compression type, " + compressionType);
                 Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
-                //save debug output
-                //File.WriteAllBytes((output ?? "scrimage") + "vga.bin", vgadata);
                 Byte[] vgadata = null;
                 DynamixChunk vgaChunk = DynamixChunk.ReadChunk(mainChunk.Data, "VGA");
                 if (vgaChunk == null)
                 {
-                    this.m_bpp = 4;
+                    if (!this.IsMa8)
+                        this.m_bpp = 4;
+                    else
+                        this.m_bpp = 8;
                 }
                 else
                 {
@@ -171,7 +182,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (vgadata == null)
                 {
                     fullData = bindata;
-                    pf = PixelFormat.Format4bppIndexed;
+                    if (!this.IsMa8)
+                        pf = PixelFormat.Format4bppIndexed;
+                    else
+                        pf = PixelFormat.Format8bppIndexed;
                 }
                 else
                 {
@@ -238,6 +252,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
+            Int32 saveType;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
@@ -246,12 +262,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }
-            List<DynamixChunk> basicChunks = SaveToChunks(fileToSave, compressionType);
+            List<DynamixChunk> basicChunks = SaveToChunks(fileToSave, compressionType, saveType);
             DynamixChunk bmpChunk = DynamixChunk.BuildChunk("BMP", basicChunks.ToArray());
             return bmpChunk.WriteChunk();
         }
 
-        protected List<DynamixChunk> SaveToChunks(SupportedFileType fileToSave, Int32 compressionType)
+        protected List<DynamixChunk> SaveToChunks(SupportedFileType fileToSave, Int32 compressionType, Int32 saveType)
         {
             if (fileToSave == null)
                 throw new NotSupportedException("File to save is empty!");
@@ -321,7 +337,25 @@ namespace CnC64FileConverter.Domain.FileTypes
                 offset += frameData.Length;
             }
             chunks.Add(new DynamixChunk("INF", framesIndex));
-            if (bpp == 8)
+            Boolean isMa8 = saveType == 1;
+            if (bpp == 4 || isMa8)
+            {
+                Byte compressionBin = 0;
+                Byte[] binData = fullData;
+                UInt32 dataLenBin = (UInt32)binData.Length;
+                if (compressionType != 0) 
+                {
+                    Byte[] dataCompr = compressionType == 1 ? DynamixCompression.RleEncode(binData) : DynamixCompression.LzwEncode(binData);
+                    if (dataCompr.Length < dataLenBin)
+                    {
+                        binData = dataCompr;
+                        compressionBin = (Byte)compressionType; ;
+                    }
+                }
+                DynamixChunk binChunk = new DynamixChunk(isMa8 ? "MA8" : "BIN", compressionBin, dataLenBin, binData);
+                chunks.Add(binChunk);
+            }
+            else
             {
                 Byte[] vgaData;
                 Byte[] binData;

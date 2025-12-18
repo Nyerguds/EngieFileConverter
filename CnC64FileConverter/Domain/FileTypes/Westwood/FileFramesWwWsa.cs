@@ -154,7 +154,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (m_Version != WsaVersion.Dune2 && m_Version != WsaVersion.Dune2v1)
                 generalInfo += "\nX-offset = " + xPos + "\nY-offset = " + yPos;
             this.ExtraInfo = generalInfo;
-
             Int32 dataIndexOffset = hdrOffset + 2 + deltaLen;
             Int32 paletteOffset = dataIndexOffset + (nrOfFrames + 2) * 4;
             this.m_HasPalette = (flags & 1) == 1;
@@ -209,22 +208,28 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     m_Continues = true;
                     Array.Clear(frameData, 0, frameData.Length);
-                    this.ExtraInfo += "\nContinues from a previous file";
                     specificInfo = "\nContinues from a previous file";
+                    this.ExtraInfo += specificInfo;                    
                 }
                 if (frameOffsetReal == fileData.Length)
-                {
                     break;
-                }
                 Int32 refOff = (Int32)frameOffsetReal;
+                Int32 uncLen;
                 try
                 {
-                    Int32 uncLen = WWCompression.LcwUncompress(fileData, ref refOff, xorData);
-                    WWCompression.ApplyXorDelta(frameData, xorData, uncLen);
+                    uncLen = WWCompression.LcwUncompress(fileData, ref refOff, xorData);
                 }
                 catch (Exception ex)
                 {
                     throw new FileTypeLoadException("LCW Decompression failed: " + ex.Message, ex);
+                }
+                try
+                {
+                    WWCompression.ApplyXorDelta(frameData, xorData, uncLen);
+                }
+                catch (Exception ex)
+                {
+                    throw new FileTypeLoadException("XOR Delta merge failed: " + ex.Message, ex);
                 }
                 if (i == 0)
                     Array.Copy(frameData, frame0Data, frameData.Length);
@@ -233,7 +238,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 finalHeight = height + yPos;
                 if (xPos > 0 || yPos > 0)
                 {
-                    finalFrameData = ImageUtils.Change8BitStride(frameData, width, height, finalWidth, true, 0);
+                    finalFrameData = ImageUtils.ChangeStride(frameData, width, height, finalWidth, true, 0);
                     finalFrameData = ImageUtils.ChangeHeight(finalFrameData, finalWidth, height, finalHeight, true, 0);
                 }
                 Bitmap curFrImg = ImageUtils.BuildImage(finalFrameData, finalWidth, finalHeight, finalWidth, PixelFormat.Format8bppIndexed, this.m_Palette, null);

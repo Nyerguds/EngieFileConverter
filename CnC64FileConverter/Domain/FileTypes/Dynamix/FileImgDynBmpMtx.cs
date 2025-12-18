@@ -24,7 +24,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null, true);
         }
 
-
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 fullWidth = fileToSave.Width;
@@ -58,13 +57,18 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 blockHeight = matchingHeights.Count == 0 ? 5 : matchingHeights.Min();
             }
-
-            return new SaveOption[]
+            Boolean is4bpp = bpp == 4;
+            SaveOption[] opts = new SaveOption[is4bpp ? 3 : 4];
+            Int32 opt = 0;
+            if (!is4bpp)
             {
-                new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString()),
-                new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString()),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString()),
-            };
+                Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
+            }
+            opts[opt++] = new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString());
+            opts[opt++] = new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString());
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString());
+            return opts;
         }
 
         public override void LoadFile(String filename)
@@ -86,7 +90,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color[] palette = fileToSave.GetColors();
             Int32 width = image.Width;
             Int32 height = image.Height;
-
+            Int32 saveType;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 blockWidth;
@@ -179,7 +184,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frs.AddFrame(fr);
             }
             // Call SaveToBmpChunk to turn into normal bmp
-            List<DynamixChunk> imageChunks = SaveToChunks(frs, compressionType);
+            List<DynamixChunk> imageChunks = SaveToChunks(frs, compressionType, saveType);
             // Fill matrix data
             DynamixChunk mtxChunk = new DynamixChunk("MTX", frameMatrixFinal);
             imageChunks.Add(mtxChunk);

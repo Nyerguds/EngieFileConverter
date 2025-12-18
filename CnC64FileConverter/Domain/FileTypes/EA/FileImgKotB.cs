@@ -154,7 +154,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] imageData = ImageUtils.GetImageData(image, out stride);
             Byte[] eightbitImage = ImageUtils.ConvertTo8Bit(imageData, imgWidth, imgHeight, 0, 4, true, ref stride);
             if (alignedWidth > imgWidth)
-                eightbitImage = ImageUtils.Change8BitStride(eightbitImage, stride, imgHeight, alignedWidth, false, 0);
+                eightbitImage = ImageUtils.ChangeStride(eightbitImage, stride, imgHeight, alignedWidth, false, 0);
             // Trim end, creating "broken" images like the original court ones.
             if (trimEnd)
             {

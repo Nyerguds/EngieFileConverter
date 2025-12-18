@@ -32,15 +32,25 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// Dynamix SCR is one of the rare cases where the frames visualisation is completely extra. 
         /// </summary>
         public override Boolean IsFramesContainer { get { return false; } }
-
+        public Boolean IsMa8 { get; private set; }
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            return new SaveOption[]
+            Bitmap img = fileToSave.GetBitmap();
+            if (img == null)
+                return null;
+            Boolean is4bpp = img.PixelFormat == PixelFormat.Format4bppIndexed;
+            SaveOption[] opts = new SaveOption[is4bpp ? 1 : 2];
+            Int32 opt = 0;
+            if (!is4bpp)
             {
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString())
-            };
+                Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
+            }
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString());
+            return opts;
         }
+
         protected Boolean m_loadedPalette = false;
         protected Int32 m_bpp = 8;
         private SupportedFileType[] m_FramesList;
@@ -106,6 +116,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     }
                 }
             }
+            this.ExtraInfo = String.Empty;
             DynamixChunk dimChunk = DynamixChunk.ReadChunk(scrChunk.Data, "DIM");
             if (dimChunk != null && dimChunk.DataLength == 4)
             {
@@ -113,13 +124,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                 height = (Int32)ArrayUtils.ReadIntFromByteArray(dimChunk.Data, 2, 2, true);
             }
             DynamixChunk binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "BIN");
+            this.IsMa8 = false;
             if (binChunk == null)
-                throw new FileTypeLoadException("Cannot find BIN chunk!");
+            {
+                binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "MA8");
+                if (binChunk == null)
+                    throw new FileTypeLoadException("Cannot find BIN chunk!");
+                this.IsMa8 = true;
+            }
             if (binChunk.Data.Length == 0)
                 throw new FileTypeLoadException("Empty BIN chunk!");
             Int32 compressionType = binChunk.Data[0];
             if (compressionType < 3)
-                ExtraInfo = "Compression: BIN:" + this.compressionTypes[compressionType];
+                this.ExtraInfo = "Compression: " + (this.IsMa8 ? "MA8" : "BIN") + ":" + this.compressionTypes[compressionType];
             else
                 throw new FileTypeLoadException("Unknown compression type, " + compressionType);
             Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
@@ -129,7 +146,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             DynamixChunk vgaChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
             if (vgaChunk == null)
             {
-                this.m_bpp = 4;
+                if (!this.IsMa8)
+                    this.m_bpp = 4;
+                else
+                    this.m_bpp = 8;
             }
             else
             {
@@ -151,14 +171,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (vgadata == null)
             {
                 fullData = bindata;
-                pf = PixelFormat.Format4bppIndexed;
-                if (m_Palette != null)
+                if (!this.IsMa8)
                 {
-                    if (asFrame)
-                        this.m_Palette = Make4BitPalette(this.m_Palette);
-                    else
-                        this.m_Palette = this.m_Palette.Take(Math.Min(this.m_Palette.Length, 16)).ToArray();
+                    pf = PixelFormat.Format4bppIndexed;
+                    if (m_Palette != null)
+                    {
+                        if (asFrame)
+                            this.m_Palette = Make4BitPalette(this.m_Palette);
+                        else
+                            this.m_Palette = this.m_Palette.Take(Math.Min(this.m_Palette.Length, 16)).ToArray();
+                    }
                 }
+                else
+                    pf = PixelFormat.Format8bppIndexed;
                 if (m_loadedPalette)
                     this.LoadedFileName += "/PAL";
             }
@@ -216,17 +241,17 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
+            return SaveToBytesAsThis(fileToSave, saveOptions, false);
+        }
+
+        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean v2)
+        {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
-            return SaveToBytesAsThis(fileToSave, compressionType, false);
-        }
-
-        public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Int32 compressionType, Boolean v2)
-        {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+            Int32 saveType;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
             Bitmap image = fileToSave.GetBitmap();
             if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
                 throw new NotSupportedException("Only 4-bit or 8-bit images can be saved as Dynamix SCR!");
@@ -253,8 +278,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)
                 throw new NotSupportedException("LZW compression is currently not supported!");
-
-            if (image.PixelFormat == PixelFormat.Format4bppIndexed)
+            Boolean isMA8 = saveType == 1;
+            if (image.PixelFormat == PixelFormat.Format4bppIndexed || isMA8)
             {
                 UInt32 dataLen = (UInt32)data.Length;
                 Byte compression = 0;
@@ -267,7 +292,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         compression = (Byte)compressionType;
                     }
                 }
-                DynamixChunk binChunk = new DynamixChunk("BIN", compression, dataLen, data);
+                DynamixChunk binChunk = new DynamixChunk(isMA8? "MA8" : "BIN", compression, dataLen, data);
                 chunks.Add(binChunk);
             }
             else

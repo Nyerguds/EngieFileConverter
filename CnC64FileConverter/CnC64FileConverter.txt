@@ -57,7 +57,10 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
-v1.2.5: (09/11/2017 13:30)
+v1.2.6: (15/11/2017 14:32)
+-Added support for MA8 format used in the Macintosh versions of the Dynamix images.
+
+v1.2.5: (09/11/2017 13:47)
 -Fixed the X and Y trimming functions to make WSA save work correctly.
 
 v1.2.4: (20/10/2017 13:37)
