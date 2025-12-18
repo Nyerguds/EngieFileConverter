@@ -18,6 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "IgDmp"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Interactive Girls DMP file"; } }
         public override String[] FileExtensions { get { return new String[] { "dmp" }; } }
@@ -114,6 +115,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[2], widths[2], heights[2], widths[2], new Rectangle(0, halfHeight1, widths[2], heights[2]), null, true);
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[3], widths[3], heights[3], widths[3], new Rectangle(halfWidth1, halfHeight1, widths[3], heights[3]), null, true);
                     filename = baseFilePath + baseExt;
+                    this.ExtraInfo = "Composed from four files.";
                 }
             }
             if (!combined)

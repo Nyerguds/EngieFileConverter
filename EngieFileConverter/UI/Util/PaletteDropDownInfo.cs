@@ -33,7 +33,7 @@ namespace Nyerguds.Util.UI
             for (Int32 i = copiedColors; i < expectedcolors; ++i)
                 palette[i] = Color.Black;
             this.Colors = palette;
-            this.ColorBackup = palette.ToArray();
+            this.ColorBackup = ArrayUtils.CloneArray(palette);
             this.SourceFile = sourceFile;
             this.Entry = entry;
             this.PrefixIndex = prefixIndex;
@@ -43,7 +43,7 @@ namespace Nyerguds.Util.UI
 
         public Boolean IsChanged(Boolean[] currentTypeTransMask)
         {
-            Color[] compareArr = this.ColorBackup.ToArray();
+            Color[] compareArr = ArrayUtils.CloneArray(this.ColorBackup);
             PaletteUtils.ApplyPalTransparencyMask(compareArr, currentTypeTransMask);
             return !compareArr.SequenceEqual(this.Colors);
         }

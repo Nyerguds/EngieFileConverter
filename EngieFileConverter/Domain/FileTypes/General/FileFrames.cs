@@ -16,6 +16,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.FrameSet | base.FileClass; } }
         public override FileClass InputFileClass { get { return FileClass.None; } }
 
+        public override Int32 Width { get { return this.m_LoadedImage == null ? this.CheckCommonWidth() : this.m_LoadedImage.Width; } }
+        public override Int32 Height { get { return this.m_LoadedImage == null ? this.CheckCommonHeight() : this.m_LoadedImage.Height; } }
+        
         public override String ShortTypeName { get { return "Frames"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return (this.BaseType == null ? String.Empty : this.BaseType + " ") + "Frames"; } }
@@ -37,7 +40,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean FramesHaveCommonPalette { get { return this.m_CommonPalette; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return this.m_LoadedImage != null; } }
-        public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1 ? this.m_BitsPerColor : base.BitsPerPixel; } }
+        public override Int32 BitsPerPixel { get { return this.m_BitsPerPixel != -1 ? this.m_BitsPerPixel : base.BitsPerPixel; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
         public override Boolean[] TransparencyMask { get { return this.m_TransparencyMask; } }
 
@@ -53,8 +56,44 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Boolean m_CommonPalette;
         protected Int32 m_ColorsInPalette;
-        protected Int32 m_BitsPerColor;
+        protected Int32 m_BitsPerPixel;
         protected Boolean[] m_TransparencyMask;
+
+        private Int32 CheckCommonWidth()
+        {
+            Int32 nrOfFrames = FramesList.Count;
+            Int32 width = 0;
+            for (Int32 i = 0; i < nrOfFrames; i++)
+            {
+                SupportedFileType fr = this.FramesList[i];
+                Bitmap bm = fr.GetBitmap();
+                if (bm == null)
+                    return 0;
+                if (width == 0)
+                    width = bm.Width;
+                else if (width != bm.Width)
+                    return 0;
+            }
+            return width;
+        }
+
+        private Int32 CheckCommonHeight()
+        {
+            Int32 nrOfFrames = FramesList.Count;
+            Int32 height = 0;
+            for (Int32 i = 0; i < nrOfFrames; i++)
+            {
+                SupportedFileType fr = this.FramesList[i];
+                Bitmap bm = fr.GetBitmap();
+                if (bm == null)
+                    return 0;
+                if (height == 0)
+                    height = bm.Height;
+                else if (height != bm.Height)
+                    return 0;
+            }
+            return height;
+        }
 
         /// <summary>
         /// Adds a frame to the list, setting its FrameParent property to this object.
@@ -76,9 +115,9 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_CommonPalette = commonPalette;
         }
 
-        public void SetBitsPerColor(Int32 bitsPerColor)
+        public void SetBitsPerPixel(Int32 bitsPerColor)
         {
-            this.m_BitsPerColor = bitsPerColor;
+            this.m_BitsPerPixel = bitsPerColor;
         }
 
         public void SetColorsInPalette(Int32 colorsInPalette)
@@ -109,7 +148,15 @@ namespace EngieFileConverter.Domain.FileTypes
             String namepart = m.Groups[1].Value;
             String numpart = m.Groups[2].Value;
             String numpartFormat = "D" + numpart.Length;
-            UInt64 filenum = UInt64.Parse(numpart);
+            UInt64 filenum;
+            try
+            {
+                filenum = UInt64.Parse(numpart);
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
             UInt64 num = filenum;
             UInt64 minNum = filenum;
             while (File.Exists(Path.Combine(folder, namepart + num.ToString(numpartFormat) + ext)))
@@ -233,7 +280,7 @@ namespace EngieFileConverter.Domain.FileTypes
             framesContainer.SetCommonPalette(commonPalette || nullPalette);
             if (framesContainer.FramesHaveCommonPalette)
             {
-                framesContainer.SetBitsPerColor(currentType.BitsPerPixel);
+                framesContainer.SetBitsPerPixel(currentType.BitsPerPixel);
                 framesContainer.SetColorsInPalette(currentType.ColorsInPalette);
                 framesContainer.SetColors(currentType.GetColors());
             }
@@ -251,16 +298,12 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="framesRange">Arra containing the indices to paste the image on.</param>
         /// <param name="keepIndices">If all involved images are indexed, and no overflow can occur, paste bare data indices when handling indexed types rather than matching image colors to a palette.</param>
         /// <returns>A new FileFrames object containing the edited frames.</returns>
-        public static FileFrames PasteImageOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
+        public static SupportedFileType PasteImageOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
         {
-            Boolean wasCloned = false;
-            if (Image.GetPixelFormatSize(image.PixelFormat) > 8 && image.PixelFormat != PixelFormat.Format32bppArgb)
-            {
-                wasCloned = true;
-                // convert to PixelFormat.Format32bppArgb
-                image = new Bitmap(image);
-            }
+            Boolean singleImage = (framesContainer.Frames == null || framesContainer.Frames.Length == 0) && framesContainer.GetBitmap() != null;
             Int32 pasteBpp = Image.GetPixelFormatSize(image.PixelFormat);
+            if (pasteBpp > 8)
+                pasteBpp = 32;
             Color[] imPalette = pasteBpp > 8 ? null : image.Palette.Entries;
             Boolean[] imPalTrans = imPalette == null ? null : imPalette.Select(c => c.A == 0).ToArray();
             Boolean[] imTransMask = null;
@@ -269,10 +312,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imData = null;
             Int32 imStride = imWidth;
             // check if all frames have the same palette.
-            Boolean equalPal = framesContainer.FramesHaveCommonPalette;
+            Boolean equalPal = singleImage || framesContainer.FramesHaveCommonPalette;
             Color[] framePal = null;
             Int32 frameBpp = 0;
-            SupportedFileType[] frames = framesContainer.Frames;
+            SupportedFileType[] frames = singleImage ? new SupportedFileType[] {framesContainer} : framesContainer.Frames;
             Int32 nrOfFrames = frames.Length;
             if (!equalPal)
             {
@@ -307,14 +350,18 @@ namespace EngieFileConverter.Domain.FileTypes
                 name = framesContainer.LoadedFile;
             else if (framesContainer.LoadedFileName != null)
                 name = framesContainer.LoadedFileName;
-            FileFrames newfile = new FileFrames();
-            newfile.SetFileNames(name);
-            newfile.SetCommonPalette(equalPal);
-            newfile.SetBitsPerColor(framesContainer.BitsPerPixel);
-            newfile.SetColorsInPalette(equalPal && framePal != null ? framePal.Length : framesContainer.ColorsInPalette);
-            newfile.SetPalette(equalPal ? framePal : null);
-            Boolean[] transMask = framesContainer.TransparencyMask;
-            newfile.SetTransparencyMask(transMask);
+            FileFrames newfile = null;
+            if (!singleImage)
+            {
+                newfile = new FileFrames();
+                newfile.SetFileNames(name);
+                newfile.SetCommonPalette(equalPal);
+                newfile.SetBitsPerPixel(framesContainer.BitsPerPixel);
+                newfile.SetColorsInPalette(equalPal && framePal != null ? framePal.Length : framesContainer.ColorsInPalette);
+                newfile.SetPalette(equalPal ? framePal : null);
+                Boolean[] transMask = framesContainer.TransparencyMask == null ? null : ArrayUtils.CloneArray(framesContainer.TransparencyMask);
+                newfile.SetTransparencyMask(transMask);
+            }
             framesRange = framesRange.Distinct().OrderBy(x => x).ToArray();
             Int32 framesToHandle = framesRange.Length;
             Int32 nextPasteFrameIndex = 0;
@@ -353,12 +400,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     else
                     {
                         Color[] frPalette = frBm.Palette.Entries;
-                        Boolean[] transGuide = null;
                         Int32 frBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
                         Int32 frStride;
                         Byte[] frData = ImageUtils.GetImageData(frBm, out frStride);
-                        frData = ImageUtils.ConvertTo8Bit(frData, frWidth, frHeight, 0, frBpp, false, ref frStride);
-                        // determine whether the image needs to be re-matched to the palette.
+                        if(frBpp != 8)
+                            frData = ImageUtils.ConvertTo8Bit(frData, frWidth, frHeight, 0, frBpp, false, ref frStride);
+                        // determine whether the image to paste needs to be re-matched to the palette.
                         Boolean regenImage = false;
                         if (imData == null)
                             regenImage = true;
@@ -380,6 +427,7 @@ namespace EngieFileConverter.Domain.FileTypes
                                 regenImage = true;
                             }
                         }
+                        Boolean[] transGuide = null;
                         if (pasteBpp <= 8)
                         {
                             Boolean keepInd = keepIndices && pasteBpp <= frBpp;
@@ -422,6 +470,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     newBm = ImageUtils.CloneImage(frBm);
                 }
+                if (newfile == null)
+                {
+                    FileImagePng result = new FileImagePng();
+                    result.LoadFile(newBm, name);
+                    return result;
+                }
                 FileImageFrame frameCombined = new FileImageFrame();
                 frameCombined.LoadFileFrame(newfile, frame.ShortTypeDescription, newBm, name, i);
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);
@@ -430,8 +484,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameCombined.SetExtraInfo(frame.ExtraInfo);
                 newfile.AddFrame(frameCombined);
             }
-            if (wasCloned)
-                image.Dispose();
             return newfile;
         }
 
@@ -463,7 +515,7 @@ namespace EngieFileConverter.Domain.FileTypes
             FileFrames newfile = new FileFrames();
             newfile.SetFileNames(imagePath);
             newfile.SetCommonPalette(indexed);
-            newfile.SetBitsPerColor(bpp);
+            newfile.SetBitsPerPixel(bpp);
             newfile.SetPalette(imPalette);
             newfile.SetColorsInPalette(colorsInPal);
             newfile.SetTransparencyMask(null);

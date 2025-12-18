@@ -21,6 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
+        public override String IdCode { get { return "WwShpD2"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Dune II Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
@@ -238,7 +239,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     sbFrInfo.Append("None");
                 sbFrInfo.Append(")");
                 sbFrInfo.Append("\nData size: ").Append(frmDataSize).Append(" bytes @ ").Append(realReadOffset);
-                if (hasRemap) sbFrInfo.Append("\nRemap table: ").Append(String.Join(" ", remapTable.Select(b => b.ToString("X2")).ToArray()));
+                if (hasRemap)
+                    sbFrInfo.Append("\nRemap table: ").Append(String.Join(" ", remapTable.Select(b => b.ToString("X2")).ToArray()));
                 framePic.SetExtraInfo(sbFrInfo.ToString());
                 framesList[i] = framePic;
             }

@@ -11,7 +11,7 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileImageBmp : FileImage
     {
         private readonly String LOAD_ERROR = "Not a bitmap file.";
-        public override String ShortTypeName { get { return "BMP"; } }
+        public override String ShortTypeName { get { return "Bitmap"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return "Bitmap Image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
@@ -42,9 +42,9 @@ namespace EngieFileConverter.Domain.FileTypes
             try
             {
                 if (headerSize == 40)
-                    this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14);
+                    this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14, headerEnd);
                 else if (headerSize == 124)
-                    this.m_LoadedImage = DibHandler.ImageFromDib5(fileData, 14, false);
+                    this.m_LoadedImage = DibHandler.ImageFromDib5(fileData, 14, headerEnd, false);
                 else
                 {
                     // Attempt loading through the framework

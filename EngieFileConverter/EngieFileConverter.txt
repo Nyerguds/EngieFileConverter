@@ -68,7 +68,7 @@ http://www.shikadi.net/moddingwiki/Visage_Format
 The Dune II SHP format was implemented based on a document written by Ultraq, with further
 assistance from OmniBlade.
 
-The DaisyField format's encryption was vastly simplified thanks to some hints from CTPAX-X Team.
+The DaisyField format's decryption was vastly simplified thanks to some hints from CTPAX-X Team.
 
 The Interactive Girls Club bit mask compression was figured out thanks to CTPAX-X Team.
 
@@ -81,6 +81,14 @@ Engie File Converter.
 
 
 Engie File Converter versions:
+
+v1.4.7: (28/10/2019 19:01)
+-"Paste on frames" now also works for a single image.
+-Fixed flickering on zoom.
+-Added "Match to palette" function under Edit -> Colors.
+-The "Palette to image" and "4-bit palette from 8-bit palette" functions now work whenever
+ a palette is shown on the UI, including for the '-1' frame on frames with a common palette.
+-"Palette to image" will now use the name of the palette if it was selected from the dropdown.
 
 v1.4.6: (14/07/2019 12:00)
 -Fixed more bugs in palette management tool

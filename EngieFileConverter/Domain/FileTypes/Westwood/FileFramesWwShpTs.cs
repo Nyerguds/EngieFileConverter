@@ -21,6 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
+        public override String IdCode { get { return "WwShpTs"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood TS Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
@@ -489,7 +490,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             FileFrames newfile = new FileFrames();
             newfile.SetCommonPalette(true);
-            newfile.SetBitsPerColor(8);
+            newfile.SetBitsPerPixel(8);
             newfile.SetColorsInPalette(file.ColorsInPalette);
             Boolean[] transMask = file.TransparencyMask;
             newfile.SetTransparencyMask(transMask);
@@ -579,7 +580,7 @@ namespace EngieFileConverter.Domain.FileTypes
             FileFrames newfile = new FileFrames();
             newfile.SetFileNames(name);
             newfile.SetCommonPalette(true);
-            newfile.SetBitsPerColor(8);
+            newfile.SetBitsPerPixel(8);
             newfile.SetColorsInPalette(file.ColorsInPalette);
             newfile.SetTransparencyMask(transMask);
             Int32 combinedFrames = file.Frames.Length / 2;

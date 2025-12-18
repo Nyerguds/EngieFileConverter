@@ -24,6 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
+        public override String IdCode { get { return "WwWsa"; } }
         protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "Command & Conquer", "Monopoly" };
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood WSA"; } }
@@ -90,7 +91,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameNames = frameNamesList.ToArray();
             }
             List<String> chain = new List<String>();
-            Int32 index = Array.FindIndex(frameNames.ToArray(), t => String.Equals(t, originalPath, StringComparison.InvariantCultureIgnoreCase));
+            Int32 index = Array.FindIndex(frameNames, t => String.Equals(t, originalPath, StringComparison.InvariantCultureIgnoreCase));
             String lastName = null;
             for (Int32 i = index - 1; i >= 0; i--)
             {
@@ -251,7 +252,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            // Loop over all versions.
+            // Loop over all versions, most recent first.
             WsaVersion[] versions = Enum.GetValues(typeof(WsaVersion)).Cast<WsaVersion>().Reverse().ToArray();
             Int32 lenmax = versions.Length - 1;
             for (Int32 i = 0; i <= lenmax; ++i)

@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing.Imaging;
+using System.IO;
+using Nyerguds.FileData.EmotionalPictures;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Nyerguds.FileData.EmotionalPictures;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -20,6 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "CgspNova"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Nova image"; } }
         public override String[] FileExtensions { get { return new String[] { "ppp" }; } }
@@ -27,7 +25,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 ColorsInPalette { get { return this.m_PaletteLoaded ? base.ColorsInPalette : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_PaletteLoaded;
-        public Boolean StartPosSeven { get; private set; }
         
         public override void LoadFile(Byte[] fileData)
         {

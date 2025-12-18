@@ -24,6 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Int32 Width { get { return 320; } }
         public override Int32 Height { get { return 200; } }
+        public override String IdCode { get { return "DflPic"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "DaisyField Pictures"; } }
         public override String[] FileExtensions { get { return new String[] { "pic" }; } }

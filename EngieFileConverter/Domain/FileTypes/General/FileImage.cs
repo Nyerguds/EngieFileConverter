@@ -31,6 +31,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
 
+        public override String IdCode { get { return null; } }
         public override String ShortTypeName { get { return "Image"; } }
         public override String ShortTypeDescription { get { return "Image file"; } }
         public override String[] FileExtensions
@@ -71,6 +72,8 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 this.CheckSpecificFileType(fileData, filename);
                 this.m_LoadedImage = ImageUtils.LoadBitmap(fileData);
+                if (PngHandler.IsPng(fileData) && fileData[25] == 0 && fileData[24] == 16)
+                    this.ExtraInfo = "Downgraded from 16 bpp grayscale to 8 bpp.";
                 this.SetFileNames(filename);
             }
             catch (Exception ex)

@@ -24,6 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
+        public override String IdCode { get { return "FntD2k"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "IG Font (Dune 2000)"; } }
         public override String[] FileExtensions { get { return new String[] { "fnt" }; } }

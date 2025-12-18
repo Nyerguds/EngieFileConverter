@@ -13,15 +13,17 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Nyerguds.FileData.EmotionalPictures;
+using System.Drawing.Drawing2D;
 
 namespace EngieFileConverter.UI
 {
     /// <summary>
-    /// To anyone who sees this, hello! And welcome to Nyerguds's random experiments and test code! These are meant to be
-    /// linked to the [Edit] -> [Test bed] menu item through the TsmiTestBed function. Typically, only one of them is called.
-    /// I keep them all here because they often contain interesting code. Note that some code that is or was referenced here
-    /// might be from the Domain\Utils\UtilsSO.cs or Domain\Utils\ImageUtils\ImageUtilsSO.cs class, which, like this one,
-    /// does not compile in Release mode.
+    /// To anyone who sees this, hello, and welcome to Nyerguds's random experiments and test code! This code onbnly compiles in Debug mode,
+    /// and is linked to the [Edit] -> [Test bed] menu item (tsmiTestBed) through the TsmiTestBedClick function. Typically, only one of the
+    /// below functions is called. I keep them all here because they often contain interesting code, but I don't want to pollute the main 
+    /// source file of FrmFileConverter with them.
+    /// Note that some code that is referenced here might be from the Domain\Utils\UtilsSO.cs or Domain\Utils\ImageUtils\ImageUtilsSO.cs
+    /// class, which, like this one, do not compile in Release mode.
     /// </summary>
     partial class FrmFileConverter
     {
@@ -39,7 +41,15 @@ namespace EngieFileConverter.UI
             //this.ExtractInts();
             //this.DecompressPppStringsFiles();
             //this.PixelsToPalette();
-            this.ShowVids();
+            //this.ShowVids();
+            //this.GetIco();
+            //this.FixPngAspectRatio();
+            //this.MakeBorderIcon();
+            //this.DetectBlobs();
+            //this.IndexedToArgb();
+            //this.WriteIcoFileFromFrames();
+            this.ChromaKey();
+            //this.ChromaKey2();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -47,18 +57,29 @@ namespace EngieFileConverter.UI
             this.ReloadWithDispose(loadImage, true, true);
         }
 
-        private void LoadTestFile(Bitmap loadImage, String filename)
+        private void LoadTestFile(Bitmap loadImage, String filename, String extraInfo)
         {
-            FileImage fileImage = new FileImagePng();
+            if (!filename.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
+                filename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".png");
+
+            FileImagePng fileImage = new FileImagePng();
             using (MemoryStream ms = new MemoryStream())
             {
                 loadImage.Save(ms, ImageFormat.Png);
+
                 fileImage.LoadFile(ms.ToArray(), filename);
+                if (extraInfo != null)
+                    fileImage.ExtraInfo = extraInfo;
             }
             this.LoadTestFile(fileImage);
         }
 
         private void LoadTestFile(Bitmap loadImage)
+        {
+            this.LoadTestFile(loadImage, ".\\image.png", null);
+        }
+
+        private void LoadTestFile(Bitmap loadImage, String extraInfo)
         {
             this.LoadTestFile(loadImage, ".\\image.png");
         }
@@ -97,7 +118,7 @@ namespace EngieFileConverter.UI
             palette[1] = Color.FromArgb(0, Color.Fuchsia);
             palette[2] = Color.White;
             palette[3] = Color.Red;
-            ColorPalette pal = BitmapHandler.GetPalette(palette);
+            ColorPalette pal = ImageUtils.GetPalette(palette);
             Int32 frames = oneBppImage.Length / 64;
             Int32 fullWidth = 16;
             Int32 fullHeight = frames * 16;
@@ -136,7 +157,7 @@ namespace EngieFileConverter.UI
                 imageFinal = ImageUtils.ConvertFrom8Bit(imageFinal, 16, 16, 4, true, ref strideFinal);
                 Bitmap frameImage = ImageUtils.BuildImage(imageFinal, 16, 16, strideFinal, PixelFormat.Format4bppIndexed, palette, Color.Empty);
                 frameImage.Palette = pal;
-                
+
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(framesContainer, "Icon", frameImage, "Icon" + i.ToString("D3") + ".png", -1);
                 frame.SetBitsPerColor(2);
@@ -148,7 +169,7 @@ namespace EngieFileConverter.UI
             Bitmap composite = ImageUtils.BuildImage(fullImage, fullWidth, fullHeight, fullStride, PixelFormat.Format4bppIndexed, palette, Color.Empty);
             composite.Palette = pal;
             framesContainer.SetCompositeFrame(composite);
-            framesContainer.SetBitsPerColor(2);
+            framesContainer.SetBitsPerPixel(2);
             framesContainer.SetPalette(pal.Entries);
             framesContainer.SetColorsInPalette(4);
             framesContainer.SetCommonPalette(true);
@@ -163,19 +184,20 @@ namespace EngieFileConverter.UI
 
         private void LoadByteArrayImage()
         {
-            Byte[] imageBytes = {0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80 };
+            Byte[] imageBytes = {
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
+                0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80 };
             Color[] palette = new Color[0x100];
             for (Int32 i = 0; i < 0x100; ++i)
                 palette[i] = Color.FromArgb(i, i, i);
@@ -190,9 +212,9 @@ namespace EngieFileConverter.UI
             if (!File.Exists(filenameImage) || !File.Exists(filenameColors))
                 return;
             // image data
-            Bitmap im = BitmapHandler.LoadBitmap(filenameImage);
+            Bitmap im = ImageUtils.LoadBitmap(filenameImage);
             // colour data
-            Bitmap col = BitmapHandler.LoadBitmap(filenameColors);
+            Bitmap col = ImageUtils.LoadBitmap(filenameColors);
             if (im.Width != col.Width || im.Height != col.Height)
                 return;
             Int32 iStride;
@@ -226,11 +248,17 @@ namespace EngieFileConverter.UI
 
         private void ExpandRAMap()
         {
-            if (!File.Exists("SCA01EA.INI"))
+            String file = "SCG01EA";
+            String ext = ".INI";
+
+            String finalFile = file + ext;
+            if (!File.Exists(finalFile))
                 return;
-            IniFile ramap = new IniFile("SCA01EA.INI");
+            IniFile ramap = new IniFile(finalFile);
             Int32 lineNr = 1;
-            Dictionary<String, String> sectionValues = ramap.GetSectionContent("MapPack");
+            //String packedSection = "MapPack";
+            String packedSection = "OverlayPack";
+            Dictionary<String, String> sectionValues = ramap.GetSectionContent(packedSection);
             StringBuilder sb = new StringBuilder();
             while (sectionValues.ContainsKey(lineNr.ToString()))
             {
@@ -254,7 +282,9 @@ namespace EngieFileConverter.UI
                 readPtr += length;
                 writePtr += decompressed;
             }
-            File.WriteAllBytes("SCA01EA.BIN", mapFile);
+            File.WriteAllBytes(file + "." + packedSection, mapFile);
+            /*/
+            // Align from 24 to 32 bit
             Byte[] mapFile2 = new Byte[128 * 128 * 16];
             writePtr = 0;
             for (Int32 i = 0; i < mapFile.Length; i += 3)
@@ -266,6 +296,7 @@ namespace EngieFileConverter.UI
                 writePtr += 5;
             }
             File.WriteAllBytes("SCA01EA_expanded16.BIN", mapFile2);
+            //*/
         }
 
         private void MatrixImage()
@@ -284,11 +315,11 @@ namespace EngieFileConverter.UI
             using (Bitmap img = ImageUtils.BuildImage(matrix, 8, 8, 8, PixelFormat.Format8bppIndexed, PaletteUtils.GenerateGrayPalette(8, null, false), null))
                 this.LoadTestFile(img);
         }
-                
+
         private void GetColorPixel()
         {
             Bitmap bm;
-            if(this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null || (bm.PixelFormat & PixelFormat.Indexed) == 0)
+            if (this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null || (bm.PixelFormat & PixelFormat.Indexed) == 0)
                 return;
             Int32 x = 120;
             Int32 y = 96;
@@ -296,7 +327,7 @@ namespace EngieFileConverter.UI
             MessageBox.Show(this, "The index of pixel [" + x + "," + y + "] is " + pixel + ".", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        
+
         private void ExtractInts()
         {
             String s = "some text here = 5\nanother text line here = 4 with random garbage\n7\nfoo bar 9";
@@ -358,8 +389,8 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || (this.m_LoadedFile.GetBitmap()) == null)
                 return;
-            String path = Path.GetDirectoryName(m_LoadedFile.LoadedFile);
-            String name = Path.GetFileNameWithoutExtension(m_LoadedFile.LoadedFile);
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String name = Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile);
             Byte[] imageData = ImageUtils.GetImageData(this.m_LoadedFile.GetBitmap(), PixelFormat.Format24bppRgb);
             Int32 palLen = Math.Min(0x300, imageData.Length / 3 * 3);
             for (Int32 i = 0; i < palLen; i += 3)
@@ -372,9 +403,9 @@ namespace EngieFileConverter.UI
             Array.Copy(imageData, paletteData, Math.Min(0x300, imageData.Length));
             FilePalette8Bit pal = new FilePalette8Bit();
             pal.LoadFile(paletteData, Path.Combine(path, name + ".pal"));
-            LoadTestFile(pal);
+            this.LoadTestFile(pal);
         }
-        
+
         private void ShowVids()
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.LoadedFile == null || !(this.m_LoadedFile is FileImgNova || this.m_LoadedFile is FileFrames))
@@ -383,7 +414,7 @@ namespace EngieFileConverter.UI
             if (framesFile != null && !(framesFile.Frames.FirstOrDefault() is FileImgNova))
                 return;
             String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            Char[] trimRange = Enumerable.Range(0, 10).Select(n => (Char) (n + '0')).ToArray();
+            Char[] trimRange = Enumerable.Range(0, 10).Select(n => (Char)(n + '0')).ToArray();
             String filenameBase = Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile).TrimEnd(trimRange);
             FileFrames frames = new FileFrames();
             Color[] greyPal = PaletteUtils.GenerateGrayPalette(4, null, false);
@@ -394,6 +425,7 @@ namespace EngieFileConverter.UI
                 {
                     String filename = filenameBase + "." + i + "_" + j;
                     String finalName = Path.Combine(path, filename);
+                    String finalShowName = Path.Combine(path, filename.Replace('.', '_') + ".png");
                     FileInfo info = new FileInfo(finalName);
                     if (!info.Exists || info.Length != 10240)
                         continue;
@@ -401,7 +433,7 @@ namespace EngieFileConverter.UI
                     Bitmap frameImg = ImageUtils.BuildImage(imageBytes, 160, 128, 80, PixelFormat.Format4bppIndexed, greyPal, null);
                     //Headerless grayscale 160x128 4-bit images which show the striptease scenes.
                     FileImageFrame framePic = new FileImageFrame();
-                    framePic.LoadFileFrame(frames, frames, frameImg, finalName, -1);
+                    framePic.LoadFileFrame(frames, frames, frameImg, finalShowName, -1);
                     framePic.SetBitsPerColor(4);
                     framePic.SetFileClass(FileClass.Image4Bit);
                     framePic.SetColorsInPalette(16);
@@ -409,8 +441,408 @@ namespace EngieFileConverter.UI
                 }
             }
             if (frames.Frames.Length > 0)
-                LoadTestFile(frames);
+                this.LoadTestFile(frames);
         }
+
+        private void CompareMaps()
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.LoadedFile == null)
+                return;
+            String folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String folder106c = Path.Combine(folder, "106c");
+            String folderOrig = Path.Combine(folder, "orig");
+            if (!Directory.Exists(folderOrig) || !Directory.Exists(folder106c))
+                return;
+            String[] allMaps = Directory.GetFiles(folderOrig, "*.bin");
+            Int32 nrOfMaps = allMaps.Length;
+            FileFrames frames = new FileFrames();
+            for (Int32 i = 0; i < nrOfMaps; ++i)
+            {
+                String fileOrig = allMaps[i];
+                String fileName = Path.GetFileName(fileOrig);
+                String file106c = Path.Combine(folder106c, fileName);
+                Boolean fileOrigExists = File.Exists(fileOrig);
+                Boolean file106cExists = File.Exists(file106c);
+
+                FileImageFrame framePic = new FileImageFrame();
+                String newPath = Path.Combine(folder, fileName);
+                if (!fileOrigExists || !file106cExists)
+                {
+                    framePic.LoadFile(null, newPath);
+                    framePic.SetExtraInfo("Compare file not found.");
+                    frames.AddFrame(framePic);
+                    continue;
+                }
+                Byte[] mapDataOrig = File.ReadAllBytes(fileOrig);
+                Byte[] mapData106c = File.ReadAllBytes(file106c);
+
+                Byte[] imageData;
+                Int32 stride;
+                Byte colIndex;
+                Color[] colors;
+                using (FileMapWwCc1Pc mapOrig = new FileMapWwCc1Pc())
+                {
+                    mapOrig.LoadFile(mapDataOrig, fileOrig);
+                    Bitmap mappic = mapOrig.GetBitmap();
+                    imageData = ImageUtils.GetImageData(mappic, out stride, true);
+                    Color[] cols = mappic.Palette.Entries;
+                    if (cols.Length < 256)
+                    {
+                        colIndex = (Byte)cols.Length;
+                        colors = new Color[colIndex + 1];
+                        Array.Copy(cols, colors, colIndex);
+                    }
+                    else
+                    {
+                        colors = cols;
+                        colIndex = 0x20;
+                    }
+                }
+                colors[colIndex] = Color.Red;
+                const Int32 mapSize = 64 * 64;
+                List<Int32> affectedCells = new List<Int32>();
+                for (Int32 c = 0; c < mapSize; c++)
+                {
+                    Int32 mapOffs = c << 1;
+                    if (mapDataOrig[mapOffs] == mapData106c[mapOffs] && mapDataOrig[mapOffs + 1] == mapData106c[mapOffs + 1])
+                        continue;
+                    imageData[c] = colIndex;
+                    affectedCells.Add(c);
+                }
+                Bitmap bm = ImageUtils.BuildImage(imageData, 64, 64, stride, PixelFormat.Format8bppIndexed, colors, null);
+                framePic.LoadFile(bm, newPath);
+                if (affectedCells.Count > 0)
+                    framePic.SetExtraInfo("Changed cells: " + String.Join(", ", affectedCells.Select(c => c.ToString()).ToArray()));
+                frames.AddFrame(framePic);
+            }
+            if (frames.Frames.Length > 0)
+                this.LoadTestFile(frames);
+        }
+
+
+        private void GetIco()
+        {
+            if (this.m_LoadedFile == null)
+                return;
+            SupportedFileType[] frames = this.m_LoadedFile.Frames;
+            Bitmap curBm = this.m_LoadedFile.GetBitmap();
+            List<Image> images = new List<Image>();
+            if (frames != null && frames.Length > 0)
+            {
+                foreach (SupportedFileType frame in frames)
+                {
+                    Bitmap frImg = frame.GetBitmap();
+                    if (frImg == null || frImg.Width > 256 || frImg.Height > 256)
+                        continue;
+                    images.Add(frImg);
+                }
+            }
+            else if (curBm != null && curBm.Width <= 256 && curBm.Height <= 256)
+            {
+                images.Add(curBm);
+            }
+            if (images.Count == 0)
+                return;
+            Byte[] contents;
+            // Set program icon to this, as quick test.
+            this.Icon = ImageUtilsSO.ConvertImagesToIco(images.ToArray(), out contents);
+            // Content of Images comes from loaded file, so don't dispose them. The LoadTestFile function will take care of that.
+            FileIcon ic = new FileIcon();
+            ic.LoadFile(contents, Path.Combine(Path.GetDirectoryName(this.m_LoadedFile.LoadedFile), Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile) + ".ico"));
+            this.LoadTestFile(ic);
+        }
+
+        private void FixPngAspectRatio()
+        {
+            if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile))
+                return;
+            String folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String[] files = Directory.GetFiles(folder, "*.png");
+            foreach (String file in files)
+                this.FixPngAspectRatio(file);    
+        }
+
+        private void FixPngAspectRatio(String path)
+        {
+            const String physChunkId = "pHYs";
+            // Read bytes
+            Byte[] pngBytes;
+            try { pngBytes = File.ReadAllBytes(path); }
+            catch { return; /* Not dealing with this. Just abort. */ }
+            // Checks
+            if (!PngHandler.IsPng(pngBytes))
+                return;
+            Int32 physLoc = PngHandler.FindPngChunk(pngBytes, physChunkId);
+            if (physLoc == -1)
+                return;
+            Byte[] pngChunk = PngHandler.GetPngChunkData(pngBytes, physLoc);
+            if (pngChunk.Length != 9)
+                return;
+            UInt32 dimX = (UInt32)ArrayUtils.ReadIntFromByteArray(pngChunk, 0, 4, false);
+            UInt32 dimY = (UInt32)ArrayUtils.ReadIntFromByteArray(pngChunk, 4, 4, false);
+            if (dimX == dimY)
+                return;
+
+            // Fix segment
+            ArrayUtils.WriteIntToByteArray(pngChunk, 0, 4, false, 0xEC3);
+            ArrayUtils.WriteIntToByteArray(pngChunk, 4, 4, false, 0xEC3);
+            PngHandler.WritePngChunk(pngBytes, physLoc, physChunkId, pngChunk);
+
+            // Make backup
+            String folder = Path.GetDirectoryName(path);
+            String origFolder = Path.Combine(folder, "orig");
+            if (!Directory.Exists(origFolder))
+                Directory.CreateDirectory(origFolder);
+            String backup = Path.Combine(origFolder, Path.GetFileName(path));
+            File.Copy(path, backup);
+            
+            // Save changes
+            File.WriteAllBytes(path, pngBytes);
+        }
+
+        private void MakeBorderIcon()
+        {
+            Int32 size = 34;
+            Int32 borderSize = 2;
+            PixelFormat pixelFormat = PixelFormat.Format1bppIndexed;
+            Int32 stride = size;
+            Byte[] pixels = new Byte[size * stride];
+
+            Color[] palette = new Color[]{ Color.Pink, Color.Green };
+
+            Byte paintIndex = 1;
+            borderSize = Math.Min(borderSize, size);
+
+            // Horizontal: just fill the whole block.
+
+            // Top line
+            Int32 end = stride * borderSize;
+            for (Int32 i = 0; i < end; i++)
+                pixels[i] = paintIndex;
+
+            // Bottom line
+            end = stride * size;
+            for (Int32 i = stride * (size - borderSize); i < end; i++)
+                pixels[i] = paintIndex;
+
+            // Vertical: Both loops are inside the same y loop. It only goes over
+            // the space between the already filled top and bottom parts.
+            Int32 lineStart = borderSize * stride;
+            Int32 yEnd = size - borderSize;
+            Int32 rightStart = size - borderSize;
+            for (Int32 y = borderSize; y < yEnd; y++)
+            {
+                // left line
+                for (Int32 x = 0; x < borderSize; x++)
+                    pixels[lineStart + x] = paintIndex;
+                // right line
+                for (Int32 x = rightStart; x < size; x++)
+                    pixels[lineStart + x] = paintIndex;
+                lineStart += stride;
+            }
+
+            if (pixelFormat == PixelFormat.Format1bppIndexed)
+                pixels = ImageUtils.ConvertFrom8Bit(pixels, size, size, 1, true, ref stride);
+
+            Bitmap bm2 = ImageUtils.BuildImage(pixels, size, size, stride, pixelFormat, palette, Color.Black);
+            this.LoadTestFile(bm2);
+        }
+
+        private void DetectBlobs()
+        {
+            Bitmap bm;
+            if (this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null)
+                return;
+            List<List<Point>> blobs = BlobDetection.FindBlobs(bm, true, 0.5f, -1, true);
+            Bitmap bm2 = new Bitmap(bm);
+            foreach (List<Point> blob in blobs)
+            {
+                Point center = BlobDetection.GetBlobCenter(blob);
+                foreach (Point p in blob)
+                    bm2.SetPixel(p.X, p.Y, Color.Blue);
+                bm2.SetPixel(center.X-1, center.Y, Color.Red);
+                bm2.SetPixel(center.X, center.Y, Color.Red);
+                bm2.SetPixel(center.X+1, center.Y, Color.Red);
+                bm2.SetPixel(center.X, center.Y-1, Color.Red);
+                bm2.SetPixel(center.X, center.Y+1, Color.Red);
+            }
+            this.LoadTestFile(bm2, m_LoadedFile.LoadedFile, "Detected blobs: " + blobs.Count);
+        }
+
+        private void IndexedToArgb()
+        {
+            Bitmap bm;
+            if (this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null || bm.PixelFormat != PixelFormat.Format8bppIndexed)
+                return;
+            Int32 stride;
+            Int32 width = bm.Width;
+            Int32 height = bm.Height;
+            Byte[] data = ImageUtils.GetImageData(bm, out stride);
+            Color[] cols = bm.Palette.Entries;
+            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(cols);
+
+            Byte[] palette = ColorUtils.GetSixBitPaletteData(sbcp);
+
+            // Used data:
+            // Byte[] data = image data
+            // Byte[] palette = 6-bit palette
+            // Int32 stride = number of bytes on one line of the image
+            // Int32 width = image width
+            // Int32 height = image height
+
+            for (Int32 t = 0; t < 0x300; ++t)
+                palette[t] = (Byte) (palette[t] * 4);
+            Int32 lineOffset = 0;
+            Int32 lineOffsetQuad = 0;
+            Int32 strideQuad = width * 4;
+            Byte[] dataArgb = new Byte[strideQuad * height];
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 offset = lineOffset;
+                Int32 outOffset = lineOffsetQuad;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    // get colour index, then get the correct location in the palette array
+                    // by multiplying it by 3 (the length of one full colour)
+                    Int32 colIndex = data[offset++] * 3;
+                    dataArgb[outOffset++] = palette[colIndex + 2]; // Blue
+                    dataArgb[outOffset++] = palette[colIndex + 1]; // Green
+                    dataArgb[outOffset++] = palette[colIndex]; // Red
+                    dataArgb[outOffset++] = (colIndex == 0 ? (Byte) 0 : (Byte) 255); // Alpha: set to 0 for background black
+                }
+                lineOffset += stride;
+                lineOffsetQuad += strideQuad;
+            }
+            Bitmap bm2 = ImageUtils.BuildImage(dataArgb, width, height, strideQuad, PixelFormat.Format32bppArgb, null, null);
+            this.LoadTestFile(bm2);
+        }
+
+        private void WriteIcoFileFromFrames()
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || m_LoadedFile.LoadedFile == null)
+                return;
+            Int32 frameNr = this.m_LoadedFile.Frames.Length;
+            List<Image> images = new List<Image>();
+            for (Int32 i = 0; i < frameNr; ++i)
+            {
+                Bitmap bm = this.m_LoadedFile.Frames[i].GetBitmap();
+                if (bm != null)
+                    images.Add(bm);
+            }
+            Byte[] fileBytes = FileIcon.ConvertImagesToIcoBytes(images.ToArray());
+            File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(m_LoadedFile.LoadedFile), "test.ico"), fileBytes);
+        }
+
+        private void ChromaKey()
+        {
+            Bitmap bm;
+            if (this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null)
+                return;
+            Int32 stride;
+            Byte[] imageData = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format32bppArgb);
+            Int32 width = bm.Width;
+            Int32 height = bm.Height;
+
+            Color chroma = Color.Aquamarine;
+            Double chromaHue = chroma.GetHue();
+            Double hueThreshold = 50.0;
+            Double satThreshold = 0.2;
+            Double briThreshold = 0.2;
+            Int32 lineOffset = 0;
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 offsetQuad = lineOffset-4;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    offsetQuad += 4;
+
+                    Byte b = imageData[offsetQuad + 0];
+                    Byte g = imageData[offsetQuad + 1];
+                    Byte r = imageData[offsetQuad + 2];
+                    Byte a = imageData[offsetQuad + 3];
+                    Color c = Color.FromArgb(a, r, g, b);
+                    Double cHue = c.GetHue();
+                    Double cSat = c.GetSaturation();
+                    Double cBri = c.GetBrightness();
+                    Double hueDiff = Math.Min(Math.Abs(chromaHue - cHue), 360 - Math.Abs(chromaHue - cHue));
+
+                    if (cSat < satThreshold || cBri < briThreshold || hueDiff > hueThreshold)
+                        continue;
+                    Byte grayVal = (Byte) Math.Min((r * 0.3) + (g * 0.59) + (b * 0.11), 255);
+                    imageData[offsetQuad + 0] = grayVal;
+                    imageData[offsetQuad + 1] = grayVal;
+                    imageData[offsetQuad + 2] = grayVal;
+                    imageData[offsetQuad + 3] = (Byte)Math.Min(((180 - hueDiff) * 255 / 360), 255);
+                }
+                lineOffset += stride;
+            }
+            lineOffset = 0;
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 offsetQuad = lineOffset-4;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    offsetQuad += 4;
+                    Byte b = imageData[offsetQuad + 0];
+                    Byte g = imageData[offsetQuad + 1];
+                    Byte r = imageData[offsetQuad + 2];
+                    Color c = Color.FromArgb(r, g, b);
+                    Double cHue = c.GetHue();
+                    Double cSat = c.GetSaturation();
+                    Double cBri = c.GetBrightness();
+
+                    if (cHue >= 60 && cHue <= 130 && cSat >= 0.15 && cBri > 0.15)
+                    {
+                        if ((r * b) != 0 && (g * g) / (r * b) >= 1.5)
+                        {
+                            imageData[offsetQuad + 0] = (Byte) Math.Max(r * 1.4, 255);
+                            imageData[offsetQuad + 1] = g;
+                            imageData[offsetQuad + 2] = (Byte) Math.Max(b * 1.4, 255);
+                        }
+                        else
+                        {
+                            imageData[offsetQuad + 0] = (Byte) Math.Max(r * 1.2, 255);
+                            imageData[offsetQuad + 1] = g;
+                            imageData[offsetQuad + 2] = (Byte) Math.Max(b * 1.2, 255);
+                        }
+                    }
+                }
+            }
+
+
+            Bitmap bmNew = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format32bppArgb, null, null);
+            this.LoadTestFile(bmNew);
+        }
+
+        private void ChromaKey2()
+        {
+            Bitmap bm;
+            if (this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null)
+                return;
+            Color low_color = Color.Green;
+            Color high_color = Color.White;
+            ImageAttributes imageAttr = new ImageAttributes();
+            imageAttr.SetColorKey(low_color, high_color);
+
+            // Make the result image.
+            int width = bm.Width;
+            int height = bm.Height;
+            Bitmap bmNew = new Bitmap(width, height);
+
+            // Process the image.
+            using (Graphics gr = Graphics.FromImage(bmNew))
+            {
+                // Fill with magenta.
+                //gr.Clear(Color.Magenta);
+
+                // Copy the original image onto the result
+                // image while using the ImageAttributes.
+                Rectangle dest_rect = new Rectangle(0, 0, width, height);
+                gr.DrawImage(bm, dest_rect, 0, 0, width, height, GraphicsUnit.Pixel, imageAttr);
+            }
+            this.LoadTestFile(bmNew);
+        }
+
     }
 }
 #endif

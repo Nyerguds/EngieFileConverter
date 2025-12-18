@@ -53,7 +53,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return null;
             originalPath = Path.GetFullPath(originalPath);
             // The function from FileFrames returns the whole range, which might be too much. Find the actual file we started from.
-            Int32 index = Array.FindIndex(frameNames.ToArray(), t => String.Equals(t, originalPath, StringComparison.InvariantCultureIgnoreCase));
+            Int32 index = Array.FindIndex(frameNames, t => String.Equals(t, originalPath, StringComparison.InvariantCultureIgnoreCase));
             // Check previous files until finding one with an initial frame.
             List<String> chain = new List<String>();
             for (Int32 i = index - 1; i >= 0; i--)
@@ -366,7 +366,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 arraySize = imageWidth * imageHeight;
             if (initialFrameData != null && initialFrameData.Length != arraySize)
                 throw new FileTypeLoadException("Bad start frame data length!");
-            Byte[] imageData = initialFrameData == null ? null : initialFrameData.ToArray();
+            Byte[] imageData = initialFrameData == null ? null : ArrayUtils.CloneArray(initialFrameData);
 
             Boolean[] pasteTransMask = base.TransparencyMask;
             Boolean[] imageTransMask = pasteTransMask;
@@ -410,6 +410,8 @@ namespace EngieFileConverter.Domain.FileTypes
                         PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, imageTransMask);
                     }
                     Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
+                    // TEST
+                    //imageData = null;
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
                     frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
@@ -635,7 +637,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 stride;
                 Bitmap currentImage = frame.GetBitmap();
                 Byte[] imageData = ImageUtils.GetImageData(currentImage, out stride, true);
-                Byte[] imageDataOpt = imageData.ToArray();
+                Byte[] imageDataOpt = ArrayUtils.CloneArray(imageData);
                 Int32 prevOffs = 0;
                 Int32 frameOffs = 0;
                 for (Int32 y = 0; y < origHeight; ++y)

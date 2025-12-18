@@ -18,7 +18,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.Info = info;
-            this.chkOption.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+            this.chkOption.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
             this.chkOption.Checked = GeneralUtils.IsTrueValue(this.Info.SaveData);
         }
         

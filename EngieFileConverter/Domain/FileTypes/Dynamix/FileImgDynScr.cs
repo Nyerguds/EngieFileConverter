@@ -16,6 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "DynScr"; } }
         public override String[] FileExtensions { get { return new String[] { "scr" }; } }
         public override String ShortTypeName { get { return "Dynamix SCR"; } }
         public override String ShortTypeDescription { get { return "Dynamix Screen file v1"; } }
@@ -244,7 +245,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Color[] Make4BitPalette(Color[] col)
         {
             if (col.Length < 256)
-                return col.ToArray();
+                return ArrayUtils.CloneArray(col);
             Color[] fourbitpal = new Color[16];
             for (Int32 i = 0; i < 16; ++i)
                 fourbitpal[i] = col[i * 16 + 3];
@@ -254,7 +255,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Color[] Set4BitPalette(Color[] fullPal, Color[] fourbitpal)
         {
             if (fullPal.Length < 256 || fourbitpal.Length != 16)
-                return fullPal.ToArray();
+                return ArrayUtils.CloneArray(fullPal);
             for (Int32 i = 0; i < 16; ++i)
                 fullPal[i * 16 + 3] = fourbitpal[i];
             return fullPal;

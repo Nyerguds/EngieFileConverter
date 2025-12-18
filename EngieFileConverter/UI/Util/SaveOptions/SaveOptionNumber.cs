@@ -48,7 +48,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.Info = info;
-            this.lblName.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+            this.lblName.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
             this.numValue.Text = this.Info.SaveData;
             String init = this.Info.InitValue;
             this.m_minimum = null;

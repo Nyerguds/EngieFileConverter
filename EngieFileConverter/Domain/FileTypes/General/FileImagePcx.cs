@@ -13,6 +13,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImagePcx: SupportedFileType
     {
+        public override String IdCode { get { return "PCX"; } }
         public override String ShortTypeName { get { return "PCX"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return "ZSoft Picture Exchange Format"; } }
@@ -115,6 +116,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 endOfData = (UInt32)(128 + fullSize);
             }
             //System.IO.File.WriteAllBytes(filename + ".raw", imageData);
+            m_BitsPerPixel = numPlanes * bitsPerPlane;
             PixelFormat pf = PixelFormat.Undefined;
             StringBuilder extraInfo = new StringBuilder("Version: ").Append(version).Append(": ");
             switch (version)
@@ -124,6 +126,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
                 case 2:
                     extraInfo.Append("v2.8, with pal info");
+                    if (m_BitsPerPixel == 1)
+                        extraInfo.Append(" (unused for 1bpp)");
                     break;
                 case 3:
                     extraInfo.Append("v2.8, no pal info");
@@ -149,7 +153,6 @@ namespace EngieFileConverter.Domain.FileTypes
             if (windowXmin != 0 || windowYmin != 0)
                 extraInfo.Append("\nImage is shifted down to (").Append(windowXmin).Append(",").Append(windowYmin).Append(")");
 
-            m_BitsPerPixel = numPlanes * bitsPerPlane;
             Int32 nrOfcolors = 1 << m_BitsPerPixel;
             m_ColorsInPalette = nrOfcolors > 0x100 ? 0 : nrOfcolors;
             extraInfo.Append("\n").Append(numPlanes).Append("-plane, ").Append(bitsPerPlane).Append(" bpp, ").Append(nrOfcolors).Append(" color image.");
@@ -181,7 +184,8 @@ namespace EngieFileConverter.Domain.FileTypes
                             m_Palette = LoadPaletteCga(fileData, palOffset, paletteInfo, bitsPerPlane);
                             extraInfo.Append("\nHandled as CGA");
                         }
-                        else if (version <= 3 || (version < 5 && paletteInfo != 1))
+                        //else if (version == 1 || version == 3 || (version == 4 && paletteInfo != 1))
+                        else if (version <= 3 || (version == 4 && paletteInfo != 1))
                             m_Palette = new[] {Color.Black, Color.White};
                         else
                             m_Palette = ColorUtils.ReadEightBitPaletteFrom(fileData, palOffset, nrOfcolors);
@@ -293,6 +297,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
+            throw new NotSupportedException();
             if (fileToSave.IsFramesContainer && fileToSave.Frames != null)
                 throw new NotSupportedException("PCX does not allow frames input.");
             Color[] palEntries = fileToSave.GetColors();
@@ -325,7 +330,8 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Byte[] bytes = new Byte[0];
             // TODO
-            return bytes;
+            throw new NotSupportedException();
+            //return bytes;
         }
 
     }

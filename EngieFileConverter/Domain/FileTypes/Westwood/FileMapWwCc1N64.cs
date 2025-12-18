@@ -28,6 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return mapPc.N64MapData;
         }
 
+        /*/
         protected override Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile)
         {
             if (fileData.Length != 8192)
@@ -42,8 +43,9 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.N64MapData = fileData;
             this.PCMapData = this.IdentifyTheaterAndConvert(fileData, ref theater, true, sourceFile);
-            return this.ReadMapAsImage(this.PCMapData, theater);
+            return this.ReadMapAsImage(this.PCMapData, theater, Rectangle.Empty);
         }
+        //*/
     }
 
     public class FileMapWwCc1N64FromIni : FileMapWwCc1N64

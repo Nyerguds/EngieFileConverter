@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Windows.Forms;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util.UI;
-using Nyerguds.Util;
 
 namespace EngieFileConverter.UI
 {
@@ -22,7 +20,6 @@ namespace EngieFileConverter.UI
         public Color[] MatchPalette { get; private set; }
 
         private PaletteDropDownInfo[] m_allPalettes;
-        private const String AllowedCharsMask = "01243456789-, ";
 
         public Int32[] CustomColors
         {
@@ -239,7 +236,7 @@ namespace EngieFileConverter.UI
             this.Close();
         }
 
-        private void BtnImportClick(Object sender, EventArgs e)
+        private void BtnConvertClick(Object sender, EventArgs e)
         {
             this.FrameWidth = (Int32)this.numWidth.Value;
             this.FrameHeight = (Int32)this.numHeight.Value;
@@ -268,5 +265,11 @@ namespace EngieFileConverter.UI
             }
             base.Dispose(disposing);
         }
+
+        private void lblCurFrame_Click(object sender, EventArgs e)
+        {
+
+        }
+
     }
 }

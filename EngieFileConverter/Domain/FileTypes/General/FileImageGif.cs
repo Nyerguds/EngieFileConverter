@@ -42,7 +42,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Color[] GetColors()
         {
-            return m_Palette == null ? new Color[0] : m_Palette.ToArray();
+            return m_Palette == null ? new Color[0] : ArrayUtils.CloneArray(m_Palette);
         }
 
         public FileImageGif() {}

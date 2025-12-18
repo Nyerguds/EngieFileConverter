@@ -21,7 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
-        //protected String[] formats = new String[] { "Dune II", "Legend of Kyrandia", "C&C1/RA1", "Tiberian Sun" };
+        public override String IdCode { get { return "WwShpCc"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood C&C1 Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
@@ -216,6 +216,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     framePic.SetBitsPerColor(this.BitsPerPixel);
                     framePic.SetFileClass(this.FrameInputFileClass);
                     framePic.SetColorsInPalette(this.ColorsInPalette);
+                    // Get compression info for UI
                     StringBuilder extraInfo = new StringBuilder("Compression: ");
                     if (frameOffsFormat == CcShpFrameFormat.Lcw)
                     {
@@ -229,14 +230,30 @@ namespace EngieFileConverter.Domain.FileTypes
                         extraInfo.Append("XOR ");
                         if (frameOffsFormat == CcShpFrameFormat.XorChain)
                         {
-                            extraInfo.Append("chained from ").Append(refIndex20);
+                            extraInfo.Append("chained from frame ").Append(refIndex20);
                             if (refIndex20 != i - 1)
                                 extraInfo.Append(" - ").Append(i - 1);
                         }
-                        else if (refIndex >= 0)
-                            extraInfo.Append("with key frame " + refIndex);
                         else
-                            extraInfo.Append("with LCW data at 0x" + currentFrame.ReferenceOffset.ToString("X"));
+                        {
+                            if (refIndex < 0)
+                            {
+                                // The referenced LCW data is not the last keyframe. Look up which frame it is.
+                                Int32 refOffs = currentFrame.ReferenceOffset;
+                                for (Int32 j = 0; j < i; ++j)
+                                {
+                                    OffsetInfo frInfo = offsets[j];
+                                    if (frInfo.DataFormat != CcShpFrameFormat.Lcw || frInfo.DataOffset != refOffs)
+                                        continue;
+                                    refIndex = j;
+                                    break;
+                                }
+                            }
+                            if (refIndex >= 0)
+                                extraInfo.Append("with key frame " + refIndex);
+                            else // LCW data that's not in the index so far. I dunno. Just say where it's read from.
+                                extraInfo.Append("with LCW data at 0x" + currentFrame.ReferenceOffset.ToString("X"));
+                        }
 
                     }
                     Int32 frDataSize = frameEnd - frameStart;

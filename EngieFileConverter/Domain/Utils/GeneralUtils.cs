@@ -242,14 +242,9 @@ namespace Nyerguds.Util
             return numbers.Distinct().ToArray();
         }
 
-        public static String DoubleFirstAmpersand(String input)
+        public static String DoubleAmpersands(String input)
         {
-            if (input == null)
-                return null;
-            Int32 index = input.IndexOf('&');
-            if (index == -1)
-                return input;
-            return input.Substring(0, index) + '&' + input.Substring(index);
+            return input == null ? null : input.Replace("&", "&&");
         }
 
         public static T ToBounds<T>(this T value, T min, T max) where T : IComparable

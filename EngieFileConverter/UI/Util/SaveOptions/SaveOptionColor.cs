@@ -43,7 +43,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             {
                 m_Loading = true;
                 this.Info = info;
-                this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+                this.lblDescription.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
                 String initVal = String.IsNullOrEmpty(this.Info.InitValue) ? String.Empty : this.Info.InitValue.Trim();
                 Char transOptions = initVal.Length == 0 ? '\0' : this.Info.InitValue.Trim()[0];
                 chkTransparent.Enabled = false;

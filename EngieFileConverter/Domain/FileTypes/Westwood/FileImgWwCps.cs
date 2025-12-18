@@ -24,6 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public CpsVersion CpsVersion { get; protected set; }
         protected String[] compressionTypes = new String[] { "No compression", "LZW-12", "LZW-14", "RLE", "LCW" };
 
+        public override String IdCode { get { return "WwCps"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood CPS"; } }
         public override String[] FileExtensions { get { return new String[] {"cps"}; } }

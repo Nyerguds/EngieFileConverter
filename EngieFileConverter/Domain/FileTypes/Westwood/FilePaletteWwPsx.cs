@@ -9,6 +9,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FilePaletteWwPsx : SupportedFileType
     {
+        public override String IdCode { get { return "WwPalPsx"; } }
         protected SupportedFileType[] m_FramesList;
         public override FileClass FileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
@@ -73,7 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.m_FramesList = new SupportedFileType[nrOfPalettes];
             Int32 stride = 16;
-            Byte[] imageData = Enumerable.Range(0, 256).Select(x => (Byte) x).ToArray();
+            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte) x).ToArray();
 
             Int32 remainingHeight = m_Height;
             for (Int32 i = 0; i < nrOfPalettes; ++i)
@@ -93,7 +94,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_FramesList[i] = frame;
                 remainingHeight -= 16;
             }
-            Byte[] fileData2 = fileData.ToArray();
+            Byte[] fileData2 = ArrayUtils.CloneArray(fileData);
             PixelFormatter.ReorderBits(fileData2, 16, m_Height, 32, pf, PixelFormatter.Format16BitArgb1555);
             Bitmap fullImage = ImageUtils.BuildImage(fileData2, 16, m_Height, 32, PixelFormat.Format16bppArgb1555, null, null);
             this.m_LoadedImage = fullImage;

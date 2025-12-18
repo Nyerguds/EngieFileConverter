@@ -19,6 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte hdrColorFormat;
         protected Int32 hdrColorsInPalette;
 
+        public override String IdCode { get { return "WwImg64"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
@@ -135,7 +136,31 @@ namespace EngieFileConverter.Domain.FileTypes
                 imageData = new Byte[imageDataSize];
                 Array.Copy(fileData, hdrDataOffset, imageData, 0, Math.Min(fileData.Length - hdrDataOffset, imageDataSize));
                 if (this.hdrColorFormat == 2)
+                {
                     PixelFormatter.ReorderBits(imageData, hdrWidth, hdrHeight, stride, Format16BitRgba5551Be, PixelFormatter.Format16BitArgb1555);
+                    /*/
+                    Byte[] imageData2 = new Byte[hdrWidth * hdrHeight];
+                    Int32 yOffs = 0;
+                    Int32 yOffs2 = 0;
+                    for (Int32 y = 0; y < hdrHeight; ++y)
+                    {
+                        Int32 offs = yOffs;
+                        Int32 offs2 = yOffs2;
+                        for (Int32 x = 0; x < hdrWidth; ++x)
+                        {
+                            UInt16 val = (UInt16) ArrayUtils.ReadIntFromByteArray(imageData, offs, 2, false);
+                            imageData2[offs2] = (Byte)(val >> 8);
+                            offs += 2;
+                            offs2 ++;
+                        }
+                        yOffs += stride;
+                        yOffs2 += hdrWidth;
+                    }
+                    imageData = imageData2;
+                    stride = hdrWidth;
+                    hdrColorFormat = 1;
+                    //*/
+                }
                 if (hdrPaletteOffset != 0)
                 {
                     Int32 palSize = hdrBytesPerColor * this.hdrColorsInPalette;
@@ -203,11 +228,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                     imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppArgb1555, true);
+                PixelFormatter.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555, Format16BitRgba5551Be);
             }
             else
                 imageData = ImageUtils.GetImageData(image, out stride, true);
-            if (colorFormat == 2)
-                PixelFormatter.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555, Format16BitRgba5551Be);
             Byte[] paletteData;
             Int32 paletteColors;
             if (colorFormat == 2 || !savePalette)

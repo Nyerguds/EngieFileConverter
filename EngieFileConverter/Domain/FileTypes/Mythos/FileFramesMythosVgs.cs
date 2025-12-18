@@ -28,6 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "MythVgs"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos Visage"; } }
         public override String[] FileExtensions { get { return new String[] { "vgs", "lbv", "all" }; } }
@@ -41,7 +42,6 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Int32 m_Width = 0;
         protected Int32 m_Height = 0;
 
-        /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }

@@ -23,6 +23,8 @@ namespace EngieFileConverter.Domain.FileTypes
         public abstract FileClass InputFileClass { get; }
         /// <summary>Type to be accepted as frames. Override this for frame types.</summary>
         public virtual FileClass FrameInputFileClass { get { return FileClass.None; } }
+        /// <summary>Unique identifier for this type. Use null for types that do not represent actual specific file types.</summary>
+        public abstract String IdCode { get; }
         /// <summary>Very short code name for this type.</summary>
         public virtual String ShortTypeName { get { return this.FileExtensions.Length > 0 ? this.FileExtensions[0].ToUpper() : this.GetType().Name; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -49,13 +51,16 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual Boolean IsFramesContainer { get { return this.Frames != null; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
         public virtual Boolean FramesHaveCommonPalette { get { return this.IsFramesContainer; } }
+        ///// <summary>Returns true if the frames inside this frame container have individual filenames.</summary>
+        //public virtual Boolean FramesHaveNames { get { return false; } }
+
         /// <summary>
         /// This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source, and can normally also be saved from a single-image source.
         /// This setting should be ignored for types that are not set to IsFramesContainer.
         /// </summary>
         public virtual Boolean HasCompositeFrame { get { return false; } }
         /// <summary>Extra info to be shown on the UI, like detected internal compression type in a loaded file.</summary>
-        public virtual String ExtraInfo { get; protected set; }
+        public virtual String ExtraInfo { get; set; }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.</summary>
         public virtual Boolean[] TransparencyMask { get { return null; } }
 
@@ -145,6 +150,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (palette == null || palette.Length == 0)
                 return;
             Boolean isInternal = this.ColorsInPalette > 0;
+            if (updateSource != null && isInternal)
+                return;
             if (this.BitsPerPixel != 0)
             {
                 Int32 maxLen = 1 << this.BitsPerPixel;
@@ -162,7 +169,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 Color[] testpal;
                 if (this.m_BackupPalette == null && (testpal = this.GetColors()) != null && testpal.Length != 0 && isInternal)
-                    this.m_BackupPalette = this.m_Palette == null ? (this.m_LoadedImage == null ? null : this.m_LoadedImage.Palette.Entries) : this.m_Palette.ToArray();
+                    this.m_BackupPalette = this.m_Palette == null ? (this.m_LoadedImage == null ? null : this.m_LoadedImage.Palette.Entries) : ArrayUtils.CloneArray(this.m_Palette);
                 this.m_Palette = pal;
                 if (this.m_LoadedImage != null)
                 {
@@ -213,7 +220,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual void ResetColors()
         {
             // Should already be applied.
-            //Color[] backup = this.m_BackupPalette.ToArray();
+            //Color[] backup = ArrayUtils.CloneArray(this.m_BackupPalette);
             //PaletteUtils.ApplyPalTransparencyMask(backup, TransparencyMask);
             this.SetColors(this.m_BackupPalette, null);
         }
@@ -325,6 +332,8 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePaletteWwPsx),
             typeof(FileFramesDfPic),
             typeof(FileFramesIgcSlb), // Experimental
+            typeof(FileFramesLadyGl),
+            typeof(FileImgLadyTme),
             typeof(FileImgIgcGx2),
             typeof(FileImgIgcDmp),
             typeof(FileImgNova),
@@ -462,14 +471,14 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 #endif
         /// <summary>Lists all types that will appear in the Open File menu.</summary>
-        public static Type[] SupportedOpenTypes { get { return m_supportedOpenTypes.ToArray(); } }
+        public static Type[] SupportedOpenTypes { get { return ArrayUtils.CloneArray(m_supportedOpenTypes); } }
         /// <summary>Lists all types that can appear in the Save File menu.</summary>
-        public static Type[] SupportedSaveTypes { get { return m_supportedSaveTypes.ToArray(); } }
+        public static Type[] SupportedSaveTypes { get { return ArrayUtils.CloneArray(m_supportedSaveTypes); } }
         /// <summary
         /// >Lists all types that can be autodetected, in the order they will be detected. Note that as a first step,
         /// all types which contain the requested file's extension are filtered out and checked.
         /// </summary>
-        public static Type[] AutoDetectTypes { get { return m_autoDetectTypes.ToArray(); } }
+        public static Type[] AutoDetectTypes { get { return ArrayUtils.CloneArray(m_autoDetectTypes); } }
 
         /// <summary>
         /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.

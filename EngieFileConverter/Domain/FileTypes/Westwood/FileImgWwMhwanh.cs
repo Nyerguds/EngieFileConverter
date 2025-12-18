@@ -14,6 +14,7 @@ namespace EngieFileConverter.Domain.FileTypes
     /// </summary>
     class FileImgWwMhwanh: SupportedFileType
     {
+        public override String IdCode { get { return "HsiRaw"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "HSI Raw"; } }
         public override String[] FileExtensions { get { return new String[] { "raw", "jap" }; } }
@@ -65,15 +66,18 @@ namespace EngieFileConverter.Domain.FileTypes
                 imgDataLen *= 3;
             if (fileData.Length != headerSize + palDataLen + imgDataLen)
                 throw new FileTypeLoadException("File length does not match.");
-            m_Palette = _IsHighCol ? null : new Color[_PaletteSize];
+            m_Palette = null;;
             Int32 readOffs = headerSize;
-            for (Int32 i = 0; i < _PaletteSize; ++i)
+            if (!_IsHighCol)
             {
-                m_Palette[i] = Color.FromArgb(fileData[readOffs], fileData[readOffs + 1], fileData[readOffs + 2]);
-                readOffs += 3;
+                m_Palette = new Color[_PaletteSize];
+                for (Int32 i = 0; i < _PaletteSize; ++i)
+                {
+                    m_Palette[i] = Color.FromArgb(fileData[readOffs], fileData[readOffs + 1], fileData[readOffs + 2]);
+                    readOffs += 3;
+                }
             }
-            Byte[] imageData = new Byte[imgDataLen]; 
-            imageData = new Byte[imgDataLen];
+            Byte[] imageData = new Byte[imgDataLen];
             Array.Copy(fileData, headerSize + palDataLen, imageData, 0, imgDataLen);
             PixelFormat pf = _IsHighCol ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed;
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, _Width, _Height, _Width, pf, m_Palette, Color.Empty);
@@ -82,10 +86,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (horizonalDpi < 0 && verticalDpi < 0)
                 this.ExtraInfo += "Aspect ratio: : " + (-horizonalDpi) + "x" + (-verticalDpi);
             else
-                this.ExtraInfo += "Horizontal DPI: " + horizonalDpi
-                + Environment.NewLine + "Vertical DPI: " + verticalDpi;
-            this.ExtraInfo +=
-                  Environment.NewLine + "Gamma: " + gamma;
+                this.ExtraInfo += "Horizontal DPI: " + horizonalDpi + Environment.NewLine + "Vertical DPI: " + verticalDpi;
+            this.ExtraInfo += Environment.NewLine + "Gamma: " + gamma;
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

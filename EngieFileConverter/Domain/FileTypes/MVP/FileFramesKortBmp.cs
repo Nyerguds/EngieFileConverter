@@ -16,6 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
+        public override String IdCode { get { return "KortBmp"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "KORT BMP"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }

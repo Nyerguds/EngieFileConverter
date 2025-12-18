@@ -126,7 +126,7 @@
             this.btnConvert.TabIndex = 200;
             this.btnConvert.Text = "Convert";
             this.btnConvert.UseVisualStyleBackColor = true;
-            this.btnConvert.Click += new System.EventHandler(this.BtnImportClick);
+            this.btnConvert.Click += new System.EventHandler(this.BtnConvertClick);
             // 
             // lblImageSizeVal
             // 
@@ -157,14 +157,15 @@
             this.lblCurFrame.Size = new System.Drawing.Size(66, 13);
             this.lblCurFrame.TabIndex = 30;
             this.lblCurFrame.Text = "Show frame:";
+            this.lblCurFrame.Click += new System.EventHandler(this.lblCurFrame_Click);
             // 
             // chkTrimColor
             // 
             this.chkTrimColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.chkTrimColor.AutoSize = true;
-            this.chkTrimColor.Location = new System.Drawing.Point(353, 219);
+            this.chkTrimColor.Location = new System.Drawing.Point(359, 219);
             this.chkTrimColor.Name = "chkTrimColor";
-            this.chkTrimColor.Size = new System.Drawing.Size(81, 17);
+            this.chkTrimColor.Size = new System.Drawing.Size(75, 17);
             this.chkTrimColor.TabIndex = 40;
             this.chkTrimColor.Text = "Trim color:";
             this.chkTrimColor.UseVisualStyleBackColor = true;

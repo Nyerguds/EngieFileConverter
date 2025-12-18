@@ -495,6 +495,7 @@ namespace Nyerguds.Util.UI
 
         protected void ResetTooltips()
         {
+            this.toolTipColor.RemoveAll();
             if (this.m_ShowColorToolTips)
             {
                 Int32 nrOfLabels = this.m_ColorLabels.Length;
@@ -513,8 +514,6 @@ namespace Nyerguds.Util.UI
                     this.SetColorToolTip(i, emptyCol, col.A);
                 }
             }
-            else
-                this.toolTipColor.RemoveAll();
         }
 
         protected void DrawPalette()
@@ -538,6 +537,7 @@ namespace Nyerguds.Util.UI
                 Array.Copy(this.m_ColorLabels, newLabels, Math.Min(this.m_ColorLabels.Length, this.m_MaxColors));
                 this.m_ColorLabels = newLabels;
             }
+            this.toolTipColor.RemoveAll();
             Color emptyCol = Color.FromArgb(this.m_EmptyItemBackColor.R, this.m_EmptyItemBackColor.G, this.m_EmptyItemBackColor.B);
             for (Int32 y = 0; y < rows; ++y)
             {
@@ -576,9 +576,7 @@ namespace Nyerguds.Util.UI
                     if (this.m_ShowColorToolTips)
                         this.SetColorToolTip(index, isEmptyCol, alpha);
                 }
-            }
-            if (!this.m_ShowColorToolTips)
-                this.toolTipColor.RemoveAll();
+            }                
             Int32 sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
             Int32 sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);

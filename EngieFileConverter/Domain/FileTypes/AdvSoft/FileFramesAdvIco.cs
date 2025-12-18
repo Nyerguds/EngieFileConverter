@@ -26,6 +26,7 @@ namespace EngieFileConverter.Domain.FileTypes
         
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
+        public override String IdCode { get { return "AdvIco"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "AdvSoft Icons"; } }
         public override String[] FileExtensions { get { return new String[] { "dat" }; } }
@@ -34,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 BitsPerPixel { get { return 4; } }
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
-        public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
+        public override SupportedFileType[] Frames { get { return ArrayUtils.CloneArray(this.m_FramesList); } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>

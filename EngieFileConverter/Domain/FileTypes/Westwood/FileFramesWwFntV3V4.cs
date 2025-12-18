@@ -23,6 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
+        public override String IdCode { get { return "WwFnt3"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Font v3"; } }
         public override String[] FileExtensions { get { return new String[] { "fnt" }; } }
@@ -263,7 +264,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (bitsLength < 8)
                     imageData[i] = ImageUtils.ConvertFrom8Bit(imgData8bit, imgWidth, imgHeight, bitsLength, false, ref stride);
                 else
-                    imageData[i] = imgData8bit.ToArray();
+                    imageData[i] = ArrayUtils.CloneArray(imgData8bit);
                 widthsList[i] = (Byte)imgWidth;
                 heightsList[i * 2] = (Byte)yOffset;
                 heightsList[i * 2 + 1] = (Byte)imgHeight;
@@ -408,6 +409,7 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "WwFnt4"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Font v4"; } }
         public override String ShortTypeDescription { get { return "Westwood Font v4 (Tiberian Sun)"; } }

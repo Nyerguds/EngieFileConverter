@@ -51,7 +51,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             {
                 m_Loading = true;
                 this.Info = info;
-                this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+                this.lblDescription.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
                 Regex r = new Regex("^\\s*(\\d+)\\s*\\|(\\s*#?[0-9a-fA-F]{6}\\s*(,\\s*#?[0-9a-fA-F]{6}\\s*)*)$");
                 String initInfo = this.Info.InitValue;
                 Match m = r.Match(initInfo);

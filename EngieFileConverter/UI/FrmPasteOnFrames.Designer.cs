@@ -181,6 +181,7 @@
             this.txtFrames.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtFrames.Size = new System.Drawing.Size(280, 55);
             this.txtFrames.TabIndex = 30;
+            this.txtFrames.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TextBoxShortcuts);
             // 
             // btnClipboard
             // 

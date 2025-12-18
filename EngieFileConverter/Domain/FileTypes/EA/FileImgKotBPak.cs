@@ -14,6 +14,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image4Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image4Bit; } }
 
+        public override String IdCode { get { return "KotbPak"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "KotB PAK"; } }
         public override String[] FileExtensions { get { return new String[] { "pak" }; } }

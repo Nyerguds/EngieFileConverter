@@ -74,7 +74,10 @@ namespace Nyerguds.ImageManipulation
                 clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] <= brightnessThreshold;
             else
                 clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] > brightnessThreshold;
-            return FindBlobs(brightness, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
+            if (mergeThreshold < 0)
+                return FindBlobs(brightness, width, height, clearsThreshold, true, getEdgesOnly);
+            else
+                return FindBlobs(brightness, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
         }
 
         public static Point GetBlobCenter(List<Point> blob)

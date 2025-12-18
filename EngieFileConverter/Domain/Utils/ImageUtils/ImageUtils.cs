@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using EngieFileConverter.Domain.FileTypes;
+using Nyerguds.Util;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -70,7 +71,7 @@ namespace Nyerguds.ImageManipulation
                         img2.Save(ms, saveFormat);
                 }
                 else if (saveFormat.Equals(ImageFormat.Png))
-                    ImageUtils.GetPngImageData(image, 0, false);
+                    GetPngImageData(image, 0, false);
                 else
                     image.Save(ms, saveFormat);
                 return ms.ToArray();
@@ -319,7 +320,6 @@ namespace Nyerguds.ImageManipulation
         /// Gets the raw bytes from an image in its original pixel format.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
-        /// <param name="stride">Stride of the retrieved image data.</param>
         /// <returns>The raw bytes of the image.</returns>
         public static Byte[] GetImageData(Bitmap sourceImage)
         {
@@ -457,7 +457,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="sourceData">Byte array of raw source data.</param>
         /// <param name="width">Width of the image.</param>
         /// <param name="height">Height of the image.</param>
-        /// <param name="stride">Scanline length inside the data. If this is negative, the image is built from the bottom up (BMP format).</param>
+        /// <param name="stride">Scanline length inside the data.</param>
         /// <param name="pixelFormat">Pixel format.</param>
         /// <param name="palette">Color palette.</param>
         /// <param name="defaultColor">Default color to fill in on the palette if the given colors don't fully fill it.</param>
@@ -489,6 +489,8 @@ namespace Nyerguds.ImageManipulation
                     else
                         break;
                 }
+                // Palette property getter creates a copy, so the newly filled in palette
+                // is not actually referenced in the image until you set it again explicitly.
                 newImage.Palette = pal;
             }
             return newImage;
@@ -693,7 +695,7 @@ namespace Nyerguds.ImageManipulation
 
         public static void Shift8BitRowVert(Byte[] source, Int32 stride, Boolean up, Boolean wrap, Byte backColor)
         {
-            Byte[] newSource = source.ToArray();
+            Byte[] newSource = ArrayUtils.CloneArray(source);
             Byte[] emptyRow = new Byte[stride];
             if (backColor != 0 && !wrap)
                 for (Int32 i = 0; i < stride; ++i)
@@ -710,7 +712,7 @@ namespace Nyerguds.ImageManipulation
 
         public static void Shift8BitRowHor(Byte[] source, Int32 stride, Boolean left, Boolean wrap, Byte backColor)
         {
-            Byte[] newSource = source.ToArray();
+            Byte[] newSource = ArrayUtils.CloneArray(source);
             Int32 length = stride - 1;
             Int32 srcStart = left ? 1 : 0;
             Int32 tarStart = left ? 0 : 1;
@@ -890,24 +892,24 @@ namespace Nyerguds.ImageManipulation
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
         /// Stride is assumed to be the minimum needed to contain the data. Output stride will be the same as the width.
         /// </summary>
-        /// <param name="fileData">The file data.</param>
+        /// <param name="imageData">The file data.</param>
         /// <param name="width">Width of the image.</param>
         /// <param name="height">Height of the image.</param>
         /// <param name="start">Start offset of the image data in the fileData parameter.</param>
         /// <param name="bitsLength">Amount of bits used by one pixel.</param>
         /// <param name="bigEndian">True if the bits in the original image data are stored as big-endian.</param>
         /// <returns>The image data in a 1-byte-per-pixel format, with a stride exactly the same as the width.</returns>
-        public static Byte[] ConvertTo8Bit(Byte[] fileData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian)
+        public static Byte[] ConvertTo8Bit(Byte[] imageData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian)
         {
             Int32 stride = GetMinimumStride(width, bitsLength);
-            return ConvertTo8Bit(fileData, width, height, start, bitsLength, bigEndian, ref stride);
+            return ConvertTo8Bit(imageData, width, height, start, bitsLength, bigEndian, ref stride);
         }
         
         /// <summary>
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
         /// The new stride at the end of the operation will always equal the width.
         /// </summary>
-        /// <param name="fileData">The file data.</param>
+        /// <param name="imageData">The image data.</param>
         /// <param name="width">Width of the image.</param>
         /// <param name="height">Height of the image.</param>
         /// <param name="start">Start offset of the image data in the fileData parameter.</param>
@@ -915,21 +917,24 @@ namespace Nyerguds.ImageManipulation
         /// <param name="bigEndian">True if the bits in the original image data are stored as big-endian.</param>
         /// <param name="stride">Stride used in the original image data. Will be adjusted to the new stride value, which will always equal the width.</param>
         /// <returns>The image data in a 1-byte-per-pixel format, with a stride exactly the same as the width.</returns>
-        public static Byte[] ConvertTo8Bit(Byte[] fileData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian, ref Int32 stride)
+        public static Byte[] ConvertTo8Bit(Byte[] imageData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian, ref Int32 stride)
         {
             if (bitsLength != 1 && bitsLength != 2 && bitsLength != 4 && bitsLength != 8)
                 throw new ArgumentOutOfRangeException("Cannot handle image data with " + bitsLength + "bits per pixel.");
             // Full array
             Byte[] data8bit = new Byte[width * height];
-            // Amount of runs that end up on the same pixel
+            // Special case: data is already compact 8-bit. Simply clone it.
+            if (bitsLength == 8 && width == stride && imageData.Length == data8bit.Length)
+                return ArrayUtils.CloneArray(imageData);
+            // Amount of pixels that are stored on the same byte
             Int32 parts = 8 / bitsLength;
-            // Amount of bytes to read per width
+            // Amount of bytes to write per line
             Int32 newStride = width;
             // Bit mask for reducing read and shifted data to actual bits length
             Int32 bitmask = (1 << bitsLength) - 1;
             Int32 size = stride * height;
             // File check, and getting actual data.
-            if (start + size > fileData.Length)
+            if (start + size > imageData.Length)
                 throw new IndexOutOfRangeException("Data exceeds array bounds!");
             // Actual conversion process.
             for (Int32 y = 0; y < height; ++y)
@@ -946,7 +951,7 @@ namespace Nyerguds.ImageManipulation
                     if (bigEndian)
                         shift = 8 - shift - bitsLength;
                     // Get data and store it.
-                    data8bit[index8bit] = (Byte) ((fileData[indexXbit] >> shift) & bitmask);
+                    data8bit[index8bit] = (Byte) ((imageData[indexXbit] >> shift) & bitmask);
                 }
             }
             stride = newStride;
@@ -982,7 +987,7 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 bitsLength, Boolean bigEndian, ref Int32 stride)
         {
             Int32 parts = 8 / bitsLength;
-            // Amount of bytes to write per width
+            // Amount of bytes to write per line
             Int32 newStride = GetMinimumStride(width, bitsLength);
             // Bit mask for reducing original data to actual bits maximum.
             // Should not be needed if data is correct, but eh.
@@ -1951,7 +1956,8 @@ namespace Nyerguds.ImageManipulation
         public static Bitmap LoadBitmap(Byte[] data)
         {
             Byte[] transparencyData = null;
-            Int32 trnsOffset = FindPngTransparencyChunk(data);
+            Boolean isPng = PngHandler.IsPng(data);
+            Int32 trnsOffset = isPng ? FindPngTransparencyChunk(data) : -1;
             Int32 trnsLength = -1;
             if (trnsOffset != -1)
             {
@@ -1968,6 +1974,22 @@ namespace Nyerguds.ImageManipulation
             using (MemoryStream ms = new MemoryStream(data))
             using (Bitmap imageFromStream = new Bitmap(ms))
             {
+                if (isPng)
+                {
+                    // Shortcut; reading data from where the header should be in a PNG.
+                    Byte colDepth = data[24];
+                    Byte colType = data[25];
+                    if (colType == 0 && imageFromStream.PixelFormat == PixelFormat.Format32bppArgb)
+                    {
+                        // colType == 0 means the image is actually grayscale, not 32bpp. Restore original colour depth.
+                        // This type supports no palette transparency mask afaik, so this operation should exclude the other one.
+                        Int32 width = imageFromStream.Width;
+                        Int32 height = imageFromStream.Height;
+                        Int32 stride32;
+                        Byte[] imgBytes32 = GetImageData(imageFromStream, out stride32);
+                        return FixGrayScaleFrom32bpp(imgBytes32, width, height, stride32, colDepth);
+                    }
+                }
                 if (imageFromStream.Palette.Entries.Length != 0 && transparencyData != null)
                 {
                     ColorPalette pal = imageFromStream.Palette;
@@ -1982,21 +2004,12 @@ namespace Nyerguds.ImageManipulation
                     }
                     imageFromStream.Palette = pal;
                 }
-                return ImageUtils.CloneImage(imageFromStream);
+                return CloneImage(imageFromStream);
             }
         }
 
         private static Int32 FindPngTransparencyChunk(Byte[] data)
         {
-            Byte[] pngStart = PngHandler.GetPngIdentifier();
-            Int32 pngStartLen = pngStart.Length;
-            if (data.Length <= pngStartLen)
-                return -1;
-            // Check if the image is a PNG.
-            Byte[] compareData = new Byte[pngStartLen];
-            Array.Copy(data, compareData, pngStartLen);
-            if (!pngStart.SequenceEqual(compareData))
-                return -1;
             Int32 hdrOffset = PngHandler.FindPngChunk(data, "IHDR");
             if (hdrOffset == -1)
                 return -1;
@@ -2116,6 +2129,72 @@ namespace Nyerguds.ImageManipulation
             Array.Copy(data, currentPosSrc, newData, currentPosTrg, data.Length - currentPosSrc);
             data = newData;
             return data;
+        }
+
+        /// <summary>
+        /// Restores a grayscale image that is loaded as 32bpp back to its correct grayscale colour depth.
+        /// This does not CONVERT the image to grayscale; it assumes the image is already grayscale
+        /// and will use the blue channel as its value.
+        /// </summary>
+        /// <param name="imgBytes32">Image bytes in 32bppArgb format</param>
+        /// <param name="width">Image width</param>
+        /// <param name="height">Image height</param>
+        /// <param name="stride32">Stride of the 32bpp data.</param>
+        /// <param name="targetDepth">Colour depth to restore the image to.</param>
+        /// <returns>The restored grayscale image.</returns>
+        public static Bitmap FixGrayScaleFrom32bpp(Byte[] imgBytes32, Int32 width, Int32 height, Int32 stride32, Byte targetDepth)
+        {
+            // 2bpp is not supported in .Net, so upgrade it to 4.
+            if (targetDepth == 2)
+                targetDepth = 4;
+            else if (targetDepth > 8)
+                targetDepth = 8;
+            Int32 stride8 = width;
+            Byte[] imgBytes8 = new Byte[width * height];
+            Int32 linePos32 = 0;
+            Int32 linePos8 = 0;
+            if (targetDepth == 8)
+            {
+
+                for (Int32 y = 0; y < height; ++y)
+                {
+                    Int32 pos32 = linePos32;
+                    Int32 pos8 = linePos8;
+                    for (Int32 x = 0; x < width; ++x)
+                    {
+                        imgBytes8[pos8] = imgBytes32[pos32]; // Blue factor. If grayscale, this is the value.
+                        pos8++;
+                        pos32 += 4;
+                    }
+                    linePos32 += stride32;
+                    linePos8 += stride8;
+                }
+            }
+            else
+            {
+                // Uses the principles of the PixelFormatter while avoiding heaviy operations.
+                Int32 maxVal = ((1 << targetDepth) - 1);
+                Double multiplier = maxVal / 255.0;
+                for (Int32 y = 0; y < height; ++y)
+                {
+                    Int32 pos32 = linePos32;
+                    Int32 pos8 = linePos8;
+                    for (Int32 x = 0; x < width; ++x)
+                    {
+                        // Blue factor. If grayscale, this is the value.
+                        UInt32 tempVal = (UInt32)Math.Min(maxVal, Math.Round(imgBytes32[pos32] * multiplier, MidpointRounding.AwayFromZero));
+                        imgBytes8[pos8] = (Byte)tempVal;
+                        pos8++;
+                        pos32 += 4;
+                    }
+                    linePos32 += stride32;
+                    linePos8 += stride8;
+                }
+                imgBytes8 = ConvertFrom8Bit(imgBytes8, width, height, targetDepth, true, ref stride8);
+            }
+            PixelFormat pf = GetIndexedPixelFormat(targetDepth);
+            // Return the result right away. No clone is needed since this object is new.
+            return BuildImage(imgBytes8, width, height, stride8, pf, PaletteUtils.GenerateGrayPalette(targetDepth, null, false), null);
         }
 
         public static ColorPalette AdjustPalette(ColorPalette colors, Int32 size)

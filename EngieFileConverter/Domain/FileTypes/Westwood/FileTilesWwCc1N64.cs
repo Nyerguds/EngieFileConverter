@@ -188,6 +188,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FileTilesWwCc1N64Bpp4 : FileTilesWwCc1N64
     {
+        public override String IdCode { get { return "WwDa4"; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit; } }
         protected override Int32 Bpp { get { return 4; } }
         protected override FilePaletteWwCc1N64 PaletteType { get { return new FilePaletteWwCc1N64Pa4(); } }
@@ -195,6 +196,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FileTilesWwCc1N64Bpp8 : FileTilesWwCc1N64
     {
+        public override String IdCode { get { return "WwDa8"; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected override Int32 Bpp { get { return 8; } }
         protected override FilePaletteWwCc1N64 PaletteType { get { return new FilePaletteWwCc1N64Pa8(); } }
@@ -202,6 +204,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FileTileCc1N64 : SupportedFileType
     {
+        public override String IdCode { get { return null; } }
         public override FileClass FileClass { get { return this.Bpp == 4 ? FileClass.Image4Bit : FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.None; } }
         /// <summary>Very short code name for this type.</summary>

@@ -12,6 +12,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileTilesetWwCc1PC : SupportedFileType
     {
+        public override String IdCode { get { return "WwTmp"; } }
         public override FileClass FileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         // maybe add FrameSet input later... not supported for now though.
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
@@ -47,13 +48,13 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Byte[][] tiles = new Byte[this.m_Tiles.Length][];
             for (Int32 i = 0; i < tiles.Length; ++i)
-                tiles[i] = this.m_Tiles[i].ToArray();
+                tiles[i] = ArrayUtils.CloneArray(this.m_Tiles[i]);
             return tiles;
         }
 
         public Boolean[] GetUsedEntriesList()
         {
-            return this.m_TileUseList.ToArray();
+            return ArrayUtils.CloneArray(this.m_TileUseList);
         }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>

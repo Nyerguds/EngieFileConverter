@@ -22,44 +22,95 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected static Color[] paletteTemperate = new Color[]
         {
-            Color.Black,                      //Unused = 0
-            Color.FromArgb(0x35, 0x44, 0x35), //Clear = 1
-            Color.FromArgb(0x99, 0xBB, 0xDD), //Water = 2
-            Color.FromArgb(0x70, 0x70, 0x70), //Rock = 3
-            Color.FromArgb(0xe3, 0xb5, 0x49), //Beach = 4
-            Color.FromArgb(0x5E, 0x55, 0x44), //Road = 5
-            Color.FromArgb(0x50, 0x50, 0x50), //CliffFace = 6
-            Color.FromArgb(0x40, 0x40, 0x40), //CliffPlateau = 7
-            Color.FromArgb(0x4D, 0x57, 0x4D), //Smudge = 8
-            Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
-        };
-        protected static Color[] paletteDesert = new Color[]
-        {
-            Color.Black,                      //Unused = 0
-            Color.FromArgb(0x88, 0x5E, 0x46), //Clear = 1
-            Color.FromArgb(0x99, 0xBB, 0xDD), //Water = 2
-            Color.FromArgb(0x70, 0x70, 0x70), //Rock = 3
-            Color.FromArgb(0xE3, 0xB5, 0x49), //Beach = 4
-            Color.FromArgb(0xAB, 0x81, 0x55), //Road = 5
-            Color.FromArgb(0x50, 0x50, 0x50), //CliffFace = 6
-            Color.FromArgb(0x40, 0x40, 0x40), //CliffPlateau = 7
-            Color.FromArgb(0x5E, 0x48, 0x3E), //Smudge = 8
-            Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
-        };
-        protected static Color[] paletteSnow = new Color[]
-        {
-            Color.Black,                      //Unused = 0
-            Color.FromArgb(0xC8, 0xC8, 0xC8), //Clear = 1
-            Color.FromArgb(0x99, 0xBB, 0xDD), //Water = 2
-            Color.FromArgb(0x50, 0x50, 0x50), //Rock = 3
-            Color.FromArgb(0xe3, 0xb5, 0x49), //Beach = 4
-            Color.FromArgb(0x92, 0x8A, 0x80), //Road = 5
-            Color.FromArgb(0x60, 0x60, 0x60), //CliffFace = 6
-            Color.FromArgb(0x60, 0x60, 0x60), //CliffPlateau = 7
-            Color.FromArgb(0x9E, 0x9E, 0x9E), //Smudge = 8
-            Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
+            Color.Black,                      // Unused = 0
+            Color.FromArgb(0x35, 0x44, 0x35), // Clear = 1
+            Color.FromArgb(0x99, 0xBB, 0xDD), // Water = 2
+            Color.FromArgb(0x70, 0x70, 0x70), // Rock = 3
+            Color.FromArgb(0xe3, 0xb5, 0x49), // Beach = 4
+            Color.FromArgb(0x5E, 0x55, 0x44), // Road = 5
+            Color.FromArgb(0x50, 0x50, 0x50), // CliffFace = 6
+            Color.FromArgb(0x40, 0x40, 0x40), // CliffPlateau = 7
+            Color.FromArgb(0x4D, 0x57, 0x4D), // Smudge = 8
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = 9
+            Color.Black,                      // Unused = A
+            Color.Black,                      // Unused = B
+            Color.Black,                      // Unused = C
+            Color.Black,                      // Unused = D
+            Color.Black,                      // Unused = E
+            Color.Black,                      // Unused = F
+            Color.FromArgb(0x00, 0x00, 0x95), // Blue, Unused = 10
+            Color.FromArgb(0x2C, 0x39, 0x9A), // Blue, Clear = 11
+            Color.FromArgb(0x82, 0x9F, 0xE8), // Blue, Water = 12
+            Color.FromArgb(0x5F, 0x5F, 0xAC), // Blue, Rock = 13
+            Color.FromArgb(0xC2, 0x9A, 0x9F), // Blue, Beach = 14
+            Color.FromArgb(0x4F, 0x47, 0x9E), // Blue, Road = 15
+            Color.FromArgb(0x43, 0x43, 0xA1), // Blue, CliffFace = 16
+            Color.FromArgb(0x35, 0x35, 0x9D), // Blue, CliffPlateau = 17
+            Color.FromArgb(0x40, 0x49, 0xA0), // Blue, Smudge = 18
+            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
         };
 
+        protected static Color[] paletteDesert = new Color[]
+        {
+            Color.Black,                      // Unused = 0
+            Color.FromArgb(0x88, 0x5E, 0x46), // Clear = 1
+            Color.FromArgb(0x99, 0xBB, 0xDD), // Water = 2
+            Color.FromArgb(0x70, 0x70, 0x70), // Rock = 3
+            Color.FromArgb(0xE3, 0xB5, 0x49), // Beach = 4
+            Color.FromArgb(0xAB, 0x81, 0x55), // Road = 5
+            Color.FromArgb(0x50, 0x50, 0x50), // CliffFace = 6
+            Color.FromArgb(0x40, 0x40, 0x40), // CliffPlateau = 7
+            Color.FromArgb(0x5E, 0x48, 0x3E), // Smudge = 8
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = 9
+            Color.Black,                      // Unused = A
+            Color.Black,                      // Unused = B
+            Color.Black,                      // Unused = C
+            Color.Black,                      // Unused = D
+            Color.Black,                      // Unused = E
+            Color.Black,                      // Unused = F
+            Color.FromArgb(0x00, 0x00, 0x95), // Blue, Unused = 10
+            Color.FromArgb(0x73, 0x4F, 0x9E), // Blue, Clear = 11
+            Color.FromArgb(0x82, 0x9F, 0xE8), // Blue, Water = 12
+            Color.FromArgb(0x5F, 0x5F, 0xAC), // Blue, Rock = 13
+            Color.FromArgb(0xC2, 0x9A, 0x9F), // Blue, Beach = 14
+            Color.FromArgb(0x91, 0x6D, 0xA2), // Blue, Road = 15
+            Color.FromArgb(0x43, 0x43, 0xA1), // Blue, CliffFace = 16
+            Color.FromArgb(0x35, 0x35, 0x9D), // Blue, CliffPlateau = 17
+            Color.FromArgb(0x4F, 0x3C, 0x9C), // Blue, Smudge = 18
+            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
+        };
+
+        protected static Color[] paletteSnow = new Color[]
+        {
+            Color.Black,                      // Unused = 0
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Clear = 1
+            Color.FromArgb(0x99, 0xBB, 0xDD), // Water = 2
+            Color.FromArgb(0x50, 0x50, 0x50), // Rock = 3
+            Color.FromArgb(0xe3, 0xb5, 0x49), // Beach = 4
+            Color.FromArgb(0x92, 0x8A, 0x80), // Road = 5
+            Color.FromArgb(0x60, 0x60, 0x60), // CliffFace = 6
+            Color.FromArgb(0x60, 0x60, 0x60), // CliffPlateau = 7
+            Color.FromArgb(0x9E, 0x9E, 0x9E), // Smudge = 8
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = 9
+            Color.Black,                      // Unused = A
+            Color.Black,                      // Unused = B
+            Color.Black,                      // Unused = C
+            Color.Black,                      // Unused = D
+            Color.Black,                      // Unused = E
+            Color.Black,                      // Unused = F
+            Color.FromArgb(0x00, 0x00, 0x95), // Blue, Unused = 10
+            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Clear = 11
+            Color.FromArgb(0x82, 0x9F, 0xE8), // Blue, Water = 12
+            Color.FromArgb(0x43, 0x43, 0xA1), // Blue, Rock = 13
+            Color.FromArgb(0xC2, 0x9A, 0x9F), // Blue, Beach = 14
+            Color.FromArgb(0x7C, 0x75, 0xB3), // Blue, Road = 15
+            Color.FromArgb(0x51, 0x51, 0xA6), // Blue, CliffFace = 16
+            Color.FromArgb(0x51, 0x51, 0xA6), // Blue, CliffPlateau = 17
+            Color.FromArgb(0x86, 0x86, 0xC2), // Blue, Smudge = 18
+            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
+        };
+
+        public override String IdCode { get { return "WwCcMap"; } }
         public override FileClass FileClass { get { return FileClass.CcMap; } }
         public override FileClass InputFileClass { get { return FileClass.CcMap; } }
         /// <summary>Very short code name for this type.</summary>
@@ -86,7 +137,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.PCMapData = fileData;
             Theater theater = (Theater)0xFF;
             this.N64MapData = this.IdentifyTheaterAndConvert(fileData, ref theater, true, null);
-            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater);
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, Rectangle.Empty);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -98,7 +149,8 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             IniInfo iniInfo = this.GetIniInfo(iniFile ?? filename, (Theater)0xFF, iniContents);
             Theater theater = iniInfo == null ? (Theater)0xFF : iniInfo.Theater;
-            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, filename);
+            Rectangle usableArea = iniInfo == null ? Rectangle.Empty : new Rectangle(iniInfo.X, iniInfo.Y, iniInfo.Width, iniInfo.Height);
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, filename, usableArea);
             if (iniInfo != null)
             {
                 this.ExtraInfo = "Ini info loaded from \"" + Path.GetFileName(iniInfo.File) + "\"" + Environment.NewLine
@@ -125,13 +177,13 @@ namespace EngieFileConverter.Domain.FileTypes
             return mapPc.PCMapData;
         }
 
-        protected virtual Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile)
+        protected virtual Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile, Rectangle usableArea)
         {
             this.PCMapData = fileData;
             if (this.PCMapData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
             this.N64MapData = this.IdentifyTheaterAndConvert(this.PCMapData, ref theater, false, sourceFile);
-            return this.ReadMapAsImage(this.PCMapData, theater);
+            return this.ReadMapAsImage(this.PCMapData, theater, usableArea);
         }
 
         protected IniInfo GetIniInfo(String filename, Theater defaultTheater, Byte[] iniData)
@@ -167,7 +219,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return info;
         }
 
-        protected Bitmap ReadMapAsImage(Byte[] fileData, Theater theater)
+        protected Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, Rectangle usableArea)
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
@@ -201,9 +253,32 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
             }
             Byte[] imageData = new Byte[64 * 64];
-            for (Int32 i = 0; i < simplifiedMap.Length; ++i)
+            if (usableArea == Rectangle.Empty)
             {
-                imageData[i] = (Byte)simplifiedMap[i];
+                for (Int32 i = 0; i < simplifiedMap.Length; ++i)
+                    imageData[i] = (Byte)simplifiedMap[i];
+            }
+            else
+            {
+                // paint blue-tinted outside border
+                if (usableArea != Rectangle.Empty)
+                {
+                    for (Int32 i = 0; i < simplifiedMap.Length; ++i)
+                        imageData[i] = (Byte)(simplifiedMap[i] + 0x10);
+                }
+                // paint normal-coloured area
+                Int32 minY = usableArea != Rectangle.Empty ? usableArea.Y : 0;
+                Int32 maxY = usableArea != Rectangle.Empty ? usableArea.Y + usableArea.Height : 64;
+                Int32 minX = usableArea != Rectangle.Empty ? usableArea.X : 0;
+                Int32 maxX = usableArea != Rectangle.Empty ? usableArea.X + usableArea.Width : 64;
+                for (Int32 y = minY; y < maxY; ++y)
+                {
+                    for (Int32 x = minX; x < maxX; ++x)
+                    {
+                        Int32 cell = (y << 6) | x;
+                        imageData[cell] = (Byte)simplifiedMap[cell];
+                    }
+                }
             }
             return ImageUtils.BuildImage(imageData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Black);
         }

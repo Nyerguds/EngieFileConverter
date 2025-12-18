@@ -15,6 +15,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "IgGx2"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Interactive Girls GX2 file"; } }
         public override String[] FileExtensions { get { return new String[] { "gx2" }; } }

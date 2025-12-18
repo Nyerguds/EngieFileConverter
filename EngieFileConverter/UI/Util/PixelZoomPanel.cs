@@ -9,7 +9,7 @@ namespace Nyerguds.Util.UI
 {
     public partial class PixelZoomPanel : UserControl
     {
-        private bool m_updating;
+        private Boolean m_updating;
 
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue(typeof(Color), "Fuchsia")]
@@ -53,7 +53,6 @@ namespace Nyerguds.Util.UI
             set { this.numZoom.EnteredValue = value; }
         }
 
-        
         [DefaultValue(typeof(Int32), "1")]
         public Int32 ZoomFactorMinimum
         {
@@ -112,8 +111,33 @@ namespace Nyerguds.Util.UI
                 ClipboardImage.SetClipboardImage(bm, bmnt, null);
         }
 
+        public void AutoSetZoom(Bitmap[] frames)
+        {
+            if (frames == null)
+                return;
+            // Set image invisible to remove scrollbars.
+            this.ImageVisible = false;
+            Size maxSize = this.MaxImageSize;
+            Int32 maxWidth = maxSize.Width;
+            Int32 maxHeight = maxSize.Height;
+            Int32 minZoomFactor = Int32.MaxValue;
+            // Build list of images to check
+            Int32 nrToCheck = frames.Length;
+            for (Int32 i = 0; i < nrToCheck; ++i)
+            {
+                Bitmap image = frames[i];
+                if (image == null)
+                    continue;
+                Int32 zoomFactor = Math.Max(1, Math.Min(maxWidth / image.Width, maxHeight / image.Height));
+                minZoomFactor = Math.Min(zoomFactor, minZoomFactor);
+            }
+            if (minZoomFactor == Int32.MaxValue)
+                minZoomFactor = 1;
+            this.ZoomFactor = minZoomFactor;
+        }
 
-        private void NumZoomValueEntered(object sender, ValueEnteredEventArgs e)
+
+        private void NumZoomValueEntered(Object sender, ValueEnteredEventArgs e)
         {
             if (this.m_updating)
                 return;
@@ -145,48 +169,56 @@ namespace Nyerguds.Util.UI
 
         private void RefreshImage(Boolean adaptZoom)
         {
-            Image bm = this.picImage.Image;
-            Boolean loadOk = bm != null;
-            this.picImage.Visible = loadOk;
-            // Centering zoom code: save all information before image resize
-            Double currentZoom = this.ZoomFactor;
-            if (this.ZoomFactor == 0 || this.ZoomFactor == -1)
-                currentZoom = 1;
-            else if (this.ZoomFactor < -1)
-                currentZoom = -1 / (Double)this.ZoomFactor;
+            try
+            {
+                this.SuspendLayout();
+                Image bm = this.picImage.Image;
+                Boolean loadOk = bm != null;
+                this.picImage.Visible = loadOk;
+                // Centering zoom code: save all information before image resize
+                Double currentZoom = this.ZoomFactor;
+                if (this.ZoomFactor == 0 || this.ZoomFactor == -1)
+                    currentZoom = 1;
+                else if (this.ZoomFactor < -1)
+                    currentZoom = -1 / (Double) this.ZoomFactor;
 
-            if (currentZoom < -1)
-                this.picImage.InterpolationMode = InterpolationMode.Default;
-            else
-                this.picImage.InterpolationMode = InterpolationMode.NearestNeighbor;
+                if (currentZoom < -1)
+                    this.picImage.InterpolationMode = InterpolationMode.Default;
+                else
+                    this.picImage.InterpolationMode = InterpolationMode.NearestNeighbor;
 
-            Int32 oldWidth = this.picImage.Width;
-            Int32 oldHeight = this.picImage.Height;
-            Int32 newWidth = loadOk ? (Int32)(bm.Width * currentZoom) : 100;
-            Int32 newHeight = loadOk ? (Int32)(bm.Height * currentZoom) : 100;
-            Int32 frameLeftVal = this.pnlImageScroll.DisplayRectangle.X;
-            Int32 frameUpVal = this.pnlImageScroll.DisplayRectangle.Y;
-            // Get previous zoom factor from current image size on the control.
-            Double prevZoom = oldWidth * currentZoom / newWidth;
-            Int32 visibleCenterXOld = Math.Min(oldWidth, this.pnlImageScroll.ClientRectangle.Width) / 2;
-            Int32 visibleCenterYOld = Math.Min(oldHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
+                Int32 oldWidth = this.picImage.Width;
+                Int32 oldHeight = this.picImage.Height;
+                Int32 newWidth = loadOk ? (Int32) (bm.Width * currentZoom) : 100;
+                Int32 newHeight = loadOk ? (Int32) (bm.Height * currentZoom) : 100;
+                Int32 frameLeftVal = this.pnlImageScroll.DisplayRectangle.X;
+                Int32 frameUpVal = this.pnlImageScroll.DisplayRectangle.Y;
+                // Get previous zoom factor from current image size on the control.
+                Double prevZoom = oldWidth * currentZoom / newWidth;
+                Int32 visibleCenterXOld = Math.Min(oldWidth, this.pnlImageScroll.ClientRectangle.Width) / 2;
+                Int32 visibleCenterYOld = Math.Min(oldHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
 
-            this.picImage.Width = newWidth;
-            this.picImage.Height = newHeight;
-            this.picImage.PerformLayout();
+                this.picImage.Width = newWidth;
+                this.picImage.Height = newHeight;
+                this.picImage.PerformLayout();
 
-            if (!adaptZoom || !loadOk || prevZoom <= 0 || ((Int32)prevZoom == (Int32)currentZoom && (Int32)(1 / prevZoom) == (Int32)(1 / currentZoom)))
-                return;
-            // Centering zoom code: Image resized. Apply zoom centering.
-            // ClientRectangle data is fetched again since it changes when scrollbars appear and disappear.
-            Int32 visibleCenterXNew = Math.Min(newWidth, this.pnlImageScroll.ClientRectangle.Width) / 2;
-            Int32 visibleCenterYNew = Math.Min(newHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
-            Int32 viewCenterActualX = (Int32)((-frameLeftVal + visibleCenterXOld) / prevZoom);
-            Int32 viewCenterActualY = (Int32)((-frameUpVal + visibleCenterYOld) / prevZoom);
-            Int32 frameLeftValNew = (Int32)(visibleCenterXNew - (viewCenterActualX * currentZoom));
-            Int32 frameUpValNew = (Int32)(visibleCenterYNew - (viewCenterActualY * currentZoom));
-            this.pnlImageScroll.SetDisplayRectLocation(frameLeftValNew, frameUpValNew);
-            this.pnlImageScroll.PerformLayout();
+                if (!adaptZoom || !loadOk || prevZoom <= 0 || ((Int32) prevZoom == (Int32) currentZoom && (Int32) (1 / prevZoom) == (Int32) (1 / currentZoom)))
+                    return;
+                // Centering zoom code: Image resized. Apply zoom centering.
+                // ClientRectangle data is fetched again since it changes when scrollbars appear and disappear.
+                Int32 visibleCenterXNew = Math.Min(newWidth, this.pnlImageScroll.ClientRectangle.Width) / 2;
+                Int32 visibleCenterYNew = Math.Min(newHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
+                Int32 viewCenterActualX = (Int32) ((-frameLeftVal + visibleCenterXOld) / prevZoom);
+                Int32 viewCenterActualY = (Int32) ((-frameUpVal + visibleCenterYOld) / prevZoom);
+                Int32 frameLeftValNew = (Int32) (visibleCenterXNew - (viewCenterActualX * currentZoom));
+                Int32 frameUpValNew = (Int32) (visibleCenterYNew - (viewCenterActualY * currentZoom));
+                this.pnlImageScroll.SetDisplayRectLocation(frameLeftValNew, frameUpValNew);
+                //this.pnlImageScroll.PerformLayout();
+            }
+            finally
+            {
+                this.ResumeLayout(true);
+            }
         }
 
         private void PicImageClick(Object sender, EventArgs e)

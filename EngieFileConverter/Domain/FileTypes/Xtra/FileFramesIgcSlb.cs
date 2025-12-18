@@ -21,6 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
+        public override String IdCode { get { return null; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Interactive Girls archive"; } }
         public override String[] FileExtensions { get { return new String[] { "slb", "m3" }; } }
@@ -101,8 +102,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_FramesList[i] = frame;
                 if (dataIndices.Count > 0)
                     this.ExtraInfo = "Non-image entries: " + String.Join(", ", dataIndices.ToArray()) + ".";
-                {
-                }
             }
         }
 

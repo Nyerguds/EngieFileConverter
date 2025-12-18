@@ -67,6 +67,8 @@
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgJmx.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgBif.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileFramesLadyGl.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileImgLadyTme.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgStris.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
     <Compile Include="Domain\FileTypes\EA\FileImgKotBPak.cs" />
@@ -126,6 +128,9 @@
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BlobDetection.cs" />
     <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
+    <EmbeddedResource Include="UI\FrmFramesToPal.resx">
+      <DependentUpon>FrmFramesToPal.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\Util\SaveOptions\SaveOptionChoices.resx">
       <DependentUpon>SaveOptionChoices.cs</DependentUpon>
     </EmbeddedResource>
@@ -174,6 +179,12 @@
     <Compile Include="Domain\Utils\ImageUtils\PixelFormatter.cs" />
     <Compile Include="Domain\Utils\KMeans.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="UI\FrmFramesToPal.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FrmFramesToPal.Designer.cs">
+      <DependentUpon>FrmFramesToPal.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Util\SaveOptions\FrmOptions.cs">
       <SubType>Form</SubType>
     </Compile>

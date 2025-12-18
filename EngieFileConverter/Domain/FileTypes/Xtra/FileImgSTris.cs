@@ -13,6 +13,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "Sextris"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "SexTris image"; } }
         public override String[] FileExtensions { get { return new String[] { "sex" }; } }
@@ -101,6 +102,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_PaletteLoaded = true;
                 width = 320;
                 height = size / width;
+                ExtraInfo = "Using default palette.";
             }
             else
                 throw new FileTypeLoadException("Not an " + this.ShortTypeName + ".");

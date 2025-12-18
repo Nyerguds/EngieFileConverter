@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using Nyerguds.Util;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -53,16 +54,14 @@ namespace Nyerguds.ImageManipulation
 
         public static Color[] GetEgaPalette()
         {
-            return EgaPalette.ToArray();
+            return ArrayUtils.CloneArray(EgaPalette);
         }
 
         public static Color[] GetEgaPalette(Int32 bitsPerPixel)
         {
             Int32 colors = 1 << bitsPerPixel;
-            if (colors > 16)
+            if (colors > 16 || colors <= 0)
                 throw new NotSupportedException("EGA palette can not contain more than 16 colors!");
-            if (colors == 16)
-                return EgaPalette.ToArray();
             Color[] pal = new Color[colors];
             Array.Copy(EgaPalette, 0, pal, 0, colors);
             return pal;

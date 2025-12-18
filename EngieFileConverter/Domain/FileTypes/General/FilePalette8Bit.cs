@@ -9,6 +9,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FilePalette8Bit : SupportedFileType
     {
+        public override String IdCode { get { return "Pal8Bit"; } }
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.None; } }

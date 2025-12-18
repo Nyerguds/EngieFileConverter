@@ -15,6 +15,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
+        public override String IdCode { get { return "ImlJmx"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "ImageLine JMX image"; } }
         public override String[] FileExtensions { get { return new String[] { "jmx" }; } }
@@ -40,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 height = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x302, 2, true);
             Int32 imgLength = width * height;
             if (dataLength != 0x304 + imgLength)
-                throw new FileTypeLoadException("Too short to be a " + ShortTypeName + ".");
+                throw new FileTypeLoadException("File size does not match header information.");
             try
             {
                 m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, 0, 256));

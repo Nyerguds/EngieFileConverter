@@ -9,6 +9,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileTblWwPal : SupportedFileType
     {
+        public override String IdCode { get { return "WwTbl"; } }
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }

@@ -44,7 +44,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.Info = info;
-            this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+            this.lblDescription.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
             this.m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
             this.txtValue.Text = this.Info.SaveData;
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Nyerguds.FileData.NullSoft
@@ -25,6 +26,7 @@ namespace Nyerguds.FileData.NullSoft
     {
         public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset)
         {
+            List<Byte> c0Bytes = new List<Byte>();
             Int32 outputSize = planes * scanlineSize * height;
             offset = startOffset ?? 0;
             UInt32 end = (UInt32)buffer.LongLength;
@@ -38,7 +40,7 @@ namespace Nyerguds.FileData.NullSoft
                 if ((val & 0xC0) == 0xC0)
                 {
                     // Repeat
-                    UInt32 amount = (UInt32) (val & 0x3F);
+                    UInt32 amount = (UInt32)(val & 0x3F);
                     if (offset >= end)
                         break;
                     if (amount == 0)
@@ -60,6 +62,44 @@ namespace Nyerguds.FileData.NullSoft
                     output[outputOffset++] = val;
                 }
             }
+            return output;
+        }
+
+        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset, out Byte[] hiddenMessage)
+        {
+            Int32 outputSize = planes * scanlineSize * height;
+            offset = startOffset ?? 0;
+            UInt32 end = (UInt32)buffer.LongLength;
+            if (endOffset.HasValue)
+                end = Math.Min(endOffset.Value, end);
+            Byte[] output = new Byte[outputSize];
+            Int32 outputOffset = 0;
+            List<Byte> c0Bytes = new List<Byte>();
+            while (offset < end && outputOffset < outputSize)
+            {
+                Byte val = buffer[offset++];
+                if ((val & 0xC0) == 0xC0)
+                {
+                    // Repeat
+                    UInt32 amount = (UInt32) (val & 0x3F);
+                    if (offset >= end)
+                        break;
+                    val = buffer[offset++];
+                    if (amount == 0)
+                        c0Bytes.Add(val);
+                    if (outputOffset + amount > outputSize)
+                        amount = (UInt32)(outputSize - outputOffset);
+                    for (Int32 i = 0; i < amount; ++i)
+                        output[outputOffset++] = val;
+                }
+                else
+                {
+                    if (outputOffset >= outputSize)
+                        break;
+                    output[outputOffset++] = val;
+                }
+            }
+            hiddenMessage = c0Bytes.ToArray();
             return output;
         }
 

@@ -15,6 +15,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.Image; } }
         protected const Int32 DATAOFFSET = 11;
 
+        public override String IdCode { get { return "WwLcw"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood LCW IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }

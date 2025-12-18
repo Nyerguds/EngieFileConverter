@@ -43,6 +43,12 @@ namespace EngieFileConverter.UI
                 this.rbtMatchPalette.Checked = true;
                 this.rbtKeepIndices.Enabled = true;
             }
+            if (m_Frames == 1)
+            {
+                this.txtFrames.Text = "0";
+                this.txtFrames.ReadOnly = true;
+                this.txtFrames.BackColor = SystemColors.Control;
+            }
         }
 
         private void BtnSelectImageClick(Object sender, EventArgs e)
@@ -85,7 +91,7 @@ namespace EngieFileConverter.UI
                 loaded = true;
                 this.btnOK.Enabled = true;
                 Int32 selectedBpp = selectedType.BitsPerPixel;
-                this.rbtKeepIndices.Enabled =  selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
+                this.rbtKeepIndices.Enabled = m_FramesBpp <= 8 && selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
                 if (!this.rbtKeepIndices.Enabled)
                 {
                     if (this.rbtMatchPalette.Enabled)
@@ -124,7 +130,6 @@ namespace EngieFileConverter.UI
                     MessageBox.Show(this, "No data on clipboard!", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
-            Boolean loaded = false;
             try
             {
                 FileImage clipImage = new FileImagePng();
@@ -146,7 +151,6 @@ namespace EngieFileConverter.UI
                 Int32 selectedBpp = clipImage.BitsPerPixel;
                 this.txtImage.Text = "[From clipboard]";
                 this.lblImage.Text = this.labelText + " " + clipImage.Width + "×" + clipImage.Height + ", " + clipImage.BitsPerPixel + "bpp";
-                loaded = true;
                 this.btnOK.Enabled = true;
                 this.rbtKeepIndices.Enabled = selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
                 if (!this.rbtKeepIndices.Enabled)
@@ -165,7 +169,7 @@ namespace EngieFileConverter.UI
             }
             finally
             {
-                if (!loaded)
+                if (this.m_Image == null)
                 {
                     this.m_Image = null;
                     this.txtImage.Text = String.Empty;
@@ -182,6 +186,42 @@ namespace EngieFileConverter.UI
                 return true;
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
+        private void TextBoxShortcuts(Object sender, KeyEventArgs e)
+        {
+            // Split off to override menu shortcuts when this control is selected.
+            TextBox textBox = sender as TextBox;
+            if (textBox == null)
+                return;
+            if (e.Control)
+            {
+                Boolean handled = true;
+                if (e.KeyCode == Keys.A)
+                    textBox.SelectAll();
+                else if (e.KeyCode == Keys.Z)
+                    textBox.Undo();
+                else if (e.KeyCode == Keys.V)
+                    textBox.Paste();
+                else if (e.KeyCode == Keys.X)
+                    textBox.Cut();
+                else if (e.KeyCode == Keys.C || e.KeyCode == Keys.Insert)
+                    textBox.Copy();
+                else
+                    handled = false;
+                if (handled)
+                {
+                    e.SuppressKeyPress = true;
+                    e.Handled = true;
+                }
+            }
+            else if (e.Shift && e.KeyCode == Keys.Insert)
+            {
+                textBox.Paste();
+                e.SuppressKeyPress = true;
+                e.Handled = true;
+            }
+        }
+
 
 
         private void BtnOkClick(Object sender, EventArgs e)

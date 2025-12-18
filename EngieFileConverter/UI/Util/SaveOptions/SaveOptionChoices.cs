@@ -41,7 +41,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             {
                 m_Loading = true;
                 this.Info = info;
-                this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+                this.lblDescription.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
                 String[] options = this.Info.InitValue.Split(',');
                 Char[] trim = " \t\r\n".ToCharArray();
                 Int32 nrOfOpts = options.Length;
