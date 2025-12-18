@@ -156,7 +156,7 @@ namespace Nyerguds.ImageManipulation
             if (image.PixelFormat == PixelFormat.Format4bppIndexed || image.PixelFormat == PixelFormat.Format8bppIndexed)
             {
                 if (ColorUtils.HasGrayPalette(image))
-                    return image;
+                    return CloneImage(image);
                 pf = image.PixelFormat;
             }
             else

@@ -41,10 +41,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// <summary>0 = 4bpp, 1=8bpp, 2 = 16bpp</summary>
         protected Byte hdrColorFormat;
         protected Int32 hdrColorsInPalette;
-
-        protected Byte[] originalFileData;
         protected Color[] palette;
-        protected Color[] fullpalette;
 
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "N64Img"; } }
@@ -91,6 +88,7 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         public override Color[] GetColors()
         {
+            // ensures the UI can show the partial palette.
             return palette;
         }
         
@@ -101,7 +99,6 @@ namespace CnC64FileConverter.Domain.ImageFile
         
         protected void LoadFromFileData(Byte[] fileData)
         {
-            this.originalFileData = fileData.ToArray();
             if (fileData.Length < 16)
                 throw new FileTypeLoadException("File is not long enough to be a valid IMG file.");
             try
@@ -126,6 +123,7 @@ namespace CnC64FileConverter.Domain.ImageFile
                 expectedSize = Math.Max(expectedSize, this.hdrPaletteOffset + this.hdrBytesPerColor * this.hdrColorsInPalette);
             if (fileData.Length < expectedSize)
                 throw new FileTypeLoadException(String.Format("File data is too short. Got {0} bytes, expected {1} bytes.", fileData.Length, expectedSize));
+            Color[] fullpalette;
             try
             {
                 Array.Copy(fileData, this.hdrDataOffset, imageData, 0, Math.Min(fileData.Length - this.hdrDataOffset, imageDataSize));
@@ -138,21 +136,21 @@ namespace CnC64FileConverter.Domain.ImageFile
                     Byte[] paletteData = new Byte[palSize];
                     Array.Copy(fileData, this.hdrPaletteOffset, paletteData, 0, palSize);
                     this.palette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, false);
-                    this.fullpalette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, true);
+                    fullpalette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, true);
                 }
                 else if (this.hdrColorFormat != 2)
                 {
                     // No palette in file, but paletted color format. Generate grayscale palette.
                     Int32 bpp = this.GetBitsPerColor();
                     this.palette = ColorUtils.GenerateGrayPalette(bpp);
-                    this.fullpalette = ColorUtils.GenerateGrayPalette(bpp);
+                    fullpalette = ColorUtils.GenerateGrayPalette(bpp);
                     // Ignore original value here.
                     this.hdrBytesPerColor = 4;
                 }
                 else
                 {
                     this.palette = null;
-                    this.fullpalette = null;
+                    fullpalette = null;
                 }
             }
             catch (Exception e)

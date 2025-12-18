@@ -257,7 +257,7 @@ namespace CnC64FileConverter.UI
                 {
                     N64FileType selectedType;
                     //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
-                    String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Open height levels image", new Type[] { typeof(FileImage) }, null, pngFileName, "images", null, out selectedType);
+                    String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] { typeof(FileImage) }, null, pngFileName, "images", null, out selectedType);
                     if (filename == null)
                         return;
                     try
@@ -274,7 +274,7 @@ namespace CnC64FileConverter.UI
                     }
                     if (plateauImage.Width != 64 || plateauImage.Height != 64)
                     {
-                        MessageBox.Show(this, "Plateaus image needs to be 64x64!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, "Height levels image needs to be 64x64!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                 }
@@ -291,12 +291,13 @@ namespace CnC64FileConverter.UI
             if (this.m_LoadedFile != null && m_LoadedFile.Width == 64 && m_LoadedFile.Height == 64 && m_LoadedFile is FileImage)
             {
                 String baseFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename));
-                String pngFileName = baseFileName + "_h.png";
+                String imgFileName = baseFileName + ".img";
                 Bitmap bm = HeightMapGenerator.GenerateHeightMapImage65x65(m_LoadedFile.GetBitmap());
-                Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref pngFileName);
-                this.m_LoadedFile = new FileImagePng();
-                m_LoadedFile.LoadImage(imageData);
-                this.m_Filename = pngFileName;
+                //Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref imgFileName);
+                FileImgN64Gray file = new FileImgN64Gray();
+                file.LoadImage(bm);
+                this.m_LoadedFile = file;
+                this.m_Filename = imgFileName;
                 ReloadUi(null);
             }
         }

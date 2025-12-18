@@ -20,17 +20,21 @@ Features:
  high-colour images can't be saved as palette, and only maps can be saved as maps.
 -Preserves the color palette when saving 4-bit and 8-bit paletted images.
 -Supports drag & drop for opening files.
--Has utilities to help generate height maps for missions.
 -Can be used as command line converter with the following syntax:
     CnC64FileConverter.exe infile.img outfile.png
+-Has utilities to help generate height maps for missions.
 
 
 Version history:
 ---------------
 This tool stated as the CnC64ImageViewer, but later got expanded to a full conversion suite.
-At that point, it becameto CnC64FileConverter v1.0.
+At that point, it became the CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
+
+v1.0.4: (07/04/2017 17:32)
+-The Converted 65x65 height maps will immediately be loaded in the program as paletteless IMG
+ format, so they can more easily be saved into that format.
 
 v1.0.3: (07/04/2017 15:30)
 -Fixed small palette import bug in tilesets
