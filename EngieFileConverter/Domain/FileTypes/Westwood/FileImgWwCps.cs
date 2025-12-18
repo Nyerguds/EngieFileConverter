@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "WwCps"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood CPS"; } }
-        public override String[] FileExtensions { get { return new String[] {"cps"}; } }
+        public override String[] FileExtensions { get { return new String[] {"cps", "cmp"}; } }
         public override String LongTypeName { get { return "Westwood CPS File"; } }
         public override Boolean NeedsPalette { get { return m_LoadedPalette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
@@ -130,19 +130,19 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 dataLen = fileData.Length - start;
             if (dataLen < (asToonstruck ? 12 : 10))
-                throw new FileTypeLoadException("File is not long enough to be a valid CPS file.");
+                throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
             Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 0, asToonstruck ? 4 : 2, true);
             // compensate for 4-byte file size.
             if (asToonstruck)
                 start += 2;
             compression = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, start + 2);
             if (compression < 0 || compression > 4)
-                throw new FileTypeLoadException("Unknown compression type " + compression);
+                throw new FileTypeLoadException(String.Format(ERR_UNKN_COMPR_X, compression));
             // compressions other than 0 and 4 count the full file including size header.
             if (!asToonstruck && (compression == 0 || compression == 4))
                 fileSize += 2;
             if (fileSize != dataLen)
-                throw new FileTypeLoadException("File size in header does not match!");
+                throw new FileTypeLoadException(ERR_BAD_HEADER_SIZE);
             Int32 bufferSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, start + 4);
             Int32 paletteLength = ArrayUtils.ReadInt16FromByteArrayLe(fileData, start + 8);
             Boolean isPc = bufferSize == 64000;
@@ -152,13 +152,12 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 amigaPalCount = 0;
             if (!isPc && !isAmiga && !isToon)
                 throw new FileTypeLoadException("Unknown CPS type!");
-
             if (paletteLength > 0)
             {
                 if (paletteLength <= 0x100 && isAmiga && paletteLength % 0x40 == 0)
                     amigaPalCount = paletteLength / 0x40;
                 if (amigaPalCount == 0 && paletteLength > 0x300)
-                    throw new FileTypeLoadException("Invalid palette length in header!");
+                    throw new FileTypeLoadException(ERR_BAD_HEADER_PAL_SIZE);
                 Int32 palStart = start + 10;
                 try
                 {
@@ -174,7 +173,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (paletteLength % 3 != 0)
                             throw new FileTypeLoadException("Bad length for 6-bit CPS palette!");
                         Int32 colors = paletteLength / 3;
-                        palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, palStart, colors);
+                        palette = ColorUtils.ReadSixBitPalette(fileData, palStart, colors);
                     }
                 }
                 catch (ArgumentException ex)
@@ -203,7 +202,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imageData;
             Int32 dataOffset = start + 10 + paletteLength;
             if (compression == 0 && dataLen < dataOffset + bufferSize)
-                throw new FileTypeLoadException("File is not long enough to contain the image data!");
+                throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
             try
             {
                 switch (compression)
@@ -221,22 +220,22 @@ namespace EngieFileConverter.Domain.FileTypes
                         imageData = lzw14.Decompress(fileData, dataOffset, bufferSize);
                         break;
                     case 3:
-                        imageData = WestwoodRle.RleDecode(fileData, (UInt32) dataOffset, null, bufferSize, isAmiga, true);
+                        imageData = WestwoodRle.RleDecode(fileData, (UInt32) dataOffset, null, bufferSize, !isAmiga, true);
                         break;
                     case 4:
                         imageData = new Byte[bufferSize];
                         WWCompression.LcwDecompress(fileData, ref dataOffset, imageData, 0);
                         break;
                     default:
-                        throw new FileTypeLoadException("Unsupported compression format \"" + compression + "\".");
+                        throw new FileTypeLoadException(String.Format(ERR_UNKN_COMPR_X, compression));
                 }
             }
             catch (Exception e)
             {
-                throw new FileTypeLoadException("Error decompressing image data: " + e.Message, e);
+                throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, e.Message), e);
             }
             if (imageData == null)
-                throw new FileTypeLoadException("Error decompressing image data.");
+                throw new FileTypeLoadException(ERR_DECOMPR);
             // Amiga-specific logic: extract EOB1 palette, and reorder 5-bit planar data to 8-bit linear data.
             if (isAmiga)
             {
@@ -291,10 +290,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException("File to save is empty!", "fileToSave");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
             if (image == null || image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException("Only 8-bit 320×200 images can be saved as CPS!", "fileToSave");
+                throw new ArgumentException(ErrFixedBppAndSize, "fileToSave");
 
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;
@@ -310,10 +309,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException("File to save is empty!", "fileToSave");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
             if (image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!", "fileToSave");
+                throw new ArgumentException(ErrFixedBppAndSize, "fileToSave");
 
             Boolean asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 version;
@@ -321,10 +320,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 version = 0;
             Int32 compressionType;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
+            Byte[] imageData = ImageUtils.GetImageData(image, true);
             if (imageData.Length != this.m_Width * this.m_Height)
-                throw new ArgumentException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!","fileToSave");
+                throw new ArgumentException(ErrFixedBppAndSize, "fileToSave");
             return SaveCps(imageData, fileToSave.GetColors(), asPaletted ? 1 : 0, compressionType, (CpsVersion) version);
         }
 
@@ -367,7 +365,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 i = 0; i < 32; ++i)
                     {
                         UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
-                        ArrayUtils.WriteInt16ToByteArrayBe(imageDataPlanes, palOffset, col);
+                        ArrayUtils.WriteUInt16ToByteArrayBe(imageDataPlanes, palOffset, col);
                         palOffset += 2;
                     }
                 }
@@ -388,13 +386,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     compressedData = lzw14.Compress(imageData);
                     break;
                 case 3:
-                    compressedData = WestwoodRle.RleEncode(imageData);
+                    compressedData = WestwoodRle.RleEncode(imageData, !isAmiga);
                     break;
                 case 4:
                     compressedData = WWCompression.LcwCompress(imageData);
                     break;
                 default:
-                    throw new ArgumentException("Unknown compression type given.", "compressionType");
+                    throw new ArgumentException(ERR_UNKN_COMPR, "compressionType");
             }
             Int32 dataLength = 10 + compressedData.Length;
             Int32 paletteLength;
@@ -418,11 +416,11 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else
             {
-                ArrayUtils.WriteInt16ToByteArrayLe(fullData, startOffset + 0, (dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
+                ArrayUtils.WriteUInt16ToByteArrayLe(fullData, startOffset + 0, (UInt16)(dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
             }
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, startOffset + 2, compressionType);
-            ArrayUtils.WriteInt32ToByteArrayLe(fullData, startOffset + 4, imageData.Length);
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, startOffset + 8, paletteLength);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, startOffset + 2, (UInt16)compressionType);
+            ArrayUtils.WriteUInt32ToByteArrayLe(fullData, startOffset + 4, (UInt32)imageData.Length);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, startOffset + 8, (UInt16)paletteLength);
             Int32 offset = 10;
             if (paletteLength > 0)
             {
@@ -434,7 +432,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 i = 0; i < palLen; ++i)
                     {
                         UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
-                        ArrayUtils.WriteInt16ToByteArrayBe(palData, i * 2, col);
+                        ArrayUtils.WriteUInt16ToByteArrayBe(palData, i * 2, col);
                     }
                 }
                 else
@@ -445,8 +443,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         Array.Copy(palette, 0, pal, 0, Math.Min(palette.Length, 256));
                         palette = pal;
                     }
-                    ColorSixBit[] sixbitPal = ColorUtils.GetSixBitColorPalette(palette);
-                    palData = ColorUtils.GetSixBitPaletteData(sixbitPal);
+                    palData = ColorUtils.GetSixBitPaletteData(palette);
                 }
                 Array.Copy(palData, 0, fullData, offset, palData.Length);
                 offset += palData.Length;

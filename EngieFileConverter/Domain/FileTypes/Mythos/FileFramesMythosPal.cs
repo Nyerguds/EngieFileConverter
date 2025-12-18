@@ -8,9 +8,11 @@ using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
+    /// <summary>
+    /// Mythos Visage format. See https://www.shikadi.net/wiki/Visage_Format
+    /// </summary>
     public class FileFramesMythosPal : FileFramesMythosVgs
     {
-
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.None; } }

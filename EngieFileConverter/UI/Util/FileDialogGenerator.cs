@@ -226,7 +226,7 @@ namespace Nyerguds.Util.UI
                     continue;
                 }
                 Int32 extLength = extensions.Length;
-                for (Int32 i = 0; i < extLength; i++)
+                for (Int32 i = 0; i < extLength; ++i)
                 {
                     String descr = skipOtherExtensions ? itemType.Description : descriptions[i];
                     types.Add(String.Format("{0} ({1})|{1}", descr, filters[i]));
@@ -327,7 +327,7 @@ namespace Nyerguds.Util.UI
             get { return String.Format("{0} (*.{1})", this.Description, this.Extensions); }
         }
 
-        /// <summary>Returns a newly created instance of this type.</summary>
+        /// <summary>Returns a new instance of this type. The same FileDialogItem always returns the same instance.</summary>
         public T ItemObject { get { return itemObjectSet ? itemObject : (T)Activator.CreateInstance(this.ItemType); } }
 
         private T itemObject;

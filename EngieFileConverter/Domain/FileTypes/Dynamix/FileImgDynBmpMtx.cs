@@ -169,11 +169,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameMatrix[i] = translationTable[frameMatrix[i]];
             // Post-processing: Exchange rows and columns.
             Byte[] frameMatrixFinal = new Byte[4 + nrOfFrames * 2];
-            ArrayUtils.WriteInt16ToByteArrayLe(frameMatrixFinal, 0, matrixWidth);
-            ArrayUtils.WriteInt16ToByteArrayLe(frameMatrixFinal, 2, matrixHeight);
+            ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 0, (UInt16)matrixWidth);
+            ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 2, (UInt16)matrixHeight);
 
             for (Int32 i = 0; i < nrOfFrames; ++i)
-                ArrayUtils.WriteInt16ToByteArrayLe(frameMatrixFinal, 4 + i * 2, frameMatrix[i] + 0);
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 4 + i * 2, (UInt16)frameMatrix[i]);
 
             // Make FileImageFrames object filled with frames
             FileFrames frs = new FileFrames();

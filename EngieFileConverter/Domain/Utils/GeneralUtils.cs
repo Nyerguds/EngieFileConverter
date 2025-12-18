@@ -56,6 +56,22 @@ namespace Nyerguds.Util
             return Regex.IsMatch(str, "^[0-9A-F]*$", RegexOptions.IgnoreCase);
         }
 
+        public static Int32 HighestCommonDenominator(Int32 a, Int32 b)
+        {
+            const String err = "Argument cannot be 0";
+            if (a == 0)
+                throw new ArgumentException(err, "a");
+            if (b == 0)
+                throw new ArgumentException(err, "b");
+            Int32 min = Math.Min(a, b);
+            if (Math.Max(a, b) % min == 0)
+                return min;
+            for (Int32 i = min; i > 0; --i)
+                if (a % i == 0 && b % i == 0)
+                    return i;
+            return 1;
+        }
+
         public static String GetApplicationPath()
         {
             return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -134,7 +150,19 @@ namespace Nyerguds.Util
         /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
         public static String GroupNumbers<T>(IEnumerable<T> numbers) where T : IComparable, IConvertible
         {
-            return new StringBuilder().AppendNumbersGrouped(numbers).ToString();
+            return GroupNumbers(numbers, false);
+    }
+
+        /// <summary>
+        /// Groups numbers into ranges and returns  the result as String. Example: [1,2,3,5,7,8,9] becomes "1-3, 5, 7-9".
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="numbers">The array of numbers.</param>
+        /// <returns>The resulting String.</returns>
+        /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
+        public static String GroupNumbers<T>(IEnumerable<T> numbers, Boolean asHex) where T : IComparable, IConvertible
+        {
+            return new StringBuilder().AppendNumbersGrouped(numbers, asHex).ToString();
         }
 
         /// <summary>
@@ -148,7 +176,21 @@ namespace Nyerguds.Util
         /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
         public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers) where T : IComparable, IConvertible
         {
-            return AppendNumbersGrouped(sb, numbers, "-", ", ");
+            return AppendNumbersGrouped(sb, numbers, "-", ", ", false);
+        }
+
+        /// <summary>
+        /// Groups numbers into ranges and writes the result to a given StringBuilder. Example: [1,2,3,5,7,8,9] becomes "1-3, 5, 7-9".
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="sb">String builder to write the result to.</param>
+        /// <param name="numbers">The array of numbers.</param>
+        /// <returns>The given string builder arg, for convenience for further appending.</returns>
+        /// <remarks>
+        /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
+        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, Boolean asHex) where T : IComparable, IConvertible
+        {
+            return AppendNumbersGrouped(sb, numbers, "-", ", ", asHex);
         }
 
         /// <summary>
@@ -162,7 +204,7 @@ namespace Nyerguds.Util
         /// <returns>The given string builder arg, for convenience for further appending.</returns>
         /// <remarks>
         /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
-        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, String rangeSeparator, String groupsSeparator) where T : IComparable, IConvertible
+        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, String rangeSeparator, String groupsSeparator, Boolean asHex) where T : IComparable, IConvertible
         {
             T[] numbersArr = numbers.Distinct().OrderBy(x => x).ToArray();
             Int64 len = numbersArr.LongLength;
@@ -172,12 +214,12 @@ namespace Nyerguds.Util
                 if (index > 0)
                     sb.Append(groupsSeparator);
                 T cur = numbersArr[index];
-                Int64 curIndex = index;
-                sb.Append(cur);
+                Int64 startIndex = index;
+                sb.Append(String.Format(asHex ? "{0:X}" : "{0}", cur));
                 while (index + 1 < len && numbersArr[index].ToInt64(CultureInfo.InvariantCulture) + 1 == numbersArr[index + 1].ToInt64(CultureInfo.InvariantCulture))
                     index++;
-                if (index > curIndex)
-                    sb.Append(rangeSeparator).Append(numbersArr[index]);
+                if (index > startIndex)
+                    sb.Append(index - startIndex == 1? groupsSeparator : rangeSeparator).Append(String.Format(asHex ? "{0:X}" : "{0}", numbersArr[index]));
                 index++;
             }
             return sb;
@@ -199,10 +241,34 @@ namespace Nyerguds.Util
         /// Duplicates in the given numbers range are ignored.
         /// </summary>
         /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
+        /// <returns>An array of distinct integers.</returns>
+        public static Int32[] GetRangedNumbers(String input, bool asHex)
+        {
+            return GetRangedNumbers(input, "-", ",", asHex);
+        }
+
+        /// <summary>
+        /// Converts grouped positive numbers into an array of integers. Example: "1-3, 5, 7-9" becomes [1,2,3,5,7,8,9].
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
         /// <param name="rangeSeparator">String put between two numbers in a range, like the '-' in "1-3".</param>
         /// <param name="groupsSeparator">String put between two groups, like the ',' in "1-5, 9-10". Spaces are trimmed off both this string and the split results.</param>
         /// <returns>An array of integers.</returns>
         public static Int32[] GetRangedNumbers(String input, String rangeSeparator, String groupsSeparator)
+        {
+            return GetRangedNumbers(input, rangeSeparator, groupsSeparator, false);
+        }
+
+        /// <summary>
+        /// Converts grouped positive numbers into an array of integers. Example: "1-3, 5, 7-9" becomes [1,2,3,5,7,8,9].
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
+        /// <param name="rangeSeparator">String put between two numbers in a range, like the '-' in "1-3".</param>
+        /// <param name="groupsSeparator">String put between two groups, like the ',' in "1-5, 9-10". Spaces are trimmed off both this string and the split results.</param>
+        /// <returns>An array of integers.</returns>
+        public static Int32[] GetRangedNumbers(String input, String rangeSeparator, String groupsSeparator, bool asHex)
         {
             if (String.IsNullOrEmpty(input))
                 return new Int32[0];
@@ -213,22 +279,28 @@ namespace Nyerguds.Util
             String[] parts = input.Split(new String[] { groupsSeparator }, StringSplitOptions.RemoveEmptyEntries);
             List<Int32> numbers = new List<Int32>();
             Int32 nrOfParts = parts.Length;
+            // Unlike a simple Split, the use of regex allows the use of negative values if the range splitter is "-".
+            String nrGroup = asHex ? "(-?)((?:0x)?[0-9A-Za-z]+)" : "(-?)(\\d+)";
+            Regex split = new Regex("^" + nrGroup + "\\s*(?:" + Regex.Escape(rangeSeparator) + "\\s*" + nrGroup + ")?$");
+            int numBase = asHex ? 16 : 10;
             for (Int32 i = 0; i < nrOfParts; ++i)
             {
                 String part = parts[i];
-                // Unlike a simple Split, the use of regex allows the use of negative values if the range splitter is "-".
-                Regex split = new Regex("^(-?\\d+)\\s*(" + Regex.Escape(rangeSeparator) + "\\s*(-?\\d+))?$");
                 Match m = split.Match(part);
                 if (m.Success)
                 {
-                    Int32 val1 = Int32.Parse(m.Groups[1].Value);
-                    if (m.Groups[3].Value.Length == 0)
+                    Int32 val1 = Convert.ToInt32(m.Groups[2].Value, numBase);
+                    if (m.Groups[1].Value == "-")
+                        val1 *= -1;
+                    if (m.Groups[4].Value.Length == 0)
                     {
                         numbers.Add(val1);
                     }
                     else
                     {
-                        Int32 val2 = Int32.Parse(m.Groups[3].Value);
+                        Int32 val2 = Convert.ToInt32(m.Groups[4].Value, numBase);
+                        if (m.Groups[3].Value == "-")
+                            val2 *= -1;
                         Int32 lowest = Math.Min(val1, val2);
                         Int32 highest = Math.Max(val1, val2);
                         numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));

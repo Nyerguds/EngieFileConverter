@@ -1,6 +1,5 @@
 ﻿Engie File Converter
 --------------------
-
 This tool was originally created to allow viewing and converting image formats found in the
 Nintendo 64 ROM of the Command & Conquer game. Since then, it has evolved into a more general
 modding suite supporting a large range of file formats from classic 90's era games.
@@ -30,8 +29,18 @@ Features:
 -Offers save options for the types that need them.
 
 
-Acknowledgements:
-----------------
+Acknowledgements and license information:
+----------------------------------------
+All code written by me specifically for this tool is released under the WTF license, meaning you
+can do whatever the F you want with it. However, the tool contains a lot of other pieces of code,
+usually written by other people (mostly the compression/decompression algorithms), that have their
+own licenses. See the information below for the specifics on that.
+
+My ini handler is released under a permissive license with requires attribution, which I dubbed
+the "supervillain license". It allows any and all use except for criminal activities, with the
+exception of supervillain activities ;)
+
+
 Any icons used in the program (except for the Engineer icon) are based on the
 Fugue Icons 16x16 pack by Yusuke Kamiyamane (Copyright (C) 2010)
 http://p.yusukekamiyamane.com/
@@ -63,7 +72,7 @@ https://www.vogons.org/viewtopic.php?p=306003#p306003
 https://web.archive.org/web/20200611023054/people.cs.umu.se/isak/snippets/lzhuf.c
 
 The K.O.R.T. image format was decoded thanks to documentation included in the K.O.R.T. savegame
-editor written by David Eriksson, aka Edison of 2GooD:
+editor written by David Eriksson, aka "Σdison of 2GooD":
 http://www.2good.nu/projekt/korted
 
 The K.O.R.T. BMP format was mapped by TheRuler on the OldGamesItalia forum:
@@ -73,9 +82,9 @@ The code of ScummVM helped a lot to figure out the compression on the Elvira VGA
 https://www.scummvm.org/
 
 The Mythos Visage format's RLE compression formats were figured out by user Ceiwad of the
-shikadi.net modding wiki, who posted his findings here:
+Shikadi modding wiki at shikadi.net, who posted his findings here:
 http://www.shikadi.net/moddingwiki/Visage_Format
-(though the topic has been thoroughly clarified by me since then :p)
+(though the article has been thoroughly extended by me since then :p)
 
 The Dune II SHP format was implemented based on a document written by Ultraq, with further
 assistance from OmniBlade.
@@ -85,9 +94,17 @@ The DaisyField format's decryption was vastly simplified thanks to some hints fr
 The Interactive Girls Club bit mask compression was figured out thanks to CTPAX-X Team.
 
 The bulk of the research on the Dynamix SCN/OFF format was done by user Knt47 of the VOGONS.org
-forums and Shikadi modding wiki.
+forums and the Shikadi modding wiki at shikadi.net.
+https://moddingwiki.shikadi.net/wiki/The_Incredible_Machine_Image_Format
 
-The "All Dogs Go To Heaven" format was figured out by Levellass.
+The "All Dogs Go To Heaven", "Jazz Jackrabbit" and "Executioners" file and compression formats
+were figured out by Levellass, and posted on the Shikadi modding wiki at shikadi.net.
+https://moddingwiki.shikadi.net/wiki/All_Dogs_Archive_Format
+https://moddingwiki.shikadi.net/wiki/All_Dogs_RLE_Compression
+https://moddingwiki.shikadi.net/wiki/Jazz_Jackrabbit_Font_Format
+https://moddingwiki.shikadi.net/wiki/Jazz_Jackrabbit_RLE_compression
+https://moddingwiki.shikadi.net/wiki/Executioners_Sprite_Format
+https://moddingwiki.shikadi.net/wiki/Executioners_RLE_Format
 
 
 Version history:
@@ -99,8 +116,12 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.10 (01/02/2025 14:35 CET)
+-Added support for the Treasure Mountain (DOS, 1990) .PAN format.
+-Fixed error causing palette selection to not propagate to all frames.
+
 v1.5.9: (28/04/2022 12:50 CET)
--Fixed error of background colour choice not showing up in "frames to single image" dialog
+-Fixed error of background color choice not showing up in "frames to single image" dialog
  if the frames were indexed format.
 -Added support for Jazz Jackrabbit fonts.
 
@@ -131,7 +152,7 @@ v1.5.5: (04/05/2021 20:41 CET)
 
 v1.5.4: (21/03/2021 20:30 CET)
 -Added support for saving completely transparent Dynamix BMP of the SCN type.
--Fixed incorrect loading of 16-colour palettes for Dynamix BMP files.
+-Fixed incorrect loading of 16-color palettes for Dynamix BMP files.
 -Changed standard palette save format to 8-bit rather than 6-bit. When opening the palette editor,
  6-bit palettes will be converted to 8-bit, with an accompanying ini file to confirm its format.
 -Fixed issue that corrupted the loaded file when using the "change palette" dialog.
@@ -142,11 +163,11 @@ v1.5.3: (31/01/2021 00:40 CET)
 -All popup windows now properly dispose their used resources.
 -Added better options for internal sizes of Windows icons.
 -Added support for INT 33 mouse cursors. Note that this type will not be autodetected.
--Added save option for png to expand the palette of 4-bit images with 4 or less colours to 16
- colours. This prevents editors from re-saving it as 2-bit, which .net can't open as indexed.
+-Added save option for png to expand the palette of 4-bit images with 4 or less colors to 16
+ colors. This prevents editors from re-saving it as 2-bit, which .net can't open as indexed.
 -Added support for loading and saving Dynamix BMP files of the SCN/OFF format. These are
  images with 4-bit data that can be incremented to other indices in an 8-bit image.
--Fixed a bug where colours converted from 6-bit to 8-bit and then back would be changed.
+-Fixed a bug where colors converted from 6-bit to 8-bit and then back would be changed.
 
 v1.5.2: (29/06/2020 15:25 CET)
 -Added support for Mythos LBV, the raw 8-bit 320x200 image with palette from Serrated Scalpel.

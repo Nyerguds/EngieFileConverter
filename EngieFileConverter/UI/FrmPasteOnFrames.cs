@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -56,7 +55,7 @@ namespace EngieFileConverter.UI
 
         private void BtnSelectImageClick(Object sender, EventArgs e)
         {
-            Type[] openTypes = SupportedFileType.SupportedOpenTypes;
+            Type[] openTypes = FileTypesFactory.SupportedOpenTypes;
             SupportedFileType[] sft = openTypes.Select(ft => new FileDialogItem<SupportedFileType>(ft).ItemObject).Where(ft => (ft.InputFileClass & FileClass.Image) != 0).ToArray();
             List<Type> filteredTypes = sft.Select(ft => ft.GetType()).ToList();
             SupportedFileType selectedType;
@@ -72,7 +71,7 @@ namespace EngieFileConverter.UI
                 if (selectedType == null)
                 {
                     List<FileTypeLoadException> loadErrors;
-                    selectedType = SupportedFileType.LoadFileAutodetect(fileData, filename, sft, true, out loadErrors);
+                    selectedType = FileTypesFactory.LoadFileAutodetect(fileData, filename, sft, true, out loadErrors);
                     if (selectedType == null)
                     {
                         String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());

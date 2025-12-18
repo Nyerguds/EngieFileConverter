@@ -294,6 +294,5 @@ namespace Nyerguds.Util.UI
             else if (e.Direction == UpDownAction.Up && val <= 1 && val > -2)
                 zoom.EnteredValue = val <= -1 ? 1 : 2;
         }
-
     }
 }

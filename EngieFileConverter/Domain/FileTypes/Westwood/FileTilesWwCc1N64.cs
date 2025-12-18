@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
@@ -23,24 +24,25 @@ namespace EngieFileConverter.Domain.FileTypes
         protected String ExtPalIndex { get { return "nd" + this.Bpp; } }
         protected String ExtPalFile { get { return "pa" + this.Bpp; } }
         protected String ExtTileIds { get { return "tl" + this.Bpp; } }
-        protected FileTileCc1N64[] m_tilesList = new FileTileCc1N64[0];
+        protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
         protected Byte[][] m_rawTiles;
         protected Byte[] m_palIndexFile;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return this.m_tilesList == null ? null : this.m_tilesList.Cast<SupportedFileType>().ToArray(); } }
+        public override SupportedFileType[] Frames { get { return ArrayUtils.CloneArray(this.m_FramesList); } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
         public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
+        public override  Boolean FramesHaveCommonPalette { get { return this.Bpp == 8; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public virtual Boolean CanSave { get { return false; } }
+        public override Boolean CanSave { get { return false; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -98,18 +100,17 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 len = palIndexFile.Length;
             Color[] fullPalette = palette.GetColors();
-            FileTileCc1N64[] list = new FileTileCc1N64[len];
+            SupportedFileType[] list = new SupportedFileType[len];
             Int32 stride = ImageUtils.GetMinimumStride(24, this.Bpp);
             Int32 tileSize = stride * 24;
             Int32 singlePalSize = 1 << this.Bpp;
-            Int32 tiles = palIndexFile.Length;
 
-            this.m_rawTiles = new Byte[palIndexFile.Length][];
+            this.m_rawTiles = new Byte[len][];
             Int32 tilesWidth = 24;
             Int32 tilesHeight = this.m_rawTiles.Length * 24;
             Int32 tilesStride = ImageUtils.GetMinimumStride(tilesWidth, this.Bpp);
             Byte[] tilesData = this.AdjustTo8BitPalette(dataFile, this.m_palIndexFile, 24, tilesHeight, ref tilesStride);
-            for (Int32 i = 0; i < tiles; ++i)
+            for (Int32 i = 0; i < len; ++i)
             {
                 Int32 index = i * tileSize;
                 Color[] subPalette = new Color[singlePalSize];
@@ -120,10 +121,28 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap currentTile = ImageUtils.BuildImage(imageData, 24, 24, stride, pf, subPalette, Color.Black);
                 Byte highByte = tileIdsFile[i * 2];
                 Byte lowByte = tileIdsFile[i * 2 + 1];
-                list[i] = new FileTileCc1N64(this, baseFileName, currentTile, highByte, lowByte, palIndexFile[i]);
+
+                FileImageFrame cell = new FileImageFrame();
+                cell.LoadFileFrame(this, this, currentTile, baseFileName, (Byte)i);
+                cell.SetBitsPerColor(this.Bpp);
+                cell.SetFileClass(this.FrameInputFileClass);
+                cell.SetNeedsPalette(false);
+                TileInfo ti;
+                bool foundMapping = MapConversion.TILEINFO_TD.TryGetValue(highByte, out ti);
+                string formattedHighByte = String.Format("[{0:X2}]", highByte);
+                String baseName = ti == null ? formattedHighByte : ti.TileName;
+                String cellFileName = baseName + "_" + lowByte.ToString("D3");
+                cell.SetFrameFileName(cellFileName);
+                StringBuilder extraInfo = new StringBuilder();
+                extraInfo.Append("Tileset: ").Append(formattedHighByte).Append(foundMapping ? " " + ti.TileName : " NOT FOUND");
+                extraInfo.Append("\nTileset number: ").Append(lowByte);
+                extraInfo.Append("\nUsed subpalette: ").Append(palIndexFile[i]);
+                cell.ExtraInfo = extraInfo.ToString();
+                list[i] = cell;
+                //list[i] = new FileTileCc1N64(this, baseFileName, currentTile, highByte, lowByte, palIndexFile[i]);
                 this.m_rawTiles[i] = ImageUtils.CopyFrom8bpp(tilesData, tilesWidth, tilesHeight, tilesStride, new Rectangle(0, i * 24, 24, 24));
             }
-            this.m_tilesList = list;
+            this.m_FramesList = list;
         }
 
         private PixelFormat GetPixelFormat(Int32 bpp)
@@ -167,27 +186,6 @@ namespace EngieFileConverter.Domain.FileTypes
             stride = width;
             return imageData;
         }
-
-        public void ConvertToTiles(String outputFolder, String baseName, SupportedFileType outputType)
-        {
-            if (!(outputType is FileImage))
-                throw new ArgumentException("Exporting tileset as type " + outputType.ShortTypeName + " is not supported.", "outputType");
-            if (outputType is FileImageJpg)
-                throw new ArgumentException("JPEG? No. Don't do that to those poor 24×24 paletted images.", "outputType");
-            String ext = "." + outputType.FileExtensions[0];
-            Int32 nrOfTiles = this.m_tilesList.Length;
-            for (Int32 i = 0; i < nrOfTiles; ++i)
-            {
-                FileTileCc1N64 tile = this.m_tilesList[i];
-                TileInfo ti;
-                if (!MapConversion.TILEINFO.TryGetValue(tile.CellData.HighByte, out ti))
-                    throw new ArgumentException("Bad mapping in " + this.ExtTileIds + " file!");
-                String outputName = ti.TileName + "_" + tile.CellData.LowByte.ToString("D3") + "_pal" + tile.PaletteIndex.ToString("D2") + ext;
-                String outputPath = Path.Combine(outputFolder, outputName);
-                outputType.SaveAsThis(tile, outputPath, new Option[0]);
-            }
-        }
-
     }
 
     public class FileTilesWwCc1N64Bpp4 : FileTilesWwCc1N64
@@ -204,60 +202,5 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected override Int32 Bpp { get { return 8; } }
         protected override FilePaletteWwCc1N64 PaletteType { get { return new FilePaletteWwCc1N64Pa8(); } }
-    }
-
-    public class FileTileCc1N64 : SupportedFileType
-    {
-        public override String IdCode { get { return null; } }
-        public override FileClass FileClass { get { return this.Bpp == 4 ? FileClass.Image4Bit : FileClass.Image8Bit; } }
-        public override FileClass InputFileClass { get { return FileClass.None; } }
-        /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 Tile"; } }
-        public override String LongTypeName { get { return "C&C64 " + this.Bpp + "-bit terrain tile";} }
-        public override String[] FileExtensions { get { return new String[0]; } }
-
-        public String SourceFileName { get; private set; }
-        public CnCMapCell CellData { get; private set; }
-        public Int32 PaletteIndex { get; private set; }
-        public TileInfo TileInfo { get; private set; }
-        public Int32 Bpp { get { return Image.GetPixelFormatSize((this.m_LoadedImage.PixelFormat)); } }
-        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
-
-        public FileTileCc1N64(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte? highByte, Byte lowByte, Int32 paletteIndex)
-        {
-            this.FrameParent = origin;
-            this.SourceFileName = sourceFileName;
-            this.m_LoadedImage = tileImage;
-            TileInfo ti = null;
-            if (highByte.HasValue && !MapConversion.TILEINFO.TryGetValue(highByte.Value, out ti))
-                throw new FileTypeLoadException("Bad mapping!");
-            this.TileInfo = ti;
-            String baseName = ti == null ? Path.GetFileNameWithoutExtension(sourceFileName) : ti.TileName;
-            this.LoadedFileName = baseName + "_" + lowByte.ToString("D3") + Path.GetExtension(sourceFileName);
-            this.LoadedFile = Path.Combine(Path.GetDirectoryName(sourceFileName), this.LoadedFileName);
-            this.CellData = new CnCMapCell(highByte ?? 0xFF, lowByte);
-            this.PaletteIndex = paletteIndex;
-        }
-
-        public override String ToString()
-        {
-            return this.SourceFileName + " " + this.CellData.ToString() + " (" + Image.GetPixelFormatSize((this.m_LoadedImage.PixelFormat)) + " BPP)";
-        }
-
-        public override void LoadFile(Byte[] fileData)
-        {
-            throw new FileTypeLoadException("Loading as this type is not supported.");
-        }
-
-        public override void LoadFile(Byte[] fileData, String filename)
-        {
-            throw new FileTypeLoadException("Loading as this type is not supported.");
-        }
-
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

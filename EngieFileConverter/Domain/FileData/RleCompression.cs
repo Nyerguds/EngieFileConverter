@@ -186,14 +186,14 @@ namespace Nyerguds.FileData.Compression
         /// <param name="buffer">Buffer to decode.</param>
         /// <param name="startOffset">Inclusive start offset in buffer. Defaults to 0.</param>
         /// <param name="endOffset">Exclusive end offset in buffer. Defaults to the buffer length.</param>
-        /// <param name="decompressedSize">The expected size of the decompressed data.</param>
+        /// <param name="decompressedSize">The expected size of the decompressed data. Leave 0 to make an auto-expanding buffer.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
         /// <returns>A byte array of the given output size, filled with the decompressed data, or null if abortOnError is enabled and an empty command was found.</returns>
         public Byte[] RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
             if (buffer == null)
                 throw new ArgumentNullException("buffer");
-            Byte[] outputBuffer = new Byte[decompressedSize];
+            Byte[] outputBuffer = decompressedSize <= 0 ? null : new Byte[decompressedSize];
             Int32 result = this.RleDecodeData(buffer, startOffset, endOffset, ref outputBuffer, abortOnError);
             if (result == -1)
                 return null;
@@ -206,7 +206,7 @@ namespace Nyerguds.FileData.Compression
         /// <param name="buffer">Buffer to decode.</param>
         /// <param name="startOffset">Inclusive start offset in buffer. Defaults to 0.</param>
         /// <param name="endOffset">Exclusive end offset in buffer. Defaults to the buffer length.</param>
-        /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
+        /// <param name="bufferOut">Output array. Determines the maximum that can be decoded. Leave null to create a buffer automaically and expand it when needed.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return -1.</param>
         /// <returns>The amount of written bytes in bufferOut.</returns>
         public Int32 RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, ref Byte[] bufferOut, Boolean abortOnError)

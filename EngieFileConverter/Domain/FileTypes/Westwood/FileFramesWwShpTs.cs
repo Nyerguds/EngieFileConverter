@@ -199,9 +199,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 shadowLimit = nrOfFrames / 2;
             const Int32 hdrSize = 0x08;
             Byte[] header = new Byte[hdrSize];
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 2, width);
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 4, height);
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 6, nrOfFrames);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 2, (UInt16)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 4, (UInt16)height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 6, (UInt16)nrOfFrames);
             const Int32 frameHdrSize = 0x18;
             Byte[] frameHeaders = new Byte[nrOfFrames * frameHdrSize];
 
@@ -261,7 +261,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    // get average colour, ignoring zero and compensating for remap range.
+                    // get average color, ignoring zero and compensating for remap range.
                     if (hasShadow && i >= shadowLimit)
                         col = Color.Empty;
                     //else if (!saveColors) // XCC emulating test
@@ -309,14 +309,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (alignment > 0)
                         frameDataOffset += 8 - alignment;
                 }
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x00, xOffset); //frmX
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x02, yOffset); //frmY
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x04, newWidth); //frmWidth
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x06, newHeight); //frmHeight
-                ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x08, flags); //frmFlags
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x00, (UInt16)xOffset); //frmX
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x02, (UInt16)yOffset); //frmY
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x04, (UInt16)newWidth); //frmWidth
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x06, (UInt16)newHeight); //frmHeight
+                ArrayUtils.WriteUInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x08, flags); //frmFlags
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x0C, 3, false, (UInt32)col.ToArgb()); //frmColor
-                //ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x10, 00);  //frmReserved
-                ArrayUtils.WriteInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x14, dataOffset); //frmDataOffset
+                //ArrayUtils.WriteUInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x10, 00);  //frmReserved
+                ArrayUtils.WriteUInt32ToByteArrayLe(frameHeaders, frameHeaderOffset + 0x14, dataOffset); //frmDataOffset
                 frameHeaderOffset += frameHdrSize;
             }
             Byte[] finalData = new Byte[frameDataOffset];
@@ -335,7 +335,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             width = -1;
             height = -1;
             palette = null;
@@ -366,7 +366,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 pixCount1 = 0;
             // All non-remap pixels
             Int32 pixCount2 = 0;
-            // Remap colours for tiberium.
+            // Remap colors for tiberium.
             Byte[] tibGr = {0xF8, 0xE4, 0xDC, 0xD0, 0xC4, 0xB8, 0xA8, 0x98, 0x88, 0x74, 0x64, 0x50, 0x3C, 0x28, 0x10, 0x00};
             Byte[] tibNonGr = {0x38, 0x28, 0x20, 0x18, 0x18, 0x10, 0x08, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
             Boolean[] remapRange = new Boolean[0x100];
@@ -385,7 +385,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     pixCount2++;
                 colCount[b]++;
             }
-            // No colour, or this is a shadow frame.
+            // No color, or this is a shadow frame.
             if (pixCount1 == 0 || pixCount1 == colCount[1])
                 return Color.Empty;
 
@@ -440,8 +440,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Color all = Color.FromArgb((Byte)(allR1 / pixCount1), (Byte)(allG1 / pixCount1), (Byte)(allB1 / pixCount1));
             if (pixCount2 == 0 || (adjustForRemap && forTiberium))
                 return all;
-            ColorHSL nonRemap = Color.FromArgb((Byte)(allR2 / pixCount2), (Byte)(allG2 / pixCount2), (Byte)(allB2 / pixCount2));
-            return new ColorHSL(nonRemap.Hue, nonRemap.Saturation, ((ColorHSL)all).Luminosity);
+            Color nonRemap = Color.FromArgb((Byte)(allR2 / pixCount2), (Byte)(allG2 / pixCount2), (Byte)(allB2 / pixCount2));
+            return new ColorHSL(nonRemap.GetHue(), nonRemap.GetSaturation(), all.GetBrightness());
         }
 
         public static void PreCheckSplitShadows(SupportedFileType file, Byte sourceShadowIndex, Byte destShadowIndex, Boolean forCombine)

@@ -7,7 +7,7 @@ namespace Nyerguds.Util
     /// </summary>
     public class Crc32
     {
-        private static UInt32[] table = FillTable();
+        private static readonly UInt32[] Table = FillTable();
 
         public static UInt32 ComputeChecksum(Byte[] bytes)
         {
@@ -21,7 +21,7 @@ namespace Nyerguds.Util
             for (Int32 i = start; i < end; ++i)
             {
                 Byte index = (Byte)((crc & 0xFF) ^ bytes[i]);
-                crc = (crc >> 8) ^ table[index];
+                crc = (crc >> 8) ^ Table[index];
             }
             return ~crc;
         }

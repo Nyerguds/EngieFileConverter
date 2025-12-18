@@ -59,7 +59,7 @@ namespace Nyerguds.FileData.Dynamix
         {
             Byte[] fullData = new Byte[data.Length + 5];
             fullData[0] = compressionType;
-            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 1, decompressedSize);
+            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 1, (Int32)decompressedSize);
             Array.Copy(data, 0, fullData, 5, data.Length);
             this.m_data = fullData;
         }
@@ -85,7 +85,7 @@ namespace Nyerguds.FileData.Dynamix
         {
             Array.Copy(Encoding.ASCII.GetBytes(this.Identifier + ":"), 0, target, offset, 4);
             offset += 4;
-            ArrayUtils.WriteInt32ToByteArrayLe(target, offset, (this.DataLength));
+            ArrayUtils.WriteInt32ToByteArrayLe(target, offset, this.DataLength);
             offset += 4;
             if (this.IsContainer)
                 target[offset - 1] |= 0x80;

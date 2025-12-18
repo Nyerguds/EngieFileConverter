@@ -2,10 +2,11 @@
 {
     public enum Theater
     {
-        Desert = 0,
-        Jungle = 1,
-        Temperate = 2,
-        Winter = 3,
-        Snow = 4
+        Desert,
+        Jungle,
+        Temperate,
+        Winter,
+        Snow,
+        Interior
     }
 }

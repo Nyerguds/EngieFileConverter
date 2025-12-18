@@ -158,7 +158,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 scnLengths[frm - 1] = scnChunk.DataLength - lastOffs;
                 Boolean eightBitFound = false;
                 Int32 maxLen = scnChunk.DataLength;
-                for (Int32 i = 0; i < frames; i++)
+                for (Int32 i = 0; i < frames; ++i)
                 {
                     // Check for 8-bit add-values; switch whole image to 8-bit if needed.
                     Int32 offs = scnOffsets[i];
@@ -168,7 +168,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 currOffsOut = 0;
                 try
                 {
-                    for (Int32 i = 0; i < frames; i++)
+                    for (Int32 i = 0; i < frames; ++i)
                     {
                         Int32 bpp = eightBitFound ? 8 : 4;
                         Byte[] decoded = DynamixCompression.ScnDecode(scnChunk.Data, scnOffsets[i], scnOffsets[i] + scnLengths[i], widths[i], heights[i], ref bpp);
@@ -192,14 +192,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     binChunk = DynamixChunk.ReadChunk(mainChunk.Data, "MA8");
                     if (binChunk == null)
-                        throw new FileTypeLoadException("Cannot find BIN chunk!");
+                        throw new FileTypeLoadException("Cannot find BIN chunk.");
                     this.InternalType = DynBmpInternalType.Ma8;
                 }
                 if (binChunk.Data.Length == 0)
-                    throw new FileTypeLoadException("Empty BIN chunk!");
+                    throw new FileTypeLoadException("Empty BIN chunk.");
                 Int32 compressionType = binChunk.Data[0];
                 if (compressionType >= CompressionTypes.Length)
-                    throw new FileTypeLoadException("Unknown compression type " + compressionType);
+                    throw new FileTypeLoadException("Unknown compression type " + compressionType + ".");
                 String compressionStr = "Compression: " + (this.InternalType == DynBmpInternalType.Ma8 ? "MA8" : "BIN") + ":" + CompressionTypes[compressionType];
                 Byte[] binData = DynamixCompression.DecodeChunk(binChunk.Data);
                 if (this.InternalType == DynBmpInternalType.Ma8) // MA8 seems to have indices 0 and FF switched
@@ -214,7 +214,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 else
                 {
                     if (vgaChunk.Data.Length == 0)
-                        throw new FileTypeLoadException("Empty VGA chunk!");
+                        throw new FileTypeLoadException("Empty VGA chunk.");
                     this.InternalType = DynBmpInternalType.BinVga;
                     this.m_bpp = 8;
                     compressionType = vgaChunk.Data[0];
@@ -273,12 +273,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 blockWidth = widths[0];
                 Int32 blockHeight = heights[0];
                 if (widths.Any(w => w != blockWidth) || heights.Any(h => h != blockHeight))
-                    throw new FileTypeLoadException("Dimensions of all frames must be equal in Matrix image!");
+                    throw new FileTypeLoadException("Dimensions of all frames must be equal in Matrix image.");
                 Byte[] matrixData = matrix.Data;
                 Int32 matrixWidth = ArrayUtils.ReadInt16FromByteArrayLe(matrixData, 0);
                 Int32 matrixHeight = ArrayUtils.ReadInt16FromByteArrayLe(matrixData, 2);
                 Int32 matrixLen = matrixHeight * matrixWidth;
-                if(matrixLen < frames)
+                if (matrixLen < frames)
                     return;
                 if ((matrixData.Length - 4) / 2 != matrixLen)
                     return;
@@ -418,7 +418,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             if (saveType == DynBmpInternalType.Unknown)
                 throw new ArgumentException(ERR_UNKN_COMPR, "saveType");
             // write save logic for frames
@@ -454,15 +454,15 @@ namespace EngieFileConverter.Domain.FileTypes
             List<DynamixChunk> chunks = new List<DynamixChunk>();
             Int32 fullDataLen = frameBytes.Sum(x => x.Length);
             Byte[] framesIndex = new Byte[nrOfFrames * 4 + 2];
-            ArrayUtils.WriteInt16ToByteArrayLe(framesIndex, 0, nrOfFrames);
+            ArrayUtils.WriteUInt16ToByteArrayLe(framesIndex, 0, (UInt16)nrOfFrames);
             Byte[] fullData = saveType == DynBmpInternalType.Scn ? null : new Byte[fullDataLen];
             Int32 offset = 0;
             Int32 widthStart = 2;
             Int32 heightStart = nrOfFrames * 2 + 2;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                ArrayUtils.WriteInt16ToByteArrayLe(framesIndex, widthStart + i * 2, frameWidths[i]);
-                ArrayUtils.WriteInt16ToByteArrayLe(framesIndex, heightStart + i * 2, frameHeights[i]);
+                ArrayUtils.WriteUInt16ToByteArrayLe(framesIndex, widthStart + i * 2, (UInt16)frameWidths[i]);
+                ArrayUtils.WriteUInt16ToByteArrayLe(framesIndex, heightStart + i * 2, (UInt16)frameHeights[i]);
                 // This operation is not needed for SCN saving; it builds the array after compressing.
                 if (fullData != null)
                 {
@@ -515,7 +515,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Byte[] offsets = new Byte[nrOfFrames * 4];
                     Int32 curOffset = 0;
                     // Compress all frames
-                    for (Int32 i = 0; i < nrOfFrames; i++)
+                    for (Int32 i = 0; i < nrOfFrames; ++i)
                     {
                         // Write start indices into the data for the OFF chunk
                         ArrayUtils.WriteInt32ToByteArrayLe(offsets, i << 2, curOffset);
@@ -528,7 +528,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     binData = new Byte[curOffset];
                     curOffset = 0;
                     // Combine all frames into one array
-                    for (Int32 i = 0; i < nrOfFrames; i++)
+                    for (Int32 i = 0; i < nrOfFrames; ++i)
                     {
                         Byte[] comprFrame = frameBytesCompressed[i];
                         Int32 comprFrameLen = comprFrame.Length;

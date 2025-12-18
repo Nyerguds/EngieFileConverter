@@ -126,15 +126,15 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Int32 fullSize = 4 + nrOfFrames * 12 + frameData.Sum(x => x.Length);
             Byte[] fullData = new Byte[fullSize];
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0, nrOfFrames);
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 2, 0x16);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0, (UInt16)nrOfFrames);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 2, 0x16);
             Int32 offset = 4;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 0, i);
-                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 2, widths[i]);
-                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 4, heights[i]);
-                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 6, strides[i]);
+                ArrayUtils.WriteUInt16ToByteArrayLe(fullData, offset + 0, (UInt16)i);
+                ArrayUtils.WriteUInt16ToByteArrayLe(fullData, offset + 2, (UInt16)widths[i]);
+                ArrayUtils.WriteUInt16ToByteArrayLe(fullData, offset + 4, (UInt16)heights[i]);
+                ArrayUtils.WriteUInt16ToByteArrayLe(fullData, offset + 6, (UInt16)strides[i]);
                 Int32 datalength = frameData[i].Length;
                 ArrayUtils.WriteInt32ToByteArrayLe(fullData, offset + 8, datalength);
                 offset += 12;

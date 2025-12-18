@@ -57,9 +57,9 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
-        public static int FindEgaColor(Color color)
+        public static Int32 FindEgaColor(Color color)
         {
-            for (int i = 0; i < 16; i++)
+            for (Int32 i = 0; i < 16; ++i)
             {
                 if (color.Equals(EgaPalette[i]))
                     return i;
@@ -318,8 +318,8 @@ namespace Nyerguds.ImageManipulation
         /// <param name="blackIndex">Index on the palette to replace with black.</param>
         /// <param name="palTransparencyMask">Array with booleans indicating which indices should become transparent.</param>
         /// <param name="reverseGenerated">Reverse the generated range. This happens after the generating, and before the operations on the first index/.</param>
-        /// <param name="startHue">Start hue range. Value from 0 to 240.</param>
-        /// <param name="endHue">End hue range. Value from 0 to 240. Must be higher then startHue.</param>
+        /// <param name="startHue">Start hue range. Value from 0 to 360.</param>
+        /// <param name="endHue">End hue range. Value from 0 to 360. Must be higher then startHue.</param>
         /// <param name="inclusiveEnd">True to include the end hue in the palette. If you generate a full hue range, this can be set to False to avoid getting a duplicate red color on it.</param>
         /// <returns>The generated palette, as array of System.Drawing.Color objects.</returns>
         public static Color[] GenerateRainbowPalette(Int32 bpp, Int32 blackIndex, Boolean[] palTransparencyMask, Boolean reverseGenerated, Int32 startHue, Int32 endHue, Boolean inclusiveEnd)
@@ -328,8 +328,8 @@ namespace Nyerguds.ImageManipulation
             Color[] pal = new Color[colors];
             Double step = (Double)(endHue - startHue) / (inclusiveEnd ? colors - 1 : colors);
             Double start = startHue;
-            Double satValue = ColorHSL.SCALE;
-            Double lumValue = 0.5 * ColorHSL.SCALE;
+            Double satValue = 1.0;
+            Double lumValue = 0.5;
             for (Int32 i = 0; i < colors; ++i)
             {
                 Double curStep = start + step * i;

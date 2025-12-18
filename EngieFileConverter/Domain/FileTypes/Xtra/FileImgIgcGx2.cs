@@ -56,13 +56,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Dimensions cannot be 0!");
             if (magic1 != 0x01325847 || magic2 != 0x58465053)
                 throw new FileTypeLoadException("Not an " + this.LongTypeName + "!");
-            Int32 palSize = bpp > 8 ? 0 : (1 << bpp) * 3;
+            Int32 palCols = bpp > 8 ? 0 : (1 << bpp);
+            Int32 palSize = palCols * 3;
             this.m_BitPerPixel = bpp;
             if (dataLen < 0x1B + palSize)
                 throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + "!");
             Byte[] pal = new Byte[palSize];
             Array.Copy(fileData, 0x1B, pal, 0, palSize);
-            this.m_Palette = ColorUtils.ReadEightBitPalette(pal, false);
+            this.m_Palette = ColorUtils.ReadEightBitPalette(pal, 0, palCols);
             Int32 dataOffs = 0x1B + palSize;
             Byte[] frameDataUncompr = RleCompressionHighBitRepeat.RleDecode(fileData, (UInt32)dataOffs, null, true);
             if (frameDataUncompr == null)
@@ -100,8 +101,8 @@ namespace EngieFileConverter.Domain.FileTypes
             ArrayUtils.WriteInt32ToByteArrayLe(data, 0x00, 0x01325847); // magic
             ArrayUtils.WriteInt16ToByteArrayLe(data, 0x04, 0x19); // headsize
             data[0x06] = 0x08; // BPP
-            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x07, width); // width
-            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x09, height); // height
+            ArrayUtils.WriteUInt16ToByteArrayLe(data, 0x07, width); // width
+            ArrayUtils.WriteUInt16ToByteArrayLe(data, 0x09, height); // height
             ArrayUtils.WriteInt16ToByteArrayLe(data, 0x0B, 0x04); // xaspect
             ArrayUtils.WriteInt16ToByteArrayLe(data, 0x0D, 0x03); // yaspect
             data[0x0F] = 0x00; // unknown1

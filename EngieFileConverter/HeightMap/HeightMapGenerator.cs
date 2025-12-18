@@ -40,7 +40,7 @@ namespace EngieFileConverter.Domain.HeightMap
             String pngFileName = baseFileName + (returnNameSuffix ?? String.Empty) + ".png";
             IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
 
-            TerrainTypeEnh[] simpleMap = MapConversion.SimplifyMap(map.Map);
+            TerrainTypeEnh[] simpleMap = MapConversion.SimplifyMap(map.Map, MapConversion.TILEINFO_TD);
 
             Int32 mapStartX = 1;
             Int32 mapStartY = 1;

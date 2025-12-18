@@ -74,7 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         throw new FileTypeLoadException("Not a DaisyField PIC file!");
                     framePalData[i] = (Byte)(curVal ^ 0x55);
                 }
-                Color[] frPalette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(framePalData, 0));
+                Color[] frPalette = ColorUtils.ReadSixBitPalette(framePalData, 0);
                 for (Int32 i = 0; i < frameSize; ++i)
                     frameData[i] = (Byte)(frameData[i] ^ 0x55);
                 Bitmap curFrImg = ImageUtils.BuildImage(frameData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, frPalette, null);
@@ -94,7 +94,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames;
             if (frames == null || (nrOfFrames = frames.Length) == 0)
-                throw new ArgumentException(ERR_NO_FRAMES);
+                throw new ArgumentException(ERR_NEEDS_FRAMES);
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
@@ -115,7 +115,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 Bitmap fr = frame.GetBitmap();
-                Byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fr.Palette.Entries));
+                Byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(fr.Palette.Entries);
                 for (Int32 j = 0; j < palSize; ++j)
                     sixBitCols[j] = (Byte)(sixBitCols[j] ^ 0x55);
                 Array.Copy(sixBitCols, 0, outBytes, writeOffset, palSize);

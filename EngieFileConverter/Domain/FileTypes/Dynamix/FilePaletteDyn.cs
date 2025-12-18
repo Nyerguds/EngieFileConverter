@@ -47,7 +47,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color[] palette = null;
             try
             {
-                palette = ColorUtils.ReadSixBitPaletteAsEightBit(vgaChunk.Data);
+                palette = ColorUtils.ReadSixBitPalette(vgaChunk.Data);
             }
             catch (ArgumentException ex)
             {
@@ -82,8 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 else
                     cols[i] = Color.Black;
             }
-            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
-            Byte[] paletteData = ColorUtils.GetSixBitPaletteData(sbcp);
+            Byte[] paletteData = ColorUtils.GetSixBitPaletteData(palEntries);
             // write as Dynamix chunks
             DynamixChunk vgaChunk = new DynamixChunk("VGA", paletteData);
             DynamixChunk palChunk = DynamixChunk.BuildChunk("PAL", vgaChunk);

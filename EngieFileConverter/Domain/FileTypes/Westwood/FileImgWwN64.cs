@@ -111,7 +111,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException(String.Format("File data is too short. Got {0} bytes, expected {1} bytes.", fileData.Length, expectedSize));
             try
             {
-                // Fill image data array. For 16-bit colour, reorder to existing Argb1555 format. For 8 or lower, just copy.
+                // Fill image data array. For 16-bit color, reorder to existing Argb1555 format. For 8 or lower, just copy.
                 imageData = new Byte[imageDataSize];
                 Array.Copy(fileData, hdrDataOffset, imageData, 0, Math.Min(fileData.Length - hdrDataOffset, imageDataSize));
                 if (this.HdrColorFormat == 2)
@@ -144,7 +144,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 PixelFormat pf = this.GetPixelFormat(this.HdrColorFormat);
                 this.m_LoadedImage = ImageUtils.BuildImage(imageData, hdrWidth, hdrHeight, stride, pf, this.m_Palette, null);
-                // Corrects the number of colours in the palette.
+                // Corrects the number of colors in the palette.
                 if (this.m_Palette != null)
                     this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
             }
@@ -157,10 +157,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             this.PerformPreliminaryChecks(fileToSave);
-            // If it is a hi-colour image, return empty
+            // If it is a hi-color image, return empty
             if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
                 return new Option[0];
-            // If it is a non-image format which does contain colours, offer to save with palette.
+            // If it is a non-image format which does contain colors, offer to save with palette.
             // Palette option is disabled by default if the palette it would save comes from the UI.
             return new Option[]
             {
@@ -239,15 +239,15 @@ namespace EngieFileConverter.Domain.FileTypes
             //PaletteOffset
             ArrayUtils.WriteInt32ToByteArrayBe(fullData, 0x04, paletteOffset);
             //Width
-            ArrayUtils.WriteInt16ToByteArrayBe(fullData, 0x08, width);
+            ArrayUtils.WriteUInt16ToByteArrayBe(fullData, 0x08, (UInt16)width);
             //Height
-            ArrayUtils.WriteInt16ToByteArrayBe(fullData, 0x0A, height);
+            ArrayUtils.WriteUInt16ToByteArrayBe(fullData, 0x0A, (UInt16)height);
             //BytesPerColor
             fullData[0x0C] = (Byte)palbpc;
             //ColorFormat
             fullData[0x0D] = colorFormat;
             //ColorsInPalette
-            ArrayUtils.WriteInt16ToByteArrayBe(fullData, 0x0E, paletteColors);
+            ArrayUtils.WriteUInt16ToByteArrayBe(fullData, 0x0E, (UInt16)paletteColors);
             Int32 targetOffs = 0x10;
 
             // Image data

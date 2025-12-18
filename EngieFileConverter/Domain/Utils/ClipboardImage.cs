@@ -43,14 +43,14 @@ namespace Nyerguds.Util
             if (clipboardimage == null && formats.Contains("Format17"))
             {
                 Byte[] dib5data = TryGetStreamDataFromClipboard(retrievedData, "Format17");
-                clipboardimage = DibHandler.ImageFromDib5(dib5data, 0, 0, true);
+                clipboardimage = DibHandler.ImageFromDib5(dib5data, 0, 0, 0, true);
                 // ImageFromClipboardDib5 builds the image in local memory.
                 if (clipboardimage != null) built = true;
             }
             if (clipboardimage == null && formats.Contains(DataFormats.Dib))
             {
                 Byte[] dibdata = TryGetStreamDataFromClipboard(retrievedData, DataFormats.Dib);
-                clipboardimage = DibHandler.ImageFromDib(dibdata, 0, true);
+                clipboardimage = DibHandler.ImageFromDib(dibdata, 0, 0, true);
                 // ImageFromClipboardDib builds the image in local memory.
                 if (clipboardimage != null) built = true;
             }

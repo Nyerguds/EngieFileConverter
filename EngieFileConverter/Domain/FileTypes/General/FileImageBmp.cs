@@ -11,42 +11,48 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageBmp : FileImage
     {
-        private readonly String LOAD_ERROR = "Not a bitmap file.";
         public override String ShortTypeName { get { return "Bitmap"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String LongTypeName { get { return "Bitmap Image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
+        /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
+        public override String[] DescriptionsForExtensions { get { return new String[] { this.LongTypeName }; } }
         protected override String MimeType { get { return "bmp"; } }
 
-        /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions
+        public override void LoadFile(Byte[] fileData)
         {
-            get { return new String[] {this.LongTypeName }; }
+            this.LoadFromFileData(fileData);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
+        {
+            this.LoadFromFileData(fileData);
+            this.SetFileNames(filename);
+        }
+
+        public void LoadFromFileData(Byte[] fileData)
         {
             // Implemented manually because it's already in the clipboard code, and GDI+ returns 32bpp for 16bpp bitmaps.
             // General specs: http://www.dragonwins.com/domains/getteched/bmp/bmpfileformat.htm
             Int32 dataLen = fileData.Length;
             if (dataLen < 18 || fileData[0] != 0x42 || fileData[1] != 0x4D)
-                throw new FileTypeLoadException(this.LOAD_ERROR);
+                throw new FileTypeLoadException(ERR_BAD_HEADER);
             UInt32 size = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x02);
             UInt32 reserved = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x06);
             Int32 headerEnd = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0A);
             if (size != dataLen || reserved != 0 || dataLen < headerEnd)
-                throw new FileTypeLoadException(this.LOAD_ERROR);
+                throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0E);
             String compression = null;
             if (headerEnd < headerSize + 14)
-                throw new FileTypeLoadException(this.LOAD_ERROR);
+                throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             try
             {
                 if (headerSize == 40)
-                    this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14, headerEnd, true);
+                    this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14, fileData.Length - 14, headerEnd, true);
                 else if (headerSize == 124)
-                    this.m_LoadedImage = DibHandler.ImageFromDib5(fileData, 14, headerEnd, false);
+                    this.m_LoadedImage = DibHandler.ImageFromDib5(fileData, 14, fileData.Length - 14, headerEnd, false);
                 if (this.m_LoadedImage == null)
                 {
                     // Attempt loading through the framework to catch unsupported cases.
@@ -130,7 +136,6 @@ namespace EngieFileConverter.Domain.FileTypes
             if (compression != null)
                 sbExtrainfo.Append("\nCompression: ").Append(compression);
             this.ExtraInfo = sbExtrainfo.ToString();
-            this.SetFileNames(filename);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)

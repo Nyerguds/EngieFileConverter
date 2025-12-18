@@ -24,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public virtual Boolean CanSave { get { return false; } }
+        public override Boolean CanSave { get { return false; } }
 
         protected static Byte[] DefPalette = {
                         0x1A, 0x1A, 0x1A, 0x3F, 0x26, 0x10, 0x00, 0x33, 0x33, 0x00, 0x3F, 0x3F,
@@ -82,7 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 height = 200;
                 // Padding byte before palette
                 start ++;
-                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, start));
+                this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, start);
                 this.m_PaletteLoaded = true;
                 // Palette size
                 start += 0x300;
@@ -102,7 +102,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Byte[] palArr = new Byte[0x300];
                 Array.Copy(DefPalette, 0, palArr, 224 * 3, 32 * 3);
-                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(palArr, 0));
+                this.m_Palette = ColorUtils.ReadEightBitPalette(palArr);
                 this.m_PaletteLoaded = true;
                 width = 320;
                 height = size / width;

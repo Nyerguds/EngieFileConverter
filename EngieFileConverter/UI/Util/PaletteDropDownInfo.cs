@@ -98,10 +98,10 @@ namespace Nyerguds.Util.UI
                 // Single palette: if there is either no ini (old 6-bit palette) or the ini specifically says it's a single palette.
                 Boolean isSinglePal = !iniExists || paletteConfig.GetBoolValue(PALINISECTION, PALINIKEYSINGLE, false);
                 // Read the palette as 8-bit or as 6-bit, as determined above.
-                Color[] fullPal = isEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPaletteAsEightBit(palBytes);
+                Color[] fullPal = isEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPalette(palBytes);
                 if (!isSinglePal)
                 {
-                    // Read multiple 16-colour palettes
+                    // Read multiple 16-color palettes
                     for (Int32 i = 0; i < 16; ++i)
                     {
                         String name = paletteConfig.GetStringValue(PALINISECTION, i.ToString(), null);
@@ -119,7 +119,7 @@ namespace Nyerguds.Util.UI
                 }
                 else
                 {
-                    // Add as one single 256 colour palette
+                    // Add as one single 256 color palette
                     palettes.Add(new PaletteDropDownInfo(bareName, 8, fullPal, bareName, 0, false, false));
                 }
             }

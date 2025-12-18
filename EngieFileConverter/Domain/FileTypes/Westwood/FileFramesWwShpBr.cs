@@ -120,15 +120,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 fullSize += 0x0C + frSize;
             }
             Byte[] fileData = new Byte[fullSize];
-            ArrayUtils.WriteInt32ToByteArrayLe(fileData, 0, nrOfFrames);
+            ArrayUtils.WriteUInt32ToByteArrayLe(fileData, 0, nrOfFrames);
             Int32 writeOffset = 4;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 Byte[] frameData = framesData[i];
                 UInt32 frSize = (UInt32) frameData.Length;
-                ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset, frameWidths[i]);
-                ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset + 4, frameHeights[i]);
-                ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset + 8, frSize);
+                ArrayUtils.WriteUInt32ToByteArrayLe(fileData, writeOffset, frameWidths[i]);
+                ArrayUtils.WriteUInt32ToByteArrayLe(fileData, writeOffset + 4, frameHeights[i]);
+                ArrayUtils.WriteUInt32ToByteArrayLe(fileData, writeOffset + 8, frSize);
                 writeOffset += 0x0C;
                 Array.Copy(frameData,0,fileData, writeOffset, frSize);
                 writeOffset += frameData.Length;
@@ -144,7 +144,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];

@@ -139,7 +139,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.m_PaletteLoaded = palette != null;
             if (this.m_PaletteLoaded)
-                this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(palette, 0, 0x100);
+                this.m_Palette = ColorUtils.ReadSixBitPalette(palette);
             else
             {
                 String palFile = Path.Combine(basePath, baseName + ".pal");
@@ -149,7 +149,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     palette = File.ReadAllBytes(palFile);
                     try
                     {
-                        this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(palette);
+                        this.m_Palette = ColorUtils.ReadSixBitPalette(palette);
                         this.ExtraInfo = "Palette loaded from " + baseName + ".pal";
                         this.m_PaletteLoaded = this.m_Palette != null;
                     }
@@ -236,11 +236,11 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] dmpData = new Byte[dataStart + imageLength];
             dmpData[0] = 0x01;
             dmpData[1] = hasPalette;
-            ArrayUtils.WriteInt16ToByteArrayLe(dmpData, 2, fileToSave.Width);
-            ArrayUtils.WriteInt16ToByteArrayLe(dmpData, 4, fileToSave.Height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(dmpData, 2, (UInt16)fileToSave.Width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(dmpData, 4, (UInt16)fileToSave.Height);
             if (asPaletted)
             {
-                Byte[] palette = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fileToSave.GetColors()));
+                Byte[] palette = ColorUtils.GetSixBitPaletteData(fileToSave.GetColors());
                 Array.Copy(palette, 0, dmpData, 0xA, palette.Length);
             }
             Array.Copy(imageBytes, 0, dmpData, dataStart, imageLength);

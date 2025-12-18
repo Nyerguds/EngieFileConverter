@@ -27,7 +27,7 @@ namespace Nyerguds.ImageManipulation
         public static List<Point> FindPoints(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold)
         {
             List<List<Point>> blobs = FindBlobs(image, detectDark, brightnessThreshold, mergeThreshold, true);
-            return blobs.Select(GetBlobCenter).ToList();
+            return blobs.Where(b => b.Count > 0).Select(GetBlobCenter).ToList();
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Nyerguds.ImageManipulation
                 Int32 usedOffset = offset;
                 for (Int32 x = 0; x < width; ++x)
                 {
-                    // get colour
+                    // get color
                     Byte blu = data[usedOffset + 0];
                     Byte grn = data[usedOffset + 1];
                     Byte red = data[usedOffset + 2];
@@ -82,7 +82,7 @@ namespace Nyerguds.ImageManipulation
         public static Point GetBlobCenter(List<Point> blob)
         {
             if (blob.Count == 0)
-                return Point.Empty;
+                return new Point(-1, -1);
             Rectangle bounds = GetBlobBounds(blob);
             return new Point(bounds.X + (bounds.Width - 1) / 2, bounds.Y + (bounds.Height - 1) / 2);
         }

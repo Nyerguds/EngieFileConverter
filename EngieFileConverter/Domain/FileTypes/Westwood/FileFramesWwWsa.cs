@@ -364,7 +364,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 try
                 {
                     if (loadVersion != WsaVersion.Poly || forceSixBitPal)
-                        this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, paletteOffset);
+                        this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, paletteOffset);
                     else
                         this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, paletteOffset, 0x100);
                     PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
@@ -383,8 +383,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] finalFrameData = null;
             Byte[] frame0Data = new Byte[xorWidth * xorHeight];
             deltaBufferSize += 37;
-            // all nice for detecting bad files, but some GOOD files manage to have a delta buffer larger than the XORWorstCase.
-            Int32 xorWorstCase = Math.Max((Int32)deltaBufferSize, WWCompression.XORWorstCase(xorWidth * xorHeight));
+            Int32 xorWorstCase = Math.Max((Int32)deltaBufferSize, Math.Max(10000, xorWidth * xorHeight * 2));
             Byte[] xorData = new Byte[xorWorstCase];
             for (Int32 i = 0; i < nrOfFrames + 1; ++i)
             {
@@ -675,28 +674,32 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             // Write header
             Int32 offset = 0;
-            ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, readFrames);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileData, offset, (UInt16)readFrames);
             offset += 2;
             if (saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2)
             {
-                ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, xOffset);
+                ArrayUtils.WriteUInt16ToByteArrayLe(fileData, offset, (UInt16)xOffset);
                 offset += 2;
-                ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, yOffset);
+                ArrayUtils.WriteUInt16ToByteArrayLe(fileData, offset, (UInt16)yOffset);
                 offset += 2;
             }
-            ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileData, offset, (UInt16)width);
             offset += 2;
-            ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileData, offset, (UInt16)height);
             offset += 2;
             ArrayUtils.WriteIntToByteArray(fileData, offset, saveType == WsaVersion.Poly ? 4 : 2, true, (UInt32)deltaBufferSize);
             offset += saveType == WsaVersion.Poly ? 4 : 2;
             if (saveType != WsaVersion.Dune2v1)
             {
-                Int32 flags = asPaletted ? 1 : 0;
+                UInt16 flags = 0;
                 // Enable extra flag
-                if (asPaletted & saveType == WsaVersion.Poly && sixBitPalOpt)
-                    flags |= 2;
-                ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, flags);
+                if (asPaletted)
+                {
+                    flags |= 1;
+                    if (saveType == WsaVersion.Poly && sixBitPalOpt)
+                        flags |= 2;
+                }
+                ArrayUtils.WriteUInt16ToByteArrayLe(fileData, offset, flags);
                 offset += 2;
             }
             for (Int32 i = 0; i < nrOfOffsets; ++i)
@@ -708,7 +711,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Byte[] palBytes;
                 if (saveSixBitPal)
-                    palBytes = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(palette));
+                    palBytes = ColorUtils.GetSixBitPaletteData(palette);
                 else
                     palBytes = ColorUtils.GetEightBitPaletteData(palette, false);
                 Array.Copy(palBytes, 0, fileData, offset, Math.Min(0x300, palBytes.Length));
@@ -732,7 +735,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames;
             if (frames == null || (nrOfFrames = frames.Length) == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             width = -1;
             height = -1;
             palette = CheckInputForColors(fileToSave, 8, true);

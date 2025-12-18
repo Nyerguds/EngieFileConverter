@@ -16,11 +16,18 @@ namespace Nyerguds.FileData.Westwood
 
         protected Boolean m_SwapWords;
 
+        /// <summary>
+        /// Initialises a new WestwoodRLE compression object, with the "swap words" option defaulting to true (PC format).
+        /// </summary>
         public WestwoodRle()
         {
-            this.m_SwapWords = false;
+            this.m_SwapWords = true;
         }
 
+        /// <summary>
+        /// Initialises a new WestwoodRLE compression object.
+        /// </summary>
+        /// <param name="swapWords">True to use little-endian (PC format) for 16-bit values.</param>
         public WestwoodRle(Boolean swapWords)
         {
             this.m_SwapWords = swapWords;

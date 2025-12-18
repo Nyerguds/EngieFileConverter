@@ -4,6 +4,7 @@ namespace Nyerguds.FileData.Westwood
 {
     /// <summary>
     /// This class contains encoders and decoders for the Westwood XOR Delta and LCW compression schemes.
+    /// It was written by Omniblade.
     /// </summary>
     public static class WWCompression
     {
@@ -36,7 +37,7 @@ namespace Nyerguds.FileData.Westwood
         // command to flag that they are relative compressed.
         //
         // LCW uses the following rules to decide which command to use:
-        // 1. Runs of the same colour should only use 4 byte RLE command if longer than
+        // 1. Runs of the same value should only use 4 byte RLE command if longer than
         //    64 bytes. 2 and 3 byte offset commands are more efficient otherwise.
         // 2. Runs of less than 3 should just be stored as is with the one byte fill
         //    command.
@@ -64,21 +65,7 @@ namespace Nyerguds.FileData.Westwood
         public const Byte XOR_MED = 0xFF;
         public const Int32 XOR_LARGE = 0x3FFF;
         public const Int32 XOR_MAX = 0x7FFF;
-
-        ////////////////////////////////////////////////////////////////////////////////
-        //  Some utility functions to get worst case sizes for buffer allocation
-        ////////////////////////////////////////////////////////////////////////////////
-
-        public static Int32 LCWWorstCase(Int32 datasize)
-        {
-            return datasize + (datasize / 63) + 1;
-        }
-
-        public static Int32 XORWorstCase(Int32 datasize)
-        {
-            return datasize + ((datasize / 63) * 3) + 4;
-        }
-
+        
         /// <summary>
         ///    Compresses data to the proprietary LCW format used in
         ///    many games developed by Westwood Studios. Compression is better
@@ -102,10 +89,8 @@ namespace Nyerguds.FileData.Westwood
             Int32 putp = 0;
             // Input length. Used commonly enough to warrant getting it out in advance I guess.
             Int32 getend = input.Length;
-            // "Worst case length" code by OmniBlade. We'll just use a buffer of
-            // that max length and cut it down to the actual used size at the end.
-            // Not using it- it's not big enough in case of some small images.
-            //LCWWorstCase(getend)
+            // Worst case: take twice the size of the input, and a minimum of 10k.
+            // We'll just cut it down to the actual used size at the end.
             Int32 worstcase = Math.Max(10000, getend * 2);
             Byte[] output = new Byte[worstcase];
             // relative LCW starts with 0 as flag to decoder.
@@ -439,13 +424,16 @@ namespace Nyerguds.FileData.Westwood
             Int32 getsp = 0;
             // -for the image we come from
             Int32 getbp = 0;
-            //Length to process
+            // Length to process
             Int32 getsendp = Math.Min(source.Length, @base.Length);
-            Byte[] dest = new Byte[XORWorstCase(getsendp)];
+            // Worst case: take twice the size of the input, and a minimum of 10k.
+            // We'll just cut it down to the actual used size at the end.
+            Int32 worstCase = Math.Max(10000, getsendp * 2);
+            Byte[] dest = new Byte[worstCase];
 
-            //Only check getsp to save a redundant check.
-            //Both source and base should be same size and both pointers should be
-            //incremented at the same time.
+            // Only check getsp to save a redundant check.
+            // Both source and base should be same size and both pointers should be
+            // incremented at the same time.
             while (getsp < getsendp)
             {
                 UInt32 fillcount = 0;

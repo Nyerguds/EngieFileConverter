@@ -10,7 +10,8 @@ namespace Nyerguds.ImageManipulation
 {
     public static class ColorUtils
     {
-        const String invalid = "This is not a valid six-bit palette file.";
+        const String Invalid6bit = "This is not a valid six-bit palette file.";
+        const String Invalid8bit = "This is not a valid eight-bit palette file.";
 
         public static Color ColorFromUInt(UInt32 argb)
         {
@@ -50,7 +51,6 @@ namespace Nyerguds.ImageManipulation
             return true;
         }
 
-
         public static Color GetAverageColor(Color col1, Color col2)
         {
             Byte averageR = (Byte)Math.Max(0, Math.Min(255, Math.Min(col1.R, col2.R) + Math.Abs(col1.R - col2.R) / 2));
@@ -59,51 +59,29 @@ namespace Nyerguds.ImageManipulation
             return Color.FromArgb(averageR, averageG, averageB);
         }
 
-        public static Color[] GetEightBitColorPalette(ColorSixBit[] sixbitpalette)
+        public static Byte[] GetSixBitPaletteData(Color[] palette)
         {
-            Color[] eightbitpalette = new Color[sixbitpalette.Length];
-            for (Int32 i = 0; i < sixbitpalette.Length; ++i)
-                eightbitpalette[i] = sixbitpalette[i];
-            return eightbitpalette;
+            return GetSixBitPaletteData(palette, false);
         }
 
-        public static ColorSixBit[] GetSixBitColorPalette(Color[] eightbitpalette)
+        public static Byte[] GetSixBitPaletteData(Color[] palette, Boolean expandTo256)
         {
-            ColorSixBit[] sixbitpalette = new ColorSixBit[eightbitpalette.Length];
-            for (Int32 i = 0; i < eightbitpalette.Length; ++i)
-                sixbitpalette[i] = new ColorSixBit(eightbitpalette[i]);
-            return sixbitpalette;
+            Int32 end = expandTo256 ? 256 : Math.Min(256, palette.Length);
+            Byte[] pal = new Byte[end * 3];
+            Int32 writeIndex = 0;
+            for (Int32 i = 0; i < end; ++i)
+            {
+                Color col = i < palette.Length ? palette[i] : Color.Black;
+                PixelFormatter.Format6BitVgaPal.WriteColor(pal, writeIndex, col);
+                writeIndex += 3;
+            }
+            return pal;
         }
 
         public static void WriteSixBitPaletteFile(Color[] palette, String palfilename)
         {
-            ColorSixBit[] newpal = GetSixBitColorPalette(palette);
-            WriteSixBitPaletteFile(newpal, palfilename);
-        }
-
-        public static void WriteSixBitPaletteFile(ColorSixBit[] palette, String palfilename)
-        {
-            Byte[] pal = GetSixBitPaletteData(palette);
-            File.WriteAllBytes(palfilename, pal);
-        }
-
-        public static Byte[] GetSixBitPaletteData(Color[] palette)
-        {
-            return GetSixBitPaletteData(GetSixBitColorPalette(palette));
-        }
-
-        public static Byte[] GetSixBitPaletteData(ColorSixBit[] palette)
-        {
-            Byte[] pal = new Byte[768];
-            Int32 end = Math.Min(768, palette.Length);
-            for (Int32 i = 0; i < end; ++i)
-            {
-                Int32 index = i * 3;
-                pal[index] = palette[i].R;
-                pal[index + 1] = palette[i].G;
-                pal[index + 2] = palette[i].B;
-            }
-            return pal;
+            Byte[] newpal = GetSixBitPaletteData(palette);
+            File.WriteAllBytes(palfilename, newpal);
         }
 
         public static void WriteEightBitPaletteFile(Color[] palette, String palfilename, Boolean expandTo256)
@@ -112,149 +90,114 @@ namespace Nyerguds.ImageManipulation
             File.WriteAllBytes(palfilename, bytes);
         }
 
+        public static Byte[] GetEightBitPaletteData(Color[] palette)
+        {
+            return GetEightBitPaletteData(palette, false);
+        }
+
         public static Byte[] GetEightBitPaletteData(Color[] palette, Boolean expandTo256)
         {
             Int32 end = expandTo256 ? 256 : Math.Min(256, palette.Length);
             Byte[] pal = new Byte[end * 3];
+            Int32 writeIndex = 0;
             for (Int32 i = 0; i < end; ++i)
             {
-                Int32 index = i * 3;
-                Color col;
-                if (i < palette.Length)
-                    col = palette[i];
-                else
-                    col = Color.Black;
-                pal[index] = col.R;
-                pal[index + 1] = col.G;
-                pal[index + 2] = col.B;
+                Color col = i < palette.Length ? palette[i] : Color.Black;
+                PixelFormatter.Format8BitVgaPal.WriteColor(pal, writeIndex, col);
+                writeIndex += 3;
             }
             return pal;
         }
 
-        public static ColorSixBit[] ReadSixBitPaletteFile(String palfilename)
+        public static Color[] ReadSixBitPaletteFile(String palfilename, Boolean readFull)
         {
             Byte[] readBytes = File.ReadAllBytes(palfilename);
-            return ReadSixBitPalette(readBytes);
+            return ReadSixBitPaletteFile(readBytes, readFull);
         }
 
-        public static Color[] ReadFromSixBitPaletteFile(String palfilename)
+        public static Color[] ReadSixBitPaletteFile(Byte[] paletteData, Boolean readFull)
         {
-            Byte[] readBytes = File.ReadAllBytes(palfilename);
-            return ReadSixBitPaletteAsEightBit(readBytes, 0, 0x100);
+            Int32 dataLength = paletteData.Length;
+            if (dataLength % 3 != 0 || dataLength > 0x300)
+                throw new ArgumentException(Invalid6bit);
+            return ReadEightBitPalette(paletteData, 0, readFull ? 0x100 : dataLength / 3);
         }
 
-        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData)
+        public static Color[] ReadSixBitPalette(Byte[] paletteData)
         {
-            if (paletteData.Length != 0x300)
-                throw new ArgumentException(invalid);
             return ReadSixBitPalette(paletteData, 0, 0x100);
         }
 
-        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData, Int32 start)
+        public static Color[] ReadSixBitPalette(Byte[] paletteData, Int32 start)
         {
             return ReadSixBitPalette(paletteData, start, 0x100);
         }
 
-        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData, Int32 start, Int32 colors)
+        public static Color[] ReadSixBitPalette(Byte[] paletteData, Int32 start, Boolean autoSize)
         {
-            if (paletteData.Length + start < colors * 3)
-                throw new ArgumentException(invalid);
-            ColorSixBit[] pal = new ColorSixBit[colors];
-            try
-            {
-                for (Int32 i = 0; i < colors; ++i)
-                {
-                    Int32 index = start + i * 3;
-                    pal[i] = new ColorSixBit(paletteData[index], paletteData[index + 1], paletteData[index + 2]);
-                }
-                return pal;
-            }
-            catch (ArgumentException e)
-            {
-                // ArgumentException means some of the values exceeded 63
-                throw new ArgumentException(invalid, e);
-            }
+            return ReadSixBitPalette(paletteData, start, autoSize ? Math.Min(0x100, paletteData.Length / 3) : 0x100);
         }
 
-        public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData)
+        public static Color[] ReadSixBitPalette(Byte[] paletteData, Int32 start, Int32 colors)
         {
-            return ReadSixBitPaletteAsEightBit(paletteData, 0, 0x100);
-        }
-
-        public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData, Int32 start)
-        {
-            return ReadSixBitPaletteAsEightBit(paletteData, start, 0x100);
-        }
-
-        public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData, Int32 start, Int32 colors)
-        {
-            if (paletteData.Length + start < colors * 3)
-                throw new ArgumentException(invalid);
-            Color[] pal = new Color[colors];
-            try
+            colors = Math.Min(0x100, Math.Max(0, colors));
+            Int32 fullLen = colors * 3;
+            if (start + fullLen > paletteData.Length)
+                throw new ArgumentException(Invalid6bit);
+            for (Int32 i = 0; i < fullLen; ++i)
             {
-                for (Int32 i = 0; i < colors; ++i)
-                {
-                    Int32 index = start + i * 3;
-                    pal[i] = new ColorSixBit(paletteData[index], paletteData[index + 1], paletteData[index + 2]).GetAsColor();
-                }
-                return pal;
+                if (paletteData[i] > 0x3F)
+                    throw new ArgumentException(Invalid6bit, "paletteData");
             }
-            catch (ArgumentException e)
-            {
-                // ArgumentException means some of the values exceeded 63
-                throw new ArgumentException(invalid, e);
-            }
+            return PixelFormatter.Format6BitVgaPal.GetColorPalette(paletteData, start, colors);
         }
 
         public static Color[] ReadEightBitPaletteFile(String palfilename, Boolean readFull)
         {
             Byte[] readBytes = File.ReadAllBytes(palfilename);
-            return ReadEightBitPalette(readBytes, readFull);
+            return ReadEightBitPaletteFile(readBytes, readFull);
         }
 
-        public static Color[] ReadEightBitPalette(Byte[] paletteData, Boolean readFull)
+        public static Color[] ReadEightBitPaletteFile(Byte[] paletteData, Boolean readFull)
         {
             Int32 dataLength = paletteData.Length;
-            if (dataLength % 3 != 0)
-                throw new ArgumentException("This is not a valid palette file.");
-            return ReadEightBitPalette(paletteData, 0, readFull ? 0x100 : Math.Min(0x100, dataLength / 3));
+            if (dataLength % 3 != 0 || dataLength > 0x300)
+                throw new ArgumentException(Invalid8bit);
+            return ReadEightBitPalette(paletteData, 0, readFull ? 0x100 : dataLength / 3);
         }
 
-        public static Color[] ReadEightBitPalette(Byte[] data)
+        public static Color[] ReadEightBitPalette(Byte[] paletteData)
         {
-            return ReadEightBitPalette(data, 0, 0x100);
+            return ReadEightBitPalette(paletteData, 0, 0x100);
         }
 
-        public static Color[] ReadEightBitPalette(Byte[] data, Int32 index)
+        public static Color[] ReadEightBitPalette(Byte[] paletteData, Int32 start, Boolean autoSize)
         {
-            return ReadEightBitPalette(data, index, 0x100);
+            return ReadEightBitPalette(paletteData, start, autoSize ? Math.Min(0x100, paletteData.Length / 3) : 0x100);
         }
 
-        public static Color[] ReadEightBitPalette(Byte[] data, Int32 index, Int32 length)
+        public static Color[] ReadEightBitPalette(Byte[] paletteData, Int32 colors)
         {
-            length = Math.Min(0x100, Math.Max(0, length));
-            Color[] pal = new Color[length];
-            Int32 dataEnd = Math.Min(data.Length, index + length * 3);
-            for (Int32 i = 0; i < length; ++i)
-            {
-                if (index + 2 > dataEnd)
-                    pal[i] = Color.Empty;
-                else
-                    pal[i] = Color.FromArgb(data[index], data[index + 1], data[index + 2]);
-                index += 3;
-            }
-            return pal;
+            return ReadEightBitPalette(paletteData, 0, colors);
+        }
+
+        public static Color[] ReadEightBitPalette(Byte[] paletteData, Int32 start, Int32 colors)
+        {
+            colors = Math.Min(0x100, Math.Max(0, colors));
+            Int32 fullLen = colors * 3;
+            if (start + fullLen > paletteData.Length)
+                throw new ArgumentException(Invalid8bit);
+            return PixelFormatter.Format8BitVgaPal.GetColorPalette(paletteData, start, colors);
         }
 
         /// <summary>
-        /// Uses Pythagorean distance in 3D colour space to find the closest match to a given colour on
-        /// a given colour palette, and returns the index on the palette at which that match was found.
+        /// Uses Pythagorean distance in 3D color space to find the closest match to a given color on
+        /// a given color palette, and returns the index on the palette at which that match was found.
         /// </summary>
-        /// <param name="col">The colour to find the closest match to</param>
-        /// <param name="colorPalette">The palette of available colours to match</param>
+        /// <param name="col">The color to find the closest match to</param>
+        /// <param name="colorPalette">The palette of available colors to match</param>
         /// <param name="excludedindices">List of palette indices that are specifically excluded from the search.</param>
-        /// <returns>The index on the palette of the colour that is the closest to the given colour.</returns>
+        /// <returns>The index on the palette of the color that is the closest to the given color.</returns>
         public static Int32 GetClosestPaletteIndexMatch(Color col, Color[] colorPalette, IEnumerable<Int32> excludedindices = null)
         {
             Int32 palLength = colorPalette.Length;

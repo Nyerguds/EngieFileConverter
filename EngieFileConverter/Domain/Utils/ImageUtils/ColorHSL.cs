@@ -15,7 +15,7 @@ namespace Nyerguds.ImageManipulation
         private Double luminosity = 1.0;
         private Byte alpha = 255;
 
-        public static Double SCALE = 240.0;
+        public static Double SCALE = 360.0;
 
         public Double Hue
         {
@@ -25,14 +25,14 @@ namespace Nyerguds.ImageManipulation
 
         public Double Saturation
         {
-            get { return this.saturation * SCALE; }
-            set { this.saturation = this.CheckRange(value / SCALE); }
+            get { return this.saturation; }
+            set { this.saturation = this.CheckRange(value); }
         }
 
         public Double Luminosity
         {
-            get { return this.luminosity * SCALE; }
-            set { this.luminosity = this.CheckRange(value / SCALE); }
+            get { return this.luminosity; }
+            set { this.luminosity = this.CheckRange(value); }
         }
         public Byte Alpha
         {
@@ -125,19 +125,16 @@ namespace Nyerguds.ImageManipulation
 
         public void SetARGB(Int32 alpha, Int32 red, Int32 green, Int32 blue)
         {
-            ColorHSL hslColor = (ColorHSL)Color.FromArgb(alpha, red, green, blue);
-            this.hue = hslColor.hue;
-            this.saturation = hslColor.saturation;
-            this.luminosity = hslColor.luminosity;
+            this.SetRGB(red, green, blue);
             this.alpha = (Byte)alpha;
         }
 
         public void SetRGB(Int32 red, Int32 green, Int32 blue)
         {
-            ColorHSL hslColor = (ColorHSL)Color.FromArgb(red, green, blue);
-            this.hue = hslColor.hue;
-            this.saturation = hslColor.saturation;
-            this.luminosity = hslColor.luminosity;
+            Color color = Color.FromArgb(red, green, blue);
+            this.hue = color.GetHue() / SCALE;
+            this.luminosity = color.GetBrightness();
+            this.saturation = color.GetSaturation();
         }
 
         public ColorHSL() { }

@@ -56,13 +56,13 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 dataLen = fileData.Length;
             if (dataLen < 16)
-                throw new FileTypeLoadException("Not long enough for header.");
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             Int32 firstNonEmpty = 0;
             Int32 headerEnd = -1;
             while (firstNonEmpty + 8 <= dataLen && (headerEnd = ArrayUtils.ReadInt32FromByteArrayBe(fileData, firstNonEmpty)) == 0)
             {
                 if (ArrayUtils.ReadUInt32FromByteArrayBe(fileData, firstNonEmpty + 4) != 0)
-                    throw new FileTypeLoadException("Bad data in trailing empty frames.");
+                    throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
                 firstNonEmpty += 8;
             }
             if (headerEnd <= 0 || headerEnd >= dataLen || headerEnd % 8 != 0 || firstNonEmpty > headerEnd)
@@ -70,7 +70,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             Int32 frames = (headerEnd) / 8;
             if (frames == 0)
-                throw new FileTypeLoadException("No frames found.");
+                throw new FileTypeLoadException(ERR_NO_FRAMES);
             UInt32[] offsets = new UInt32[frames];
             UInt16[] widths = new UInt16[frames];
             UInt16[] heights = new UInt16[frames];
@@ -81,7 +81,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 UInt32 dataOffset = ArrayUtils.ReadUInt32FromByteArrayBe(fileData, readOffset);
                 if (dataOffset != 0 && (dataOffset < headerEnd || dataOffset > dataLen))
-                    throw new FileTypeLoadException("Bad offset in header.");
+                    throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
                 offsets[index] = dataOffset;
                 UInt16 imageHeight = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, readOffset + 4);
                 compressedFlags[index] = (imageHeight & 0x8000) != 0;
@@ -218,8 +218,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 height = heights[i];
                 if (compressed[i])
                     height |= 0x8000;
-                ArrayUtils.WriteInt16ToByteArrayBe(finalFile, indexOffset + 4, height);
-                ArrayUtils.WriteInt16ToByteArrayBe(finalFile, indexOffset + 6, widths[i]);
+                ArrayUtils.WriteUInt16ToByteArrayBe(finalFile, indexOffset + 4, (UInt16)height);
+                ArrayUtils.WriteUInt16ToByteArrayBe(finalFile, indexOffset + 6, (UInt16)widths[i]);
                 if (data[i] != null)
                     Array.Copy(data[i], 0, finalFile, offsets[i], data[i].Length);
             }

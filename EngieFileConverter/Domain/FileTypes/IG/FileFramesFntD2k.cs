@@ -82,7 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 actualSpaceWidth = spaceWidth + padding;
             Bitmap spaceImg = ImageUtils.BuildImage(new Byte[maxHeight * actualSpaceWidth], actualSpaceWidth, maxHeight, actualSpaceWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
             FileImageFrame space = CreateFrame(spaceImg, sourcePath, spacePos, 1, 1, -1, -1, 0);
-            space.SetExtraInfo(space.ExtraInfo + "\nSpace width in header: " + spaceWidth + "\nApplied padding: " + padding);
+            space.SetExtraInfo(space.ExtraInfo + "\nSpace width in header: " + spaceWidth + "\nApplied padding: " + padding + " pixel" + (padding == 1 ? String.Empty : "s"));
             // Read the rest of the symbols.
             Int32 readOffset = 0x408;
             Int32 datalen = fileData.Length;

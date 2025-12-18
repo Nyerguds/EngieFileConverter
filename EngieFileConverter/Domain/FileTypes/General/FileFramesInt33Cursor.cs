@@ -102,7 +102,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 using (BinaryReader br = new BinaryReader(ms))
                 {
                     ms.Position = 64 * i;
-                    for (Int32 j = 0; j < 32; j++)
+                    for (Int32 j = 0; j < 32; ++j)
                     {
                         if (j == 16)
                             sb.Append('\n');
@@ -148,12 +148,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (len == 0)
                     throw new ArgumentException("No frames in given source.");
                 frames = new Bitmap[len];
-                for (Int32 i = 0; i < len; i++)
+                for (Int32 i = 0; i < len; ++i)
                     frames[i] = srcFrames[i].GetBitmap();
             }
             Int32 frLen = frames.Length;
             Byte[][] frameBytes = new Byte[frLen][];
-            for (Int32 i = 0; i < frLen; i++)
+            for (Int32 i = 0; i < frLen; ++i)
             {
                 Bitmap bm = frames[i];
                 if (bm == null)
@@ -166,17 +166,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] origData = ImageUtils.GetImageData(bm, out stride);
                 Byte[] eightBitData = ImageUtils.ConvertTo8Bit(origData, 16, 16, 0, Image.GetPixelFormatSize(bm.PixelFormat), true);
                 frameBytes[i] = eightBitData;
-                for (Int32 j = 0; j < eightBitData.Length; j++)
+                for (Int32 j = 0; j < eightBitData.Length; ++j)
                     if (eightBitData[i] > 3)
                         throw new ArgumentException("This format can only handle images with indexed values from 0 up to 3.");
             }
             Byte[] finalData8Bit = new Byte[512 * frLen];
-            for (Int32 i = 0; i < frLen; i++)
+            for (Int32 i = 0; i < frLen; ++i)
             {
                 Byte[] curImage = frameBytes[i];
                 Int32 curImageOffsAnd = i * 512;
                 Int32 curImageOffsXor = curImageOffsAnd + 256;
-                for (Int32 j = 0; j < 256; j++)
+                for (Int32 j = 0; j < 256; ++j)
                 {
                     if ((curImage[j] & 1) != 0)
                         finalData8Bit[curImageOffsAnd + j] = 1;

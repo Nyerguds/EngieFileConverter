@@ -85,7 +85,7 @@ namespace EngieFileConverter.UI
             {
                 List<String> files = new List<String>();
                 files.Add(args[0]);
-                for (int i = 1; i < args.Length; i++)
+                for (Int32 i = 1; i < args.Length; ++i)
                 {
                     String pth = args[i];
                     if (File.Exists(pth))
@@ -110,13 +110,13 @@ namespace EngieFileConverter.UI
             palettes.Add(new PaletteDropDownInfo("CGA pal 2, bright", 2, PaletteUtils.GetCgaPalette(0, false, true, true, 2), null, -1, false, false));
 
             palettes.Add(new PaletteDropDownInfo("Grayscale B->W", 4, PaletteUtils.GenerateGrayPalette(4, null, false), null, -1, false, false));
-            //palettes.Add(new PaletteDropDownInfo("Heights Blue->Red", 4, PaletteUtils.GenerateRainbowPalette(4, false, false, true, 0, 160.0 / 240.0), null, -1, false, false));
+            //palettes.Add(new PaletteDropDownInfo("Heights Blue->Red", 4, PaletteUtils.GenerateRainbowPalette(4, false, false, true, 0, 240), null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("Grayscale W->B", 4, PaletteUtils.GenerateGrayPalette(4, null, true), null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("Rainbow", 4, PaletteUtils.GenerateRainbowPalette(4, -1, null, false), null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("EGA Palette", 4, PaletteUtils.GetEgaPalette(4), null, -1, false, false));
             //palettes.Add(new PaletteDropDownInfo("Windows palette", 4, PaletteUtils.GenerateDefWindowsPalette(4, false, false), null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("Grayscale B->W", 8, PaletteUtils.GenerateGrayPalette(8, null, false), null, -1, false, false));
-            palettes.Add(new PaletteDropDownInfo("Heights Blue->Red", 8, PaletteUtils.GenerateRainbowPalette(8, -1, null, true, 0, 160, true), null, -1, false, false));
+            palettes.Add(new PaletteDropDownInfo("Heights Blue->Red", 8, PaletteUtils.GenerateRainbowPalette(8, -1, null, true, 0, 240, true), null, -1, false, false));
             //palettes.Add(new PaletteDropDownInfo("Grayscale W->B", 8, PaletteUtils.GenerateGrayPalette(8, false, true), null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("Rainbow", 8, PaletteUtils.GenerateRainbowPalette(8, -1, null, false), null, -1, false, false));
             //palettes.Add(new PaletteDropDownInfo("Windows palette", 8, PaletteUtils.GenerateDefWindowsPalette(8, false, false), null, -1, false, false));
@@ -143,7 +143,7 @@ namespace EngieFileConverter.UI
             String basePath = null;
             String firstFoundFolder = null;
             Int32 foldersFound = 0;
-            for (Int32 i = 0; i < files.Length; i++)
+            for (Int32 i = 0; i < files.Length; ++i)
             {
                 String path = files[i];
                 try
@@ -170,7 +170,7 @@ namespace EngieFileConverter.UI
                 return;
             if (basePath == null && firstFoundFolder != null)
                 basePath = foldersFound == 1 ? firstFoundFolder : Path.GetDirectoryName(firstFoundFolder);
-            SupportedFileType[] preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filesList[0]);
+            SupportedFileType[] preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(FileTypesFactory.AutoDetectTypes, filesList[0]);
             this.m_LastOpenedFolder = basePath;
             this.LoadFile(filesList.ToArray(), null, preferredTypes);
         }
@@ -226,7 +226,7 @@ namespace EngieFileConverter.UI
                     if (selectedType == null)
                     {
                         List<FileTypeLoadException> loadErrors;
-                        loadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, error != null, out loadErrors);
+                        loadedFile = FileTypesFactory.LoadFileAutodetect(fileData, path, preferredTypes, error != null, out loadErrors);
                         if (loadedFile != null)
                             error = null;
                         else
@@ -345,7 +345,7 @@ namespace EngieFileConverter.UI
             Array.Sort(paths2);
             FileFrames fr = new FileFrames(true);
             SupportedFileType[] loadedFiles = new SupportedFileType[paths.Length];
-            for (Int32 i = 0; i < paths2.Length; i++)
+            for (Int32 i = 0; i < paths2.Length; ++i)
             {
                 String path = paths2[i];
                 if (File.Exists(path))
@@ -366,7 +366,7 @@ namespace EngieFileConverter.UI
                         else
                         {
                             List<FileTypeLoadException> loadErrors;
-                            loadedFiles[i] = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, selectedType != null, out loadErrors);
+                            loadedFiles[i] = FileTypesFactory.LoadFileAutodetect(fileData, path, preferredTypes, selectedType != null, out loadErrors);
                             fr.AddFrame(loadedFiles[i]);
                         }
                     }
@@ -445,18 +445,19 @@ namespace EngieFileConverter.UI
 
             // General
             this.tsmiSave.Enabled = hasFile;
-            this.TsmiSaveRaw.Enabled = hasShownImage;
+            this.tsmiSaveRaw.Enabled = hasShownImage;
+            this.tsmiSaveSingleFrame.Enabled = canExportFrames && numFrame.Value >= 0;
             this.tsmiSaveFrames.Enabled = canExportFrames;
             this.tsmiFramesToSingleImage.Enabled = canExportFrames;
             this.tsmiCopy.Enabled = hasShownImage;
 
             // General frame tools
             this.tsmiImageToFrames.Enabled = hasShownImage;
-            this.tsmiFramesToSingleImage.Enabled = canExportFrames;
+            this.tsmiFramesToSingleImage.Enabled = canExportFrames && frames > 0;
             // General animations "paste on frames" option.
             this.tsmiPasteOnFrames.Enabled = (hasFrames && frames > 0) || (!hasFrames && hasShownImage);
 
-            // Extract colours
+            // Extract colors
             this.tsmiExtractPal.Enabled = hasPal;
             this.tsmiExtract4BitPal.Enabled = hasPal && shownBpp == 8;
             this.tsmiImageToPalette4Bit.Enabled = hasShownImage;
@@ -511,7 +512,7 @@ namespace EngieFileConverter.UI
                 Bitmap image = shownFile.GetBitmap();
                 this.pzpImage.Image = image;
                 this.RefreshPalettes(resetPalettes, resetPalettes);
-                if (needsPalette && resetPalettes)
+                if (needsPalette) // && resetPalettes)
                     this.CmbPalettesSelectedIndexChanged(null, null);
                 else
                     this.RefreshColorControls();
@@ -568,14 +569,18 @@ namespace EngieFileConverter.UI
 
         private void TsmiSaveClick(Object sender, EventArgs e)
         {
-            this.Save(false);
+            this.Save(false, false);
+        }
+
+        private void tsmiSaveSingleFrameClick(Object sender, EventArgs e)
+        {
+            this.Save(false, true);
         }
 
         private void TsmiSaveFramesClick(Object sender, EventArgs e)
         {
-            this.Save(true);
+            this.Save(true, false);
         }
-
 
         private void TsmiSaveRawClick(Object sender, EventArgs e)
         {
@@ -611,22 +616,22 @@ namespace EngieFileConverter.UI
             return null;
         }
 
-        private void Save(Boolean frames)
+        private void Save(Boolean frames, Boolean saveSingle)
         {
             this.SaveFocus(this);
             if (this.m_LoadedFile == null)
                 return;
             SupportedFileType selectedItem;
             Boolean hasFrames = this.m_LoadedFile.Frames != null && this.m_LoadedFile.Frames.Length > 0;
-            Boolean isFrame = !frames && hasFrames && this.numFrame.Value != -1;
-            SupportedFileType loadedFile = isFrame ? this.m_LoadedFile.Frames[(Int32) this.numFrame.Value] : this.m_LoadedFile;
+            Boolean saveSingleFrame = !frames && saveSingle && hasFrames && this.numFrame.Value != -1;
+            SupportedFileType loadedFile = saveSingleFrame ? this.m_LoadedFile.Frames[(Int32) this.numFrame.Value] : this.m_LoadedFile;
             Boolean hasEmptyFrames = frames && hasFrames && loadedFile.Frames.Any(f => f == null || f.GetBitmap() == null);
             Type selectType = frames ? typeof (FileImagePng) : loadedFile.GetType();
-            Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
+            Type[] saveTypes = FileTypesFactory.SupportedSaveTypes;
             Int32 nrOfSaveTypes = saveTypes.Length;
             FileClass loadedFileType = loadedFile.FileClass;
             FileClass frameFileType = FileClass.None;
-            if (hasFrames && !isFrame)
+            if (hasFrames && !saveSingleFrame)
             {
                 SupportedFileType first = this.m_LoadedFile.Frames.FirstOrDefault(x => x != null && x.GetBitmap() != null);
                 if (first != null)
@@ -644,7 +649,7 @@ namespace EngieFileConverter.UI
             if (filteredTypes.Count == 0)
             {
                 String message = "No types found for saving this data.";
-                if (hasFrames && !isFrame)
+                if (hasFrames && !saveSingleFrame)
                     message += "\nTry exporting as frames instead.";
                 MessageBox.Show(this, message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -655,11 +660,10 @@ namespace EngieFileConverter.UI
                 while (saveableType != null && saveableType != typeof(SupportedFileType))
                 {
                     saveableType = saveableType.BaseType;
-                    if (saveableType != null && filteredTypes.Contains(saveableType))
-                    {
-                        selectType = saveableType;
-                        break;
-                    }
+                    if (saveableType == null || !filteredTypes.Contains(saveableType))
+                        continue;
+                    selectType = saveableType;
+                    break;
                 }
             }
             if (!filteredTypes.Contains(selectType))
@@ -680,19 +684,21 @@ namespace EngieFileConverter.UI
             try
             {
                 // For export to frames only: collect the options for all frames.
-                Dictionary<String, Option> saveOptsUnique = new Dictionary<String, Option>();
+                HashSet<String> saveOptsUnique = new HashSet<String>();
                 if (frames && hasFrames)
                 {
                     SupportedFileType[] internalFrames = loadedFile.Frames;
                     Int32 nrOfFrames = internalFrames.Length;
-                    for (Int32 i = 0; i < nrOfFrames; i++)
+                    for (Int32 i = 0; i < nrOfFrames; ++i)
                     {
                         Option[] optsInt = selectedItem.GetSaveOptions(internalFrames[i], filename);
-                        for (Int32 j = 0; j < optsInt.Length; j++)
+                        for (Int32 j = 0; j < optsInt.Length; ++j)
                         {
                             Option optInt = optsInt[j];
-                            if (!saveOptsUnique.ContainsKey(optInt.Code))
-                                saveOptsUnique.Add(optInt.Code, optInt);
+                            if (saveOptsUnique.Contains(optInt.Code))
+                                continue;
+                            saveOptsUnique.Add(optInt.Code);
+                            saveOptions.Add(optInt);
                         }
                     }
                 }
@@ -701,15 +707,16 @@ namespace EngieFileConverter.UI
                     Option[] optsFile = selectedItem.GetSaveOptions(loadedFile, filename);
                     if (optsFile != null)
                     {
-                        for (Int32 j = 0; j < optsFile.Length; j++)
+                        for (Int32 j = 0; j < optsFile.Length; ++j)
                         {
                             Option optFile = optsFile[j];
-                            if (!saveOptsUnique.ContainsKey(optFile.Code))
-                                saveOptsUnique.Add(optFile.Code, optFile);
+                            if (saveOptsUnique.Contains(optFile.Code))
+                                continue;
+                            saveOptsUnique.Add(optFile.Code);
+                            saveOptions.Add(optFile);
                         }
                     }
                 }
-                saveOptions.AddRange(saveOptsUnique.Values);
                 if (frames && hasFrames)
                 {
                     // Check if this is a loaded files range; in that case, prefer using the real filenames.
@@ -824,6 +831,7 @@ namespace EngieFileConverter.UI
         {
             if (this.m_FocusedControl != null && this.m_FocusedControl.Enabled && !this.m_FocusedControl.ContainsFocus)
                 this.m_FocusedControl.Focus();
+            this.m_FocusedControl = null;
         }
 
         protected void FrmFileConverterFormClosing(Object sender, FormClosingEventArgs e)
@@ -846,19 +854,19 @@ namespace EngieFileConverter.UI
         {
             this.SaveFocus(this);
             SupportedFileType selectedItem;
-            String[] filenames = FileDialogGenerator.ShowOpenFileFialog(this, null, false, SupportedFileType.SupportedOpenTypes, SupportedFileType.AutoDetectTypes, this.m_LastOpenedFolder, "images", null, true, out selectedItem);
+            String[] filenames = FileDialogGenerator.ShowOpenFileFialog(this, null, false, FileTypesFactory.SupportedOpenTypes, FileTypesFactory.AutoDetectTypes, this.m_LastOpenedFolder, "images", null, true, out selectedItem);
             if (filenames == null ||filenames.Length == 0)
                 return;
             String filename = filenames[0];
             this.m_LastOpenedFolder = Path.GetDirectoryName(filename);
             SupportedFileType[] preferredTypes = null;
             if (selectedItem == null)
-                preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filename);
+                preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(FileTypesFactory.AutoDetectTypes, filename);
             else
             {
                 SupportedFileType curr = selectedItem;
                 Type currType = curr.GetType();
-                Type[] subTypes = SupportedFileType.AutoDetectTypes.Where(x => currType.IsAssignableFrom(x)).ToArray();
+                Type[] subTypes = FileTypesFactory.AutoDetectTypes.Where(x => currType.IsAssignableFrom(x)).ToArray();
                 if (subTypes.Length > 0 && subTypes[0] != currType)
                 {
                     List<SupportedFileType> subTypeObjs = new List<SupportedFileType>(FileDialogGenerator.GetItemsList<SupportedFileType>(subTypes));
@@ -914,7 +922,7 @@ namespace EngieFileConverter.UI
             if (loadedFile != null && cs != ColorStatus.None && loadedFile.BitsPerPixel != 0)
             {
                 bpp = Math.Abs(loadedFile.BitsPerPixel);
-                // Fix for palettes larger than the colour depth would normally allow (can happen on png)
+                // Fix for palettes larger than the color depth would normally allow (can happen on png)
                 while (1 << bpp < pal.Length)
                     bpp *= 2;
                 bpp = Math.Min(8, bpp);
@@ -999,8 +1007,8 @@ namespace EngieFileConverter.UI
                     currentPal.Revert(this.GetCurrentTypeTransparencyMask());
                     Color[] colors = currentPal.Colors;
                     this.GetShownFile().SetColors(colors);
-                    
-                    // If CGA colour 0 changed: change all CGA palettes.
+
+                    // If CGA color 0 changed: change all CGA palettes.
                     if (this.GetShownFile().BitsPerPixel == -2 && colors.Length > 0 && zeroCol.ToArgb() != colors[0].ToArgb())
                     {
                         PaletteDropDownInfo[] itemsToChange = this.GetPalettes(2, false, this.GetCurrentTypeTransparencyMask()).Where(p => p.Name.StartsWith("CGA ")).ToArray();
@@ -1220,7 +1228,7 @@ namespace EngieFileConverter.UI
                 if (cs == ColorStatus.External)
                 {
                     PaletteDropDownInfo[] itemsToChange;
-                    // If CGA colour 0: change all CGA palettes.
+                    // If CGA color 0: change all CGA palettes.
                     if (loadedFile.BitsPerPixel == -2 && colindex == 0)
                     {
                         itemsToChange = this.GetPalettes(2, false, this.GetCurrentTypeTransparencyMask()).ToArray();
@@ -1393,7 +1401,6 @@ namespace EngieFileConverter.UI
             List<PaletteDropDownInfo> allPalettes = new List<PaletteDropDownInfo>();
             allPalettes.AddRange(this.m_DefaultPalettes);
             allPalettes.AddRange(this.m_ReadPalettes);
-            Object[] arrParams;
             String imagePath = shownFile.LoadedFile;
             if (String.IsNullOrEmpty(imagePath))
                 imagePath = shownFile.LoadedFileName;
@@ -1479,14 +1486,15 @@ namespace EngieFileConverter.UI
             {
                 paletteStr = String.Join(",", palette.Select(c => ColorUtils.HexStringFromColor(c, false)).ToArray());
             }
-            Option[] so = new Option[4];
+            Option[] so = new Option[5];
             so[0] = new Option("FRW", OptionInputType.Number, "Frame width", maxWidth + ",", maxWidth.ToString());
             so[1] = new Option("FRH", OptionInputType.Number, "Frame height", maxHeight + ",", maxHeight.ToString());
-            so[2] = new Option("FPL", OptionInputType.Number, "Frames per line", "1," + nrOfframes, ((Int32)Math.Sqrt(nrOfframes)).ToString());
+            so[2] = new Option("FRC", OptionInputType.Boolean, "Center in frame", "0");
+            so[3] = new Option("FPL", OptionInputType.Number, "Frames per line", "1," + nrOfframes, ((Int32)Math.Sqrt(nrOfframes)).ToString());
             if (highestBpp <= 8)
-                so[3] = new Option("BGI", OptionInputType.Palette, "Background color around frames", highestBpp + "|" + paletteStr, "0");
+                so[4] = new Option("BGI", OptionInputType.Palette, "Background color around frames", highestBpp + "|" + paletteStr, "0");
             else
-                so[3] = new Option("BGC", OptionInputType.Color, "Background color around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
+                so[4] = new Option("BGC", OptionInputType.Color, "Background color around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
             SaveOptionInfo soi = new SaveOptionInfo();
             soi.Name = "Frames to single image";
             soi.Properties = so;
@@ -1513,18 +1521,19 @@ namespace EngieFileConverter.UI
             Int32.TryParse(Option.GetSaveOptionValue(so, "FRH"), out frameHeight);
             Int32 framesPerLine;
             Int32.TryParse(Option.GetSaveOptionValue(so, "FPL"), out framesPerLine);
+            Boolean centerFrames = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(so, "FRC"));
             Byte fillPalIndex = 0;
             Color fillColor = Color.Empty;
             if (highestBpp <= 8)
                 Byte.TryParse(Option.GetSaveOptionValue(so, "BGI"), out fillPalIndex);
             else
                 fillColor = ColorUtils.ColorFromHexString(Option.GetSaveOptionValue(so, "BGC"));
-            this.ExecuteThreaded(() => this.FramesToSingleImage(frameImages, frameWidth, frameHeight, framesPerLine, fillPalIndex, fillColor), false, true, true, "Combining frames");
+            this.ExecuteThreaded(() => this.FramesToSingleImage(frameImages, frameWidth, frameHeight, centerFrames, framesPerLine, fillPalIndex, fillColor), false, true, true, "Combining frames");
         }
 
-        private SupportedFileType FramesToSingleImage(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Int32 framesPerLine, Byte backFillPalIndex, Color backFillColor)
+        private SupportedFileType FramesToSingleImage(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Boolean centerFrames, Int32 framesPerLine, Byte backFillPalIndex, Color backFillColor)
         {
-            Bitmap bm = ImageUtils.BuildImageFromFrames(images, framesWidth, framesHeight, framesPerLine, backFillPalIndex, backFillColor);
+            Bitmap bm = ImageUtils.BuildImageFromFrames(images, framesWidth, framesHeight, centerFrames, framesPerLine, backFillPalIndex, backFillColor);
             FileImagePng returnImg = new FileImagePng();
             returnImg.LoadFile(bm, this.m_LoadedFile.LoadedFile);
             return returnImg;
@@ -1608,36 +1617,6 @@ namespace EngieFileConverter.UI
             this.ExecuteThreaded(() => HeightMapGenerator.GeneratePlateauImage64x64(map, "_lvl"), false, false, false, "Generating plateaus");
         }
 
-        private void TsmiSplitShadowsClick(Object sender, EventArgs e)
-        {
-            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
-                return;
-            this.SaveFocus(this);
-            Option[] so = new Option[1];
-            so[0] = new Option("IND", OptionInputType.Number, "Input shadow index", "0,255", "4");
-            SaveOptionInfo soi = new SaveOptionInfo();
-            soi.Name = "Shadow splitting options:";
-            soi.Properties = so;
-            try
-            {
-                using (FrmOptions opts = new FrmOptions(GetTitle(), soi))
-                {
-                    opts.Height = opts.OptimalHeight;
-                    if (opts.ShowDialog(this) != DialogResult.OK)
-                        return;
-                }
-            }
-            catch (ArgumentException ex)
-            {
-                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-            Int32 ind;
-            Int32.TryParse(Option.GetSaveOptionValue(so, "IND"), out ind);
-
-            this.ExecuteThreaded(() => FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, (Byte) ind, 1), false, true, false, "Splitting shadows");
-        }
-
         private void TsmiCombineShadowsClick(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
@@ -1665,6 +1644,71 @@ namespace EngieFileConverter.UI
             Int32 ind;
             Int32.TryParse(Option.GetSaveOptionValue(so, "IND"), out ind);
             this.ExecuteThreaded(() => FileFramesWwShpTs.CombineShadows(this.m_LoadedFile, 1, (Byte) ind), false, true, false, "Combining shadows");
+        }
+
+        private void TsmiSplitShadowsClick(Object sender, EventArgs e)
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
+                return;
+            this.SaveFocus(this);
+            Option[] so = new Option[1];
+            so[0] = new Option("IND", OptionInputType.Number, "Input shadow index", "0,255", "4");
+            SaveOptionInfo soi = new SaveOptionInfo();
+            soi.Name = "Shadow splitting options:";
+            soi.Properties = so;
+            try
+            {
+                using (FrmOptions opts = new FrmOptions(GetTitle(), soi))
+                {
+                    opts.Height = opts.OptimalHeight;
+                    if (opts.ShowDialog(this) != DialogResult.OK)
+                        return;
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            Int32 ind;
+            Int32.TryParse(Option.GetSaveOptionValue(so, "IND"), out ind);
+            this.ExecuteThreaded(() => FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, (Byte) ind, 1), false, true, false, "Splitting shadows");
+        }
+
+        private void TsmiApplyTransparencyMaskClick(Object sender, EventArgs e)
+        {
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
+                return;
+            this.SaveFocus(this);
+
+
+
+            Option[] so = new Option[1];
+            so[0] = new Option("IND", OptionInputType.Number, "Input shadow index", "0,255", "4");
+            SaveOptionInfo soi = new SaveOptionInfo();
+            soi.Name = "Shadow splitting options:";
+            soi.Properties = so;
+            try
+            {
+                using (FrmOptions opts = new FrmOptions(GetTitle(), soi))
+                {
+                    opts.Height = opts.OptimalHeight;
+                    if (opts.ShowDialog(this) != DialogResult.OK)
+                        return;
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                return;
+            }
+            Int32 ind;
+            Int32.TryParse(Option.GetSaveOptionValue(so, "IND"), out ind);
+            //this.ExecuteThreaded(() => FileFrames.ApplyTransparencyMask(this.m_LoadedFile, (Byte)ind, 1), false, true, false, "Splitting shadows");
+        }
+
+        private void TsmiSplitTransparencyMaskClick(Object sender, EventArgs e)
+        {
+
         }
 
         private void TsmiPasteOnFramesClick(Object sender, EventArgs e)
@@ -1836,7 +1880,7 @@ namespace EngieFileConverter.UI
                 paletteData[palPtr++] = imageData[i + 1];
                 paletteData[palPtr++] = imageData[i];
             }
-            Color[] col = ColorUtils.ReadEightBitPalette(paletteData, false);
+            Color[] col = ColorUtils.ReadEightBitPaletteFile(paletteData, false);
             Byte[] newImageData = Enumerable.Range(0, limit).Select(b => (Byte)b).ToArray();
             Byte[] fullImageData = new Byte[palSize];
             Array.Copy(newImageData, fullImageData, limit);
@@ -1851,7 +1895,7 @@ namespace EngieFileConverter.UI
             return palImage;
         }
 
-        private void TsmiChangeTo24BitRgb_Click(Object sender, EventArgs e)
+        private void TsmiChangeTo24BitRgbClick(Object sender, EventArgs e)
         {
             SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & FileClass.Image | FileClass.FrameSet) == 0)
@@ -1859,7 +1903,7 @@ namespace EngieFileConverter.UI
             this.ExecuteThreaded(() => this.ChangeToRgb(fileToEdit, 24), true, true, true, "Changing to 24bpp RGB");
         }
 
-        private void TsmiChangeTo32BitArgb_Click(Object sender, EventArgs e)
+        private void TsmiChangeTo32BitArgbClick(Object sender, EventArgs e)
         {
             SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & FileClass.Image | FileClass.FrameSet) == 0)
@@ -1907,7 +1951,7 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void TsmiMatchToPalette_Click(Object sender, EventArgs e)
+        private void TsmiMatchToPaletteClick(Object sender, EventArgs e)
         {
             SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & FileClass.Image | FileClass.FrameSet) == 0)
@@ -1929,7 +1973,7 @@ namespace EngieFileConverter.UI
             this.ExecuteThreaded(() => this.MatchToPalette(fileToEdit, matchBpp, matchPalette), true, true, true, "Matching to palette");
         }
 
-        private void TsmiRemovePalette_Click(Object sender, EventArgs e)
+        private void TsmiRemovePaletteClick(Object sender, EventArgs e)
         {
             SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & (FileClass.Image | FileClass.FrameSet)) == 0)
@@ -1938,7 +1982,7 @@ namespace EngieFileConverter.UI
             this.ReloadWithDispose(editedFile, true, false, false);
         }
 
-        private void TsmiSetToDifferenPalette_Click(Object sender, EventArgs e)
+        private void TsmiSetToDifferenPaletteClick(Object sender, EventArgs e)
         {
             SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & (FileClass.Image | FileClass.FrameSet)) == 0)
@@ -2116,11 +2160,10 @@ namespace EngieFileConverter.UI
             if (shownFile == null || shownFile.BitsPerPixel != 8 || this.GetColorStatus() == ColorStatus.None)
                 return;
             this.SaveFocus(this);
-
             Option[] so = new Option[1];
             so[0] = new Option("start", OptionInputType.Number, "Start index", "0," + 240, "0");
             SaveOptionInfo soi = new SaveOptionInfo();
-            soi.Name = "16-color palette from 256-color palette.\n\nSelect start index of 16-colour range. Press Cancel to select manually.";
+            soi.Name = "16-color palette from 256-color palette.\n\nSelect start index of 16-color range. Press Cancel to select manually.";
             soi.Properties = so;
             Int32[] selectedIndices = null;
             try
@@ -2342,7 +2385,7 @@ namespace EngieFileConverter.UI
         {
             this.tsmiOpen.Enabled = enable;
             this.tsmiSave.Enabled = enable;
-            this.TsmiSaveRaw.Enabled = enable;
+            this.tsmiSaveRaw.Enabled = enable;
             this.tsmiSaveFrames.Enabled = enable;
             if (!enable)
             {

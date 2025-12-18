@@ -61,7 +61,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 try
                 {
-                    this.m_Palette = ColorUtils.ReadFromSixBitPaletteFile(palettePath);
+                    this.m_Palette = ColorUtils.ReadSixBitPaletteFile(palettePath, true);
                     this.m_PaletteLoaded = true;
                 }
                 catch (ArgumentException) { }
@@ -91,8 +91,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 stride;
             Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] bifData = new Byte[imageBytes.Length + 4];
-            ArrayUtils.WriteInt16ToByteArrayLe(bifData, 0, width);
-            ArrayUtils.WriteInt16ToByteArrayLe(bifData, 2, height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(bifData, 0, (UInt16)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(bifData, 2, (UInt16)height);
             Array.Copy(imageBytes, 0, bifData, 4, imageBytes.Length);
             return bifData;
         }

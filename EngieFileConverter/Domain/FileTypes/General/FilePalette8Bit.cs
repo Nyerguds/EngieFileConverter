@@ -40,7 +40,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length != 768)
                 throw new FileTypeLoadException("Incorrect file size.");
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, true);
+            this.m_Palette = ColorUtils.ReadEightBitPalette(fileData);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 

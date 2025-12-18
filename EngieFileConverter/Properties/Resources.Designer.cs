@@ -19,7 +19,7 @@ namespace EngieFileConverter.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -398,6 +398,64 @@ namespace EngieFileConverter.Properties {
         internal static string tilesets2 {
             get {
                 return ResourceManager.GetString("tilesets2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [clear1]
+        ///X=1
+        ///Y=1
+        ///Terrain0=C
+        ///PrimaryType=Clear
+        ///
+        ///[w1]
+        ///X=1
+        ///Y=1
+        ///Terrain0=W
+        ///PrimaryType=Clear
+        ///
+        ///[w2]
+        ///X=2
+        ///Y=2
+        ///Terrain0=WW
+        ///Terrain1=WW
+        ///PrimaryType=Clear
+        ///
+        ///[sh01]
+        ///X=4
+        ///Y=5
+        ///Terrain0=___H
+        ///Terrain1=_CCH
+        ///Terrain2=BWWV
+        ///Terrain3=WW__
+        ///Terrain4=W___
+        ///PrimaryType=Clear
+        ///
+        ///[sh02]
+        ///X=5
+        ///Y=5
+        ///Terrain0=____C
+        ///Terrain1=___CB
+        ///Terrain2=CCCBW
+        ///Terrain3=BHHW_
+        ///Terrain4=WWV__
+        ///PrimaryType=Clear
+        ///
+        ///[sh03]
+        ///X=3
+        ///Y=5
+        ///Terrain0=__C
+        ///Terrain1=_CB
+        ///Terrain2=CBW
+        ///Terrain3=WW_
+        ///Terrain4=W__
+        ///PrimaryType=Clear
+        ///
+        ///[sh04 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string tilesets2ra {
+            get {
+                return ResourceManager.GetString("tilesets2ra", resourceCulture);
             }
         }
     }

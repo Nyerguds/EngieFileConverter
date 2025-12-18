@@ -76,7 +76,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 try
                 {
-                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, dataOffset));
+                    this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, dataOffset);
                     PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                 }
                 catch (ArgumentException argex)
@@ -161,7 +161,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             SupportedFileType[] frames = FileFramesWwShpD2.PerformPreliminaryChecks(fileToSave);
-            // If it is a non-image format which does contain colours, offer to save with palette
+            // If it is a non-image format which does contain colors, offer to save with palette
             FileFramesWwShpLol1 shp = fileToSave as FileFramesWwShpLol1;
             Int32 compression = shp != null ? shp.CompressionType : 4;
             Dune2ShpType d2shp = fileToSave as Dune2ShpType;

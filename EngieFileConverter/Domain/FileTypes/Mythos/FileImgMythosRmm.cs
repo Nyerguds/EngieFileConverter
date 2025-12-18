@@ -57,7 +57,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Array.Copy(fileData, datalen - imageLen, imageData, 0, imageLen);
             try
             {
-                this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, datalen - fullLen, 256);
+                this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, datalen - fullLen);
             }
             catch (ArgumentException arex)
             {

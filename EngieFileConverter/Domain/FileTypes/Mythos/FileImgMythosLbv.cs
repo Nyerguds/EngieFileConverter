@@ -8,7 +8,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
 
     /// <summary>
-    /// This type is ridiculously simple; it's a raw 320x200 array of 8-bit data, followed by a 6-bit colour palette.
+    /// This type is ridiculously simple; it's a raw 320x200 array of 8-bit data, followed by a 6-bit color palette.
     /// The combination of exact file size and the fact the last 0x300 bytes all need to be below 0x40 makes detection
     /// fairly reliable, though, so I'm keeping this in the autodetect logic.
     /// </summary>
@@ -55,7 +55,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             try
             {
-                this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, imageLen, 256);
+                this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, imageLen);
             }
             catch (ArgumentException arex)
             {

@@ -169,10 +169,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (Exception e)
                     {
-                        throw new FileTypeLoadException("Cannot decompress VGS file!", e);
+                        throw new FileTypeLoadException(ERR_DECOMPR, e);
                     }
                     if (imageData == null)
-                        throw new FileTypeLoadException("Cannot decompress VGS file!");
+                        throw new FileTypeLoadException(ERR_DECOMPR);
                 }
                 else
                 {
@@ -187,7 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (compare.SequenceEqual(Encoding.ASCII.GetBytes(PAL_IDENTIFIER)) && imageData[PAL_IDENTIFIER.Length] == 0x1A)
                     {
                         // Palette found! Extract palette and skip frame so it doesn't get added to the list.
-                        this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(imageData, PAL_IDENTIFIER.Length + 1));
+                        this.m_Palette = ColorUtils.ReadSixBitPalette(imageData, PAL_IDENTIFIER.Length + 1);
                         PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, transMask);
                         this.m_LoadedPalette = sourcePath;
                         this.ExtraInfo =  "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame.";
@@ -196,15 +196,15 @@ namespace EngieFileConverter.Domain.FileTypes
                         {
                             if (offset == fileData.Length || !paletteStrict)
                                 return;
-                            throw new FileTypeLoadException("Not a single palette file!");
+                            throw new FileTypeLoadException("Not a single palette file.");
                         }
                         continue;
                     }
                     if (asPalette)
-                        throw new FileTypeLoadException("Not a palette file!");
+                        throw new FileTypeLoadException("Not a palette file.");
                 }
                 else if (asPalette)
-                    throw new FileTypeLoadException("Not a palette file!");
+                    throw new FileTypeLoadException("Not a palette file.");
                 // safe to execute this now the palette has been handled; otherwise there would be a ghost X and Y for the palette entry.
                 if (asVideo)
                 {
@@ -363,7 +363,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] frameBytes = new Byte[780];
                 Array.Copy(Encoding.ASCII.GetBytes(PAL_IDENTIFIER), 0, frameBytes, 0, PAL_IDENTIFIER.Length);
                 frameBytes[PAL_IDENTIFIER.Length] = 0x1A;
-                Byte[] colorBytes = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(palette));
+                Byte[] colorBytes = ColorUtils.GetSixBitPaletteData(palette);
                 Array.Copy(colorBytes, 0, frameBytes, PAL_IDENTIFIER.Length + 1, colorBytes.Length);
                 frameData[0] = frameBytes;
                 compressed[0] = false;
@@ -419,8 +419,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 offset = 0;
             for (Int32 i = 0; i < actualLen; ++i)
             {
-                ArrayUtils.WriteInt16ToByteArrayLe(finalData, offset + 0, (widths[i] - 1));
-                ArrayUtils.WriteInt16ToByteArrayLe(finalData, offset + 2, (heighths[i]-1));
+                ArrayUtils.WriteUInt16ToByteArrayLe(finalData, offset + 0, (UInt16)(widths[i] - 1));
+                ArrayUtils.WriteUInt16ToByteArrayLe(finalData, offset + 2, (UInt16)(heighths[i] - 1));
                 //finalData[offset + 4] = 0x00;
                 finalData[offset + 5] = (Byte)(compressed[i] ? 1 : 0);
                 finalData[offset + 6] = xOffsets[i];
@@ -441,7 +441,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];

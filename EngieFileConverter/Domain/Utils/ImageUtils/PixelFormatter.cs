@@ -11,23 +11,27 @@ namespace Nyerguds.ImageManipulation
     /// This class works slightly differently than the ScummVM version, using 4-entry arrays for all data, with each entry
     /// representing one of the color components, so the code can easily loop over them and perform the same action on each one.
     /// </summary>
+    /// <remarks>Written by Nyerguds.</remarks>
     public class PixelFormatter
     {
+        #region Predefined pixelformatters for common use
         /// <summary>Standard PixelFormatter for .Net's little-endian 32-bit RGBA format.</summary>
         public static PixelFormatter Format32BitArgbLe = new PixelFormatter(4, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
-
         /// <summary>Standard PixelFormatter for .Net's little-endian 24-bit RGB format.</summary>
         public static PixelFormatter Format24BitRgbLe = new PixelFormatter(3, 0x00000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
-
         /// <summary>Standard PixelFormatter for .Net's little-endian 16-bit RGBA format with 1-bit transparency.</summary>
         public static PixelFormatter Format16BitArgb1555Le = new PixelFormatter(2, 0x8000, 0x7C00, 0x03E0, 0x001F, true);
-
         /// <summary>Standard PixelFormatter for .Net's little-endian 16-bit RGB format with 5-bit components.</summary>
         public static PixelFormatter Format16BitRgb555Le = new PixelFormatter(2, 0x0000, 0x7C00, 0x03E0, 0x001F, true);
-
         /// <summary>Standard PixelFormatter for .Net's little-endian 16-bit RGB format with 6-bit green.</summary>
         public static PixelFormatter Format16BitRgb565Le = new PixelFormatter(2, 0x0000, 0xF800, 0x07E0, 0x001F, true);
+        /// <summary>PixelFormatter for classic 6-bit VGA color palette entries.</summary>
+        public static PixelFormatter Format6BitVgaPal = new PixelFormatter(3, 0x00000000, 0x003F0000, 0x00003F00, 0x0000003F, false);
+        /// <summary>PixelFormatter for classic 8-bit VGA color palette entries.</summary>
+        public static PixelFormatter Format8BitVgaPal = new PixelFormatter(3, 0x00000000, 0x00FF0000, 0x0000FF00, 0x000000FF, false);
+        #endregion
 
+        #region public properties. All read-only; the only data input is in the constructor.
         public Int32 BytesPerPixel
         {
             get { return this.bytesPerPixel; }
@@ -38,7 +42,7 @@ namespace Nyerguds.ImageManipulation
             get { return this.littleEndian; }
         }
 
-        /// <summary>Bit masks get the bits for each color component (A,R,G,B).</summary>
+        /// <summary>Bit masks to get the bits for each color component (A,R,G,B).</summary>
         public ReadOnlyCollection<UInt32> BitMasks
         {
             get { return Array.AsReadOnly(this.bitMasks); }
@@ -55,55 +59,50 @@ namespace Nyerguds.ImageManipulation
         {
             get { return Array.AsReadOnly(this.multipliers); }
         }
+
         /// <summary>Maximum value for each component (A,R,G,B)</summary>
         public ReadOnlyCollection<UInt32> Maximums
         {
             get { return Array.AsReadOnly(this.maxChan); }
         }
+        #endregion
 
-        /// <summary>Internal maximum bits per colour component. Currently set to support 8-bit colour components. 16-bit could work, but seems problematic to combine with masks.</summary>
+        #region private variables
+        /// <summary>Internal maximum bits per color component. Currently set to support 8-bit color components. 16-bit could work, but seems problematic to combine with masks.</summary>
         private const Int32 InternalMaxBits = 8;
-        /// <summary>Internal maximum value per colour component.</summary>
-        private const UInt32 InternalMax = (UInt32)((1 << InternalMaxBits) - 1);
+        /// <summary>Internal maximum value per color component.</summary>
+        private const UInt32 InternalMax = (1 << InternalMaxBits) - 1;
         /// <summary>Internal maximum bits for the full processed color value.</summary>
         private const Int32 InternalMaxSize = InternalMaxBits * 4;
         private const Double MultiplierFor8BitCol = 255.0 / InternalMax;
-
-        /// <summary>Number of bytes to read per pixel. since this only handles ARGB, less than 1 is unsupported.</summary>
-        private Byte bytesPerPixel;
-
+        /// <summary>Number of bytes to read per pixel. Since this only handles ARGB, less than 1 is unsupported.</summary>
+        private readonly Byte bytesPerPixel;
         /// <summary>Bit masks get the bits for each color component (A,R,G,B). If not explicitly given this can be derived from the number of bits.</summary>
-        private UInt32[] bitMasks = new UInt32[4];
-
+        private readonly UInt32[] bitMasks = new UInt32[4];
         /// <summary>Amount of bits for each component (A,R,G,B).</summary>
-        private Byte[] bitsAmounts = new Byte[4];
-
+        private readonly Byte[] bitsAmounts = new Byte[4];
         /// <summary>Multiplier for each component (A,R,G,B). If not explicitly given this can be derived from the number of bits.</summary>
-        private Double[] multipliers = new Double[4];
-
-        /// <summary>Maximum value for each component (A,R,G,B)</summary>
-        private UInt32[] maxChan = new UInt32[4];
-
+        private readonly Double[] multipliers = new Double[4];
+        /// <summary>Maximum value for each component (A,R,G,B).</summary>
+        private readonly UInt32[] maxChan = new UInt32[4];
         /// <summary>Defaults for each component (A,R,G,B). This is always the maximum value for Alpha, and 0 for the rest.</summary>
-        private UInt32[] defaultsChan = new UInt32[4];
-
+        private readonly UInt32[] defaultsChan = new UInt32[4];
         /// <summary>True to read the input bytes as little-endian.</summary>
-        private Boolean littleEndian;
+        private readonly Boolean littleEndian;
+        #endregion
 
-        // The following values are saved as bare ints rather than an enum to avoid unnecessary casts.
-
+        #region Indices. These are saved as bare ints rather than an enum to avoid unnecessary casts.
         /// <summary>The index used for the Alpha color components in all arrays.</summary>
         public const Int32 ColA = 0;
-
         /// <summary>The index used for the Red color components in all arrays.</summary>
         public const Int32 ColR = 1;
-
         /// <summary>The index used for the Green color components in all arrays.</summary>
         public const Int32 ColG = 2;
-
         /// <summary>The index used for the Blue color components in all arrays.</summary>
         public const Int32 ColB = 3;
+        #endregion
 
+        #region Constructors
         /// <summary>
         /// Creates a new PixelFormatter based on bit masks.
         /// </summary>
@@ -246,7 +245,9 @@ namespace Nyerguds.ImageManipulation
             this.maxChan[ColB] = MakeMaxVal(blueBits);
             this.defaultsChan[ColB] = 0;
         }
+        #endregion
 
+        #region Private functions
         /// <summary>
         /// Counts the amount of bits in a mask.
         /// </summary>
@@ -282,6 +283,32 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
+        /// Gets the raw value of a specific component from the given integer value, without adjustment to 0-255 range.
+        /// </summary>
+        /// <param name="readValue">The read integer value.</param>
+        /// <param name="component">The color component to get.</param>
+        /// <returns>The read color component.</returns>
+        private UInt32 GetRawChannelFromValue(UInt32 readValue, Int32 component)
+        {
+            return GetValueFromMask(this.bitMasks[component], readValue);
+        }
+
+        /// <summary>
+        /// Gets a specific color component from a read integer value. The returned value is adjusted to 0-255 range.
+        /// </summary>
+        /// <param name="readValue">The read integer value.</param>
+        /// <param name="component">The color component to get.</param>
+        /// <returns>The read color component, adjust to /256 fraction.</returns>
+        private UInt32 GetChannelFromValue(UInt32 readValue, Int32 component)
+        {
+            if (this.bitsAmounts[component] == 0)
+                return this.defaultsChan[component];
+            UInt32 val = this.GetRawChannelFromValue(readValue, component);
+            Double valD = (val * this.multipliers[component]);
+            return Math.Min(InternalMax, (UInt32)Math.Round(valD, MidpointRounding.AwayFromZero));
+        }
+
+        /// <summary>
         /// Adds the bits of a value to a destination value according to a mask.
         /// </summary>
         /// <param name="destValue">Value to add the current input to.</param>
@@ -313,7 +340,9 @@ namespace Nyerguds.ImageManipulation
         {
             return (UInt32) ((1 << colorComponentBitLength) - 1);
         }
+        #endregion
 
+        #region Public functions
         /// <summary>
         /// Using this multiplier instead of a basic int ensures a true uniform distribution of values of this bits length over the 0-255 range.
         /// </summary>
@@ -360,7 +389,7 @@ namespace Nyerguds.ImageManipulation
 
         /// <summary>
         /// Reads the raw data of a pixel as ARGB array in the original internal format from the data from the given offset.
-        /// Each component is the actual colour value, stored in the amount of bits specified in the read mask.
+        /// Each component is the actual color value, stored in the amount of bits specified in the read mask.
         /// The ColorComponent enum can be used to get the correct values out.
         /// </summary>
         /// <param name="data">Image data as byte array.</param>
@@ -425,32 +454,6 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Gets the raw value of a specific component from the given integer value, without adjustment to 0-255 range.
-        /// </summary>
-        /// <param name="readValue">The read integer value.</param>
-        /// <param name="component">The color component to get.</param>
-        /// <returns>The read color component.</returns>
-        private UInt32 GetRawChannelFromValue(UInt32 readValue, Int32 component)
-        {
-            return GetValueFromMask(this.bitMasks[component], readValue);
-        }
-
-        /// <summary>
-        /// Gets a specific color component from a read integer value. The returned value is adjusted to 0-255 range.
-        /// </summary>
-        /// <param name="readValue">The read integer value.</param>
-        /// <param name="component">The color component to get.</param>
-        /// <returns>The read color component, adjust to /256 fraction.</returns>
-        private UInt32 GetChannelFromValue(UInt32 readValue, Int32 component)
-        {
-            if (this.bitsAmounts[component] == 0)
-                return this.defaultsChan[component];
-            UInt32 val = this.GetRawChannelFromValue(readValue, component);
-            Double valD = (val * this.multipliers[component]);
-            return Math.Min(InternalMax, (UInt32)Math.Round(valD, MidpointRounding.AwayFromZero));
-        }
-
-        /// <summary>
         /// Gets the bare integer value of a color.
         /// </summary>
         /// <param name="color">The color to convert.</param>
@@ -483,9 +486,9 @@ namespace Nyerguds.ImageManipulation
                 val = AddValueWithMask(val, this.bitMasks[i], componentsChecked[i]);
             return val;
         }
+        #endregion
 
-        #region ArrayUtils import
-
+        #region Array utils. Copied from Nyerguds.Util.ArrayUtils class to avoid unnecessary dependencies.
         private static UInt32 ReadIntFromByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian)
         {
             Int32 lastByte = bytes - 1;
@@ -511,11 +514,9 @@ namespace Nyerguds.ImageManipulation
                 data[offs] = (Byte)(value >> (8 * index) & 0xFF);
             }
         }
-
         #endregion
 
-        #region toolsets
-
+        #region Static tools
         /// <summary>
         /// Reorders the bits inside a byte array to a new pixel format of equal length. Both formats are specified by a PixelFormatter object.
         /// </summary>
@@ -530,7 +531,7 @@ namespace Nyerguds.ImageManipulation
             if (inputFormat.BytesPerPixel != outputFormat.BytesPerPixel)
                 throw new ArgumentException("Output format's bytes per pixel do not match input format!", "outputFormat");
             if (inputFormat.BitMasks.SequenceEqual(outputFormat.BitMasks))
-                return; // Nothing to fix; they're the same already.
+                return; // Nothing to change; they're the same already.
             Int32 step = outputFormat.BytesPerPixel;
             Int32 lineOffset = 0;
             if (inputFormat.BitsAmounts.SequenceEqual(outputFormat.BitsAmounts))
@@ -579,6 +580,7 @@ namespace Nyerguds.ImageManipulation
 
         /// <summary>
         /// Converts the bits inside a byte array to a new pixel format. Both formats are specified by a PixelFormatter object.
+        /// If both formats have the same pixel length, use ReorderBits.
         /// </summary>
         /// <param name="imageData">Image data.</param>
         /// <param name="width">Image width.</param>
@@ -595,11 +597,12 @@ namespace Nyerguds.ImageManipulation
             Byte[] newData = new Byte[newSize];
 
             // Converter multiplier. Example:
-            // in:  3 bits => 111    => max  7 => multfactor = 255 /  7 = 36,428571
-            // out: 6 bits => 111111 => max 63 => multfactor = 255 / 63 =  4,047619
-            // Conversion multiplication factor: (36,428571/4,047619) = 9
+            // in:  3 bits => 111    => max  7 => multfactor = 255 /  7 = 36.428571
+            // out: 6 bits => 111111 => max 63 => multfactor = 255 / 63 =  4.047619
+            // Conversion multiplication factor: (36.428571/4.047619) = 9
             // 7 * 9 = 63 => successful conversion from 'in' to 'out' format.
 
+            // Caching these in advance, because every call to the getter repeats the readonly-wrapping.
             ReadOnlyCollection<Double> mulIn = inputFormat.Multipliers;
             ReadOnlyCollection<Byte> bitsOut = outputFormat.BitsAmounts;
             ReadOnlyCollection<Double> mulOut = outputFormat.Multipliers;
@@ -637,5 +640,19 @@ namespace Nyerguds.ImageManipulation
 
         #endregion
 
+        /// <summary>
+        /// Enum version of the color component indices.
+        /// </summary>
+        public enum ColorComponent
+        {
+            /// <summary>The index used for the Alpha color components in all arrays.</summary>
+            ColA = PixelFormatter.ColA,
+            /// <summary>The index used for the Red color components in all arrays.</summary>
+            ColR = PixelFormatter.ColR,
+            /// <summary>The index used for the Green color components in all arrays.</summary>
+            ColG = PixelFormatter.ColG,
+            /// <summary>The index used for the Blue color components in all arrays.</summary>
+            ColB = PixelFormatter.ColB,
+        }
     }
 }

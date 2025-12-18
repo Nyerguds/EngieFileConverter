@@ -66,7 +66,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Creates a new FileFrames object</summary>
         /// <param name="fromFileRange">Sets whether this file was created from a range of files.</param>
         public FileFrames(Boolean fromFileRange)
-            :this()
+            : this()
         {
             this.FromFileRange = fromFileRange;
         }
@@ -233,6 +233,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else if (frName.EndsWith("-") && frName.Length > 1)
                 frName = frName.Substring(0, frName.Length - 1);
+            frName = frName.Trim();
             if (frName.Length == 0)
                 frName = new String(Enumerable.Repeat('#', numpartFormat.Length).ToArray());
             baseName = Path.Combine(folder, frName + ext);
@@ -268,9 +269,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     String framePath = frameNames[i];
                     if (new FileInfo(framePath).Length == 0)
                         continue;
-                    SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, framePath);
+                    SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(FileTypesFactory.AutoDetectTypes, framePath);
                     List<FileTypeLoadException> loadErrors;
-                    currentType = LoadFileAutodetect(framePath, possibleTypes, false, out loadErrors);
+                    currentType = FileTypesFactory.LoadFileAutodetect(framePath, possibleTypes, false, out loadErrors);
                     break;
                 }
                 // All frames are empty. Not gonna support that.
@@ -319,12 +320,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             framesContainer.SetCommonPalette(commonPalette || nullPalette);
+            framesContainer.SetTransparencyMask(currentType.TransparencyMask);
             framesContainer.SetFrameInputClass(frameTypes);
             if (framesContainer.FramesHaveCommonPalette)
             {
                 framesContainer.SetBitsPerPixel(currentType.BitsPerPixel);
                 framesContainer.SetNeedsPalette(currentType.NeedsPalette);
-                // Ensures the correct amount of colours is set for the container
+                // Ensures the correct amount of colors is set for the container
                 framesContainer.SetPalette(currentType.GetColors());
                 framesContainer.SetColors(currentType.GetColors());
             }
@@ -359,9 +361,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean equalPal = singleImage || framesContainer.FramesHaveCommonPalette;
             Color[] framePal = null;
             Int32 frameBpp = 0;
-            SupportedFileType[] frames = singleImage ? new SupportedFileType[] {framesContainer} : framesContainer.Frames;
+            SupportedFileType[] frames = singleImage ? new SupportedFileType[] { framesContainer } : framesContainer.Frames;
             Int32 nrOfFrames = frames.Length;
-            // Explicitly test if all frames have the same colour depth and palette.
+            // Explicitly test if all frames have the same color depth and palette.
             if (!equalPal)
             {
                 Boolean isEqual = true;
@@ -591,11 +593,339 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.LoadFileFrame(newfile, newfile, framesArr[i], imagePath, i);
                 framePic.SetBitsPerColor(bpp);
                 framePic.SetNeedsPalette(indexed && needsPalette);
-                if (framesArr[i] == null && indexed)
-                    framePic.SetColors(imPalette);
                 newfile.AddFrame(framePic);
             }
+            if (indexed)
+                newfile.SetColors(imPalette);
             return newfile;
+        }
+
+        public static Int32[][] CheckForMaskFrames(SupportedFileType input, out Int32 srcTransIndex)
+        {
+            Dictionary<UInt16, List<Int32>> twoColImages = new Dictionary<UInt16, List<Int32>>();
+            Int32[] imageFrames;
+            Int32[] maskFrames;
+            HashSet<Byte> foundColors = new HashSet<Byte>();
+            SupportedFileType[] frames = input.Frames;
+            Int32 nrOfFrames = frames.Length;
+            Byte[][] frameData = new Byte[nrOfFrames][];
+            Boolean sameFrameSizes = true;
+            Int32 prevWidth = -1;
+            Int32 prevHeight = -1;
+            for (Int32 i = 0; i < nrOfFrames; i++)
+            {
+                SupportedFileType frame = frames[i];
+                if (sameFrameSizes)
+                {
+                    if (prevWidth != -1 && prevHeight != -1 && (frame.Width != prevWidth || frame.Height != prevHeight))
+                        sameFrameSizes = false;
+                    prevWidth = frame.Width;
+                    prevHeight = frame.Height;
+                }
+                if (frame.BitsPerPixel > 8)
+                    throw new ArgumentException("All frames need to be indexed for this conversion.", "input");
+                Byte[] imageData = ImageUtils.GetImageData(frame.GetBitmap(), PixelFormat.Format8bppIndexed);
+                frameData[i] = imageData;
+                foundColors.Clear();
+                for (Int32 j = 0; j < imageData.Length; ++j)
+                {
+                    if (foundColors.Contains(imageData[i]))
+                        continue;
+                    foundColors.Add(imageData[i]);
+                    if (foundColors.Count > 2)
+                        break;
+                }
+                if (foundColors.Count == 2)
+                {
+                    Byte[] cols = foundColors.ToArray();
+                    Array.Sort(cols);
+                    UInt16 keyVal = (UInt16)(cols[0] << 8 | cols[1]);
+                    List<Int32> curFrames;
+                    if (!twoColImages.TryGetValue(keyVal, out curFrames))
+                    {
+                        curFrames = new List<Int32>();
+                        twoColImages[keyVal] = curFrames;
+                    }
+                    curFrames.Add(i);
+                }
+            }
+            // Get the color pair for which the amount of found images is the largest.
+            Int32 maxTwoCol = twoColImages.Select(x => x.Value.Count).Max();
+            KeyValuePair<UInt16, List<Int32>> detectedColor = twoColImages.Where(x => x.Value.Count == maxTwoCol).First();
+
+            List<Int32> maskFramesList = detectedColor.Value;
+            maskFramesList.Sort();
+            // List found. Check how it relates to other frames.
+            Boolean isBefore = true;
+            List<Int32> correspondingFramesBefore = new List<Int32>();
+            Boolean isAfter = true;
+            List<Int32> correspondingFramesAfter = new List<Int32>();
+            List<Int32> correspondingFramesBeforeBatch = new List<Int32>();
+            List<Int32> correspondingFramesAfterBatch = new List<Int32>();
+            for (Int32 i = 0; i < maskFramesList.Count; ++i)
+            {
+                Int32 frameNr = maskFramesList[i];
+                if (frameNr > 0 && !maskFramesList.Contains(frameNr - 1))
+                {
+                    correspondingFramesBefore.Add(frameNr);
+                    continue;
+                }
+                isBefore = false;
+                break;
+            }
+            for (Int32 i = maskFramesList.Count - 1; i >= 0; --i)
+            {
+                Int32 frameNr = maskFramesList[i];
+                if (frameNr + 1 < maskFramesList.Count && !maskFramesList.Contains(frameNr + 1))
+                {
+                    correspondingFramesAfter.Add(frameNr);
+                    continue;
+                }
+                isAfter = false;
+                break;
+            }
+            // Try ranges
+            Boolean includesFirst = false;
+            Boolean includesLast = false;
+            List<Int32[]> batches = new List<Int32[]>();
+            for (Int32 i = 0; i < maskFramesList.Count; ++i)
+            {
+                List<Int32> batch = new List<Int32>();
+                batch.Add(maskFramesList[i]);
+                while (i + 1 < maskFramesList.Count && maskFramesList[i] + 1 == maskFramesList[i + 1])
+                {
+                    i++;
+                    batch.Add(maskFramesList[i]);
+                }
+                batches.Add(batch.ToArray());
+            }
+            // Only check ranges if they aren't singular anyway.
+            Boolean hasRanges = batches.Any(b => b.Length > 1);
+            // Can't be 'before' the actual image frames it masks if it includes the last frame
+            Boolean isBeforeBatch = hasRanges && !batches.Last().Contains(nrOfFrames - 1);
+            // Can't be 'after' the actual image frames it masks if it includes the first frame
+            Boolean isAfterBatch = hasRanges && !batches.First().Contains(0);
+            if (isBeforeBatch)
+            {
+                for (Int32 i = 0; i < batches.Count; ++i)
+                {
+                    Int32[] batch = batches[i];
+                    // Batches are never empty.
+                    Int32 first = batch[0];
+                    Int32 maskRangeAmount = batch.Length;
+                    for (Int32 j = 0; j < maskRangeAmount; ++j)
+                    {
+                        Int32 frame = batch[j] - maskRangeAmount;
+                        if (frame > 0 && !maskFramesList.Contains(frame))
+                        {
+                            correspondingFramesBeforeBatch.Add(frame);
+                            continue;
+                        }
+                        isBeforeBatch = false;
+                        break;
+                    }
+                    if (!isBeforeBatch)
+                        break;
+                }
+            }
+            if (isAfterBatch)
+            {
+                for (Int32 i = batches.Count - 1; i >= 0; --i)
+                {
+                    Int32[] batch = batches[i];
+                    // Batches are never empty.
+                    Int32 first = batch[0];
+                    Int32 maskRangeAmount = batch.Length;
+                    for (Int32 j = maskRangeAmount - 1; j >= 0; --j)
+                    {
+                        Int32 frame = batch[j] - maskRangeAmount;
+                        if (frame > 0 && !maskFramesList.Contains(frame))
+                        {
+                            correspondingFramesAfterBatch.Add(frame);
+                            continue;
+                        }
+                        isAfterBatch = false;
+                        break;
+                    }
+                    if (!isAfterBatch)
+                        break;
+                }
+            }
+            // Now, check which of the detected choices is most likely. If multiple match, check image contents for overlap with different indices.
+            // First check: see if frame sizes are the same. Ignore this if all sizes are the same.
+            Int32[] correctFramesBefore = null;
+            Int32[] correctFramesAfter = null;
+            Int32[] correctFramesBatchBefore = null;
+            Int32[] correctFramesBatchAfter = null;
+            if (!sameFrameSizes)
+            {
+                Int32[] matchCount = new Int32[4];
+                if (isBefore)
+                {
+                    correctFramesBefore = maskFramesList.Where(f => frames[maskFramesList[f]].Width == frames[correspondingFramesBefore[f]].Width
+                                                                && frames[maskFramesList[f]].Height == frames[correspondingFramesBefore[f]].Height).ToArray();
+                    if (correctFramesBefore.Length == 0)
+                        isBefore = false;
+                }
+                if (isAfter)
+                {
+                    correctFramesAfter = maskFramesList.Where(f => frames[maskFramesList[f]].Width == frames[correspondingFramesAfter[f]].Width
+                                                                && frames[maskFramesList[f]].Height == frames[correspondingFramesAfter[f]].Height).ToArray();
+                    if (correctFramesAfter.Length == 0)
+                        isAfter = false;
+                }
+                if (isBeforeBatch)
+                {
+                    correctFramesBatchBefore = maskFramesList.Where(f => frames[maskFramesList[f]].Width == frames[correspondingFramesBeforeBatch[f]].Width
+                                                                && frames[maskFramesList[f]].Height == frames[correspondingFramesBeforeBatch[f]].Height).ToArray();
+                    if (correctFramesBatchBefore.Length == 0)
+                        isBeforeBatch = false;
+                }
+                if (isAfterBatch)
+                {
+                    correctFramesBatchAfter = maskFramesList.Where(f => frames[maskFramesList[f]].Width == frames[correspondingFramesAfterBatch[f]].Width
+                                                                && frames[maskFramesList[f]].Height == frames[correspondingFramesAfterBatch[f]].Height).ToArray();
+                    if (correctFramesBatchAfter.Length == 0)
+                        isAfterBatch = false;
+                }
+            }
+            // BIG FAT TODO
+            imageFrames = new Int32[0];
+            maskFrames = new Int32[0];
+            srcTransIndex = 0;
+            return new Int32[][] { imageFrames, maskFrames };
+        }
+
+        public static FileFrames ApplyTransparencyMask(SupportedFileType input, Int32[] imageFrames, Int32[] maskFrames, Int32 srcTransIndex, Int32 resTransIndex, Boolean keepOtherFrames)
+        {
+            if (imageFrames.Length != maskFrames.Length)
+                throw new ArgumentException("Amount of mask frames does not equal amount of image frames.", "maskFrames");
+            Array.Sort(imageFrames);
+            Array.Sort(maskFrames);
+            Int32[] origImageFrames = new Int32[imageFrames.Length];
+            Array.Copy(imageFrames, origImageFrames, imageFrames.Length);
+            Int32[] origMaskFrames = new Int32[maskFrames.Length];
+            Array.Copy(maskFrames, origMaskFrames, maskFrames.Length);
+            SupportedFileType[] imagesToProcess;
+            SupportedFileType[] masksToProcess;
+            if (keepOtherFrames)
+            {
+                imagesToProcess = input.Frames;
+                masksToProcess = input.Frames;
+            }
+            else
+            {
+                imagesToProcess = new SupportedFileType[imageFrames.Length];
+                masksToProcess = new SupportedFileType[maskFrames.Length];
+                for (Int32 i = 0; i < imageFrames.Length; ++i)
+                {
+                    imagesToProcess[i] = input.Frames[imageFrames[i]];
+                    masksToProcess[i] = input.Frames[maskFrames[i]];
+                    imageFrames[i] = i;
+                    maskFrames[i] = i;
+                }
+            }
+            Bitmap[] outputBm = new Bitmap[imageFrames.Length];
+            for (Int32 i = 0; i < imageFrames.Length; ++i)
+            {
+                SupportedFileType src = imagesToProcess[imageFrames[i]];
+                SupportedFileType mask = masksToProcess[maskFrames[i]];
+                Bitmap srcBm = src.GetBitmap();
+                Bitmap maskBm = mask.GetBitmap();
+                if (srcBm == null || srcBm == null)
+                    throw new ArgumentException("Empty frames are not supported for this operation.", "input");
+                Int32 frWidth = srcBm.Width;
+                Int32 frHeight = srcBm.Height;
+                if (frWidth != maskBm.Width || frHeight != maskBm.Height)
+                    throw new ArgumentException(String.Format("Dimensions don't math on frame {0}, mask frame {1}.", origImageFrames[i], origMaskFrames[i]), "input");
+                PixelFormat srcPf = srcBm.PixelFormat;
+                PixelFormat maskPf = maskBm.PixelFormat;
+                if (((srcPf | maskPf) & PixelFormat.Indexed) == 0)
+                    throw new ArgumentException("All frames need to be indexed.", "input");
+                Color[] pal = srcBm.Palette.Entries;
+                //Boolean maskHiCol = (maskBm.PixelFormat | PixelFormat.Indexed) == 0;
+                Byte[] imageData = ImageUtils.GetImageData(srcBm, PixelFormat.Format8bppIndexed);
+                Byte[] maskData = ImageUtils.GetImageData(maskBm, PixelFormat.Format8bppIndexed);
+                Int32 linePos = 0;
+                Byte resTrans = (Byte)resTransIndex;
+                for (int y = 0; y < frHeight; y++)
+                {
+                    Int32 pos = linePos;
+                    for (int x = 0; x < frWidth; y++)
+                    {
+                        if (maskData[pos] == srcTransIndex)
+                            imageData[pos] = resTrans;
+                        pos++;
+                    }
+                    linePos += frWidth;
+                }
+                Int32 origBpp = Image.GetPixelFormatSize(srcPf);
+                Int32 finalBpp = origBpp;
+                while (origBpp < 8 && resTrans >= Math.Pow(2, finalBpp))
+                {
+                    finalBpp <<= 1;
+                }
+                if (finalBpp == 2)
+                    finalBpp <<= 1;
+                if (finalBpp < 8)
+                    imageData = ImageUtils.ConvertFrom8Bit(imageData, frWidth, frHeight, finalBpp, true);
+                PixelFormat resultFormat = ImageUtils.GetIndexedPixelFormat(finalBpp);
+                for (Int32 c = 0; c < pal.Length; c++)
+                    pal[c] = Color.FromArgb(c == resTransIndex ? 0 : 255, pal[c]);
+                outputBm[i] = ImageUtils.BuildImage(imageData, frWidth, frHeight, frWidth, resultFormat, pal, Color.Black);
+                imagesToProcess[imageFrames[i]] = null;
+            }
+            // Remove mask frames
+            if (keepOtherFrames && imagesToProcess.Length != imageFrames.Length * 2)
+            {
+                List<SupportedFileType> images = new List<SupportedFileType>(imagesToProcess);
+                for (Int32 i = maskFrames.Length-1; i >= 0; --i)
+                    images.RemoveAt(i);
+                imagesToProcess = images.ToArray();
+            }
+            // Recreate the whole thing as new frames file.
+            FileFrames newfile = new FileFrames(input);
+            newfile.SetFileNames(input.LoadedFile);
+            newfile.SetCommonPalette(input.FramesHaveCommonPalette);
+            newfile.SetNeedsPalette(input.NeedsPalette);
+            newfile.SetBitsPerPixel(input.BitsPerPixel);
+            newfile.SetFrameInputClassFromBpp(input.BitsPerPixel);
+            newfile.SetPalette(input.GetColors());
+            // Adapt to new transparency?
+            if (imagesToProcess.Length == imageFrames.Length) {
+                Boolean[] trans = new Boolean[resTransIndex + 1];
+                trans[resTransIndex] = true;
+                newfile.SetTransparencyMask(trans);
+            }
+            Int32[] imageFramesNew = new Int32[imageFrames.Length];
+            for (Int32 i = 0; i < imagesToProcess.Length; ++i)
+            {
+                SupportedFileType frame = imagesToProcess[i];
+                if (frame == null)
+                {
+                    imageFramesNew[imageFramesNew.Length - 1] = i;
+                    continue;
+                }
+                FileImageFrame framePic = new FileImageFrame();
+                framePic.LoadFileFrame(newfile, newfile, frame.GetBitmap(), input.LoadedFile, i);
+                framePic.SetBitsPerColor(frame.BitsPerPixel);
+                framePic.SetNeedsPalette(input.NeedsPalette);
+                imagesToProcess[i] = framePic;
+            }
+            for (Int32 i = 0; i < imageFrames.Length; ++i)
+            {
+                Bitmap masked = outputBm[i];
+                SupportedFileType orig = input.Frames[origImageFrames[i]];
+                FileImageFrame framePic = new FileImageFrame();
+                framePic.LoadFileFrame(newfile, newfile, masked, input.LoadedFile, i);
+                Boolean isCga = orig.BitsPerPixel == 2 && resTransIndex < 4;
+                framePic.SetBitsPerColor(isCga ? 2 : Image.GetPixelFormatSize(masked.PixelFormat));
+                framePic.SetNeedsPalette(input.NeedsPalette);
+                imagesToProcess[imageFramesNew[i]] = framePic;                    
+            }
+            for (Int32 i = 0; i < imagesToProcess.Length; ++i)
+                newfile.AddFrame(imagesToProcess[i]);
+            return null;
         }
     }
 }

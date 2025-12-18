@@ -75,7 +75,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // The play court images do this: their cut-off height is always set at 85 lines.
             // They use the Rio one (which is complete) for the court image itself.
             if ((decompressedLength - 2) % fourLinesStride != 0)
-                throw new FileTypeLoadException("Data cutoff is not exactly on one line!");
+                throw new FileTypeLoadException("Data cutoff is not exactly on one line.");
             Int32 endHeight = (decompressedLength - 2) / fourLinesStride;
             if (endHeight < imgHeight)
                 this.ExtraInfo = "Data cut off at " + endHeight + " lines";
@@ -169,7 +169,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 dataEnd = compressedData.Length;
             Byte[] finalCompressedData = new Byte[dataEnd + 2];
             Array.Copy(compressedData, finalCompressedData, dataEnd);
-            ArrayUtils.WriteInt16ToByteArrayLe(finalCompressedData, dataEnd, finalData.Length);
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalCompressedData, dataEnd, (UInt16)finalData.Length);
             return finalCompressedData;
         }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -14,7 +13,7 @@ namespace Nyerguds.Util
             Int32 origHeight = original.Length;
             if (origHeight == 0)
                 return new T[0][];
-            // Since this is for images, it is assumed that the array is a perfectly rectangular matrix
+            // Since this is for images, it is assumed that the array is a perfectly rectangular matrix.
             Int32 origWidth = original[0].Length;
 
             T[][] swapped = new T[origWidth][];
@@ -90,7 +89,8 @@ namespace Nyerguds.Util
             for (Int32 index = 0; index < bytes; ++index)
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                value |= (((UInt64)data[offs]) << (8 * index));
+                // "index << 3" is "index * 8"
+                value |= ((UInt64)data[offs]) << (index << 3);
             }
             return value;
         }
@@ -165,47 +165,48 @@ namespace Nyerguds.Util
             for (Int32 index = 0; index < bytes; ++index)
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                data[offs] = (Byte) (value >> (8 * index) & 0xFF);
+                // "index << 3" is "index * 8"
+                data[offs] = (Byte) (value >> (index << 3) & 0xFF);
             }
         }
 
         #region WriteIntToByteArray shortcuts
-        public static void WriteInt16ToByteArrayLe(Byte[] data, Int32 startIndex, Int64 value)
+        public static void WriteInt16ToByteArrayLe(Byte[] data, Int32 startIndex, Int16 value)
         {
             WriteIntToByteArray(data, startIndex, 2, true, (UInt64)value);
         }
 
-        public static void WriteInt16ToByteArrayBe(Byte[] data, Int32 startIndex, Int64 value)
+        public static void WriteInt16ToByteArrayBe(Byte[] data, Int32 startIndex, Int16 value)
         {
             WriteIntToByteArray(data, startIndex, 2, false, (UInt64)value);
         }
 
-        public static void WriteUInt16ToByteArrayLe(Byte[] data, Int32 startIndex, UInt64 value)
+        public static void WriteUInt16ToByteArrayLe(Byte[] data, Int32 startIndex, UInt16 value)
         {
             WriteIntToByteArray(data, startIndex, 2, true, value);
         }
 
-        public static void WriteUInt16ToByteArrayBe(Byte[] data, Int32 startIndex, UInt64 value)
+        public static void WriteUInt16ToByteArrayBe(Byte[] data, Int32 startIndex, UInt16 value)
         {
             WriteIntToByteArray(data, startIndex, 2, false, value);
         }
 
-        public static void WriteInt32ToByteArrayLe(Byte[] data, Int32 startIndex, Int64 value)
+        public static void WriteInt32ToByteArrayLe(Byte[] data, Int32 startIndex, Int32 value)
         {
             WriteIntToByteArray(data, startIndex, 4, true, (UInt64)value);
         }
 
-        public static void WriteInt32ToByteArrayBe(Byte[] data, Int32 startIndex, Int64 value)
+        public static void WriteInt32ToByteArrayBe(Byte[] data, Int32 startIndex, Int32 value)
         {
             WriteIntToByteArray(data, startIndex, 4, false, (UInt64)value);
         }
 
-        public static void WriteUInt32ToByteArrayLe(Byte[] data, Int32 startIndex, UInt64 value)
+        public static void WriteUInt32ToByteArrayLe(Byte[] data, Int32 startIndex, UInt32 value)
         {
             WriteIntToByteArray(data, startIndex, 4, true, value);
         }
 
-        public static void WriteUInt32ToByteArrayBe(Byte[] data, Int32 startIndex, UInt64 value)
+        public static void WriteUInt32ToByteArrayBe(Byte[] data, Int32 startIndex, UInt32 value)
         {
             WriteIntToByteArray(data, startIndex, 4, false, value);
         }
@@ -231,23 +232,23 @@ namespace Nyerguds.Util
         }
         #endregion
 
-        public static Int32 ReadBitsFromByteArray(Byte[] dataArr, ref Int32 bitIndex, Int32 codeLen, Int32 bufferInEnd)
+        public static Int32 ReadBitsFromByteArray(Byte[] dataArr, ref Int32 bitIndex, Int32 bitsToRead, Int32 dataArrEnd)
         {
             Int32 intCode = 0;
             Int32 byteIndex = bitIndex / 8;
             Int32 ignoreBitsAtIndex = bitIndex % 8;
-            Int32 bitsToReadAtIndex = Math.Min(codeLen, 8 - ignoreBitsAtIndex);
+            Int32 bitsToReadAtIndex = Math.Min(bitsToRead, 8 - ignoreBitsAtIndex);
             Int32 totalUsedBits = 0;
-            while (codeLen > 0)
+            while (bitsToRead > 0)
             {
-                if (byteIndex >= bufferInEnd)
+                if (byteIndex >= dataArrEnd)
                     return -1;
 
                 Int32 toAdd = (dataArr[byteIndex] >> ignoreBitsAtIndex) & ((1 << bitsToReadAtIndex) - 1);
                 intCode |= (toAdd << totalUsedBits);
                 totalUsedBits += bitsToReadAtIndex;
-                codeLen -= bitsToReadAtIndex;
-                bitsToReadAtIndex = Math.Min(codeLen, 8);
+                bitsToRead -= bitsToReadAtIndex;
+                bitsToReadAtIndex = Math.Min(bitsToRead, 8);
                 ignoreBitsAtIndex = 0;
                 byteIndex++;
             }
@@ -255,18 +256,18 @@ namespace Nyerguds.Util
             return intCode;
         }
 
-        public static void WriteBitsToByteArray(Byte[] dataArr, Int32 bitIndex, Int32 codeLen, Int32 intCode)
+        public static void WriteBitsToByteArray(Byte[] dataArr, Int32 bitIndex, Int32 bitsToWrite, Int32 data)
         {
             Int32 byteIndex = bitIndex / 8;
             Int32 usedBitsAtIndex = bitIndex % 8;
-            Int32 bitsToWriteAtIndex = Math.Min(codeLen, 8 - usedBitsAtIndex);
-            while (codeLen > 0)
+            Int32 bitsToWriteAtIndex = Math.Min(bitsToWrite, 8 - usedBitsAtIndex);
+            while (bitsToWrite > 0)
             {
-                Int32 codeToWrite = (intCode & ((1 << bitsToWriteAtIndex) - 1)) << usedBitsAtIndex;
-                intCode = intCode >> bitsToWriteAtIndex;
+                Int32 codeToWrite = (data & ((1 << bitsToWriteAtIndex) - 1)) << usedBitsAtIndex;
+                data = data >> bitsToWriteAtIndex;
                 dataArr[byteIndex] |= (Byte) codeToWrite;
-                codeLen -= bitsToWriteAtIndex;
-                bitsToWriteAtIndex = Math.Min(codeLen, 8);
+                bitsToWrite -= bitsToWriteAtIndex;
+                bitsToWriteAtIndex = Math.Min(bitsToWrite, 8);
                 usedBitsAtIndex = 0;
                 byteIndex++;
             }

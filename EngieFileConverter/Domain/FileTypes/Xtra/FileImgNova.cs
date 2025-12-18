@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
             List<String> extraInfo = new List<String>();
             if (palettePath != null && File.Exists(palettePath) && new FileInfo(palettePath).Length == 0x300)
             {
-                this.m_Palette = ColorUtils.ReadFromSixBitPaletteFile(palettePath);
+                this.m_Palette = ColorUtils.ReadSixBitPaletteFile(palettePath, true);
                 this.m_PaletteLoaded = true;
                 extraInfo.Add("Palette loaded from " + paletteFilename);
             }
@@ -143,8 +143,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] novaData = new Byte[8 + imageData.Length];
             ArrayUtils.WriteInt32ToByteArrayLe(novaData, 0, 0x41564F4E);
-            ArrayUtils.WriteInt16ToByteArrayLe(novaData, 4, width);
-            ArrayUtils.WriteInt16ToByteArrayLe(novaData, 6, height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(novaData, 4, (UInt16)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(novaData, 6, (UInt16)height);
             Array.Copy(imageData, 0, novaData, 8, imageData.Length);
             Byte[] compressBuffer = PppCompression.CompressPppRle(novaData);
             return compressBuffer;

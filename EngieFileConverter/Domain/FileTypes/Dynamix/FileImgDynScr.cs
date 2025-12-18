@@ -65,10 +65,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2)
         {
             if (fileData.Length < 0x10)
-                throw new FileTypeLoadException("File is not long enough to be a valid SCR file.");
+                throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
             DynamixChunk scrChunk = DynamixChunk.ReadChunk(fileData, "SCR");
             if (scrChunk == null || scrChunk.Address != 0)
-                throw new FileTypeLoadException("File does not start with an SCR chunk!");
+                throw new FileTypeLoadException("File does not start with an SCR chunk.");
 
             String firstChunk = Encoding.ASCII.GetString(fileData, 8, 4);
             Int32 width = 320;
@@ -79,7 +79,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new FileTypeLoadException("Dimensions chunk is only supported in v2 format.");
             }
             else if (v2)
-                throw new FileTypeLoadException("Cannot find image dimensions chunk!");
+                throw new FileTypeLoadException("Cannot find image dimensions chunk.");
             // This does not gracefully continue in the autodetect: the type is confirmed, but not supported.
             if ("VQT:".Equals(firstChunk))
                 throw new FileTypeLoadException("SCR files with VQT section are currently not supported.");
@@ -109,11 +109,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
                     if (binChunk == null)
-                        throw new FileTypeLoadException("Cannot find BIN chunk!");
+                        throw new FileTypeLoadException("Cannot find BIN chunk.");
                 }
             }
             if (binChunk.Data.Length == 0)
-                throw new FileTypeLoadException("Empty BIN chunk!");
+                throw new FileTypeLoadException("Empty BIN chunk.");
             Int32 compressionType = binChunk.Data[0];
             if (compressionType < this.compressionTypes.Length)
                 this.ExtraInfo = "Compression: " + binChunk.Identifier + ":" + this.compressionTypes[compressionType];
@@ -136,7 +136,7 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 if (vgaChunk.Data.Length == 0)
-                    throw new FileTypeLoadException("Empty VGA chunk!");
+                    throw new FileTypeLoadException("Empty VGA chunk.");
                 this.m_bpp = 8;
                 compressionType = vgaChunk.Data[0];
                 if (compressionType < this.compressionTypes.Length)
@@ -240,8 +240,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (image.Width % 8 !=0)
                     throw new ArgumentException("Dynamix image formats only support image widths divisible by 8.", "fileToSave");
                 Byte[] dimensions = new Byte[4];
-                ArrayUtils.WriteInt16ToByteArrayLe(dimensions, 0, image.Width);
-                ArrayUtils.WriteInt16ToByteArrayLe(dimensions, 2, image.Height);
+                ArrayUtils.WriteUInt16ToByteArrayLe(dimensions, 0, (UInt16)image.Width);
+                ArrayUtils.WriteUInt16ToByteArrayLe(dimensions, 2, (UInt16)image.Height);
                 DynamixChunk dimChunk = new DynamixChunk("DIM", dimensions);
                 chunks.Add(dimChunk);
             }

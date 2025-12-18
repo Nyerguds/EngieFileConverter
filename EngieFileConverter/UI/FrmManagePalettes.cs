@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Ini;
+using Nyerguds.Util.UI.SaveOptions;
 
 namespace Nyerguds.Util.UI
 {
@@ -108,7 +109,7 @@ namespace Nyerguds.Util.UI
             String saveName = "newpal.pal";
             if (this.SuggestedSaveName != null)
                 saveName = Path.GetFileNameWithoutExtension(this.SuggestedSaveName) + ".pal";
-            String newPaletteName = InputBox.Show("Palette name:", this.Title, saveName, null, FormStartPosition.CenterParent);
+            String newPaletteName = this.GetTextInput("Palette name:", this.Title, saveName, FormStartPosition.CenterParent);
             Char[] invalid = Path.GetInvalidFileNameChars();
             Boolean isNull = newPaletteName == null;
             Boolean isEmpty = !isNull && newPaletteName.Length == 0;
@@ -123,7 +124,7 @@ namespace Nyerguds.Util.UI
                 MessageBox.Show(this, message , this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 if (isEmpty)
                     newPaletteName = saveName;
-                newPaletteName = InputBox.Show("Palette name:", this.Title, newPaletteName, null, FormStartPosition.CenterParent);
+                newPaletteName = this.GetTextInput("Palette name:", this.Title, newPaletteName, FormStartPosition.CenterParent);
                 isNull = newPaletteName == null;
                 isEmpty = !isNull && newPaletteName.Length == 0;
                 illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
@@ -249,7 +250,7 @@ namespace Nyerguds.Util.UI
             String newPaletteName;
             do
             {
-                newPaletteName = InputBox.Show("Sub-palette name:", this.Title, currentPal.Name, null, FormStartPosition.CenterParent);
+                newPaletteName = this.GetTextInput("Sub-palette name:", this.Title, currentPal.Name, FormStartPosition.CenterParent);
                 if (String.Empty.Equals(newPaletteName))
                     dr = MessageBox.Show(this, "Giving the sub-palette an empty name will remove it\nfrom the FontEditor's palette listing!\n\nAre you sure you want to do that?", this.Title, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 else
@@ -283,7 +284,7 @@ namespace Nyerguds.Util.UI
             String newPaletteName;
             do
             {
-                newPaletteName = InputBox.Show("New sub-palette name:", this.Title, String.Empty, null, FormStartPosition.CenterParent);
+                newPaletteName = this.GetTextInput("New sub-palette name:", this.Title, String.Empty, FormStartPosition.CenterParent);
                 if (String.Empty.Equals(newPaletteName))
                     dr = MessageBox.Show(this, "Giving the sub-palette an empty name will remove it\nfrom the FontEditor's palette listing!\n\nAre you sure you want to do that?", this.Title, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                 else
@@ -452,7 +453,7 @@ namespace Nyerguds.Util.UI
                     if (!iniExists && palBytes.Any(b => b > 0x3F))
                         origIsEightBit = true;
                     // Read the palette as 8-bit or as 6-bit, as determined above.
-                    thisFullPal = origIsEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPaletteAsEightBit(palBytes);
+                    thisFullPal = origIsEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPalette(palBytes);
                 }
                 else
                     thisFullPal = Enumerable.Repeat(Color.Black, 256).ToArray();
@@ -496,6 +497,24 @@ namespace Nyerguds.Util.UI
             }
             this.DialogResult = DialogResult.OK;
             this.Close();
+        }
+
+        private String GetTextInput(String prompt, String title, String defaultText, FormStartPosition startPosition)
+        {
+            SaveOptionInfo soi = new SaveOptionInfo();
+            soi.Name = null;
+            Option[] saveOption = { new Option("QUE", OptionInputType.String, prompt, defaultText ?? String.Empty) };
+            soi.Properties = saveOption;
+            using (FrmOptions opts = new FrmOptions(title, soi))
+            {
+                opts.StartPosition = startPosition;
+                opts.Width = 500;
+                opts.Height = opts.OptimalHeight;
+                if (opts.ShowDialog(this) != DialogResult.OK)
+                    return null;
+                return Option.GetSaveOptionValue(opts.GetSaveOptions(), "QUE");
+            }
+
         }
 
         private void FrmManagePalettes_Load(Object sender, EventArgs e)

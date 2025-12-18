@@ -44,7 +44,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.CompressionType = compression;
             this.CpsVersion = cpsVersion;
             if (palette == null)
-                throw new FileTypeLoadException("Cannot identify palette!");
+                throw new FileTypeLoadException("Cannot identify palette.");
             this.m_LoadedPalette = filename;
             this.m_Palette = palette;
             Int32 images = this.m_Palette.Length / 32;
@@ -104,7 +104,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // Test if the image data exceeds the normal bottom and goes into the 8-pixel strîp below.
             Byte[] bottomstrip = ImageUtils.CopyFrom8bpp(imageData, 320, 200, 320, new Rectangle(0, 192, 320, 8));
             Boolean expandBottomFrames = bottomstrip.Any(p => p != 0);
-            // Combine images by making each one use a different 32-colour slice of the palette.
+            // Combine images by making each one use a different 32-color slice of the palette.
             for (Int32 i = 0; i < amigaPalCount; ++i)
             {
                 Int32 palOffset = i * 32;
@@ -187,7 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             if (frames == null || frames.Length == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames > 4)
                 throw new ArgumentException("This type can only save up to four frames.", "fileToSave");

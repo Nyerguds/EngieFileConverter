@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
-using Nyerguds.Util.UI;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -15,17 +14,26 @@ namespace EngieFileConverter.Domain.FileTypes
         #region Generic error messages
         // Input
         protected const String ERR_FILE_TOO_SMALL = "File is not long enough to be of this type.";
-        protected const String ERR_NOHEADER = "File data too short to contain header.";
-        protected const String ERR_BADHEADER = "Identifying bytes in header do not match.";
-        protected const String ERR_BADHEADERDATA = "Bad values in header.";
+        protected const String ERR_NO_HEADER = "File data too short to contain header.";
+        protected const String ERR_BAD_HEADER = "Identifying bytes in header do not match.";
+        protected const String ERR_BAD_HEADER_DATA = "Bad values in header.";
         protected const String ERR_BAD_SIZE = "Incorrect file size.";
-        protected const String ERR_SIZETOOSMALL = "File is too small.";
-        protected const String ERR_DECOMPR = "Error decompressing file.";
+        protected const String ERR_BAD_HEADER_SIZE = "File size in header does not match.";
+        protected const String ERR_BAD_HEADER_PAL_SIZE = "Invalid palette length in header.";
+        protected const String ERR_NO_FRAMES = "No frames found in file.";
+        protected const String ERR_SIZE_TOO_SMALL = "File is too small.";
+        protected const String ERR_SIZE_TOO_SMALL_IMAGE = "File is is too small to contain the image data.";
+        protected const String ERR_DECOMPR_ = "Error decompressing file";
+        protected const String ERR_DECOMPR = ERR_DECOMPR_ + ".";
+        protected const String ERR_DECOMPR_ERR = ERR_DECOMPR_ + ": {0}";
         protected const String ERR_DECOMPR_LEN = "Decompressed size does not match.";
         protected const String ERR_DIM_ZERO = "Image dimensions can't be 0.";
+        protected const String ERR_MAKING_IMG_ = "Cannot construct image from read data";
+        protected const String ERR_MAKING_IMG = ERR_MAKING_IMG_ + ".";
+        protected const String ERR_MAKING_IMG_ERR = ERR_MAKING_IMG_ + ": {0}";
         // Output
         protected const String ERR_EMPTY_FILE = "File to save is empty!";
-        protected const String ERR_NO_FRAMES = "This format needs at least one frame.";
+        protected const String ERR_NEEDS_FRAMES = "This format needs at least one frame.";
         protected const String ERR_IMAGE_TOO_LARGE = "Image is too large to be saved into this format.";
         protected const String ERR_EMPTY_FRAMES = "This format can't handle empty frames.";
         protected const String ERR_FRAMES_DIFF = "This format needs all its frames to be the same size.";
@@ -34,16 +42,16 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_INPUT_4BPP_8BPP = "This format needs 4bpp or 8bpp input.";
         protected const String ERR_INPUT_DIMENSIONS = "This format needs {0}x{1} input.";
         protected const String ERR_NO_COL = "The given input contains no colors.";
-        protected const String ERR_UNKN_COMPR_ = "Unknown compression type";
-        protected const String ERR_UNKN_COMPR = ERR_UNKN_COMPR_ + ".";
-        protected const String ERR_UNKN_COMPR_X = ERR_UNKN_COMPR_ + " \"{0}\".";
+        protected const String ERR_UNKN_COMPR = "Unknown compression type.";
+        protected const String ERR_UNKN_COMPR_X = "Unknown compression type \"{0}\".";
+        protected String ErrFixedBppAndSize { get { return "Only " + this.BitsPerPixel + "-bit " + this.Width + "×" + this.Height + " images can be saved as " + ShortTypeName + "."; } }
 
         #endregion
         /// <summary>Main image in this loaded file. Can be left as null for an empty frame or the main entry of a frames container.</summary>
         protected Bitmap m_LoadedImage;
-        /// <summary>Colour palette currently loaded into the image.</summary>
+        /// <summary>Color palette currently loaded into the image.</summary>
         protected Color[] m_Palette;
-        /// <summary>Backup colour palette, to allow resetting the palette to its original state. Not used if NeedsPalette is set to return 'false'.</summary>
+        /// <summary>Backup color palette, to allow resetting the palette to its original state. Not used if NeedsPalette is set to return 'false'.</summary>
         protected Color[] m_BackupPalette;
         public SupportedFileType FrameParent { get; set; }
 
@@ -69,7 +77,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual Int32 Width { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Width; } }
         /// <summary>Height of the file (if applicable). Normally the same as GetBitmap().Height</summary>
         public virtual Int32 Height { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Height; } }
-        /// <summary>True if the type contains no colours of its own, and needs an external palette to display its data. Only needs to be overridden if it return true.</summary>
+        /// <summary>True if the type contains no colors of its own, and needs an external palette to display its data. Only needs to be overridden if it return true.</summary>
         public virtual Boolean NeedsPalette { get { return false; } }
         /// <summary>Full path of the loaded file.</summary>
         public String LoadedFile { get; protected set; }
@@ -79,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual Int32 BitsPerPixel { get { return this.m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat); } }
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public virtual SupportedFileType[] Frames { get { return null; } }
-        /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
+        /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false will not get an index -1 in the frames list.</summary>
         public virtual Boolean IsFramesContainer { get { return this.Frames != null; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
         public virtual Boolean FramesHaveCommonPalette { get { return this.IsFramesContainer; } }
@@ -93,7 +101,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual String ExtraInfo { get; set; }
         /// <summary>
         /// Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.
-        /// Note that this is only applied when a palette is loaded into the file from the UI; the class itself is responsible for the loaded file's initial colour palette and transparency.
+        /// Note that this is only applied when a palette is loaded into the file from the UI; the class itself is responsible for the loaded file's initial color palette and transparency.
         /// </summary>
         public virtual Boolean[] TransparencyMask { get { return null; } }
 
@@ -109,7 +117,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
         /// <summary>
         /// Load a file from byte array. Note that the use of this function is discouraged, since many file types refer
-        /// to accompanying files, like colour palettes, to complete the loaded data, and these cannot be detected without
+        /// to accompanying files, like color palettes, to complete the loaded data, and these cannot be detected without
         /// a file path.
         /// </summary>
         /// <param name="fileData">The data read from the file.</param>
@@ -184,7 +192,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Gets the colours out of an image. Typically, this takes any specifically saved colours in m_Palette
+        /// Gets the colors out of an image. Typically, this takes any specifically saved colors in m_Palette
         /// </summary>
         /// <returns></returns>
         public virtual Color[] GetColors()
@@ -254,11 +262,11 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (this.IsFramesContainer && !this.FramesHaveCommonPalette)
                 return;
-            // Logic if this is a frame: call for a colour replace in the parent so all frames get affected.
+            // Logic if this is a frame: call for a color replace in the parent so all frames get affected.
             // Skip this step if the FrameParent is the source, since that means some other frame already started this.
             if (this.FrameParent != null && !ReferenceEquals(this.FrameParent, updateSource) && this.FrameParent.FramesHaveCommonPalette)
                 this.FrameParent.SetColors(palette, this);
-            // Logic for frame container: call a colour replace on all frames, giving the current object as source.
+            // Logic for frame container: call a color replace on all frames, giving the current object as source.
             // Only execute this if the current object has frames. Skip the source frame.
             SupportedFileType[] frames = this.Frames;
             if (frames == null)
@@ -299,12 +307,12 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Palette types can use this to get the colour out of a SupportedFileType in their SaveToBytesAsThis routine.
+        /// Palette types can use this to get the color out of a SupportedFileType in their SaveToBytesAsThis routine.
         /// </summary>
         /// <param name="fileToSave">File to save.</param>
         /// <param name="targetBpp">Targeted bits per pixel.</param>
         /// <param name="expandToFullSize">Expand to full size.</param>
-        /// <returns>The found colours in the input frames.</returns>
+        /// <returns>The found colors in the input frames.</returns>
         public static Color[] CheckInputForColors(SupportedFileType fileToSave, Int32 targetBpp, Boolean expandToFullSize)
         {
             if (fileToSave == null)
@@ -405,350 +413,15 @@ namespace EngieFileConverter.Domain.FileTypes
             return bpp;
         }
 
-        private static Type[] m_autoDetectTypes =
-        {
-            typeof(FileImagePng),
-            typeof(FileImageBmp),
-            typeof(FileImageGif),
-            typeof(FileImageJpg),
-            typeof(FileImagePcx),
-            typeof(FileImage),
-            typeof(FileIcon),
-            typeof(FileFramesJazzFontC),
-            typeof(FileFramesJazzFont),
-            typeof(FileImgWwCps),
-            typeof(FileImgWwCpsToon),
-            typeof(FileFramesWwCpsAmi4),
-            typeof(FileFramesWwWsa),
-            typeof(FileFramesWwShpD2),
-            typeof(FileFramesWwShpLol1),
-            typeof(FileFramesWwShpCc),
-            typeof(FileFramesWwShpTs),
-            typeof(FileFramesWwShpBr),
-            typeof(FileFramesWwFntV3),
-            typeof(FileFramesWwFntV4),
-            typeof(FileFramesFntD2k),
-            typeof(FileImgWwLcw),
-            typeof(FileImgWwN64),
-            typeof(FileImgWwMhwanh), // Experimental
-            typeof(FileMapWwCc1Pc),
-            typeof(FileMapWwCc1N64),
-            typeof(FileMapWwCc1PcFromIni),
-            typeof(FileMapWwCc1N64FromIni),
-            typeof(FileTilesWwCc1N64Bpp4),
-            typeof(FileTilesWwCc1N64Bpp8),
-            typeof(FileTilesetWwCc1PC),
-            typeof(FileFramesDogsDb),
-            typeof(FileFramesAdvVga),
-            typeof(FileImgKort),
-            typeof(FileFramesKortBmp),
-            typeof(FileImgDynScr),
-            typeof(FileImgDynScrV2),
-            typeof(FileFramesDynBmp),
-            typeof(FileImgDynBmpMtx),
-            typeof(FilePaletteDyn),
-            typeof(FileFramesMythosPal),
-            typeof(FileFramesMythosVgs),
-            typeof(FileFramesMythosVda),
-            typeof(FileImgKotB),
-            typeof(FileImgMythosLbv),
-            typeof(FileFramesDfPic),
-            typeof(FileFramesIgcSlb),
-            typeof(FileFramesLadyGl),
-            typeof(FileImgLadyTme),
-            typeof(FileImgIgcGx2),
-            typeof(FileImgIgcDmp),
-            typeof(FileImgNova),
-            typeof(FileImgStris),
-            typeof(FileImgBif),
-            typeof(FileImgJmx),
-            typeof(FilePalette6Bit),
-            typeof(FilePalette8Bit),
-            typeof(FilePaletteWwCc1N64Pa8),
-            //typeof(FileFramesInt33Cursor), // Not gonna autodetect this.
-            typeof(FilePaletteWwCc1N64Pa4),
-            typeof(FileTblWwPal),
-            typeof(FilePaletteWwAmiga),
-#if DEBUG
-            typeof(FilePaletteWwPsx), // Experimental
-#endif
-#if DEBUG
-            typeof(FileImgMythosRmm), // Do not enable; too much chance on false positive.
-#endif
-            typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
-        };
-
-        private static Type[] m_supportedOpenTypes =
-        {
-            typeof(FileImage),
-            typeof(FileIcon),
-            typeof(FileFramesInt33Cursor),
-            typeof(FileImgWwCps),
-            typeof(FileImgWwCpsToon),
-            typeof(FileFramesWwShpD2),
-            typeof(FileFramesWwShpLol1),
-            typeof(FileFramesWwShpCc),
-            typeof(FileFramesWwShpTs),
-            typeof(FileFramesWwShpBr),
-            typeof(FileFramesWwFntV3),
-            typeof(FileFramesWwFntV4),
-            typeof(FileFramesFntD2k),
-            typeof(FileFramesWwWsa),
-            typeof(FileFramesWwCpsAmi4),
-            typeof(FileImgWwLcw),
-            typeof(FileImgWwN64),
-            typeof(FileImgWwMhwanh),
-            typeof(FileMapWwCc1N64),
-            typeof(FileMapWwCc1Pc),
-            //typeof(FileMapRa1PC),
-            typeof(FileTilesWwCc1N64Bpp4),
-            typeof(FileTilesWwCc1N64Bpp8),
-            typeof(FileTilesetWwCc1PC),
-            typeof(FilePalette6Bit),
-            typeof(FilePalette8Bit),
-            typeof(FilePaletteWwCc1N64Pa8),
-            typeof(FilePaletteWwCc1N64Pa4),
-            typeof(FileTblWwPal),
-            typeof(FileFramesJazzFont),
-            typeof(FileFramesJazzFontC),
-            typeof(FileFramesDogsDb),
-            typeof(FileFramesAdvVga),
-            typeof(FileFramesAdvIco),
-            typeof(FileFramesDynBmp),
-            typeof(FileImgDynScr),
-            typeof(FileImgDynScrV2),
-            typeof(FilePaletteDyn),
-            typeof(FileImgKort),
-            typeof(FileFramesKortBmp),
-            typeof(FileImgKotB),
-            typeof(FileFramesMythosPal),
-            typeof(FileFramesMythosVgs),
-            typeof(FileFramesMythosVda),
-            typeof(FilePaletteWwAmiga),
-            typeof(FilePaletteWwPsx),
-            typeof(FileFramesDfPic),
-            typeof(FileFramesLadyGl),
-            typeof(FileImgLadyTme),
-            typeof(FileFramesIgcSlb),
-            typeof(FileImgIgcGx2),
-            typeof(FileImgIgcDmp),
-            typeof(FileImgNova),
-            typeof(FileImgStris),
-            typeof(FileImgBif),
-            typeof(FileImgJmx),
-        };
-
-        private static Type[] m_supportedSaveTypes =
-        {
-            //typeof(FileImgN64Standard),
-            //typeof(FileImgN64Jap),
-            //typeof(FileImgN64Gray),
-            typeof(FileMapWwCc1N64),
-            typeof(FileMapWwCc1Pc),
-            typeof(FileImagePng),
-            typeof(FileImageBmp),
-            typeof(FileImageGif),
-            typeof(FileImageJpg),
-            typeof(FileIcon),
-            typeof(FileFramesInt33Cursor),
-            typeof(FilePalette6Bit),
-            typeof(FilePalette8Bit),
-            typeof(FileFramesWwShpD2),
-            typeof(FileFramesWwShpLol1),
-            typeof(FileFramesWwShpCc),
-            typeof(FileFramesWwShpTs),
-            typeof(FileFramesWwShpBr),
-            typeof(FileFramesWwFntV3),
-            typeof(FileFramesWwFntV4),
-            typeof(FileFramesFntD2k),
-            typeof(FileFramesWwWsa),
-            typeof(FileImgWwCps),
-            typeof(FileImgWwCpsToon),
-            typeof(FileFramesWwCpsAmi4),
-            typeof(FileTilesetWwCc1PC),
-            typeof(FileFramesDogsDb),
-            typeof(FileImgWwLcw),
-            typeof(FileImgWwN64),
-            typeof(FilePaletteWwCc1N64Pa4),
-            typeof(FilePaletteWwCc1N64Pa8),
-            typeof(FileTblWwPal),
-            typeof(FileFramesJazzFont),
-            typeof(FileFramesJazzFontC),
-            typeof(FileFramesAdvVga),
-            typeof(FileFramesAdvIco),
-            typeof(FileImgDynScr),
-            typeof(FileImgDynScrV2),
-            typeof(FileFramesDynBmp),
-            typeof(FileImgDynBmpMtx),
-            typeof(FilePaletteDyn),
-            typeof(FileImgKort),
-            typeof(FileFramesKortBmp),
-            typeof(FileFramesMythosVgs),
-            typeof(FileFramesMythosVda),
-            typeof(FileFramesMythosPal),
-            typeof(FileImgKotB),
-            typeof(FilePaletteWwAmiga),
-            //typeof(FilePaletteWwPsx),
-            typeof(FileFramesDfPic),
-            typeof(FileImgIgcDmp),
-            typeof(FileImgIgcGx2),
-            typeof(FileImgNova),
-            typeof(FileImgBif),
-            typeof(FileImgJmx),
-        };
-
-#if DEBUG
-        static SupportedFileType()
-        {
-            CheckTypes(SupportedOpenTypes);
-            CheckTypes(SupportedSaveTypes);
-            CheckTypes(AutoDetectTypes);
-        }
-
-        private static void CheckTypes(Type[] types)
-        {
-            // internal check for development.
-            Type sft = typeof(SupportedFileType);
-            Int32 typesLength = types.Length;
-            for (Int32 i = 0; i < typesLength; ++i)
-            {
-                Type t = types[i];
-                if (!t.IsSubclassOf(sft))
-                    throw new Exception("Entries in types list must all be SupportedFileType classes!");
-            }
-        }
-#endif
-        /// <summary>Lists all types that will appear in the Open File menu.</summary>
-        public static Type[] SupportedOpenTypes { get { return ArrayUtils.CloneArray(m_supportedOpenTypes); } }
-        /// <summary>Lists all types that can appear in the Save File menu.</summary>
-        public static Type[] SupportedSaveTypes { get { return ArrayUtils.CloneArray(m_supportedSaveTypes); } }
-        /// <summary
-        /// >Lists all types that can be autodetected, in the order they will be detected. Note that as a first step,
-        /// all types which contain the requested file's extension are filtered out and checked.
-        /// </summary>
-        public static Type[] AutoDetectTypes { get { return ArrayUtils.CloneArray(m_autoDetectTypes); } }
-
-        /// <summary>
-        /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
-        /// </summary>
-        /// <param name="path">File path to load.</param>
-        /// <param name="preferredTypes">List of the most likely types it can be.</param>
-        /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
-        /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
-        /// <returns>The detected type, or null if detection failed.</returns>
-        public static SupportedFileType LoadFileAutodetect(String path, SupportedFileType[] preferredTypes, Boolean onlyGivenTypes, out List<FileTypeLoadException> loadErrors)
-        {
-            Byte[] fileData = File.ReadAllBytes(path);
-            return LoadFileAutodetect(fileData, path, preferredTypes, onlyGivenTypes, out loadErrors);
-        }
-
-        /// <summary>
-        /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
-        /// </summary>
-        /// <param name="fileData">File dat to load file from.</param>
-        /// <param name="path">File path, used for extension filtering and file initialisation. Not for reading as bytes; fileData is used for that.</param>
-        /// <param name="preferredTypes">List of the most likely types it can be.</param>
-        /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
-        /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
-        /// <returns>The detected type, or null if detection failed.</returns>
-        public static SupportedFileType LoadFileAutodetect(Byte[] fileData, String path, SupportedFileType[] preferredTypes, Boolean onlyGivenTypes, out List<FileTypeLoadException> loadErrors)
-        {
-            loadErrors = new List<FileTypeLoadException>();
-            // See which extensions match, and try those first.
-            if (preferredTypes == null)
-                preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, path);
-            else if (onlyGivenTypes)
-            {
-                // Try extension-filtering first, then the rest.
-                SupportedFileType[] preferredTypesExt = FileDialogGenerator.IdentifyByExtension(preferredTypes, path);
-                Int32 extLength = preferredTypesExt.Length;
-                for (Int32 i = 0; i < extLength; ++i)
-                {
-                    SupportedFileType typeObj = preferredTypesExt[i];
-                    try
-                    {
-                        typeObj.LoadFile(fileData, path);
-                        return typeObj;
-                    }
-                    catch (FileTypeLoadException e)
-                    {
-                        e.AttemptedLoadedType = typeObj.ShortTypeName;
-                        loadErrors.Add(e);
-                    }
-                    preferredTypes = preferredTypes.Where(tp => preferredTypesExt.All(tpe => tpe.GetType() != tp.GetType())).ToArray();
-                }
-            }
-            Int32 prefTypesLength = preferredTypes.Length;
-            for (Int32 i = 0; i < prefTypesLength; ++i)
-            {
-                SupportedFileType typeObj = preferredTypes[i];
-                try
-                {
-                    typeObj = (SupportedFileType) Activator.CreateInstance(typeObj.GetType());
-                    typeObj.LoadFile(fileData, path);
-                    return typeObj;
-                }
-                catch (FileTypeLoadException e)
-                {
-                    e.AttemptedLoadedType = typeObj.ShortTypeName;
-                    loadErrors.Add(e);
-                }
-            }
-            if (onlyGivenTypes)
-                return null;
-            Int32 autoTypesLength = AutoDetectTypes.Length;
-            for (Int32 i = 0; i < autoTypesLength; ++i)
-            {
-                Type type = AutoDetectTypes[i];
-                // Skip entries on the already-tried list.
-                Boolean isPreferredType = false;
-                for (Int32 j = 0; j < prefTypesLength; ++j)
-                {
-                    if (preferredTypes[j].GetType() != type)
-                        continue;
-                    isPreferredType = true;
-                    break;
-                }
-                if (isPreferredType)
-                    continue;
-                SupportedFileType objInstance = null;
-                try
-                {
-                    objInstance = (SupportedFileType) Activator.CreateInstance(type);
-                }
-                catch
-                {
-                    /* Ignore; programmer error. */
-                }
-                if (objInstance == null)
-                    continue;
-                try
-                {
-                    objInstance.LoadFile(fileData, path);
-                    return objInstance;
-                }
-                catch (FileTypeLoadException e)
-                {
-                    // objInstance should not be disposed here since it never succeeded in initializing,
-                    // and should not contain any loaded images at that point.
-                    e.AttemptedLoadedType = objInstance.ShortTypeName;
-                    loadErrors.Add(e);
-                    // Removes any stored images.
-                    objInstance.Dispose();
-                }
-            }
-            return null;
-        }
-
         public void Dispose()
         {
             SupportedFileType[] frames = this.Frames;
-            if (this.IsFramesContainer && this.Frames != null)
+            if (this.IsFramesContainer && frames != null)
             {
-                Int32 nrOfFrames = this.Frames.Length;
+                Int32 nrOfFrames = frames.Length;
                 for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
-                    SupportedFileType frame = this.Frames[i];
+                    SupportedFileType frame = frames[i];
                     if (frame != null)
                         frame.Dispose();
                 }
@@ -766,14 +439,14 @@ namespace EngieFileConverter.Domain.FileTypes
     public enum FileClass
     {
         None = 0x00,
-        Image1Bit = 0x01,
-        Image4Bit = Image1Bit << 1,
-        Image8Bit = Image4Bit << 1,
+        Image1Bit = 1 << 0,
+        Image4Bit = 1 << 1,
+        Image8Bit = 1 << 2,
         ImageIndexed = Image1Bit | Image4Bit | Image8Bit,
-        ImageHiCol = Image8Bit << 1,
+        ImageHiCol = 1 << 3,
         Image = Image1Bit | Image4Bit | Image8Bit | ImageHiCol,
-        FrameSet = ImageHiCol << 1,
-        CcMap = FrameSet << 1,
-        RaMap = CcMap << 1,
+        FrameSet = 1 << 4,
+        CcMap = 1 << 5,
+        RaMap = 1 << 6,
     }
 }

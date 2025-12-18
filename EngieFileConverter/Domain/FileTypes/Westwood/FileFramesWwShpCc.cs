@@ -15,11 +15,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
-        protected SupportedFileType[] m_FramesList;
 
         public override Int32 Width { get { return this.m_Width; } }
-        public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
+        public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Height;
         public override String IdCode { get { return "WwShpCc"; } }
         /// <summary>Very short code name for this type.</summary>
@@ -27,11 +26,13 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
         public override String LongTypeName { get { return "Westwood Shape File - C&C"; } }
         public override Boolean NeedsPalette { get { return !this.m_HasPalette; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_HasPalette;
+        public override Int32 BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
+        protected SupportedFileType[] m_FramesList;
+
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
@@ -95,15 +96,9 @@ namespace EngieFileConverter.Domain.FileTypes
             // Read palette if flag enabled. No games I know support using it, but, might as well be complete.
             if (this.m_HasPalette)
             {
-                try
-                {
-                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, hdrSize + offsSize * (hdrFrames + 2)));
-                    PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
-                }
-                catch (ArgumentException argex)
-                {
-                    throw new FileTypeLoadException("Illegal values in embedded palette.", argex);
-                }
+                try { this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, hdrSize + offsSize * (hdrFrames + 2)); }
+                catch (ArgumentException argex) { throw new FileTypeLoadException("Illegal values in embedded palette.", argex); }
+                PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
             }
             else
             {
@@ -123,7 +118,9 @@ namespace EngieFileConverter.Domain.FileTypes
             // Read is always safe; we already checked that the header size is inside the file bounds.
             OffsetInfo currentFrame = OffsetInfo.Read(fileData, curOffs);
             if (currentFrame.DataFormat != CcShpFrameFormat.Lcw)
-                throw new FileTypeLoadException("Cannot parse SHP frame info: iinvalid type on first frame.");
+                throw new FileTypeLoadException("Error on frame 0: first frame needs to be LCW.");
+            if (currentFrame.ReferenceFormat != CcShpFrameFormat.Empty)
+                throw new FileTypeLoadException("Error on frame 0: LCW with illegal reference format.");
             Int32 lastKeyFrameNr = 0;
             OffsetInfo lastKeyFrame = currentFrame;
             Int32 frameOffs = currentFrame.DataOffset;
@@ -137,21 +134,25 @@ namespace EngieFileConverter.Domain.FileTypes
                 offsets[i] = currentFrame;
                 curOffs += offsSize;
                 OffsetInfo nextFrame = OffsetInfo.Read(fileData, curOffs);
-                if (!frameFormats.Contains(nextFrame.DataFormat) || !frameFormats.Contains(nextFrame.ReferenceFormat))
-                    throw new FileTypeLoadException("Cannot parse SHP frame info: invalid frame format.");
+                if (!frameFormats.Contains(nextFrame.DataFormat))
+                    throw new FileTypeLoadException("Error on frame " + (i + 1) + ": Unknown frame type \"" + nextFrame.DataFormat.ToString("X2") + "\".");
+                if (!frameFormats.Contains(nextFrame.ReferenceFormat))
+                    throw new FileTypeLoadException("Error on frame " + (i + 1) + ": Unknown reference type \"" + nextFrame.ReferenceFormat.ToString("X2") + "\".");
                 Int32 frameOffsEnd = nextFrame.DataOffset;
                 Int32 frameStart = frameOffs;
                 Int32 frameEnd;
                 CcShpFrameFormat frameOffsFormat = currentFrame.DataFormat;
                 //Int32 dataLen = frameOffsEnd - frameOffs;
                 if (frameOffs > fileData.Length || frameOffsEnd > fileData.Length)
-                    throw new FileTypeLoadException("File is too small to contain all frame data!");
+                    throw new FileTypeLoadException("Error on frame " + i + ": File is too small to contain all frame data!");
                 Byte[] frame = new Byte[frameSize];
                 Int32 refIndex = -1;
                 Int32 refIndex20 = -1;
                 switch (frameOffsFormat)
                 {
                     case CcShpFrameFormat.Lcw:
+                        if (currentFrame.ReferenceFormat != CcShpFrameFormat.Empty)
+                            throw new FileTypeLoadException("Error on frame " + i + ": LCW with illegal reference format.");
                         // Actual LCW-compressed frame data.
                         WWCompression.LcwDecompress(fileData, ref frameOffs, frame, 0);
                         frameEnd = realIndex >= 0 ? frameStart : frameOffs;
@@ -165,14 +166,14 @@ namespace EngieFileConverter.Domain.FileTypes
                         CcShpFrameFormat refFormat = currentFrame.ReferenceFormat;
                         if (i < 2 || refFormat != CcShpFrameFormat.XorChainRef || refIndex20 >= i || offsets[refIndex20].DataFormat != CcShpFrameFormat.XorBase
                             || (offsets[i - 1].DataFormat != CcShpFrameFormat.XorBase && offsets[i - 1].DataFormat != CcShpFrameFormat.XorChain))
-                            throw new FileTypeLoadException("Bad frame reference information for frame " + i + ".");
+                            throw new FileTypeLoadException("Error on frame " + i + ": Bad frame reference information.");
                         frames[i - 1].CopyTo(frame, 0);
                         WWCompression.ApplyXorDelta(frame, fileData, ref frameOffs, 0);
                         frameEnd = frameOffs;
                         break;
                     case CcShpFrameFormat.XorBase:
                         if (currentFrame.ReferenceFormat != CcShpFrameFormat.Lcw)
-                            throw new FileTypeLoadException("XOR base frames can only reference LCW frames!");
+                            throw new FileTypeLoadException("Error on frame " + i + ": XOR base frames can only reference LCW frames!");
                         // 0x40 = XOR with a previous frame. Could technically reference anything, but normally only references the last LCW "keyframe".
                         // This load method ignores the format saved in ReferenceFormat since the decompressed frame is stored already.
                         if (lastKeyFrame.DataOffset == currentFrame.ReferenceOffset)
@@ -182,19 +183,19 @@ namespace EngieFileConverter.Domain.FileTypes
                             // not found as referenced frame, but in the file anyway?? Whatever; if it's LCW, just read it.
                             Int32 readOffs = currentFrame.ReferenceOffset;
                             if (readOffs >= fileData.Length)
-                                throw new FileTypeLoadException("File is too small to contain all frame data!");
+                                throw new FileTypeLoadException("Error on frame " + i + ": File is too small to contain all frame data!");
                             WWCompression.LcwDecompress(fileData, ref readOffs, frame, 0);
                             refIndex = -1;
                         }
                         if (refIndex >= i)
-                            throw new FileTypeLoadException("XOR cannot reference later frames!");
+                            throw new FileTypeLoadException("Error on frame " + i + ": XOR cannot reference later frames!");
                         if (refIndex >= 0)
                             frames[refIndex].CopyTo(frame, 0);
                         WWCompression.ApplyXorDelta(frame, fileData, ref frameOffs, 0);
                         frameEnd = frameOffs;
                         break;
                     default:
-                        throw new FileTypeLoadException("Unknown frame type \"" + frameOffsFormat.ToString("X2") + "\".");
+                        throw new FileTypeLoadException("Error on frame " + i + ": Unknown frame type \"" + frameOffsFormat.ToString("X2") + "\".");
                 }
                 frames[i] = frame;
 
@@ -203,7 +204,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     brokenLoop = !frame.SequenceEqual(frames[0]);
                     this.ExtraInfo = "Has loop frame";
-                    if(brokenLoop)
+                    if (brokenLoop)
                         this.ExtraInfo += " (but doesn't match)";
                 }
                 if (!hasLoopFrame || i + 1 < hdrFrames || brokenLoop)
@@ -301,11 +302,11 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 hdrSize = 0x0E;
             Byte[] header = new Byte[hdrSize];
 
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 0, nrOfFrames);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 0, (UInt16)nrOfFrames);
             //ArrayUtils.WriteInt16ToByteArrayLe(header, 2, 0); // XPos
             //ArrayUtils.WriteInt16ToByteArrayLe(header, 4, 0); // YPos
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 6, width);
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 8, height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 6, (UInt16)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 8, (UInt16)height);
             //ArrayUtils.WriteInt16ToByteArrayLe(header, 0x0A, DeltaSize);
             //ArrayUtils.WriteInt16ToByteArrayLe(header, 0x0C, 0); // Flags
 
@@ -419,7 +420,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 size = curDataOffs;
             Byte[] finalData = new Byte[size];
             Int32 maxDeltaSize = framescompr.Max(f => f.Length);
-            ArrayUtils.WriteInt16ToByteArrayLe(header, 0x0A, maxDeltaSize);
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 0x0A, (UInt16)maxDeltaSize);
             header.CopyTo(finalData, 0);
             Int32 indexOffs = hdrSize;
             for (Int32 i = 0; i < nrOfFrames; ++i)
@@ -443,7 +444,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             width = -1;
             height = -1;
             for (Int32 i = 0; i < nrOfFrames; ++i)

@@ -29,7 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 len = fileData.Length;
             if (len == 0)
                 throw new FileTypeLoadException("File is empty!");
-            // Test on full 16-colour lines (16 x 3 bytes)
+            // Test on full 16-color lines (16 x 3 bytes)
             if (len % 48 != 0)
                 throw new FileTypeLoadException("Incorrect file size: not a multiple of 48.");
             // test on max of 16 sub-palettes
@@ -37,7 +37,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Incorrect file size: exceeds 768 bytes.");
             try
             {
-                this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, false);
+                this.m_Palette = ColorUtils.ReadEightBitPaletteFile(fileData, false);
             }
             catch (ArgumentException ex)
             {
@@ -101,12 +101,12 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            // test on colour triplets
+            // test on color triplets
             if (fileData.Length != 768)
                 throw new FileTypeLoadException("Incorrect file size: 8-bit palette needs to be 768 bytes.");
             try
             {
-                this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, false);
+                this.m_Palette = ColorUtils.ReadEightBitPaletteFile(fileData, false);
             }
             catch (ArgumentException ex)
             {

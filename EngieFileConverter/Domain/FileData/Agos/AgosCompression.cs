@@ -22,7 +22,7 @@ namespace Nyerguds.FileData.Agos
             Byte[] outBuffer2 = new Byte[byteLength];
             // Post-processing: Exchange rows and columns.
             for (Int32 i = 0; i < byteLength; ++i)
-                outBuffer2[i % height * stride + i / height] = outBuffer[i];
+                outBuffer2[(i % height) * stride + (i / height)] = outBuffer[i];
             // outBuffer2 is now the correct image.
             return outBuffer2;
         }

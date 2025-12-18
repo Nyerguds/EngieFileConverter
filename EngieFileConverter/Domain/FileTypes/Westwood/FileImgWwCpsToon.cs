@@ -27,9 +27,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileData.Length < 4)
                 throw new FileTypeLoadException("File is not long enough to be a valid CPS file.");
-            const Int32 cpsn = 0x4E435053;
-            const Int32 lzss = 0x53535A4C;
-            const Int32 rnc = 0x53535A4C;
+            const Int32 cpsn = 0x4E435053; // "SPCN" string
+            const Int32 lzss = 0x53535A4C; // "LZSS" string
+            const Int32 rnc = 0x53535A4C; // Identical? Check this!
             if (fileData.Length < 4)
                 throw new FileTypeLoadException("Not a Toonstruck CPS!");
             UInt32 idBytes = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0);
@@ -55,8 +55,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (palSize % 3 != 0)
                         throw new FileTypeLoadException("Bad length for 6-bit CPS palette!");
                     Int32 colors = palSize / 3;
-                    ColorSixBit[] sbPalette = ColorUtils.ReadSixBitPalette(fileData, 0, colors);
-                    this.m_Palette = ColorUtils.GetEightBitColorPalette(sbPalette);
+                    this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, 0, colors);
                     this.HasPalette = true;
                     Array.Copy(rawData, palSize, imageData, 0, 256000);
                 }

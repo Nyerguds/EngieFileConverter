@@ -384,7 +384,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 imageStride = 320;
             Int32 arraySize = imageWidth * imageHeight;
             if (initialFrameData != null && initialFrameData.Length != arraySize)
-                throw new FileTypeLoadException("Bad start frame data length!");
+                throw new FileTypeLoadException("Bad start frame data length.");
             Byte[] imageData = initialFrameData == null ? null : ArrayUtils.CloneArray(initialFrameData);
 
             Boolean[] pasteTransMask = base.TransparencyMask;
@@ -814,10 +814,10 @@ namespace EngieFileConverter.Domain.FileTypes
             for (Int32 i = 0; i < finalChunksCount; ++i)
             {
                 VideoChunk chunk = finalChunks[i];
-                ArrayUtils.WriteInt16ToByteArrayLe(vdaFile, offset + 0, (chunk.ImageRect.Width - 1));
-                ArrayUtils.WriteInt16ToByteArrayLe(vdaFile, offset + 2, (chunk.ImageRect.Height - 1));
+                ArrayUtils.WriteUInt16ToByteArrayLe(vdaFile, offset + 0, (UInt16)(chunk.ImageRect.Width - 1));
+                ArrayUtils.WriteUInt16ToByteArrayLe(vdaFile, offset + 2, (UInt16)(chunk.ImageRect.Height - 1));
                 vdaFile[offset + 4] = (Byte) (chunk.Compressed ? 0x02 : 0x00);
-                ArrayUtils.WriteInt16ToByteArrayLe(vdaFile, offset + 5, (chunk.ImageRect.X));
+                ArrayUtils.WriteUInt16ToByteArrayLe(vdaFile, offset + 5, (UInt16)(chunk.ImageRect.X));
                 vdaFile[offset + 7] = (Byte) (chunk.ImageRect.Y & 0xFF);
                 offset += 8;
                 Byte[] chunkData = chunk.ImageData;
@@ -836,7 +836,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             palette = fileToSave.GetColors();
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {

@@ -33,6 +33,7 @@ namespace Nyerguds.Util.Ui
             this.m_CustomControlInfo = cci;
             this.SuspendLayout();
             this.lblTypeName.Text = cci.Name;
+            this.lblTypeName.Visible = !String.IsNullOrEmpty(cci.Name);
             TU[] props = cci.Properties;
             Int32 nrOfProps = props.Length;
             for (Int32 i = 0; i < nrOfProps; ++i)
@@ -80,9 +81,12 @@ namespace Nyerguds.Util.Ui
         {
             if (refresh)
                 this.SuspendLayout();
+            Int32 ySpacing = this.lblTypeName.Location.Y;
+            // Can't count on "lblTypeName.Visible" inside suspended layout.
+            Boolean addSpacing = !String.IsNullOrEmpty(lblTypeName.Name);
             Int32 YPos;
             if (this.m_Contents.Count == 0)
-                YPos = this.lblTypeName.Location.Y * 2 + this.lblTypeName.Size.Height;
+                YPos = ySpacing + (addSpacing ? this.lblTypeName.Height + ySpacing : 0);
             else
             {
                 T lastControl = this.m_Contents[this.m_Contents.Count - 1];

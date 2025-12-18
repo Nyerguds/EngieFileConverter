@@ -80,11 +80,12 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected void CheckSpecificFileType(Byte[] fileData, String filename)
         {
-            if(this.MimeType == null)
+            if (this.MimeType == null)
                 return;
-            String mimeType = MimeTypeDetector.GetMimeTypeFromExtension(this.MimeType)[1];
-            if (!mimeType.Equals(MimeTypeDetector.GetMimeType(fileData)[1], StringComparison.InvariantCultureIgnoreCase))
-                throw new FileTypeLoadException("This is not a " + this.ShortTypeName + " image!");
+            String[] mimeType = MimeTypeDetector.GetMimeTypeFromExtension(this.MimeType);
+            String[] dataMime = MimeTypeDetector.GetMimeType(fileData, 0);
+            if (mimeType == null || dataMime == null || !mimeType[1].Equals(dataMime[1], StringComparison.InvariantCultureIgnoreCase))
+                throw new FileTypeLoadException("This is not a " + this.ShortTypeName + " image.");
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)

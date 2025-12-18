@@ -25,8 +25,8 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "All Dogs DB"; } }
         public override String[] FileExtensions { get { return new String[] { "db0", "db1", "db2", "db3", "db4", "db5", "db6" }; } }
         public override String LongTypeName { get { return "All Dogs Go To Heaven DB file"; } }
-        public override Boolean NeedsPalette { get { return m_bpp == -2; } }
-        public override Int32 BitsPerPixel { get { return m_bpp; } }
+        public override Boolean NeedsPalette { get { return this.m_bpp == -2; } }
+        public override Int32 BitsPerPixel { get { return this.m_bpp; } }
         protected Int32 m_bpp;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -44,12 +44,12 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Dictionary<Int32, String> GetTextEntries()
         {
-            return m_textEntries;
+            return this.m_textEntries;
         }
 
         protected Dictionary<Int32, Int32> GetTextLengths()
         {
-            return m_textLengths;
+            return this.m_textLengths;
         }
 
         public override void LoadFile(Byte[] fileData)
@@ -73,6 +73,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (datalen < 2)
                 throw new FileTypeLoadException("Bad header size.");
             Int32 nrOfFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            if (nrOfFrames == 0)
+                throw new FileTypeLoadException("No frames in file.");
             Int32 headerEnd = 2 + (nrOfFrames * 8);
             if (datalen < headerEnd)
                 throw new FileTypeLoadException("File is too short to contain an index of " + nrOfFrames + " files");
@@ -84,12 +86,12 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 pal = PaletteUtils.GetCgaPalette(0, true, true, true, 2);
                 cgaPal = ImageUtils.GetPalette(pal);
-                m_bpp = -2;
+                this.m_bpp = -2;
             }
             else
             {
                 pal = PaletteUtils.GetEgaPalette(4);
-                m_bpp = 4;
+                this.m_bpp = 4;
             }
             Int32 offset = 2;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
@@ -123,7 +125,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     Int32 j = 0;
                     Boolean validAscii = true;
-                    for (; j < decompSize; j++)
+                    for (; j < decompSize; ++j)
                     {
                         Byte cur = frameData[j];
                         if (cur == 0)
@@ -148,13 +150,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     else
                         throw new FileTypeLoadException("Decompressed size in frame " + i + " does not match.");
                 }
+                // Using List<String> and not StringBuilder because it's easier to add line breaks in between.
                 List<String> extraInfo = new List<String>();
                 Bitmap frameImage = null;
                 if (textFrame != null)
                 {
                     this.m_textEntries.Add(i, textFrame);
                     this.m_textLengths.Add(i, decompSize);
-
                     extraInfo.Add("Type: ASCII text entry");
                     extraInfo.Add("Value: \"" + textFrame + "\"");
                 }
@@ -180,7 +182,6 @@ namespace EngieFileConverter.Domain.FileTypes
                         frameImage.Palette = cgaPal;
                     extraInfo.Add("Type: " + (isCga ? "CGA" : "EGA") + " image frame");
                 }
-
                 if (compSize == decompSize)
                     extraInfo.Add("Uncompressed entry\nSize: " + decompSize + " bytes");
                 else
@@ -188,7 +189,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(textFrame == null ? this.BitsPerPixel : 0);
-                frame.SetNeedsPalette(m_bpp == -2);
+                frame.SetNeedsPalette(this.m_bpp == -2);
                 frame.SetExtraInfo(String.Join("\n", extraInfo.ToArray()));
                 this.m_FramesList[i] = frame;
             }
@@ -210,7 +211,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             FileFramesDogsDb native = fileToSave as FileFramesDogsDb;
             Int32 nrOfFrames = frames.Length;
-            for (int i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame;
                 Bitmap bm;
@@ -225,7 +226,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new ArgumentException("The images can't exceed a height of 200 pixels.", "fileToSave");
                 if (frame.GetColors().Length == 4)
                 {
-                    // Don't actually check 4 colour images.
+                    // Don't actually check 4 color images.
                     maxCol = 3;
                     continue;
                 }
@@ -235,7 +236,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     maxCol = Math.Max(maxCol, pixels[p]);
                     if (maxCol >= 16)
-                        throw new ArgumentException("The images contain colours on indices higher than 15.", "fileToSave");
+                        throw new ArgumentException("The images contain colors on indices higher than 15.", "fileToSave");
                     if (maxCol >= 4)
                         canBeCga = false;
 
@@ -249,19 +250,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 Dictionary<Int32, Int32> textLengths = native == null ? null : native.GetTextLengths();
                 if (textEntries == null || textEntries.Keys.Count == 0)
                 {
-                    empty = emptyEntries.Select(x => x + ":  : ").ToArray();
+                    empty = emptyEntries.Select(x => x + " : 50 : ").ToArray();
                 }
                 else
                 {
                     empty = new String[emptyAmount];
-                    for (int i = 0; i < emptyAmount; i++)
+                    for (Int32 i = 0; i < emptyAmount; ++i)
                     {
                         Int32 emptyNum = emptyEntries[i];
                         String textVal;
                         textEntries.TryGetValue(emptyNum, out textVal);
                         Int32 textLen;
                         textLengths.TryGetValue(emptyNum, out textLen);
-                        empty[i] = emptyNum + " : " + (textLen != 0 ? textLen.ToString() : "len") + " : " + (textVal ?? String.Empty);
+                        empty[i] = emptyNum + " : " + (textLen != 0 ? textLen.ToString() : "50") + " : " + (textVal ?? String.Empty);
                     }
                 }
 
@@ -276,10 +277,11 @@ namespace EngieFileConverter.Domain.FileTypes
             if (canBeCga)
                 opts[opt++] = new Option("CGA", OptionInputType.Boolean, "Save as CGA", null, "1", true);
             if (empty != null)
-                opts[opt++] = new Option("TXT", OptionInputType.String, "Text entries. Format: \"nr : size : text\". The easiest way to get this is to go to the save options of the original archive and copy it from the text field.", String.Join(Environment.NewLine, empty));
+                opts[opt++] = new Option("TXT", OptionInputType.String, "Text entries. Format: \"nr : size : text\". The easiest way to get this is to go to the save options of the original archive and copy it from the text field.", String.Join("," + Environment.NewLine, empty));
 
             return opts;
         }
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Boolean isCga = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CGA"));
@@ -289,9 +291,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Dictionary<Int32, Int32> textLengths = new Dictionary<Int32, Int32>();
             if (emptyEntries != null)
             {
-                String[] empties = emptyEntries.Split(new Char[] {'\r', '\n'}, StringSplitOptions.RemoveEmptyEntries);
+                String[] empties = emptyEntries.Split(new Char[] {'\r', '\n', ',', ';'}, StringSplitOptions.RemoveEmptyEntries);
                 Regex emptyPattern = new Regex("^\\s*(\\d+)\\s*:\\s*(\\d*)\\s*:\\s*(.*?)\\s*$");
-                for (int i = 0; i < empties.Length; i++)
+                for (Int32 i = 0; i < empties.Length; ++i)
                 {
                     Match m = emptyPattern.Match(empties[i]);
                     if (m.Success)

@@ -57,26 +57,26 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length < 0x17)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
             Byte[] hdrBytesCheck = Encoding.ASCII.GetBytes(header);
-            for (Int32 i = 0; i < hdrBytesCheck.Length; i++)
+            for (Int32 i = 0; i < hdrBytesCheck.Length; ++i)
                 if (fileData[i] != hdrBytesCheck[i])
-                    throw new FileTypeLoadException(ERR_BADHEADER);
+                    throw new FileTypeLoadException(ERR_BAD_HEADER);
             if (fileData[0x12] != 0x1A || fileData[0x15] != 0x00 || fileData[0x16] != 0x00)
-                throw new FileTypeLoadException(ERR_BADHEADER);
+                throw new FileTypeLoadException(ERR_BAD_HEADER);
             this.SpaceWidth = fileData[0x13];
             this. LineHeight = fileData[0x14];
             Int32 offset = 0x17;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             List<SupportedFileType> imageDataList = new List<SupportedFileType>();
+            List<String> foundHidden = new List<String>();
             Int32 index = 0;
             while (offset < fileData.Length)
             {
                 Int32 frameOffset = offset;
                 Int32 comprLen;
+                Int32 actualComprLen = -1;
                 UInt32 decompSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
                 offset += 2;
                 Bitmap symb;
-                Int32 symbWidth = 0;
-                Int32 symbHeight = 0;
                 if (decompSize == 0)
                 {
                     symb = null;
@@ -86,35 +86,47 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     comprLen = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
                     if (offset + 2 + comprLen > fileData.Length)
-                        throw new FileTypeLoadException(ERR_SIZETOOSMALL);
-                    Byte[] decompressedData = JazzRleCompression.RleDecodeJazz(fileData, (UInt32)offset, true, decompSize, true);
+                        throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
+                    Byte[] decompressedData = JazzRleCompression.RleDecodeJazz(fileData, (UInt32)offset, true, decompSize, false, out actualComprLen);
                     offset += comprLen + 2;
                     if (decompressedData == null || decompressedData.Length < 4)
                         throw new FileTypeLoadException(ERR_DECOMPR);
-                    symbWidth = (Int32)ArrayUtils.ReadIntFromByteArray(decompressedData, 0, 2, true);
-                    symbHeight = (Int32)ArrayUtils.ReadIntFromByteArray(decompressedData, 2, 2, true);
+                    Int32 symbWidth = (Int32)ArrayUtils.ReadIntFromByteArray(decompressedData, 0, 2, true);
+                    Int32 symbHeight = (Int32)ArrayUtils.ReadIntFromByteArray(decompressedData, 2, 2, true);
                     Int32 imgSize = symbWidth * symbHeight;
                     if (imgSize != decompSize - 4)
-                        throw new FileTypeLoadException("Image dimensions do not match decompressed size!");
+                        throw new FileTypeLoadException(ERR_DECOMPR_LEN);
                     Byte[] symbol = new Byte[imgSize];
                     Array.Copy(decompressedData, 4, symbol, 0, imgSize);
                     symb = imgSize == 0 ? null : ImageUtils.BuildImage(symbol, symbWidth, symbHeight, symbWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 }
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this, symb, sourcePath, index++);
+                frame.LoadFileFrame(this, this, symb, sourcePath, index);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetNeedsPalette(true);
                 StringBuilder extraInfo = new StringBuilder();
                 extraInfo.Append("Data offset: ").Append(frameOffset);
                 extraInfo.Append('\n').Append("Data size: ").Append(comprLen);
                 extraInfo.Append('\n').Append("Uncompressed size: ").Append(decompSize);
+                if (actualComprLen != -1 && actualComprLen < comprLen)
+                {
+                    extraInfo.Append('\n').Append("Hidden data detected: ").Append(comprLen - actualComprLen).Append(" bytes at ").Append(frameOffset + 4 + actualComprLen);
+                    foundHidden.Add(index.ToString());
+                }
                 if (symb == null)
                     extraInfo.Append('\n').Append("Empty frame.");
                 frame.SetExtraInfo(extraInfo.ToString());
                 imageDataList.Add(frame);
+                index++;
             }
-            this.ExtraInfo = "Space width in header: " + this.SpaceWidth + "\n"
-                           + "Line height in header: " + this.LineHeight;
+            this.ExtraInfo = "Space width in header: " + this.SpaceWidth
+                           + "\nLine height in header: " + this.LineHeight;
+            Int32 hiddenFound = foundHidden.Count;
+            if (hiddenFound > 0)
+            {
+                this.ExtraInfo += "\nHidden data found on ind" + (hiddenFound == 1 ? "ex " : "ices:\n")
+                    + String.Join(", ", foundHidden.ToArray());
+            }
             this.m_FramesList = imageDataList.ToArray();
             this.m_LoadedImage = null;
 
@@ -211,10 +223,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave);
-            Int32 saveHdr13;
-            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "SPW"), out saveHdr13);
-            Int32 saveHdr14;
-            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "LNH"), out saveHdr14);
+            Int32 spaceWidth;
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "SPW"), out spaceWidth);
+            Int32 lineHeight;
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "LNH"), out lineHeight);
             Int32 nrOfSymbols = frames.Length;
             Byte[][] imageData = new Byte[nrOfSymbols][];
             for (Int32 i = 0; i < nrOfSymbols; ++i)
@@ -240,16 +252,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 imageData[i] = comprWriteData;
             }
             Int32 bufLen = 0x17;
-            for (Int32 i = 0; i < nrOfSymbols; i++)
+            for (Int32 i = 0; i < nrOfSymbols; ++i)
                 bufLen += imageData[i].Length;
             Byte[] fontData = new Byte[bufLen];
             Encoding.ASCII.GetBytes(header, 0, header.Length, fontData, 0);
             fontData[0x12] = 0x1A;
-            fontData[0x13] = (Byte)Math.Min(255, saveHdr14);
-            fontData[0x14] = (Byte)Math.Min(255, saveHdr13);
+            fontData[0x13] = (Byte)Math.Min(255, lineHeight);
+            fontData[0x14] = (Byte)Math.Min(255, spaceWidth);
             // 0x15 & 0x16 are both 00.
             Int32 writeOffs = 0x17;
-            for (Int32 i = 0; i < nrOfSymbols; i++)
+            for (Int32 i = 0; i < nrOfSymbols; ++i)
             {
                 Byte[] curData = imageData[i];
                 Int32 curLength = curData.Length;
@@ -267,7 +279,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];

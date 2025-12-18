@@ -23,7 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public virtual Boolean CanSave { get { return false; } }
+        public override Boolean CanSave { get { return false; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -62,7 +62,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 try
                 {
-                    pal = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, frameStart + 6, colors);
+                    pal = ColorUtils.ReadSixBitPalette(fileData, frameStart + 6, colors);
                 }
                 catch (ArgumentException)
                 {

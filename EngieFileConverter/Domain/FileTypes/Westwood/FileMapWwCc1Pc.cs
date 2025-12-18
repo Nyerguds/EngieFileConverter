@@ -26,7 +26,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected static readonly Regex INFREGEX = new Regex("^([A-Za-z0-9]+),([A-Za-z0-9]+),(\\d+),(\\d+),(\\d+),([a-zA-Z0-9]+),(\\d+),([^\\s]+)$");
         protected static readonly Regex VEHREGEX = new Regex("^([A-Za-z0-9]+),([A-Za-z0-9]+),(\\d+),(\\d+),(\\d+),([a-zA-Z0-9]+),([^\\s]+)$");
 
-        protected static Color[] PaletteTemperate = new Color[]
+        public static Color[] PaletteTemperate = new Color[]
         {
             Color.Black,                      // Unused = 0
             Color.FromArgb(0x35, 0x44, 0x35), // Clear = 1
@@ -34,29 +34,19 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0x70, 0x70, 0x70), // Rock = 3
             Color.FromArgb(0xe3, 0xb5, 0x49), // Beach = 4
             Color.FromArgb(0x5E, 0x55, 0x44), // Road = 5
-            Color.FromArgb(0x50, 0x50, 0x50), // CliffFace = 6
-            Color.FromArgb(0x40, 0x40, 0x40), // CliffPlateau = 7
-            Color.FromArgb(0x4D, 0x57, 0x4D), // Smudge = 8
-            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = 9
-            Color.FromArgb(0x65, 0x59, 0x55), // Bibs = A
-            Color.FromArgb(0x48, 0x79, 0x44), // Trees = B
-            Color.FromArgb(0x70, 0x70, 0x70), // Rocks = C
-            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = D
-            Color.Black,                      // Unused = E
-            Color.Black,                      // Unused = F
-            Color.FromArgb(0x00, 0x00, 0x95), // Blue, Unused = 10
-            Color.FromArgb(0x2C, 0x39, 0x9A), // Blue, Clear = 11
-            Color.FromArgb(0x82, 0x9F, 0xE8), // Blue, Water = 12
-            Color.FromArgb(0x5F, 0x5F, 0xAC), // Blue, Rock = 13
-            Color.FromArgb(0xC2, 0x9A, 0x9F), // Blue, Beach = 14
-            Color.FromArgb(0x4F, 0x47, 0x9E), // Blue, Road = 15
-            Color.FromArgb(0x43, 0x43, 0xA1), // Blue, CliffFace = 16
-            Color.FromArgb(0x35, 0x35, 0x9D), // Blue, CliffPlateau = 17
-            Color.FromArgb(0x40, 0x49, 0xA0), // Blue, Smudge = 18
-            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
+            Color.FromArgb(0x6D, 0xA4, 0xDB), // River = 6
+            Color.FromArgb(0x50, 0x50, 0x50), // CliffFace = 7
+            Color.FromArgb(0x40, 0x40, 0x40), // CliffPlateau = 8
+            Color.FromArgb(0x4D, 0x57, 0x4D), // Smudge = 9
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = A
+            Color.FromArgb(0x65, 0x59, 0x55), // Bibs = B
+            Color.FromArgb(0x48, 0x79, 0x44), // Trees = C
+            Color.FromArgb(0x70, 0x70, 0x70), // Rocks = D
+            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = E
+            Color.FromArgb(0x58, 0x58, 0x58), // CliffPlateauWater= F
         };
 
-        protected static Color[] PaletteDesert = new Color[]
+        public static Color[] PaletteDesert = new Color[]
         {
             Color.Black,                      // Unused = 0
             Color.FromArgb(0x88, 0x5E, 0x46), // Clear = 1
@@ -64,29 +54,19 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0x70, 0x70, 0x70), // Rock = 3
             Color.FromArgb(0xE3, 0xB5, 0x49), // Beach = 4
             Color.FromArgb(0xAB, 0x81, 0x55), // Road = 5
-            Color.FromArgb(0x50, 0x50, 0x50), // CliffFace = 6
-            Color.FromArgb(0x40, 0x40, 0x40), // CliffPlateau = 7
-            Color.FromArgb(0x5E, 0x48, 0x3E), // Smudge = 8
-            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = 9
-            Color.FromArgb(0xA3, 0x78, 0x53), // Bibs = A
-            Color.FromArgb(0x71, 0x69, 0x48), // Trees = B
-            Color.FromArgb(0xae, 0x79, 0x69), // Rocks = C
-            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = D
-            Color.Black,                      // Unused = E
-            Color.Black,                      // Unused = F
-            Color.FromArgb(0x00, 0x00, 0x95), // Blue, Unused = 10
-            Color.FromArgb(0x73, 0x4F, 0x9E), // Blue, Clear = 11
-            Color.FromArgb(0x82, 0x9F, 0xE8), // Blue, Water = 12
-            Color.FromArgb(0x5F, 0x5F, 0xAC), // Blue, Rock = 13
-            Color.FromArgb(0xC2, 0x9A, 0x9F), // Blue, Beach = 14
-            Color.FromArgb(0x91, 0x6D, 0xA2), // Blue, Road = 15
-            Color.FromArgb(0x43, 0x43, 0xA1), // Blue, CliffFace = 16
-            Color.FromArgb(0x35, 0x35, 0x9D), // Blue, CliffPlateau = 17
-            Color.FromArgb(0x4F, 0x3C, 0x9C), // Blue, Smudge = 18
-            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
+            Color.FromArgb(0x6D, 0xA4, 0xDB), // River = 6
+            Color.FromArgb(0x68, 0x68, 0x68), // CliffFace = 7
+            Color.FromArgb(0x50, 0x50, 0x50), // CliffPlateau = 8
+            Color.FromArgb(0x5E, 0x48, 0x3E), // Smudge = 9
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = A
+            Color.FromArgb(0xA3, 0x78, 0x53), // Bibs = B
+            Color.FromArgb(0x71, 0x69, 0x48), // Trees = C
+            Color.FromArgb(0xAE, 0x79, 0x69), // Rocks = D
+            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = E
+            Color.FromArgb(0x5C, 0x5C, 0x5C), // CliffPlateauWater= F
         };
 
-        protected static Color[] PaletteSnow = new Color[]
+        public static Color[] PaletteSnow = new Color[]
         {
             Color.Black,                      // Unused = 0
             Color.FromArgb(0xC8, 0xC8, 0xC8), // Clear = 1
@@ -94,26 +74,36 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0x50, 0x50, 0x50), // Rock = 3
             Color.FromArgb(0xe3, 0xb5, 0x49), // Beach = 4
             Color.FromArgb(0x92, 0x8A, 0x80), // Road = 5
-            Color.FromArgb(0x60, 0x60, 0x60), // CliffFace = 6
-            Color.FromArgb(0x60, 0x60, 0x60), // CliffPlateau = 7
-            Color.FromArgb(0x9E, 0x9E, 0x9E), // Smudge = 8
-            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = 9
-            Color.FromArgb(0x8C, 0x84, 0x7D), // Bibs = A
-            Color.FromArgb(0x48, 0x79, 0x44), // Trees = B
-            Color.FromArgb(0x70, 0x70, 0x70), // Rocks = C
-            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = D
-            Color.Black,                      // Unused = E
-            Color.Black,                      // Unused = F
-            Color.FromArgb(0x00, 0x00, 0x95), // Blue, Unused = 10
-            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Clear = 11
-            Color.FromArgb(0x82, 0x9F, 0xE8), // Blue, Water = 12
-            Color.FromArgb(0x43, 0x43, 0xA1), // Blue, Rock = 13
-            Color.FromArgb(0xC2, 0x9A, 0x9F), // Blue, Beach = 14
-            Color.FromArgb(0x7C, 0x75, 0xB3), // Blue, Road = 15
-            Color.FromArgb(0x51, 0x51, 0xA6), // Blue, CliffFace = 16
-            Color.FromArgb(0x51, 0x51, 0xA6), // Blue, CliffPlateau = 17
-            Color.FromArgb(0x86, 0x86, 0xC2), // Blue, Smudge = 18
-            Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
+            Color.FromArgb(0x6D, 0xA4, 0xDB), // River = 6
+            Color.FromArgb(0x68, 0x68, 0x68), // CliffFace = 7
+            Color.FromArgb(0x50, 0x50, 0x50), // CliffPlateau = 8
+            Color.FromArgb(0x9E, 0x9E, 0x9E), // Smudge = 9
+            Color.FromArgb(0xC8, 0xC8, 0xC8), // Snow = A
+            Color.FromArgb(0x8C, 0x84, 0x7D), // Bibs = B
+            Color.FromArgb(0x48, 0x79, 0x44), // Trees = C
+            Color.FromArgb(0x70, 0x70, 0x70), // Rocks = D
+            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = E
+            Color.FromArgb(0x5C, 0x5C, 0x5C), // CliffPlateauWater= F
+        };
+
+        public static Color[] PaletteInterior = new Color[]
+        {
+            Color.Black,                      // Unused = 0
+            Color.FromArgb(0x35, 0x35, 0x35), // Clear = 1
+            Color.FromArgb(0x99, 0xBB, 0xDD), // Water = 2
+            Color.FromArgb(0x70, 0x70, 0x70), // Rock = 3
+            Color.FromArgb(0x45, 0x39, 0x39), // Beach = 4
+            Color.FromArgb(0xAE, 0xAE, 0xAE), // Road = 5
+            Color.FromArgb(0x6D, 0xA4, 0xDB), // River = 6
+            Color.FromArgb(0x68, 0x68, 0x68), // CliffFace = 7
+            Color.FromArgb(0x50, 0x50, 0x50), // CliffPlateau = 8
+            Color.FromArgb(0x4D, 0x00, 0x00), // Smudge = 9
+            Color.FromArgb(0xE7, 0x92, 0x28), // Snow = A
+            Color.FromArgb(0x65, 0x59, 0x55), // Bibs = B
+            Color.FromArgb(0x48, 0x79, 0x44), // Trees = C
+            Color.FromArgb(0x70, 0x70, 0x70), // Rocks = D
+            Color.FromArgb(0xE6, 0x95, 0x30), // Blossom Trees = E
+            Color.FromArgb(0x5C, 0x5C, 0x5C), // CliffPlateauWater= F
         };
 
         protected static Color[] PaletteGoodGuy = new Color[] { Color.FromArgb(0xf7, 0xd7, 0x79), Color.FromArgb(0x8a, 0x71, 0x38) };
@@ -162,7 +152,7 @@ namespace EngieFileConverter.Domain.FileTypes
         };
 
         public override String IdCode { get { return "WwCc1MapPC"; } }
-        public override FileClass FileClass { get { return FileClass.CcMap; } }
+        public override FileClass FileClass { get { return FileClass.CcMap | FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.CcMap; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C Map"; } }
@@ -172,12 +162,12 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "bin" }; } }
         public override Int32 Width { get { return 64; } }
         public override Int32 Height { get { return 64; } }
-        public override Int32 BitsPerPixel { get { return 0; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
 
         public Byte[] PCMapData { get; protected set; }
         public Byte[] N64MapData { get; protected set; }
 
-        public CnCMap Map { get { return new CnCMap(this.PCMapData);} }
+        public CnCMap Map { get { return new CnCMap(this.PCMapData, false); } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -226,12 +216,6 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        public override Color[] GetColors()
-        {
-            // This type does not expost itself as an image, and will pretend not to have a colour palette.
-            return null;
-        }
-
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             FileMapWwCc1Pc cc1PcMap = fileToSave as FileMapWwCc1Pc;
@@ -273,7 +257,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 inifile = new IniFile(inipath, IniFile.ENCODING_DOS_US);
             }
-            if (inifile == null || (!inifile.ContainsSection("Basic") && !inifile.ContainsSection("Map")))
+            if (inifile == null || inifile.ContainsSection("MapPack") || (!inifile.ContainsSection("Basic") && !inifile.ContainsSection("Map")))
                 return null;
             String th = inifile.GetStringValue("Map", "Theater", null);
             info.Theater = GeneralUtils.TryParseEnum(th, defaultTheater, true);
@@ -316,9 +300,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 strCell = mapStruct.Cell + (strInfo.Height - 1) * 64;
                 Int32 bibsize = 2 * strInfo.Width;
                 Int32 strWidth = strInfo.Width;
-                for (Int32 i = 0; i < bibsize; i++)
+                for (Int32 i = 0; i < bibsize; ++i)
                 {
-                    cells[strCell] = 0x0A;
+                    cells[strCell] = (int)TerrainTypeEnh.Bibs;
                     strCell++;
                     if ((i + 1) % strWidth == 0)
                         strCell += 64 - strWidth;
@@ -339,18 +323,18 @@ namespace EngieFileConverter.Domain.FileTypes
                 StructInfo strInfo;
                 if (!MapConversion.TERRAININFO.TryGetValue(terType, out strInfo))
                     continue;
-                Int32 terColor;
+                TerrainTypeEnh terColor;
                 if (terType.StartsWith("SPLIT", StringComparison.InvariantCultureIgnoreCase))
-                    terColor = 0x0D;
+                    terColor = TerrainTypeEnh.BlossomTrees;
                 else if (terType.StartsWith("ROCK", StringComparison.InvariantCultureIgnoreCase))
-                    terColor = 0x0C;
+                    terColor = TerrainTypeEnh.Rocks;
                 else
-                    terColor = 0x0B;
+                    terColor = TerrainTypeEnh.Trees;
                 Int32 strWidth = strInfo.Width;
-                for (Int32 i = 0; i < strInfo.OccupyList.Length; i++)
+                for (Int32 i = 0; i < strInfo.OccupyList.Length; ++i)
                 {
                     if (strInfo.OccupyList[i])
-                        cells[terCell] = terColor;
+                        cells[terCell] = (int)terColor;
                     terCell++;
                     if ((i + 1) % strWidth == 0)
                         terCell += 64 - strWidth;
@@ -381,7 +365,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 strColor = this.GetHouseColorIndex(mapStruct.Owner, 1);
                 Int32 strCell = mapStruct.Cell;
                 Int32 strWidth = strInfo.Width;
-                for (Int32 i = 0; i < strInfo.OccupyList.Length; i++)
+                for (Int32 i = 0; i < strInfo.OccupyList.Length; ++i)
                 {
                     if (strInfo.OccupyList[i])
                         cells[strCell] = strColor;
@@ -419,7 +403,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return cells;
         }
 
-        protected Color[] GetHousePalette(House owner)
+        protected static Color[] GetHousePalette(House owner)
         {
             switch (owner)
             {
@@ -449,18 +433,18 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Color GetHouseColor(House owner, Int32 index)
         {
-            return this.GetHousePalette(owner)[index];
+            return GetHousePalette(owner)[index];
         }
 
         protected Int32 GetHouseColorIndex(House owner, Int32 index)
         {
-            return 0x20 + ((Int32)owner * 2) + index;
+            return 0x40 + ((Int32)owner * 2) + index;
         }
 
         protected Int32 GetOverlayColorIndex(OverlayTd type)
         {
             Int32 lastHouse = (Int32)Enum.GetValues(typeof(House)).Cast<House>().Max();
-            return 0x20 + (lastHouse + 1) * 2 + (Int32)type;
+            return 0x40 + (lastHouse + 1) * 2 + (Int32)type;
         }
 
         /// <summary>
@@ -478,14 +462,14 @@ namespace EngieFileConverter.Domain.FileTypes
             TerrainTypeEnh[] simplifiedMap;
             try
             {
-                simplifiedMap = MapConversion.SimplifyMap(new CnCMap(fileData));
+                simplifiedMap = MapConversion.SimplifyMap(new CnCMap(fileData, false), MapConversion.TILEINFO_TD);
             }
             catch (ArgumentException ex)
             {
                 throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
             }
-            Color[] palette = this.GetTheaterPalette(theater);
-            Byte[] imageData = new Byte[64 * 64];
+            Color[] palette = GetTheaterPaletteFull(theater);
+            Byte[] imageData = new Byte[CnCMap.LENGTH_TD];
             if (usableArea == Rectangle.Empty)
             {
                 for (Int32 i = 0; i < simplifiedMap.Length; ++i)
@@ -497,9 +481,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (usableArea != Rectangle.Empty)
                 {
                     for (Int32 i = 0; i < simplifiedMap.Length; ++i)
-                        imageData[i] = (Byte)(simplifiedMap[i] + 0x10);
+                        imageData[i] = (Byte)(simplifiedMap[i] + 0x20);
                 }
-                // paint normal-coloured area
+                // paint normal-colored area
                 Int32 minY = usableArea != Rectangle.Empty ? usableArea.Y : 0;
                 Int32 maxY = usableArea != Rectangle.Empty ? usableArea.Y + usableArea.Height : 64;
                 Int32 minX = usableArea != Rectangle.Empty ? usableArea.X : 0;
@@ -516,7 +500,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (addedPixels != null)
             {
                 Int32[] cells = addedPixels.Keys.ToArray();
-                for (Int32 i = 0; i < cells.Length; i++)
+                for (Int32 i = 0; i < cells.Length; ++i)
                 {
                     Int32 cell = cells[i];
                     imageData[cell] = (Byte)addedPixels[cell];
@@ -524,8 +508,12 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             return ImageUtils.BuildImage(imageData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Black);
         }
+        public static Color[] GetTheaterPalette(Theater theater)
+        {
+            return GetTheaterPalette(theater, null);
+        }
 
-        private Color[] GetTheaterPalette(Theater theater)
+        public static Color[] GetTheaterPalette(Theater theater, Dictionary<byte, Color> overrides)
         {
             Color[] colBasic;
             switch (theater)
@@ -546,18 +534,72 @@ namespace EngieFileConverter.Domain.FileTypes
                 case Theater.Snow:
                     colBasic = PaletteSnow;
                     break;
+                case Theater.Interior:
+                    colBasic = PaletteInterior;
+                    break;
             }
             Color[] colFull = new Color[0x100];
             Array.Copy(colBasic, 0, colFull, 0, colBasic.Length);
-            // Fill missing entries until 0x20
-            if (colBasic.Length < 0x20)
-                Array.Copy(colBasic, colBasic.Length - 0x10, colFull, colBasic.Length, 0x20 - colBasic.Length);
+            for (int i = colBasic.Length; i < 0x100; ++i)
+            {
+                colFull[i] = Color.Black;
+            }
+            // Apply overrides
+            if (overrides != null)
+            {
+                foreach (KeyValuePair<byte, Color> kvp in overrides)
+                {
+                    colFull[kvp.Key] = kvp.Value;
+                }
+            }
+            // Generate blue-tinted ones.
+            using (Bitmap bm = new Bitmap(16, 16, PixelFormat.Format32bppArgb))
+            using (Bitmap bm2 = new Bitmap(16, 16, PixelFormat.Format32bppArgb))
+            {
+                Rectangle fullRect = new Rectangle(0, 0, 16, 16);
+                using (Graphics g = Graphics.FromImage(bm2))
+                using (SolidBrush sb = new SolidBrush(Color.FromArgb(0x80, 0x80, 0xFF)))
+                {
+                    g.FillRectangle(sb, fullRect);
+                }
+                for (int i = 0; i < 0x20; i++)
+                {
+                    bm.SetPixel(i % 0x10, i / 0x10, colFull[i]);
+                }
+                using (Graphics g = Graphics.FromImage(bm))
+                using (ImageAttributes imageAttributes = new ImageAttributes())
+                {
+                    // 30% alpha.
+                    ColorMatrix cm = new ColorMatrix(new float[][]
+                    {
+                        new float[] {1, 0, 0, 0, 0},
+                        new float[] {0, 1, 0, 0, 0},
+                        new float[] {0, 0, 1, 0, 0},
+                        new float[] {0, 0, 0, 0.3f, 0},
+                        new float[] {0, 0, 0, 0, 1},
+                    });
+                    imageAttributes.SetColorMatrix(cm);
+                    g.DrawImage(bm2, fullRect, 0, 0, 16, 16, GraphicsUnit.Pixel, imageAttributes);
+                }
+                int i0 = 0;
+                for (int i = 0x20; i < 0x40; i++)
+                {
+                    colFull[i] = bm.GetPixel(i0 % 0x10, i0 / 0x10);
+                    i0++;
+                }
+            }
+            return colFull;
+        }
+
+        public static Color[] GetTheaterPaletteFull(Theater theater)
+        {
+            Color[] colFull = GetTheaterPalette(theater);
             House[] houses = Enum.GetValues(typeof (House)).Cast<House>().ToArray();
             Array.Sort(houses);
-            Int32 curIndex = 0x20;
+            Int32 curIndex = 0x40;
             foreach (House house in houses)
             {
-                Color[] housePal = this.GetHousePalette(house);
+                Color[] housePal = GetHousePalette(house);
                 Array.Copy(housePal, 0, colFull, curIndex, 2);
                 curIndex += 2;
             }
@@ -622,7 +664,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Byte[] ConvertMap(Byte[] mapData, Dictionary<Int32, CnCMapCell> mapping, Boolean toPC, out List<CnCMapCell> errorcells)
         {
-            CnCMap map = new CnCMap(mapData);
+            CnCMap map = new CnCMap(mapData, false);
             map = MapConversion.ConvertMap(map, mapping, null, null, !toPC, out errorcells);
             return map.GetAsBytes();
         }

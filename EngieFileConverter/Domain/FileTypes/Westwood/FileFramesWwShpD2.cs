@@ -267,7 +267,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             PerformPreliminaryChecks(fileToSave);
             Dune2ShpType d2File = fileToSave as Dune2ShpType;
-            Boolean isdune100shape = d2File != null && !d2File.IsVersion107;
+            Boolean isDunev100 = d2File != null && !d2File.IsVersion107;
             Boolean hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
             String remapped = hasRemap ? GeneralUtils.GroupNumbers(d2File.RemappedIndices) : String.Empty;
             Boolean hasUncompressed = d2File != null && d2File.UncompressedIndices != null && d2File.UncompressedIndices.Length > 0;
@@ -275,7 +275,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             return new Option[]
             {
-                new Option("VER", OptionInputType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape ? "0" : "1"),
+                new Option("VER", OptionInputType.ChoicesList, "Game version", "v1.00,v1.07", isDunev100 ? "0" : "1"),
                 // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
                 new Option("RMT", OptionInputType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
                 new Option("RMA", OptionInputType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new EnableFilter("RMT", true, "1")),
@@ -447,10 +447,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 frmDataSize = frameHeaderLen + imageData.Length;
                 ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x00, (UInt16)flags);
                 frameHeader[0x02] = (Byte) frmHeight;
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeader, 0x03, frmWidth);
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x03, (UInt16)frmWidth);
                 frameHeader[0x05] = (Byte) frmHeight;
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeader, 0x06, frmDataSize);
-                ArrayUtils.WriteInt16ToByteArrayLe(frameHeader, 0x08, zeroDataLen);
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x06, (UInt16)frmDataSize);
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x08, (UInt16)zeroDataLen);
                 if (remapThis)
                 {
                     Int32 writeOffs = 0x0A;
@@ -470,7 +470,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (isVersion107)
                 actualLen += 2;
             Byte[] finalData = new Byte[actualLen];
-            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0, nrOfFrames);
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0, (UInt16)nrOfFrames);
             Int32 headerOffset = 2;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
@@ -500,7 +500,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];

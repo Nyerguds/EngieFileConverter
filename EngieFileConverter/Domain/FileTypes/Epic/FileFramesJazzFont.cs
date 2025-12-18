@@ -59,8 +59,10 @@ namespace EngieFileConverter.Domain.FileTypes
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             if (fileData.Length < 2)
-                throw new FileTypeLoadException(ERR_NOHEADER);
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             UInt32 symbols = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+            if (symbols == 0)
+                throw new FileTypeLoadException(ERR_NO_FRAMES);
             Int32 offset = 2;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             this.m_FramesList = new SupportedFileType[symbols];
@@ -68,7 +70,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 dataOffset = offset;
                 if (offset + 8 > fileData.Length)
-                    throw new FileTypeLoadException(ERR_SIZETOOSMALL);
+                    throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
                 Int32 stride = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
                 Int32 width = stride * 4;
                 Int32 height = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true);
@@ -85,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] symbol = new Byte[size * 4];
                 for (Int32 j = 0; j < 4; ++j)
                 {
-                    for (Int32 k = 0; k < size; k++)
+                    for (Int32 k = 0; k < size; ++k)
                         symbol[k * 4 + j] = fileData[offset + k];
                     offset += size;
                 }
@@ -154,7 +156,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] symbolData = framesData[i];
                 for (Int32 j = 0; j < 4; ++j)
                 {
-                    for (Int32 k = 0; k < size; k++)
+                    for (Int32 k = 0; k < size; ++k)
                         fileData[offset + k] = symbolData[(k << 2) + j];
                     offset += size;
                 }
@@ -170,7 +172,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];

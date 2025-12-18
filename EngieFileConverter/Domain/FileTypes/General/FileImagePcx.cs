@@ -66,13 +66,13 @@ namespace EngieFileConverter.Domain.FileTypes
         public void LoadFromFileData(Byte[] fileData, String filename)
         {
             if (fileData.Length < 128)
-                throw new FileTypeLoadException("Not a PCX file!");
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             if (fileData[0] != 10) // ID byte
-                throw new FileTypeLoadException("Not a PCX file!");
+                throw new FileTypeLoadException(ERR_BAD_HEADER);
             Byte version = fileData[1];
             Byte encoding = fileData[2];
             if (encoding > 1)
-                throw new FileTypeLoadException("Not a PCX file!");
+                throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             Boolean reservedByteFree = fileData[64] == 0; // reserved byte
             Boolean reservedSpaceFree = true;
             for (Int32 i = 74; i < 128; ++i)
@@ -91,7 +91,7 @@ namespace EngieFileConverter.Domain.FileTypes
             UInt16 windowXmax = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
             UInt16 windowYmax = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 10);
             if (windowXmax < windowXmin || windowYmax < windowYmin)
-                throw new FileTypeLoadException("Bad dimensions in PCX file!");
+                throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             //UInt16 hDpi = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 12); // Horizontal Resolution of image in DPI
             //UInt16 vDpi = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 14); // Vertical Resolution of image in DPI
             Byte numPlanes = fileData[65]; // Number of color planes
@@ -271,7 +271,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Unsupported for now.");
             if (this.m_BitsPerPixel == 8 && usesHeaderPal)
             {
-                extraInfo.Append("\nNo palette found for indexed image with more than 16 colors! Reverting to 16-colour palette.");
+                extraInfo.Append("\nNo palette found for indexed image with more than 16 colors! Reverting to 16-color palette.");
                 Color[] palette = new Color[256];
                 for (Int32 i = 0; i < 0x100; i+=0x10)
                     Array.Copy(m_Palette, 0, palette, i, 0x10);
@@ -298,14 +298,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean cgaColorBurstEnable;
             if (paletteInfo != 0) // PB 4.0
             {
-                // Evaluate values of RGB colour slot #1 (skip background colour info)
+                // Evaluate values of RGB color slot #1 (skip background color info)
                 Byte greenValue1 = fileData[index + 4];
                 Byte blueValue1 = fileData[index + 5];
                 // Pick green palette (0) if G > B
                 cgaPaletteValue = greenValue1 <= blueValue1;
                 // Pick bright palette if max(G,B) > 200
                 cgaIntensityValue = Math.Max(greenValue1, blueValue1) > 200;
-                // Check for palette 2 by testing if the first check returned palette 1, and in the third colour entry, red is smaller or equal to blue.
+                // Check for palette 2 by testing if the first check returned palette 1, and in the third color entry, red is smaller or equal to blue.
                 // This should default to true in a nulled palette, and be equal on palette 1 because it is AA00AA.
                 // Not sure if this is really filled in, but it would make sense.
                 Byte redValue2 = fileData[index + 6];

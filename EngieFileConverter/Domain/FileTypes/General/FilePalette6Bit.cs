@@ -27,14 +27,6 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public FilePalette6Bit() { }
 
-        public FilePalette6Bit(Color[] contents)
-        {
-            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            this.m_Palette = new Color[0x100];
-            Array.Copy(contents, m_Palette, Math.Min(contents.Length, 0x100));
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
-        }
-
         public override void LoadFile(Byte[] fileData)
         {
             if (fileData.Length != 768)
@@ -43,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color[] palette;
             try
             {
-                palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData);
+                palette = ColorUtils.ReadSixBitPalette(fileData);
             }
             catch (ArgumentException ex)
             {
@@ -70,8 +62,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, true);
-            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(cols);
-            return ColorUtils.GetSixBitPaletteData(sbcp);
+            return ColorUtils.GetSixBitPaletteData(cols);
         }
 
     }

@@ -16,9 +16,9 @@ namespace Nyerguds.FileData.Dynamix
             Int32 len = vgaData.Length;
             Byte[] fullData = new Byte[len * 2];
             // ENRICHED 4-BIT IMAGE LOGIC
-            // Basic principle: The data in the VGA chunk is already perfectly viewable as 4-bit image. The colour palettes
-            // are designed so each block of 16 colours consists of different tints of the same colour. The 16-colour palette
-            // for the VGA chunk alone can be constructed by taking a palette slice where each colour is 16 entries apart.
+            // Basic principle: The data in the VGA chunk is already perfectly viewable as 4-bit image. The color palettes
+            // are designed so each block of 16 colors consists of different tints of the same color. The 16-color palette
+            // for the VGA chunk alone can be constructed by taking a palette slice where each color is 16 entries apart.
 
             // This VGA data [AB] gets "ennobled" to 8-bit by adding detail data [ab] from the BIN chunk, to get bytes [Aa Bb].
             for (Int32 i = 0; i < len; ++i)
@@ -262,7 +262,7 @@ namespace Nyerguds.FileData.Dynamix
                         inPtr += skippedBytes;
                         if (outPtr + arg > decompressedSize)
                             throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "copy command attempted to write outside output buffer."), "buffer");
-                        for (Int32 i = 0; i < arg && outPtr < decompressedSize; i++)
+                        for (Int32 i = 0; i < arg && outPtr < decompressedSize; ++i)
                         {
                             Byte copyByte = (Byte) (toWrite[i] + addValue);
                             if (copyByte > 0x0F && bpp == 4)
@@ -314,7 +314,7 @@ namespace Nyerguds.FileData.Dynamix
             Byte maxVal = 0;
             Byte minVal = 0xFF;
             Boolean allEmpty = true;
-            for (Int32 i = 0; i < buffer8Bit.Length; i++)
+            for (Int32 i = 0; i < buffer8Bit.Length; ++i)
             {
                 Byte curVal = buffer8Bit[i];
                 if (curVal == 0)
@@ -379,7 +379,7 @@ namespace Nyerguds.FileData.Dynamix
                             lookPtr = GetNonRepeatingRange(buffer8Bit, startPtr, curVal, nextLineOffs, maxNonRepeat);
                         Int32 length = lookPtr - startPtr;
                         Byte[] toCopy = new Byte[length];
-                        for (Int32 i = 0; i < length; i++)
+                        for (Int32 i = 0; i < length; ++i)
                             toCopy[i] = (Byte) (buffer8Bit[startPtr + i] - minVal);
                         Int32 stride = length;
                         toCopy = ImageUtils.ConvertFrom8Bit(toCopy, length, 1, 4, true, ref stride);
@@ -477,7 +477,7 @@ namespace Nyerguds.FileData.Dynamix
                     outbuffer[outPtr++] = (Byte) (toSubtract & 0x3F);
                     if (toSubtract > 0x3F)
                         outbuffer[outPtr++] = (Byte) ((toSubtract >> 6) & 0x3F);
-                    for (Int32 i = 1; i < linesToAdd; i++)
+                    for (Int32 i = 1; i < linesToAdd; ++i)
                         outbuffer[outPtr++] = 0x00;
                     nextLineOffs += width * linesToAdd;
                 }

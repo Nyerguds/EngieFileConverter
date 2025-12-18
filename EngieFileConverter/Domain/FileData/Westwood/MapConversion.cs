@@ -11,7 +11,8 @@ namespace Nyerguds.FileData.Westwood
 {
     public static class MapConversion
     {
-        public static readonly Dictionary<Int32, TileInfo> TILEINFO = ReadTileInfo();
+        public static readonly Dictionary<Int32, TileInfo> TILEINFO_TD = ReadTileInfoTd();
+        public static readonly Dictionary<Int32, TileInfo> TILEINFO_RA = ReadTileInfoRa();
         public static readonly Dictionary<String, StructInfo> STRUCTUREINFO = ReadStructInfo(EngieFileConverter.Properties.Resources.structs, "structs.ini", "Structures");
         public static readonly Dictionary<String, StructInfo> TERRAININFO = ReadStructInfo(EngieFileConverter.Properties.Resources.terrain, "terrain.ini", "Terrain");
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", EngieFileConverter.Properties.Resources.th_desert);
@@ -19,7 +20,7 @@ namespace Nyerguds.FileData.Westwood
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
         public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
 
-        private static Dictionary<Int32, TileInfo> ReadTileInfo()
+        private static Dictionary<Int32, TileInfo> ReadTileInfoTd()
         {
             String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
             String tilesetsData2;
@@ -27,15 +28,34 @@ namespace Nyerguds.FileData.Westwood
                 tilesetsData2 = File.ReadAllText(file);
             else
                 tilesetsData2 = EngieFileConverter.Properties.Resources.tilesets2;
+            return ReadTileInfo(tilesetsData2, 0xFF);
+        }
 
-            IniFile tilesetsFile2 = new IniFile(null, tilesetsData2, true, IniFile.ENCODING_DOS_US, true);
+        private static Dictionary<Int32, TileInfo> ReadTileInfoRa()
+        {
+            String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2ra.ini");
+            String tilesetsData2;
+            if (File.Exists(file))
+                tilesetsData2 = File.ReadAllText(file);
+            else
+                tilesetsData2 = EngieFileConverter.Properties.Resources.tilesets2ra;
+            return ReadTileInfo(tilesetsData2, 0xFFFF);
+        }
+
+        private static Dictionary<Int32, TileInfo> ReadTileInfo(string tilesFile, int maxId)
+        {
+            IniFile tilesetsFile2 = new IniFile(null, tilesFile, true, IniFile.ENCODING_DOS_US, true);
             Dictionary<Int32, TileInfo> tileInfo2 = new Dictionary<Int32, TileInfo>();
             //tilesets2.ini - new loading code
-            for (Int32 currentId = 0; currentId < 0xFF; ++currentId)
+            for (Int32 currentId = 0; currentId < maxId; ++currentId)
             {
                 String sectionName = tilesetsFile2.GetStringValue("TileSets", currentId.ToString(), null);
                 if (sectionName == null)
                     continue;
+                if (sectionName.StartsWith("WC"))
+                {
+
+                }
                 TileInfo info = new TileInfo();
                 info.TileName = sectionName;
                 Int32 width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
@@ -69,6 +89,9 @@ namespace Nyerguds.FileData.Westwood
                         case 'W':
                             typedCells[i] = TerrainTypeEnh.Water;
                             break;
+                        case 'V':
+                            typedCells[i] = TerrainTypeEnh.River;
+                            break;
                         case 'I':
                             typedCells[i] = TerrainTypeEnh.Rock;
                             break;
@@ -78,11 +101,14 @@ namespace Nyerguds.FileData.Westwood
                         case 'R':
                             typedCells[i] = TerrainTypeEnh.Road;
                             break;
+                        case 'F':
+                            typedCells[i] = TerrainTypeEnh.CliffFace;
+                            break;
                         case 'P':
                             typedCells[i] = TerrainTypeEnh.CliffPlateau;
                             break;
-                        case 'F':
-                            typedCells[i] = TerrainTypeEnh.CliffFace;
+                        case 'L':
+                            typedCells[i] = TerrainTypeEnh.CliffPlateauwater;
                             break;
                         case 'M':
                             typedCells[i] = TerrainTypeEnh.Smudge;
@@ -139,7 +165,7 @@ namespace Nyerguds.FileData.Westwood
                     occupy = String.Empty;
                 
                 Boolean[] occupyList = new Boolean[occupy.Length];
-                for (Int32 i = 0; i < occupy.Length; i++)
+                for (Int32 i = 0; i < occupy.Length; ++i)
                 {
                     Char cell = occupy[i];
                     occupyList[i] = isAlphabetChar(cell);
@@ -231,18 +257,18 @@ namespace Nyerguds.FileData.Westwood
                 {
                     if (ms.Read(buffer, 0, 4) == 4)
                     {
-                        CnCMapCell N64cell = new CnCMapCell(buffer[0], buffer[1]);
-                        CnCMapCell PCcell = new CnCMapCell(buffer[2], buffer[3]);
-                        if (n64MapValues.ContainsKey(N64cell.Value))
+                        CnCMapCell N64cell = new CnCMapCell(buffer[0], buffer[1], false);
+                        CnCMapCell PCcell = new CnCMapCell(buffer[2], buffer[3], false);
+                        if (n64MapValues.ContainsKey(N64cell.ValueTD))
                         {
                             n64MapValues.Clear();
                             throw new ApplicationException("File contains duplicate entries!");
                         }
-                        if (reverseValues.ContainsKey(PCcell.Value))
-                            errorMessages.Add(String.Format("Value {0} - {1} - PC value {1} already mapped on N64 value {2}", N64cell.ToString(), PCcell.ToString(), reverseValues[PCcell.Value].ToString()));
+                        if (reverseValues.ContainsKey(PCcell.ValueTD))
+                            errorMessages.Add(String.Format("Value {0} - {1} - PC value {1} already mapped on N64 value {2}", N64cell.ToString(), PCcell.ToString(), reverseValues[PCcell.ValueTD].ToString()));
                         else
-                            reverseValues.Add(PCcell.Value, N64cell);
-                        n64MapValues.Add(N64cell.Value, PCcell);
+                            reverseValues.Add(PCcell.ValueTD, N64cell);
+                        n64MapValues.Add(N64cell.ValueTD, PCcell);
                     }
                 }
             }
@@ -262,10 +288,10 @@ namespace Nyerguds.FileData.Westwood
                     Int32 key = keys[i];
                     CnCMapCell n64Cell = new CnCMapCell(key);
                     CnCMapCell pcCell = mapping[key];
-                    ms.WriteByte(n64Cell.HighByte);
-                    ms.WriteByte(n64Cell.LowByte);
-                    ms.WriteByte(pcCell.HighByte);
-                    ms.WriteByte(pcCell.LowByte);
+                    ms.WriteByte((byte)n64Cell.TemplateType);
+                    ms.WriteByte(n64Cell.Icon);
+                    ms.WriteByte((byte)pcCell.TemplateType);
+                    ms.WriteByte(pcCell.Icon);
                 }
                 ms.Flush();
                 return ms.ToArray();
@@ -276,7 +302,7 @@ namespace Nyerguds.FileData.Westwood
         {
             Byte highByte = defaultHigh.GetValueOrDefault(0xFF);
             Byte lowByte = defaultLow.GetValueOrDefault((Byte)(toN64 ? 0xFF : 0x00));
-            CnCMap newmap = new CnCMap(map.GetAsBytes());
+            CnCMap newmap = new CnCMap(map.GetAsBytes(), false);
             if (toN64)
             {
                 CleanUpMapClearTerrain(newmap);
@@ -284,9 +310,9 @@ namespace Nyerguds.FileData.Westwood
                 RemoveSnow(newmap);
             }
             errorcells = new List<CnCMapCell>();
-            for (Int32 i = 0; i < CnCMap.LENGTH; ++i)
+            for (Int32 i = 0; i < CnCMap.LENGTH_TD; ++i)
             {
-                Int32 cellvalue = newmap[i].Value;
+                Int32 cellvalue = newmap[i].ValueTD;
                 if ((!toN64 && cellvalue == 0xFFFF) || (toN64 && cellvalue == 0xFF00))
                 {
                     newmap[i] = new CnCMapCell(toN64 ? 0xFFFF : 0xFF00);
@@ -298,7 +324,7 @@ namespace Nyerguds.FileData.Westwood
                 else
                 {
                     errorcells.Add(new CnCMapCell(cellvalue));
-                    newmap[i] = new CnCMapCell(highByte, lowByte);
+                    newmap[i] = new CnCMapCell(highByte, lowByte, false);
                 }
             }
             return newmap;
@@ -311,15 +337,15 @@ namespace Nyerguds.FileData.Westwood
             foreach (Int32 mapval in mapping.Keys)
             {
                 CnCMapCell cell = mapping[mapval];
-                if (!newmapping.ContainsKey(cell.Value))
-                    newmapping.Add(cell.Value, new CnCMapCell[] { new CnCMapCell(mapval) });
+                if (!newmapping.ContainsKey(cell.ValueTD))
+                    newmapping.Add(cell.ValueTD, new CnCMapCell[] { new CnCMapCell(mapval) });
                 else
                 {
-                    CnCMapCell[] orig = newmapping[cell.Value];
+                    CnCMapCell[] orig = newmapping[cell.ValueTD];
                     CnCMapCell[] arr = new CnCMapCell[orig.Length + 1];
                     Array.Copy(orig, arr, orig.Length);
                     arr[orig.Length] = new CnCMapCell(mapval);
-                    newmapping[cell.Value] = arr;
+                    newmapping[cell.ValueTD] = arr;
                     if (!errorcells.Contains(cell))
                         errorcells.Add(cell);
                 }
@@ -332,20 +358,21 @@ namespace Nyerguds.FileData.Westwood
         /// </summary>
         /// <param name="mapData">Map data.</param>
         /// <returns>The map data simplified to terrain types.</returns>
-        public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData)
+        public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData, Dictionary<Int32, TileInfo> tileInfo)
         {
-            TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[64 * 64];
+            int emptyType = mapData.IsRaType ? 0xFFFF : 0xFF;
+            TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[mapData.Cells.Length];
             for (Int32 i = 0; i < mapData.Cells.Length; ++i)
             {
                 CnCMapCell cell = mapData.Cells[i];
                 TerrainTypeEnh terrain = TerrainTypeEnh.Clear;
-                if (cell.HighByte != 0xFF)
+                if (cell.TemplateType != emptyType)
                 {
                     TileInfo info;
-                    if (TILEINFO.TryGetValue(cell.HighByte, out info))
+                    if (tileInfo.TryGetValue(cell.TemplateType, out info))
                     {
-                        if (info.TypedCells.Length > cell.LowByte)
-                            terrain = info.TypedCells[cell.LowByte];
+                        if (info.TypedCells.Length > cell.Icon)
+                            terrain = info.TypedCells[cell.Icon];
                         else
                             terrain = info.PrimaryHeightType;
                     }
@@ -363,14 +390,14 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="map">The map to fix.</param>
         public static void CleanUpMapClearTerrain(CnCMap map)
         {
-            for (Int32 i = 0; i < CnCMap.LENGTH; ++i)
+            for (Int32 i = 0; i < CnCMap.LENGTH_TD; ++i)
             {
                 CnCMapCell cell = map.Cells[i];
-                if (cell.HighByte == 0 // XCC
-                    || (cell.HighByte == 0xFF && cell.LowByte == 0xFF)) // cncmap
+                if (cell.TemplateType == 0 // XCC
+                    || (cell.TemplateType == 0xFF && cell.Icon == 0xFF)) // cncmap
                 {
-                    cell.HighByte = 0xFF;
-                    cell.LowByte = 0x00;
+                    cell.TemplateType = 0xFF;
+                    cell.Icon = 0x00;
                 }
             }
         }
@@ -381,18 +408,18 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="map">Removes snow from a map, since the N64 version can't handle it.</param>
         public static void RemoveSnow(CnCMap map)
         {
-            for (Int32 i = 0; i < CnCMap.LENGTH; ++i)
+            for (Int32 i = 0; i < CnCMap.LENGTH_TD; ++i)
             {
                 CnCMapCell cell = map.Cells[i];
                 TileInfo tileInfo;
-                if (!TILEINFO.TryGetValue(cell.HighByte, out tileInfo))
+                if (!TILEINFO_TD.TryGetValue(cell.TemplateType, out tileInfo))
                     continue;
-                if (tileInfo.TypedCells.Length <= cell.LowByte)
+                if (tileInfo.TypedCells.Length <= cell.Icon)
                     continue;
-                if (tileInfo.TypedCells[cell.LowByte] != TerrainTypeEnh.Snow)
+                if (tileInfo.TypedCells[cell.Icon] != TerrainTypeEnh.Snow)
                     continue;
-                cell.HighByte = 0xFF;
-                cell.LowByte = 0x00;
+                cell.TemplateType = 0xFF;
+                cell.Icon = 0x00;
             }
         }
     }

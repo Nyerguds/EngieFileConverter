@@ -56,7 +56,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Generates a table of best in-between values for all possible colour pairs on a 256-colour palette.
+        /// Generates a table of best in-between values for all possible color pairs on a 256-color palette.
         /// </summary>
         /// <param name="colorPalette"></param>
         /// <param name="exclIndSrc"></param>

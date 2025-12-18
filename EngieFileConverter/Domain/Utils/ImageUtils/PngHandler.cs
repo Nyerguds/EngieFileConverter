@@ -9,13 +9,13 @@ namespace Nyerguds.ImageManipulation
     public static class PngHandler
     {
         /// <summary>An array containing the identifying bytes required at the start of a PNG image file.</summary>
-        private static Byte[] PNG_IDENTIFIER = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        private static readonly Byte[] PNG_IDENTIFIER = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
         /// <summary>Returns an array containing the identifying bytes required at the start of a PNG image file.</summary>
         /// <returns>An array containing the identifying bytes required at the start of a PNG image file.</returns>
         public static Byte[] GetPngIdentifier() { return ArrayUtils.CloneArray(PNG_IDENTIFIER); }
 
         /// <summary>The contents of the IDAT chunk for a 1x1 8-bit indexed image with pixel value 0.</summary>
-        private static Byte[] PNG_BLANK = { 0x08, 0xD7, 0x63, 0x60, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01 };
+        private static readonly Byte[] PNG_BLANK = { 0x08, 0xD7, 0x63, 0x60, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01 };
         /// <summary>
         /// Returns the contents of the IDAT chunk for a 1x1 8-bit indexed image with pixel value 0.
         /// Used as dummy for generating custom-sized palettes.
@@ -114,7 +114,7 @@ namespace Nyerguds.ImageManipulation
             Array.Copy(chunkData, 0, target, offset, curLength);
             offset += curLength;
             UInt32 crcval = Crc32.ComputeChecksum(target, nameOffset, chunkData.Length + 4);
-            ArrayUtils.WriteInt32ToByteArrayBe(target, offset, crcval);
+            ArrayUtils.WriteInt32ToByteArrayBe(target, offset, (Int32)crcval);
             offset += 4;
             return offset;
         }

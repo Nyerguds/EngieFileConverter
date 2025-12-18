@@ -101,9 +101,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     UInt32 imageLength = dirEntryImageLength;
                     if (imageOffset + imageLength > fileData.Length)
                         throw new HeaderParseException("Bad header data: offset and length for image " + i + " do not fit in file.");
-                    Byte[] frameData = new Byte[imageLength];
-                    Array.Copy(fileData, imageOffset, frameData, 0, imageLength);
-                    String type = MimeTypeDetector.GetMimeType(frameData)[0];
+                    String type = MimeTypeDetector.GetMimeType(fileData, (Int32)imageOffset)[0];
                     Bitmap bmp;
                     Int32 frWidth = dirEntryWidth == 0 ? 0x100 : dirEntryWidth;
                     Int32 frHeight = dirEntryHeight == 0 ? 0x100 : dirEntryHeight;
@@ -111,12 +109,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (frWidth == 0 || frHeight == 0)
                         throw new HeaderParseException("Icon dimensions cannot be zero.");
                     if ("png".Equals(type))
-                        bmp = this.GetBmp<FileImagePng>(frameData);
+                        bmp = this.GetBmp<FileImagePng>(fileData, imageOffset, imageLength);
                     else if ("bmp".Equals(type))
-                        bmp = this.GetBmp<FileImageBmp>(frameData);
+                        bmp = this.GetBmp<FileImageBmp>(fileData, imageOffset, imageLength);
                     else
                     {
-                        bmp = DibHandler.ImageFromDib(frameData, 0, 0, true, false, out originalPixelFormat);
+                        bmp = DibHandler.ImageFromDib(fileData, (Int32)imageOffset, (Int32)imageLength, 0, true, false, out originalPixelFormat);
                         if (bmp != null)
                             type = "dib";
                     }
@@ -186,8 +184,11 @@ namespace EngieFileConverter.Domain.FileTypes
 
         }
 
-        private Bitmap GetBmp<T>(Byte[] frameData) where T : FileImage, new()
+        private Bitmap GetBmp<T>(Byte[] data, UInt32 offset, UInt32 length) where T : FileImage, new()
         {
+            Byte[] frameData = new Byte[length];
+            Array.Copy(data, offset, frameData, 0, length);
+
             using (T frameImg = new T())
             {
                 frameImg.LoadFile(frameData);
@@ -225,7 +226,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32[] sizes = GeneralUtils.GetRangedNumbers(includedSizesStr);
             if (sizes.Length == 0)
                 throw new ArgumentException("The icon needs to contain at least one image.", "fileToSave");
-            for (Int32 i = 0; i < sizes.Length; i++)
+            for (Int32 i = 0; i < sizes.Length; ++i)
             {
                 if (sizes[i] == 0)
                     throw new ArgumentException("0 is not a valid icon size.", "saveOptions");
@@ -369,13 +370,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 height = frameData[23] | frameData[22] << 8 | frameData[21] << 16 | frameData[20] << 24;
                     if (width > 256 || height > 256)
                         throw new ArgumentException("Image " + i + "is too large!", "pngImages");
-                    // Get the colour depth to save in the icon info. This needs to be
+                    // Get the color depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.
                     Int32 bpp;
                     Byte colDepth = frameData[24];
                     Byte colType = frameData[25];
-                    // I think .Net saving only supports colour types 2, 3 and 6 anyway.
+                    // I think .Net saving only supports color types 2, 3 and 6 anyway.
                     switch (colType)
                     {
                         case 2: bpp = 3 * colDepth; break; // RGB

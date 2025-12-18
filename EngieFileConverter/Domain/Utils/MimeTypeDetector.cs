@@ -12,9 +12,9 @@ namespace Nyerguds.Util
                 {"bmp", new Byte[] { 66, 77 }},
                 {"doc", new Byte[] { 208, 207, 17, 224, 161, 177, 26, 225 }},
                 {"exe", new Byte[] { 77, 90 }},
-                {"gif", new Byte[] { 71, 73, 70, 56 }},
-                {"ico", new Byte[] { 0, 0, 1, 0 }},
-                {"jpg", new Byte[] { 255, 216, 255 }},
+                {"gif", new Byte[] { 0x47, 0x49, 0x46, 0x38 }},
+                {"ico", new Byte[] { 0x00, 0x00, 0x01, 0x00 }},
+                {"jpg", new Byte[] { 0xFF, 0xD8, 0xFF }},
                 {"mp3", new Byte[] { 255, 251, 48 }},
                 {"pdf", new Byte[] { 37, 80, 68, 70, 45, 49, 46 }},
                 {"png", new Byte[] { 137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82 }},
@@ -22,9 +22,9 @@ namespace Nyerguds.Util
                 {"swf", new Byte[] { 70, 87, 83 }},
                 {"tiff", new Byte[] { 73, 73, 42, 0 }},
                 {"torrent", new Byte[] { 100, 56, 58, 97, 110, 110, 111, 117, 110, 99, 101 }},
-                {"ttf", new Byte[] { 0, 1, 0, 0, 0 }},
+                {"ttf", new Byte[] { 0x00, 0x01, 0x00, 0x00, 0x00 }},
                 {"zip", new Byte[] { 80, 75, 3, 4 }},
-                {"pcx", new Byte[] { 10 }},
+                {"pcx", new Byte[] { 0x0A }},
             };
 
         private static Dictionary<String, String> MIME_TYPES = new Dictionary<String, String>()
@@ -68,16 +68,24 @@ namespace Nyerguds.Util
                 do actualRead += fs.Read(file, actualRead, BYTESTOREAD - actualRead);
                 while (actualRead != BYTESTOREAD && fs.Position < fs.Length);
             }
-            return GetMimeType(file);
+            return GetMimeType(file, 0);
         }
 
-        public static String[] GetMimeType(Byte[] input)
+        public static Boolean MatchesMimeType(Byte[] input, String mimeType)
+        {
+            Byte[] identifier;
+            if (!KNOWN_TYPES.TryGetValue(mimeType, out identifier))
+                throw new ArgumentException("Unknown type.", "mimeType");
+            return (input.Length >= identifier.Length && !input.Take(identifier.Length).SequenceEqual(identifier));
+        }
+
+        public static String[] GetMimeType(Byte[] input, int readOffset)
         {
             String type = null;
             foreach (KeyValuePair<String, Byte[]> pair in KNOWN_TYPES)
             {
                 Byte[] value = pair.Value;
-                if (!input.Take(value.Length).SequenceEqual(value))
+                if (!input.Skip(readOffset).Take(value.Length).SequenceEqual(value))
                     continue;
                 type = pair.Key;
                 break;

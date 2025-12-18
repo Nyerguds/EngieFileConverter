@@ -15,11 +15,27 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String LongTypeName { get { return "Portable Network Graphics"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "png" }; } }
-
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return new String[] {this.LongTypeName }; } }
-
         protected override String MimeType { get { return "png"; } }
+        
+        public override void LoadFile(Byte[] fileData)
+        {
+            this.LoadFromFileData(fileData);
+        }
+
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            this.LoadFromFileData(fileData);
+            this.SetFileNames(filename);
+        }
+
+        public void LoadFromFileData(Byte[] fileData)
+        {
+            if (!PngHandler.IsPng(fileData))
+                throw new FileTypeLoadException(ERR_BAD_HEADER);
+            base.LoadFile(fileData);
+        }
 
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
@@ -39,7 +55,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (hasPaletteTransparency)
                 opts.Add(new Option("NTP", OptionInputType.Boolean, "Save indexed graphics without transparency (advised for editing)", mainTypeHasMask || parentTypeHasMask ? "1" : "0"));
             if (fileToSave.GetBitmap() != null && fileToSave.GetBitmap().PixelFormat == PixelFormat.Format4bppIndexed && fileToSave.GetColors().Length <= 4)
-                opts.Add(new Option("EXP", OptionInputType.Boolean, "Expand palette of 4-bit image to 16 colours, to ensure re-saved versions do not get reduced to 2-bit png, so they can still be opened in Engie File Converter (advised for editing)", "1"));
+                opts.Add(new Option("EXP", OptionInputType.Boolean, "Expand palette of 4-bit image to 16 colors, to ensure re-saved versions do not get reduced to 2-bit png, so they can still be opened in Engie File Converter (advised for editing)", "1"));
             return opts.ToArray();
         }
 

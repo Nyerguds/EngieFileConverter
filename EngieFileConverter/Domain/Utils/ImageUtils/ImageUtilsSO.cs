@@ -95,7 +95,7 @@ namespace Nyerguds.ImageManipulation
             // Not an alpha-capable color format. Note that GDI+ indexed images are alpha-capable on the palette.
             if (((ImageFlags) bitmap.Flags & ImageFlags.HasAlpha) == 0)
                 return false;
-            // Indexed format, and no alpha colours in the images palette: immediate pass.
+            // Indexed format, and no alpha colors in the images palette: immediate pass.
             if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.A == 255))
                 return false;
             // Get the byte data 'as 32-bit ARGB'. This offers a converted version of the image data without modifying the original image.
@@ -120,7 +120,7 @@ namespace Nyerguds.ImageManipulation
         /// <returns>True if all visible pixels in the image are greyscale.</returns>
         public static Boolean IsGrayscale(Bitmap bitmap)
         {
-            // Indexed format, and no non-gray colours in the images palette: immediate pass.
+            // Indexed format, and no non-gray colors in the images palette: immediate pass.
             if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.R == c.G && c.R == c.B))
                 return true;
             Int32 stride;
@@ -138,7 +138,7 @@ namespace Nyerguds.ImageManipulation
                     Byte g = data[curOffs + 1];
                     Byte r = data[curOffs + 2];
                     Byte a = data[curOffs + 3];
-                    // Increase offset to next colour
+                    // Increase offset to next color
                     curOffs += 4;
                     if (a == 0)
                         continue;
@@ -328,7 +328,7 @@ namespace Nyerguds.ImageManipulation
                 Int32 resPtr = y * width;
                 for (Int32 x = 0; x < width; ++x)
                 {
-                    // Get correct colour components from sliding window
+                    // Get correct color components from sliding window
                     Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1);
                     Boolean blueRow = y % 2 == (blueRowFirst ? 0 : 1);
                     // BGR
@@ -349,7 +349,7 @@ namespace Nyerguds.ImageManipulation
             }
             Bitmap resultImg = BuildImage(result, width, height, width, PixelFormat.Format8bppIndexed);
             ColorPalette palette = resultImg.Palette;
-            for (Int32 i = 0; i < 256; i++)
+            for (Int32 i = 0; i < 256; ++i)
                 palette.Entries[i] = Color.FromArgb(i, i, i);
             return resultImg;
         }
@@ -379,7 +379,7 @@ namespace Nyerguds.ImageManipulation
                 Int32 resPtr = y * actualStride;
                 for (Int32 x = 0; x < actualWidth; ++x)
                 {
-                    // Get correct colour components from sliding window
+                    // Get correct color components from sliding window
                     Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1);
                     Boolean blueRow = y % 2 == (blueRowFirst ? 0 : 1);
                     Byte cornerCol1 = isGreen ? arr[curPtr + 1] : arr[curPtr];
@@ -443,8 +443,8 @@ namespace Nyerguds.ImageManipulation
                 Int32 resPtr = y * actualStride;
                 for (Int32 x = 0; x < width; ++x)
                 {
-                    // Get correct colour components from sliding window
-                    Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1); // all corner colours and center are green.
+                    // Get correct color components from sliding window
+                    Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1); // all corner colors and center are green.
                     Boolean isBlueRow = y % 2 == (blueRowFirst ? 0 : 1);
                     Byte valGreen;
                     Byte valRed;
@@ -509,8 +509,8 @@ namespace Nyerguds.ImageManipulation
                 Int32 resPtr = y * actualStride;
                 for (Int32 x = 0; x < width; ++x)
                 {
-                    // Get correct colour components from sliding window
-                    Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1); // all corner colours and center are green.
+                    // Get correct color components from sliding window
+                    Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1); // all corner colors and center are green.
                     Boolean isBlueRow = y % 2 == (blueRowFirst ? 0 : 1);
                     Byte valGreen;
                     Byte valRed;
@@ -593,7 +593,7 @@ namespace Nyerguds.ImageManipulation
                 Int32 resPtr = y * newStride;
                 for (Int32 x = 0; x < processWidth; ++x)
                 {
-                    // Get correct colour components from sliding window
+                    // Get correct color components from sliding window
                     Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1);
                     Boolean blueRow = y % 2 == (blueRowFirst ? 0 : 1);
                     Byte cornerCol1 = isGreen ? arr[curPtr + 1] : arr[curPtr];
@@ -953,7 +953,7 @@ namespace Nyerguds.ImageManipulation
                         curFrame.Save(pngMs, ImageFormat.Png);
                         frameData = pngMs.ToArray();
                     }
-                    // Get the colour depth to save in the icon info. This needs to be
+                    // Get the color depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.
                     Byte colDepth = frameData[24];
@@ -1116,10 +1116,10 @@ namespace Nyerguds.ImageManipulation
             Byte[] imageBytesBlack = new Byte[shapeImageBytes.Length];
             // Line start offset is set to 3 to immediately get the alpha component.
             Int32 lineOffsImg = 3;
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 curOffs = lineOffsImg;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // copy either alpha or inverted brightness (whichever is lowest)
                     // from the shape image onto black lines image as alpha, effectively
@@ -1149,10 +1149,10 @@ namespace Nyerguds.ImageManipulation
                 return null;
             // Line start offset is set to 3 to immediately get the alpha component.
             Int32 lineOffsImg = 3;
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 curOffs = lineOffsImg;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // copy alpha from shape image onto pattern image.
                     imageBytesPattern[curOffs] = alphaImageBytes[curOffs];
@@ -1270,12 +1270,12 @@ namespace Nyerguds.ImageManipulation
                         curFrame.Save(pngMs, ImageFormat.Png);
                         frameData = pngMs.ToArray();
                     }
-                    // Get the colour depth to save in the icon info. This needs to be
+                    // Get the color depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.
                     Byte colDepth = frameData[24];
                     Byte colType = frameData[25];
-                    // I think .Net saving only supports colour types 2, 3 and 6 anyway.
+                    // I think .Net saving only supports color types 2, 3 and 6 anyway.
                     switch (colType)
                     {
                         case 2: bpp = 3 * colDepth; break; // RGB
@@ -1303,7 +1303,7 @@ namespace Nyerguds.ImageManipulation
                     iconWriter.Write(offset);
                     offset += imageLen;
                 }
-                for (Int32 i = 0; i < imgCount; i++)
+                for (Int32 i = 0; i < imgCount; ++i)
                 {
                     // Write image data
                     // png data must contain the whole png data file
@@ -1352,12 +1352,12 @@ namespace Nyerguds.ImageManipulation
                         curFrame.Save(pngMs, ImageFormat.Png);
                         frameData = pngMs.ToArray();
                     }
-                    // Get the colour depth to save in the icon info. This needs to be
+                    // Get the color depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.
                     Byte colDepth = frameData[24];
                     Byte colType = frameData[25];
-                    // I think .Net saving only supports colour types 2, 3 and 6 anyway.
+                    // I think .Net saving only supports color types 2, 3 and 6 anyway.
                     switch (colType)
                     {
                         case 2: bpp = 3 * colDepth; break; // RGB
@@ -1385,7 +1385,7 @@ namespace Nyerguds.ImageManipulation
                     iconWriter.Write(offset);
                     offset += imageLen;
                 }
-                for (Int32 i = 0; i < imgCount; i++)
+                for (Int32 i = 0; i < imgCount; ++i)
                 {
                     // Write image data
                     // png data must contain the whole png data file
@@ -1476,10 +1476,10 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="image">Image to reduce.</param>
         /// <param name="substitutePalette">Substitute final palette with grayscale.</param>
-        /// <param name="bgWhite">If changed to grayscale, true if the background should be the white colour. If not, it will be the black one.</param>
+        /// <param name="bgWhite">If changed to grayscale, true if the background should be the white color. If not, it will be the black one.</param>
         /// <returns>
         /// An 8-bit image with the image content of the input reduced to grayscale,
-        /// with the found two most found colours as black and white.
+        /// with the found two most found colors as black and white.
         /// </returns>
         public static Bitmap ReduceToTwoColorFade(Bitmap image, Boolean substitutePalette, Boolean bgWhite)
         {
@@ -1500,10 +1500,10 @@ namespace Nyerguds.ImageManipulation
             // Make color population histogram
             Int32 lineOffset = 0;
             Dictionary<UInt32, Int32> histogram = new Dictionary<UInt32, Int32>();
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 offset = lineOffset;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // Optional check: only handle if not mostly-transparent
                     if (imgBytes[offset + 3] > 0x7F)
@@ -1526,7 +1526,7 @@ namespace Nyerguds.ImageManipulation
             Color colBackgr = histoSorted.Length < 1 ? Color.Black : Color.FromArgb((Int32)histoSorted[0].Key);
             // if less than 2 colors, just default it to the same.
             Color colContent = histoSorted.Length < 2 ? colBackgr : Color.FromArgb((Int32)histoSorted[1].Key);
-            // Make a new 256-colour palette, making a fade between these two colours, for feeding into GetClosestPaletteIndexMatch later
+            // Make a new 256-color palette, making a fade between these two colors, for feeding into GetClosestPaletteIndexMatch later
             Color[] matchPal = new Color[0x100];
             Color toBlack = bgWhite ? colContent : colBackgr;
             Color toWhite = bgWhite ? colBackgr : colContent;
@@ -1536,7 +1536,7 @@ namespace Nyerguds.ImageManipulation
             Double rDif = (toBlack.R - toWhite.R) / 255.0;
             Double gDif = (toBlack.G - toWhite.G) / 255.0;
             Double bDif = (toBlack.B - toWhite.B) / 255.0;
-            for (Int32 i = 0; i < 0x100; i++)
+            for (Int32 i = 0; i < 0x100; ++i)
                 matchPal[i] = Color.FromArgb(
                     Math.Min(0xFF, Math.Max(0, rFirst - (Int32)Math.Round(rDif * i, MidpointRounding.AwayFromZero))),
                     Math.Min(0xFF, Math.Max(0, gFirst - (Int32)Math.Round(gDif * i, MidpointRounding.AwayFromZero))),
@@ -1544,10 +1544,10 @@ namespace Nyerguds.ImageManipulation
             // Ensure start and end point are correct, and not mangled by small rounding errors.
             matchPal[0x00] = toBlack;
             matchPal[0xFF] = toWhite;
-            // Small extra: ignore duplicates of the highest colour, to ensure that
-            // all matches of the highest colour itself actually end up on index 0xFF.
+            // Small extra: ignore duplicates of the highest color, to ensure that
+            // all matches of the highest color itself actually end up on index 0xFF.
             List<Int32> ignoreIndices = new List<Int32>();
-            for (Int32 i = 0; i < 0xFF; i++)
+            for (Int32 i = 0; i < 0xFF; ++i)
                 if (matchPal[i] == toWhite)
                     ignoreIndices.Add(i);
             // The 8-bit stride is simply the width in this case.
@@ -1558,11 +1558,11 @@ namespace Nyerguds.ImageManipulation
             lineOffset = 0;
             // Make new offset vars for a loop through the 8-bit image data
             Int32 lineOffset8Bit = 0;
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 offset = lineOffset;
                 Int32 offset8Bit = lineOffset8Bit;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     Int32 toWrite;
                     // If transparent, revert to background color.
@@ -1601,12 +1601,12 @@ namespace Nyerguds.ImageManipulation
             ColorPalette pal = newBm.Palette;
             if (substitutePalette)
             {
-                for (Int32 i = 0; i < 0x100; i++)
+                for (Int32 i = 0; i < 0x100; ++i)
                     pal.Entries[i] = Color.FromArgb(i, i, i);
             }
             else
             {
-                for (Int32 i = 0; i < 0x100; i++)
+                for (Int32 i = 0; i < 0x100; ++i)
                     pal.Entries[i] = matchPal[i];
             }
             newBm.Palette = pal;

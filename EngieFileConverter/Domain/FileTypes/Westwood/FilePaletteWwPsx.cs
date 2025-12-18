@@ -35,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public virtual Boolean CanSave { get { return false; } }
+        public override Boolean CanSave { get { return false; } }
 
         protected Int32 m_Height;
 
@@ -69,7 +69,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 curPalRows = Math.Min(this.m_Height - curHeight, 16);
                 Int32 offset = i << 9; // = (* 256 * 16bit);
-                // Check starting bytes. All PSX palettes start with a 00 00 colour.
+                // Check starting bytes. All PSX palettes start with a 00 00 color.
                 for (Int32 j = 0; j < curPalRows; ++j)
                     if (ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + (j << 5)) != 0)
                         throw new FileTypeLoadException("Incorrect data: PSX palettes always start with a transparent value.");

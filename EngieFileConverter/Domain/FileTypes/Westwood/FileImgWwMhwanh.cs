@@ -84,7 +84,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
             this.ExtraInfo = "Version: " + this._Version + Environment.NewLine;
             if (horizonalDpi < 0 && verticalDpi < 0)
-                this.ExtraInfo += "Aspect ratio: : " + (-horizonalDpi) + "x" + (-verticalDpi);
+                this.ExtraInfo += "Aspect ratio: " + (-horizonalDpi) + "x" + (-verticalDpi);
             else
                 this.ExtraInfo += "Horizontal DPI: " + horizonalDpi + Environment.NewLine + "Vertical DPI: " + verticalDpi;
             this.ExtraInfo += Environment.NewLine + "Gamma: " + gamma;

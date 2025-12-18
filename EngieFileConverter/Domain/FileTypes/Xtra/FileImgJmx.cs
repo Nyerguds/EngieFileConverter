@@ -44,7 +44,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("File size does not match header information.");
             try
             {
-                this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, 0, 256);
+                this.m_Palette = ColorUtils.ReadSixBitPalette(fileData);
             }
             catch (ArgumentException)
             {
@@ -70,10 +70,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 stride;
             Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] jmxData = new Byte[imageBytes.Length + 0x304];
-            Byte[] palette = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fileToSave.GetColors()));
+            Byte[] palette = ColorUtils.GetSixBitPaletteData(fileToSave.GetColors());
             Array.Copy(palette, 0, jmxData, 0, palette.Length);
-            ArrayUtils.WriteInt16ToByteArrayLe(jmxData, 0x300, width);
-            ArrayUtils.WriteInt16ToByteArrayLe(jmxData, 0x302, height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(jmxData, 0x300, (UInt16)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(jmxData, 0x302, (UInt16)height);
             Array.Copy(imageBytes, 0, jmxData, 0x304, imageBytes.Length);
             return jmxData;
         }

@@ -11,9 +11,6 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesWwFntV3 : SupportedFileType
     {
-        protected const String ERR_NOHEADER = "File data too short to contain header.";
-        protected const String ERR_SIZEHEADER = "File size value in header does not match file data length.";
-
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit; } }
@@ -55,10 +52,10 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 fileLength = fileData.Length;
             if (fileLength < 0x14)
-                throw new FileTypeLoadException(ERR_NOHEADER);
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             Int32 fileLSizeHeader = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x00);
             if (fileLSizeHeader != fileLength)
-                throw new FileTypeLoadException(ERR_SIZEHEADER);
+                throw new FileTypeLoadException(ERR_BAD_HEADER_SIZE);
             Byte dataFormat = fileData[0x02];
             //Byte unknown03 = fileData[0x03];
             //this.Unknown04 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x04);
@@ -94,11 +91,11 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Height = fileData[0x12];
             this.m_Width = fileData[0x13];
             if (fontDataOffsetsListOffset + length * 2 > fileLength)
-                throw new FileTypeLoadException("File data too short for offsets list!");
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             if (widthsListOffset + length > fileLength)
-                throw new FileTypeLoadException("File data too short for symbol widths list starting from offset!");
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             if (heightsListOffset + length * 2 > fileLength)
-                throw new FileTypeLoadException("File data too short for symbol heights list!");
+                throw new FileTypeLoadException(ERR_NO_HEADER);
             //FontDataOffset
             Int32[] fontDataOffsetsList = new Int32[length];
             for (Int32 i = 0; i < length; ++i)
@@ -178,7 +175,6 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 maxUsedWidth;
@@ -245,9 +241,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     imageData[i] = ArrayUtils.CloneArray(imgData8bit);
 
                 //StringBuilder sb = new StringBuilder();
-                //for (int y = 0; y < imgHeight; y++)
+                //for (int y = 0; y < imgHeight; ++y)
                 //{
-                //    for (int x = 0; x < stride; x++)
+                //    for (int x = 0; x < stride; ++x)
                 //    {
                 //        sb.Append(imageData[i][y * stride + x].ToString("X2"));
                 //    }
@@ -278,16 +274,16 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] fullData = new Byte[fullLength];
 
             // write header
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0, fullLength);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0, (UInt16)fullLength);
             fullData[0x02] = (Byte)(forV4 ? 0x02 : 0x00);       // Byte DataFormat
             fullData[0x03] = (Byte)(forV4 ? 0 : 5);             // Byte Unknown03 (0x05 in EOB/C&C/RA1, 0x00 in TS)
             fullData[0x04] = 0x0e;                              // UInt16 Unknown04, low byte; (always 0x0e)
             fullData[0x05] = 0x00;                              // UInt16 Unknown04, high byte; (always 0x00)
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x06, offsetsListOffset);
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x08, widthsListOffset);
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x0A, fontOffsetStart);
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x0C, heightsListOffset);
-            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x0E, (forV4 ? 0 : 0x1012));
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0x06, (UInt16)offsetsListOffset);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0x08, (UInt16)widthsListOffset);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0x0A, (UInt16)fontOffsetStart);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0x0C, (UInt16)heightsListOffset);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fullData, 0x0E, (UInt16)(forV4 ? 0 : 0x1012));
             fullData[0x10] = 0x00;                              // Byte AlwaysZero (Always 0x00)
             fullData[0x11] = (Byte)(forV4 ? 0 : imagesCount - 1);  // Byte LastSymbolIndex (for non-TS)
             fullData[0x12] = (Byte)fontHeight;                // Byte FontHeight
@@ -317,7 +313,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             if (frames == null || frames.Length == 0)
-                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             if (frames.Length > 256)
                 throw new ArgumentException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames!", "fileToSave");
             width = -1;
@@ -371,7 +367,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (dataOffset > maxValue)
                         throw new OverflowException("Data too large: this format cannot address data that exceeds " + maxValue + " bytes!");
                     // Data is not null and not a duplicate: write offset and advance offset ptr.
-                    ArrayUtils.WriteInt16ToByteArrayLe(fontDataOffsetsList, (i + writeDiff) * 2, dataOffset);
+                    ArrayUtils.WriteUInt16ToByteArrayLe(fontDataOffsetsList, (i + writeDiff) * 2, (UInt16)dataOffset);
                     dataOffset += imageData[i].Length;
                 }
                 else

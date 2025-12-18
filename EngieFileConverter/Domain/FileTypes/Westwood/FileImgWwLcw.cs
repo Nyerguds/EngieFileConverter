@@ -41,21 +41,21 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException("File to save is empty!", "fileToSave");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             return this.SaveImg(fileToSave.GetBitmap());
         }
 
         protected void LoadFromFileData(Byte[] fileData)
         {
             if (fileData.Length < DATAOFFSET)
-                throw new FileTypeLoadException("File is not long enough to be a valid Blade Runner IMG file.");
+                throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
 
             Byte[] hdrId = new Byte[3];
             Array.Copy(fileData, hdrId, 3);
             Int32 hdrWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 3);
             Int32 hdrHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 7);
             if (!Encoding.ASCII.GetBytes("LCW").SequenceEqual(hdrId))
-                throw new FileTypeLoadException("File does not start with signature \"LCW\".");
+                throw new FileTypeLoadException(ERR_BAD_HEADER);
             Int32 stride = ImageUtils.GetMinimumStride(hdrWidth, this.BitsPerPixel);
             Int32 imageDataSize = stride * hdrHeight;
             Byte[] imageData = new Byte[imageDataSize];
@@ -66,22 +66,21 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (Exception e)
             {
-                throw new FileTypeLoadException("Error decompressing image data: " + e.Message);
+                throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, e.Message), e);
             }
             try
             {
                 this.m_LoadedImage = ImageUtils.BuildImage(imageData, hdrWidth, hdrHeight, stride, PixelFormat.Format16bppRgb555, null, null);
             }
-            catch (IndexOutOfRangeException)
+            catch (IndexOutOfRangeException e)
             {
-                throw new FileTypeLoadException("Cannot construct image from read data!");
+                throw new FileTypeLoadException(String.Format(ERR_MAKING_IMG_ERR, e.Message), e);
             }
         }
 
         protected Byte[] SaveImg(Bitmap image)
         {
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppRgb555, true);
+            Byte[] imageData = ImageUtils.GetImageData(image, PixelFormat.Format16bppRgb555, true);
             Byte[] compressedData = WWCompression.LcwCompress(imageData);
             Byte[] fullData = new Byte[compressedData.Length + DATAOFFSET];
             fullData[0] = (Byte)'L';
