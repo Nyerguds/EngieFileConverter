@@ -59,6 +59,11 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.1: (23/09/2017 21:23)
+-Fixed crash when saving images with uneven width in Dynamix VGA/BIN format.
+-Added tighter checks on Dynamix image input; they can only handle widths divisible by 8.
+-Exporting to frames now always takes png as default format.
+
 v1.2: (22/09/2017 15:30)
 -Added new Save Options dialog for types that need extra options for saving.
 -Added very efficient automatic filter system to determine what types a file can be saved as.

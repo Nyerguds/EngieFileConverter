@@ -236,6 +236,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             List<DynamixChunk> chunks = new List<DynamixChunk>();
             if (v2)
             {
+                if (image.Width % 8 !=0)
+                    throw new NotSupportedException("Dynamix image formats only support image widths divisible by 8!");
                 Byte[] dimensions = new Byte[4];
                 ArrayUtils.WriteIntToByteArray(dimensions, 0, 2, true, (UInt32)image.Width);
                 ArrayUtils.WriteIntToByteArray(dimensions, 2, 2, true, (UInt32)image.Height);
@@ -285,13 +287,13 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (dataHiCompr.Length < dataLenVga)
                     {
                         dataVga = dataHiCompr;
-                        compressionVga = (Byte)compressionType; ;
+                        compressionVga = (Byte)compressionType;
                     }
                     Byte[] dataLoCompr = compressionType == 1 ? DynamixCompression.RleEncode(dataBin) : DynamixCompression.LzwEncode(dataBin);
                     if (dataLoCompr.Length < dataLenBin)
                     {
                         dataBin = dataLoCompr;
-                        compressionBin = (Byte)compressionType; ;
+                        compressionBin = (Byte)compressionType;
                     }
                 }
                 DynamixChunk binChunk = new DynamixChunk("BIN", compressionBin, dataLenBin, dataBin);

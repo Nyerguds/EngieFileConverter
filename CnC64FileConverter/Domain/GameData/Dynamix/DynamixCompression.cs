@@ -41,8 +41,8 @@ namespace Nyerguds.GameData.Dynamix
 
         public static void SplitEightBit(Byte[] imageData, out Byte[] vgaData, out Byte[] binData)
         {
-            vgaData = new Byte[imageData.Length / 2];
-            binData = new Byte[imageData.Length / 2];
+            vgaData = new Byte[(imageData.Length + 1) / 2];
+            binData = new Byte[(imageData.Length + 1) / 2];
             for (Int32 i = 0; i < imageData.Length; i++)
             {
                 Byte pixData = imageData[i];
@@ -56,7 +56,6 @@ namespace Nyerguds.GameData.Dynamix
                 vgaData[pixOffs] |= (Byte)pixHi;
                 binData[pixOffs] |= (Byte)pixLo;
             }
-
         }
 
         /// <summary>
@@ -120,13 +119,14 @@ namespace Nyerguds.GameData.Dynamix
         public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
             Byte[] outputBuffer = new Byte[decompressedSize];
+            // Uses standard RLE implementation.
             RleCompression rle = new RleCompression();
             rle.RleDecodeData(buffer, startOffset, endOffset, outputBuffer, abortOnError);
             return outputBuffer;
         }
         
         /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// Applies LZW Encoding to the given data.
         /// </summary>
         /// <param name="buffer">Input buffer</param>
         /// <returns>The run-length encoded data</returns>

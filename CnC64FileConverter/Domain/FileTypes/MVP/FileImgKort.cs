@@ -13,6 +13,10 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     public class FileImgKort : SupportedFileType
     {
+
+        public override FileClass FileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
+
         public override Int32 Width { get { return 320; } }
         public override Int32 Height { get { return 240; } }
 
@@ -45,14 +49,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 len = this.Width * this.Height;
             Byte[] targetData = new Byte[len];
             Int32 destOffs = 0;
+            //Poor Man's RLE: each byte is just followed by the repetition amount, without grouping for non-repeating bytes.
             for (Int32 i = 0; i < datalen; i += 2)
             {
                 Int32 col = fileData[i];
                 Int32 rep = fileData[i+1];
                 if (rep == 0)
                     throw new FileTypeLoadException("Repetition value 0 encountered. Not a KORT image file.");
-
-
                 for (UInt32 replen = 0; replen < rep; replen++)
                 {
                     if (destOffs >= len)
@@ -68,7 +71,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_Palette, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
@@ -81,35 +84,20 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] flippedData = new Byte[dataLen];
             for (Int32 y = 0; y < this.Height; y++)
                 Array.Copy(imageData, (this.Height - 1 - y) * this.Width, flippedData, y * this.Width, this.Width);
-            Byte[] finalData;
-            // Well the option is there, so why not, lol.
-            if (dontCompress)
+            Byte[] comprData = new Byte[dataLen * 2];
+            Int32 inPtr = 0;
+            Int32 outPtr = 0;
+            while (inPtr < dataLen)
             {
-                finalData = new Byte[dataLen * 2];
-                for (Int32 i = 0; i < dataLen; i++)
-                {
-                    Int32 i2 = i*2;
-                    finalData[i2 + 0] = flippedData[i];
-                    finalData[i2 + 1] = 1;
-                }
+                Int32 start = inPtr;
+                Int32 end = Math.Min(inPtr + 0xFF, dataLen);
+                Byte cur = flippedData[inPtr];
+                for (; inPtr < end && flippedData[inPtr] == cur; inPtr++) { }
+                comprData[outPtr++] = cur;
+                comprData[outPtr++] = (Byte)(inPtr - start);
             }
-            else
-            {
-                Byte[] comprData = new Byte[dataLen * 2];
-                Int32 inPtr = 0;
-                Int32 outPtr = 0;
-                while (inPtr < dataLen)
-                {
-                    Int32 start = inPtr;
-                    Int32 end = Math.Min(inPtr + 0xFF, dataLen);
-                    Byte cur = flippedData[inPtr];
-                    for (; inPtr < end && flippedData[inPtr] == cur; inPtr++) { }
-                    comprData[outPtr++] = cur;
-                    comprData[outPtr++] = (Byte)(inPtr - start);
-                }
-                finalData = new Byte[outPtr];
-                Array.Copy(comprData, 0, finalData, 0, outPtr);
-            }
+            Byte[] finalData = new Byte[outPtr];
+            Array.Copy(comprData, 0, finalData, 0, outPtr);
             return finalData;
         }
     }

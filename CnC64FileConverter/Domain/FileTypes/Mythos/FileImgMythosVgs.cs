@@ -7,6 +7,8 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Nyerguds.GameData.Dynamix;
+using Nyerguds.Util.GameData;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -16,9 +18,14 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
 
+
+        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
+
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos VGS"; } }
-        public override String[] FileExtensions { get { return new String[] { "VGS" }; } }
+        public override String[] FileExtensions { get { return new String[] { "vgs" }; } }
         public override String ShortTypeDescription { get { return "Mythos frames file"; } }
         public override Int32 ColorsInPalette { get { return m_PaletteSet? this.m_Palette.Length : 0; } }
         public override Int32 BitsPerColor { get { return 8; } }
@@ -33,7 +40,14 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean HasCompositeFrame { get { return false; } }
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            return new SaveOption[] { new SaveOption(SaveOptionType.Boolean, "Save palette into file", "0") }; 
+            return new SaveOption[]
+            {
+                new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file", "0"),
+                //new SaveOption("CMP", SaveOptionType.Boolean, "Use compression", "0"),
+                new SaveOption("OPX", SaveOptionType.Boolean, "Optimize empty horizontal space to X-offsets", "0"),
+                new SaveOption("OPY", SaveOptionType.Boolean, "Optimize empty vertical space to Y-offsets", "0"),
+                new SaveOption("BG", SaveOptionType.Number, "Background color to cut for optimisations","0,255", "255")
+            };
         }
 
         public override void SetColors(Color[] palette, SupportedFileType updateSource)
@@ -88,6 +102,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (comprByte != 1)
                         throw new FileTypeLoadException("Unknown compression type: " + comprByte);
                     skipLen = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true) - 8;
+                    if (skipLen < 0)
+                        throw new FileTypeLoadException("Invalid compressed size.");
+
                 }
                 else
                 {
@@ -99,13 +116,30 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (compressed)
                 {
                     // Is compressed. Doesn't actually work...
-                    //Array.Copy(fileData, offset, imageData, 0, skipLen);
-                    // TODO: LZW MAGIC! ...or not. Bah. Maybe it's just RLE?
 
-                    // Draw a nice little "Nope" box instead...
-                    for (int i = 0; i < imageData.Length; i++)
-                        imageData[i] = 0;
-                    Byte drawColor = 0xFF;
+                    Byte[] compressedData = new Byte[skipLen - 2];
+                    Array.Copy(fileData, offset + 2, compressedData, 0, compressedData.Length);
+                    try
+                    {
+                        // Nothing seems to work so far.
+                        //LzwCompression lzw = new LzwCompression(LzwSize.Size14Bit);
+                        //imageData = lzw.Decompress(compressedData, 0, dataLen);
+                        //DynamixCompression.RleDecode(compressedData, null, null, dataLen);
+                        
+                        // Just clear it with transparent colour for now...
+                        for (int i = 0; i < imageData.Length; i++)
+                            imageData[i] = 0xFF;
+                    }
+                    catch (Exception e)
+                    {
+                        throw new FileTypeLoadException("Cannot decompress VGS file!", e);
+                    }
+                    /*/
+                    // Draw a nice little "Nope" box instead:
+                    Byte[] imageData2 = new Byte[dataLen];
+                    for (int i = 0; i < imageData2.Length; i++)
+                        imageData2[i] = 0xFF;
+                    Byte drawColor = 0x00;
                     Int32 crossDim = Math.Min(frameHeight, frameWidth);
                     Int32 skipW = (frameWidth - crossDim) / 2;
                     Int32 skipH = (frameHeight - crossDim) / 2;
@@ -120,8 +154,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                                 (x == frameWidth - 1) || // line right
                                 (y == frameHeight - 1) // line bottom
                                 )
-                                imageData[y * frameWidth + x] = drawColor;
+                                imageData2[y * frameWidth + x] = drawColor;
                     }
+                    imageData = imageData2;
+                    //*/
                 }
                 else
                 {
@@ -164,13 +200,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (this.m_Palette == null)
                     this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
                 Bitmap curImage = ImageUtils.BuildImage(imageData, frameWidth, frameHeight, frameWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
-                // TODO CALL FRAME CREATION
-
                 FileImageFrameMythosVgs frame = new FileImageFrameMythosVgs();
                 frame.LoadFileFrame(this, this.ShortTypeName, curImage, sourcePath, this.m_FramesList.Count);
                 frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
                 frame.SetColors(this.m_Palette);
+                String extraInfo = String.Empty;
+                if (xOffset > 0)
+                    extraInfo += "X-offset: " + xOffset + "\n";
+                if(yOffset > 0)
+                    extraInfo += "Y-offset: " + yOffset + "\n";
+                if(compressed)
+                    extraInfo += "Compressed (Unsupported)\n";
 
+                frame.SetExtraInfo(extraInfo.TrimEnd('\n'));
                 this.m_FramesList.Add(frame);
                 offset += skipLen;
             }
@@ -178,24 +220,30 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Image load failed.");
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            return SaveToBytes(fileToSave, saveOptions, dontCompress);
-        }
-
-        protected static Byte[] SaveToBytes(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
-        {
-            if (fileToSave.Frames == null)
-                throw new NotSupportedException("Mythos VGS saving for single frame is not supported!");
+            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            {
+                FileImageFrames frameSave = new FileImageFrames();
+                frameSave.AddFrame(fileToSave);
+                fileToSave = frameSave;
+            }
             if (fileToSave.Frames.Length == 0)
                 throw new NotSupportedException("No frames found in source data!");
-            Boolean asPaletted = GeneralUtils.IsTrueValue(saveOptions[0].SaveData, false);
+            Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean compress = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CMP"));
+            Boolean optimiseX = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPX"));
+            Boolean optimiseY = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPY"));
+            Int32 bgCol;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BG"), out bgCol);
+            bgCol = Math.Max(0, Math.Min(255, bgCol));
             Color[] palette = null;
+            // Check all frames, and fetch the palette if needed.
             foreach (SupportedFileType frame in fileToSave.Frames)
             {
                 if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("Mythos VGS can't handle empty frames!");
-                Bitmap image = fileToSave.GetBitmap();
+                Bitmap image = frame.GetBitmap();
                 if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
                     throw new NotSupportedException("Mythos VGS requires 8-bit frames!");
                 // Take first frame's palette as colours.
@@ -231,11 +279,29 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = fileToSave.Frames[asPaletted ? i - 1 : i];
                 Int32 stride;
-                frameData[i] = ImageUtils.GetImageData(frame.GetBitmap(), out stride);
+                Byte[] frameBytes = ImageUtils.GetImageData(frame.GetBitmap(), out stride);
+                Int32 width = frame.Width;
+                Int32 height = frame.Height;
+                // Trim off stride
+                frameBytes = ImageUtils.CollapseStride(frameBytes, width, height, 8, ref stride);
+                Int32 xOffset = 0;
+                Int32 yOffset = 0;
                 widths[i] = frame.Width;
-                heighths[i] = frame.Height;                
-                // Optimise Y offset here
-                //yOffsets[i] = (Byte)frame.YOffset;
+                heighths[i] = frame.Height;
+                // TODO Optimise X and Y offset here
+                if (optimiseX)
+                    frameBytes = ImageUtils.OptimizeXWidth(frameBytes, ref width, height, ref xOffset, true, bgCol, 0xFF);
+                if (optimiseY)
+                    frameBytes = ImageUtils.OptimizeYHeight(frameBytes, width, ref height, ref yOffset, true, bgCol, 0xFF);
+                if (compress)
+                {
+                    // TODO figure out compression
+                }
+                frameData[i] = frameBytes;
+                widths[i] = width;
+                heighths[i] = height;
+                xOffsets[i] = (Byte)xOffset;
+                yOffsets[i] = (Byte)yOffset;
             }
             Byte[] finalData = new Byte[actualLen * 8 + frameData.Sum(sd => sd.Length)];
             Int32 offset = 0;
@@ -264,7 +330,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             for (Int32 i = palette.Length; i < 256; i++)
                 palette2[i] = Color.Empty;
             palette2[255] = Color.FromArgb(0, palette[255]);
-            base.SetColors(palette2, updateSource);
+            base.SetColors(palette2, updateSource, false);
         }
     }
 }

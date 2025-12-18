@@ -41,13 +41,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 List<Int32> matchingWidths = new List<Int32>();
                 blockWidth = fullWidth;
-                while (blockWidth > 5)
+                while (blockWidth > 7)
                 {
-                    if (fullWidth % blockWidth == 0 && (bpp == 8 || blockWidth % 2 == 0))
+                    if (fullWidth % blockWidth == 0 && (fullWidth % 8 == 0))
                         matchingWidths.Add(blockWidth);
                     blockWidth --;
                 }
-                blockWidth = matchingWidths.Count == 0? 5 : matchingWidths.Min();
+                blockWidth = matchingWidths.Count == 0? 8 : matchingWidths.Min();
                 List<Int32> matchingHeights = new List<Int32>();
                 blockHeight = fullHeight;
                 while (blockHeight > 5)

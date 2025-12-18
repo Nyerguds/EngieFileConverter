@@ -12,8 +12,10 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     public class FileImgKortBmp : SupportedFileType
     {
-        public override Int32 Width { get { return 320; } }
-        public override Int32 Height { get { return 240; } }
+
+        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
         /// <summary>Very short code name for this type.</summary>
@@ -29,11 +31,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
-
-
-
-        public FileImgKortBmp() { }
-
+        
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData, null);
@@ -93,10 +91,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = null;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.Frames == null)
-                throw new NotSupportedException("No frames in input type!");
+            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            {
+                FileImageFrames frameSave = new FileImageFrames();
+                frameSave.AddFrame(fileToSave);
+                fileToSave = frameSave;
+            }
+            if (fileToSave.Frames.Length == 0)
+                throw new NotSupportedException("No frames found in source data!");
             foreach (SupportedFileType frame in fileToSave.Frames)
             {
                 if (frame == null)

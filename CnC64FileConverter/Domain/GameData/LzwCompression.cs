@@ -1,14 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 
 namespace Nyerguds.Util.GameData
 {
     /// <summary>
-    /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website http://marknelson.us
-    /// Based on the C# translation by Github user pevillarreal
-    /// https://github.com/pevillarreal/LzwCompressor
-    /// The code was adapted to fix the 7-bit filter caused by using an ASCII stream reader.
+    /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website: http://marknelson.us
+    /// Based on the C# translation by Github user pevillarreal: https://github.com/pevillarreal/LzwCompressor
+    /// The code was adapted by Maarten Meuris aka Nyerguds to fix the 7-bit filter caused by using an ASCII stream reader.
     /// This version uses byte arrays as input and output, and uses an enum to switch to different supported bit lengths.
     /// </summary>
     public class LzwCompression
@@ -161,8 +159,6 @@ namespace Nyerguds.Util.GameData
                         // decode_string
                         while (code > 255) // decode string by cycling back through the prefixes
                         {
-                            // lstDecodeStack.Add((Byte)append_character[iCurrentCode]);
-                            // iCurrentCode = prefix_code[iCurrentCode];
                             decode_stack[iCounter] = (Byte)append_character[code];
                             ++iCounter;
                             if (iCounter >= MAX_CODE)
@@ -230,12 +226,13 @@ namespace Nyerguds.Util.GameData
         }
     }
 
+    /// <summary>
+    /// Bit lengths supported by the LZWCompression class.
+    /// </summary>
     public enum LzwSize
     {
         Size12Bit = 12,
         Size13Bit = 13,
         Size14Bit = 14,
     }
-
-
 }

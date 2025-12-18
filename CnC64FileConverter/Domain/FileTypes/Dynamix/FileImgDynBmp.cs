@@ -283,6 +283,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Bitmap bm = frame.GetBitmap();
                 if (bm == null)
                     throw new NotSupportedException("Dynamix BMP cannot handle empty frames!");
+                if (bm.Width % 8 != 0)
+                    throw new NotSupportedException("Dynamix image formats only support image widths divisible by 8!");
                 if (pf == PixelFormat.Undefined)
                 {
                     pf = bm.PixelFormat;
@@ -291,7 +293,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         throw new NotSupportedException("Dynamix BMP frames must be 4bpp or 8bpp!");
                 }
                 else if (pf != bm.PixelFormat)
-                    throw new NotSupportedException("Dynamix BMP cannot handle empty frames!");
+                    throw new NotSupportedException("All frames must have the same color depth!");
                 Int32 stride;
                 Int32 width = bm.Width;
                 Int32 height = bm.Height;

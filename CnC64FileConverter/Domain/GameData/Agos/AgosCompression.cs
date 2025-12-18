@@ -4,7 +4,7 @@ using Nyerguds.Util.GameData;
 
 namespace Nyerguds.GameData.Agos
 {
-    // This one is too messed up to convert to a RleImplementation class.
+    // Finally managed to convert this to an RleImplementation class.
     public class AgosCompression: RleImplementation<AgosCompression>
     {
 
@@ -22,12 +22,10 @@ namespace Nyerguds.GameData.Agos
                 outBuffer2[i % height * stride + i / height] = outBuffer[i];
             // outBuffer2 is now the correct image.
             return outBuffer2;
-
         }
 
         public static Byte[] EncodeImage(Byte[] buffer, Int32 stride)
         {
-            AgosCompression rle = new AgosCompression();
             Int32 byteLength = buffer.Length;
             Int32 height = byteLength / stride;
             // Should not happen, but you never know...
@@ -38,10 +36,12 @@ namespace Nyerguds.GameData.Agos
             for (Int32 i = 0; i < byteLength; i++)
                 buffer2[i] = buffer[i % height * stride + i / height];
             // buffer2 is now the image, with its columns stored as rows.
+            // Perform actual compression.
+            AgosCompression rle = new AgosCompression();
             return rle.RleEncodeData(buffer2);
         }
-        #region tweaked overrides
 
+        #region tweaked overrides
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
         public override UInt32 MaxRepeatValue { get { return 0x80; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
@@ -53,18 +53,21 @@ namespace Nyerguds.GameData.Agos
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
         /// <param name="inPtr">Input pointer.</param>
-        /// <param name="bufferEnd">End of buffer.</param>
+        /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be read from.</param>
         /// <param name="IsRepeat">Returns true for repeat code, false for copy code.</param>
         /// <param name="amount">Returns the amount to copy or repeat.</param>
         /// <returns>True if the read succeeded, false if it failed.</returns>
         protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean IsRepeat, out UInt32 amount)
         {
+            if (inPtr >= bufferEnd)
+            {
+                IsRepeat = false;
+                amount = 0;
+                return false;
+            }
             Byte code = buffer[inPtr++];
             IsRepeat = (code & 0x80) == 0;
-            if (IsRepeat)
-                amount = (UInt32)(code + 1);
-            else
-                amount = (UInt32)(0x100 - code);
+            amount = (UInt32)(IsRepeat ? code + 1 : 0x100 - code);
             return true;
         }
 
@@ -73,11 +76,12 @@ namespace Nyerguds.GameData.Agos
         /// and advances the write pointer to the location behind the written code.
         /// </summary>
         /// <param name="bufferOut">Output buffer to write to.</param>
+        /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be written to.</param>
         /// <param name="outPtr">Pointer for the output buffer.</param>
         /// <param name="forRepeat">True if this is a repeat code, false if this is a copy code.</param>
         /// <param name="amount">Amount to write into the repeat or copy code.</param>
         /// <returns>True if the write succeeded, false if it failed.</returns>
-        protected override Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, Boolean forRepeat, UInt32 amount)
+        protected override Boolean WriteCode(Byte[] bufferOut, UInt32 bufferEnd, ref UInt32 outPtr, Boolean forRepeat, UInt32 amount)
         {
             if (bufferOut.Length <= outPtr)
                 return false;

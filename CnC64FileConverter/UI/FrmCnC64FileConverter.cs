@@ -375,7 +375,7 @@ namespace CnC64FileConverter.UI
             Boolean hasFrames = m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0;
             Boolean isFrame = !frames && hasFrames && numFrame.Value != -1;
             SupportedFileType loadedFile = isFrame ? m_LoadedFile.Frames[(Int32)numFrame.Value] : m_LoadedFile;
-            Type selectType = loadedFile.GetType();
+            Type selectType = frames ? typeof(FileImagePng) : loadedFile.GetType();
             Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
             FileClass loadedFileType = loadedFile.FileClass;
             FileClass frameFileType = FileClass.None;
