@@ -10,7 +10,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImageGif : FileImage
     {
-        public override String ShortTypeName { get { return "ImageGIF"; } }
+        public override String ShortTypeName { get { return "GIF"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription
         {
@@ -31,7 +31,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override SupportedFileType[] Frames { get { return m_TilesList == null ? null : m_TilesList.Cast<SupportedFileType>().ToArray(); } }
 
-        /// <summary>Enables frame controls on the UI.</summary>
+        /// <summary>See this as a data type containing frames.</summary>
         public override Boolean ContainsFrames { get { return m_isAnimatedGif; } }
         protected Boolean m_isAnimatedGif = false;
         protected Byte[][] m_rawframes;

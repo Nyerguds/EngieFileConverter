@@ -57,11 +57,22 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.1.3: (12/09/2017 21:20)
+-Optimised RLE compression for Elvira VGA format to compress better than the original.
+-Added checks on empty data before saving.
+-Changed frames handling so types can have frames without being seen as a frames container.
+-Added support for viewing the 4-bit version of Dynamix SCR files using new frames system.
+-Disabled support for Dynamix BMP files; the image data can't actually be viewed anyway.
+-When opening an empty file, the program will not not attempt type detection.
+-Importing a range of frames from numbered files now also works when opening an empty file.
+-Saving frames data without a full image filters out non-frames types in the Save dialog.
+-Fixed bug where the stride wasn't collapsed to the width on grayscale C&C64 images.
+-Added support for King of the Beach .PAK image format.
+
 v1.1.2: (07/09/2017 15:03)
 -Added better support for frames; when opening an image with a numeric suffix that is part of
  a range of images, the tool will ask to load it as frames.
 -Added Elvira VGA writing support.
-
 
 v1.1.1: (10/08/2017 15:53)
 -Added support for different compression types in CPS files.

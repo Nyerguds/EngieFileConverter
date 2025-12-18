@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -170,16 +171,16 @@ namespace Nyerguds.ImageManipulation
             Int32 stride;
             Byte[] imageData = GetImageData(image, out stride);
             imageData = Convert32bToGray(imageData, image.Width, image.Height, grayBpp, bigEndianBits, ref stride);
-            return BuildImage(imageData, image.Width, image.Height, stride, pf, PaletteUtils.GenerateGrayPalette(grayBpp, false, false), null);
+            return BuildImage(imageData, image.Width, image.Height, stride, pf, PaletteUtils.GenerateGrayPalette(grayBpp, null, false), null);
         }
 
-        public static Bitmap PaintOn32bpp(Image image, Color? transparencyColor)
+        public static Bitmap PaintOn32bpp(Image image, Color? transparencyFillColor)
         {
             Bitmap bp = new Bitmap(image.Width, image.Height, PixelFormat.Format32bppArgb);
             using (Graphics gr = Graphics.FromImage(bp))
             {
-                if (transparencyColor.HasValue)
-                    using (System.Drawing.SolidBrush myBrush = new System.Drawing.SolidBrush(transparencyColor.Value))
+                if (transparencyFillColor.HasValue)
+                    using (System.Drawing.SolidBrush myBrush = new System.Drawing.SolidBrush(Color.FromArgb(255, transparencyFillColor.Value)))
                         gr.FillRectangle(myBrush, new Rectangle(0, 0, image.Width, image.Height));
                 gr.DrawImage(image, new Rectangle(0, 0, bp.Width, bp.Height));
             }
@@ -188,8 +189,8 @@ namespace Nyerguds.ImageManipulation
 
         public static Byte[] Convert32bToGray(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, ref Int32 stride)
         {
-            if (width * 4 > stride)
-                throw new ArgumentException("Stride is smaller than one scan line!", "stride");
+            if (stride < width * 4)
+                throw new ArgumentException("Stride is smaller than one pixel line!", "stride");
             Int32 divvalue = 256 / (1 << bpp);
             Byte[] newImageData = new Byte[width * height];
             for (Int32 y = 0; y < height; y++)
@@ -198,7 +199,7 @@ namespace Nyerguds.ImageManipulation
                 {
                     Int32 inputOffs = y * stride + x * 4;
                     Int32 outputOffs = y * width + x;
-                    Color c = PixelFormatter.Format32BitArgb.GetColor(imageData, inputOffs);
+                    Color c = Color.FromArgb(imageData[inputOffs + 3], imageData[inputOffs + 2], imageData[inputOffs + 1], imageData[inputOffs]);
                     if (c.A < 128)
                         newImageData[outputOffs] = 0;
                     else
@@ -262,7 +263,6 @@ namespace Nyerguds.ImageManipulation
             Int32 stride;
             if (originalImage.PixelFormat != PixelFormat.Format32bppArgb)
                 originalImage = PaintOn32bpp(originalImage, Color.Black);
-            // not sure about the bit-endianness. Most 1bpp formats seem to use largest bits first though.
             Byte[] imageData = GetImageData(originalImage, out stride);
             Byte[] palettedData = Convert32BitToPaletted(imageData, originalImage.Width, originalImage.Height, bpp, bpp == 1, palette, ref stride);
             return BuildImage(palettedData, originalImage.Width, originalImage.Height, stride, pf, palette, Color.Black);
@@ -270,25 +270,26 @@ namespace Nyerguds.ImageManipulation
 
         public static Byte[] Convert32BitToPaletted(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, Color[] palette, ref Int32 stride)
         {
-            if (width * 4 > stride)
-                throw new ArgumentException("Stride is smaller than one scan line!", "stride");
+            if (stride < width * 4)
+                throw new ArgumentException("Stride is smaller than one pixel line!", "stride");
             Byte[] newImageData = new Byte[width * height];
             List<Int32> transparentIndices = new List<Int32>();
             for (Int32 i = 0; i < palette.Length; i++)
                 if (palette[i].A == 0)
                     transparentIndices.Add(i);
-
             for (Int32 y = 0; y < height; y++)
             {
+                Int32 inputOffs = y * stride;
+                Int32 outputOffs = y * width;
                 for (Int32 x = 0; x < width; x++)
                 {
-                    Int32 inputOffs = y * stride + x * 4;
-                    Int32 outputOffs = y * width + x;
-                    Color c = PixelFormatter.Format32BitArgb.GetColor(imageData, inputOffs);
+                    Color c = Color.FromArgb(imageData[inputOffs + 3], imageData[inputOffs + 2], imageData[inputOffs + 1], imageData[inputOffs]);
                     if (c.A < 128)
                         newImageData[outputOffs] = 0;
                     else
                         newImageData[outputOffs] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(c, palette, transparentIndices);
+                    inputOffs += 4;
+                    outputOffs++;
                 }
             }
             stride = width;
@@ -354,7 +355,6 @@ namespace Nyerguds.ImageManipulation
             return targetImage;
         }
 
-
         /// <summary>
         /// Creates a bitmap based on data, width, height, stride and pixel format.
         /// </summary>
@@ -381,7 +381,7 @@ namespace Nyerguds.ImageManipulation
                     if (i < palette.Length)
                         pal.Entries[i] = palette[i];
                     else if (defaultColor.HasValue)
-                            pal.Entries[i] = defaultColor.Value;
+                        pal.Entries[i] = defaultColor.Value;
                     else
                         break;
                 }
@@ -414,8 +414,7 @@ namespace Nyerguds.ImageManipulation
             IntPtr destPos = target;
             Int32 minStride = Math.Min(origStride, targetStride);
             Byte[] imageData = new Byte[targetStride];
-
-            while (length >= targetStride)
+            while (length >= minStride && length > 0)
             {
                 Marshal.Copy(sourcePos, imageData, 0, minStride);
                 Marshal.Copy(imageData, 0, destPos, targetStride);
@@ -494,6 +493,216 @@ namespace Nyerguds.ImageManipulation
                 }
             }
             return false;
+        }
+
+        private static Color[] GeneratePalette(Color[] colors, Color def)
+        {
+            Color[] pal = new Color[256];
+            for (Int32 i = 0; i < pal.Length; i++)
+                if (i < colors.Length)
+                    pal[i] = colors[i];
+                else
+                    pal[i] = def;
+            return pal;
+        }
+
+        public static Bitmap GenerateBlankImage(Int32 width, Int32 height, Color[] colors, Byte paintColor)
+        {
+            if (width == 0 || height == 0)
+                return null;
+            Color[] pal = GeneratePalette(colors, Color.Empty);
+            Byte[] blankArray = new Byte[width * height];
+            if (paintColor != 0)
+                for (Int32 i = 0; i < blankArray.Length; i++)
+                    blankArray[i] = paintColor;
+            return BuildImage(blankArray, width, height, width, PixelFormat.Format8bppIndexed, pal, Color.Empty);
+        }
+
+        public static Bitmap GenerateCheckerboardImage(Int32 width, Int32 height, Color[] colors, Byte color1, Byte color2)
+        {
+            if (width == 0 || height == 0)
+                return null;
+            Color[] pal = GeneratePalette(colors, Color.Empty);
+            Byte[] patternArray = new Byte[width * height];
+            for (Int32 y = 0; y < width; y++)
+            {
+                for (Int32 x = 0; x < width; x++)
+                {
+                    Int32 offset = x + y * height;
+                    patternArray[offset] = (Byte)(((x + y) % 2 == 0) ? 1 : 0);
+                }
+            }
+            return BuildImage(patternArray, width, height, width, PixelFormat.Format8bppIndexed, pal, Color.Empty);
+        }
+
+        public static Bitmap GenerateGridImage(Int32 origWidth, Int32 origHeight, Int32 zoomFactor, Color[] colors, Byte bgColor, Byte gridcolor, Byte outLineColor)
+        {
+            if (zoomFactor <= 0)
+                throw new ArgumentOutOfRangeException("zoomFactor");
+            Color[] pal = GeneratePalette(colors, Color.Empty);
+            Int32 width1 = origWidth * zoomFactor;
+            Int32 height1 = origHeight * zoomFactor;
+            Int32 width = width1 + 1;
+            Int32 height = height1 + 1;
+            if (width == 0 || height == 0)
+                return null;
+            Byte[] patternArray = new Byte[width * height];
+            if (bgColor != 0)
+                for (Int32 i = 0; i < patternArray.Length; i++)
+                    patternArray[i] = bgColor;
+            for (Int32 y = 0; y < height; y++)
+            {
+                for (Int32 x = 0; x < width; x++)
+                {
+                    Int32 offset = x + y * width;
+                    if (x == 0 || x == width1 || y == 0 || y == height1)
+                        patternArray[offset] = outLineColor;
+                    else if (x % zoomFactor == 0 || y % zoomFactor == 0)
+                        patternArray[offset] = gridcolor;
+                }
+            }
+            return BuildImage(patternArray, width, height, width, PixelFormat.Format8bppIndexed, pal, Color.Empty);
+        }
+
+        /// <summary>
+        ///     Gets an 8-bit image's internal byte array for editing, executes a given function with that data, and writes the edited array back to the image afterwards.
+        /// </summary>
+        /// <param name="source">The source image</param>
+        /// <param name="editDelegate">A delegate to edit the resulting byte array, with the byte array's stride as second argument.</param>
+        public static void EditRawImageBytes(Bitmap source, Action<Byte[], Int32> editDelegate)
+        {
+            BitmapData sourceData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.ReadOnly, source.PixelFormat);
+            // Could technically design this to edit the bytes directly instead of copying, but this way doesn't require (technically) unsafe code.
+            Byte[] picData = new Byte[sourceData.Stride * sourceData.Height];
+            Int32 sourceStride = sourceData.Stride;
+            Marshal.Copy(sourceData.Scan0, picData, 0, picData.Length);
+            source.UnlockBits(sourceData);
+            // =======================================
+            // Call delegate function to perform the actual actions.
+            editDelegate(picData, sourceStride);
+            // =======================================
+            BitmapData destData = source.LockBits(new Rectangle(0, 0, source.Width, source.Height), ImageLockMode.WriteOnly, source.PixelFormat);
+            CopyToMemory(destData.Scan0, picData, 0, picData.Length, sourceStride, destData.Stride);
+            source.UnlockBits(destData);
+        }
+
+        public static void DrawRect8Bit(Bitmap source, Int32 startX, Int32 startY, Int32 endX, Int32 endY, Byte colorIndex, Boolean fill)
+        {
+            if (source.PixelFormat != PixelFormat.Format8bppIndexed)
+                return;
+            EditRawImageBytes(source, (arr, stride) => DrawRect8Bit(arr, source.Width, source.Height, stride, startX, startY, endX, endY, colorIndex, fill));
+        }
+
+        public static void DrawRect8Bit(Byte[] dataArray, Int32 width, Int32 height, Int32 stride, Int32 startX, Int32 startY, Int32 endX, Int32 endY, Byte colorIndex, Boolean fill)
+        {
+            // Switch incorrect start and end positions
+            if (startX > endX)
+            {
+                Int32 tmp = startX;
+                startX = endX;
+                endX = tmp;
+            }
+            if (startY > endY)
+            {
+                Int32 tmp = startY;
+                startY = endY;
+                endY = tmp;
+            }
+            // Check if bounds are completely outside image
+            if ((startX < 0 && endX < 0) || (startX >= width && endX >= width)
+                || (startY < 0 && endY < 0) || (startY >= height && endX >= height))
+                return;
+            // Restrict bounds to image.
+            Int32 maxw = width - 1;
+            Int32 maxh = height - 1;
+            startX = Math.Min(maxw, Math.Max(0, startX));
+            endX = Math.Min(maxw, Math.Max(0, endX));
+            startY = Math.Min(maxh, Math.Max(0, startY));
+            endY = Math.Min(maxh, Math.Max(0, endY));
+            for (Int32 y = startY; y <= endY; y++)
+            {
+                if (fill)
+                {
+                    for (Int32 x = startX; x <= endX; x++)
+                        dataArray[x + y * stride] = colorIndex;
+                }
+                else
+                {
+                    if (y == startY || y == endY)
+                        for (Int32 x = startX; x <= endX; x++)
+                            dataArray[x + y * stride] = colorIndex;
+                    else
+                    {
+                        dataArray[startX + y * stride] = colorIndex;
+                        dataArray[endX + y * stride] = colorIndex;
+                    }
+                }
+            }
+        }
+
+        public static void Shift8BitRowVert(Byte[] source, Int32 stride, Boolean up, Boolean wrap, Byte backColor)
+        {
+            Byte[] newSource = source.ToArray();
+            Byte[] emptyRow = new Byte[stride];
+            if (backColor != 0)
+                for (Int32 i = 0; i < stride; i++)
+                    emptyRow[i] = backColor;
+            Int32 length = source.Length - stride;
+            Int32 srcStart = up ? stride : 0;
+            Int32 tarStart = up ? 0 : stride;
+            if (wrap)
+                Array.Copy(source, up ? 0 : length, emptyRow, 0, stride);
+            Array.Copy(newSource, srcStart, source, tarStart, length);
+            // clear shifted row
+            Array.Copy(emptyRow, 0, source, up ? length : 0, stride);
+        }
+
+        public static void Shift8BitRowHor(Byte[] source, Int32 stride, Boolean left, Boolean wrap, Byte backColor)
+        {
+            Byte[] newSource = source.ToArray();
+            Int32 length = stride - 1;
+            Int32 srcStart = left ? 1 : 0;
+            Int32 tarStart = left ? 0 : 1;
+            for (Int32 i = 0; i < source.Length; i += stride)
+            {
+                Byte fill = (Byte)(wrap ? newSource[i + (left ? 0 : length)] : backColor);
+                Array.Copy(newSource, i + srcStart, source, i + tarStart, length);
+                // clear shifted pixel
+                source[i + length * srcStart] = fill;
+            }
+        }
+
+        public static Byte[] Change8BitStride(Byte[] source, Int32 origStride, Int32 height, Int32 targetStride, Boolean fromLeft, Byte backColor)
+        {
+            Int32 sourcePos = 0;
+            Int32 destPos = 0;
+            Int32 minStride = Math.Min(origStride, targetStride);
+            Int32 length = source.Length;
+            Int32 targetSize = height * targetStride;
+            Byte[] target = new Byte[targetSize];
+            if (backColor != 0)
+                for (Int32 i = 0; i < targetSize; i++)
+                    target[i] = backColor;
+            Int32 diff = origStride - targetStride;
+            while (length >= origStride && length > 0)
+            {
+                Int32 sourcePos1 = sourcePos;
+                Int32 destPos1 = destPos;
+                if (fromLeft)
+                {
+                    if (diff > 0)
+                        sourcePos1 += diff;
+                    else
+                        destPos1 -= diff;
+                }
+                Array.Copy(source, sourcePos1, target, destPos1, minStride);
+                length -= origStride;
+                sourcePos += origStride;
+                destPos += targetStride;
+            }
+            if (length > 0)
+                Array.Copy(source, sourcePos, target, destPos, length);
+            return target;
         }
 
         /// <summary>
@@ -583,7 +792,6 @@ namespace Nyerguds.ImageManipulation
             }
             return finalFileData;
         }
-
 
         /// <summary>
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
@@ -745,6 +953,5 @@ namespace Nyerguds.ImageManipulation
             }
             return images.ToArray();
         }
-
     }
 }

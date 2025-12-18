@@ -150,7 +150,7 @@ namespace CnC64FileConverter
                         ((FileTilesN64Bpp4)inputImage).ConvertToTiles(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output), outputType);
                     }
                     else
-                        outputType.SaveAsThis(inputImage, outputFull, noCompress);
+                        outputType.SaveAsThis(inputImage, outputFull, new SaveOption[0], noCompress);
                 }
                 catch (NotSupportedException ex)
                 {
@@ -274,7 +274,7 @@ namespace CnC64FileConverter
                         Bitmap img = ImageUtils.ConvertToPalette(sf.GetBitmap(), 8, palette);
                         String name = sf.LoadedFileName;
                         FileImage newFile = new FileImage();
-                        newFile.LoadFile(img, palette.Length, name);
+                        newFile.LoadFile(img, name);
                         readFiles[i] = newFile;
                     }
                     else
@@ -294,9 +294,6 @@ namespace CnC64FileConverter
             }
             // Palette set.
             //FileTilesetPC readFiles = new SupportedFileType[0xFF];
-
-
-
 
             return 0;
         }

@@ -15,7 +15,7 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteDyn : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "DynPal"; } }
+        public override String ShortTypeName { get { return "Dynamix Palette"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return "Dynamix palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
@@ -39,7 +39,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (vgaChunk.DataLength != 768)
                 throw new FileTypeLoadException("Incorrect file size.");
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            SixBitColor[] palette = null;
+            ColorSixBit[] palette = null;
             Exception e = null;
             try
             {
@@ -84,8 +84,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException(String.Empty);
             Color[] palEntries = fileToSave.GetColors();
@@ -99,7 +101,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 else
                     cols[i] = Color.Black;
             }
-            SixBitColor[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
+            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
             Byte[] paletteData = ColorUtils.GetSixBitPaletteData(sbcp);
             // write as Dynamix chunks
             DynamixChunk vgaChunk = new DynamixChunk("VGA", paletteData);

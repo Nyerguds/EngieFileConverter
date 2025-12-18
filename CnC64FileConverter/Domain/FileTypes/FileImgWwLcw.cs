@@ -22,7 +22,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 hdrHeight;
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "BRImg"; } }
+        public override String ShortTypeName { get { return "Blade Runner IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
         public override String ShortTypeDescription { get { return "Blade Runner LCW image"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
@@ -47,8 +47,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return SaveImg(fileToSave.GetBitmap());
         }
 

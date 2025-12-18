@@ -84,9 +84,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected virtual Boolean InternalColors { get { return hasPalette; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "CPS"; } }
+        public override String ShortTypeName { get { return "Westwood CPS"; } }
         public override String[] FileExtensions { get { return new String[] { "cps" }; } }
-        public override String ShortTypeDescription { get { return "CPS Image file (" + this.Compressiondesc + ")"; } }
+        public override String ShortTypeDescription { get { return "Westwood CPS File (" + this.Compressiondesc + ")"; } }
         public override Int32 ColorsInPalette { get { return hasPalette? 256 : 0; } }
         public override Int32 BitsPerColor { get{ return 8; } }
 
@@ -103,8 +103,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return SaveCps(fileToSave.GetBitmap(), fileToSave.GetColors(), !this.InternalColors, this.CompressionType);
         }
 
@@ -131,7 +133,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     throw new FileTypeLoadException("Invalid palette length in header!");
                 Byte[] pal = new Byte[paletteLength];
                 Array.Copy(fileData, 10, pal, 0, paletteLength);
-                SixBitColor[] palette;
+                ColorSixBit[] palette;
                 try
                 {
                     palette = ColorUtils.ReadSixBitPalette(pal);
@@ -148,7 +150,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.hasPalette = true;
             }
             if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, null, false);
             Byte[] imageData = new Byte[bufferSize];
             Int32 dataOffset = 10 + paletteLength;
             try
@@ -231,7 +233,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Array.Copy(palette, 0, pal,0, Math.Min(palette.Length, 256));
                     palette = pal;
                 }
-                SixBitColor[] sixbitPal = ColorUtils.GetSixBitColorPalette(palette);
+                ColorSixBit[] sixbitPal = ColorUtils.GetSixBitColorPalette(palette);
                 Byte[] palData = ColorUtils.GetSixBitPaletteData(sixbitPal);
                 Array.Copy(palData, 0, fullData, offset, palData.Length);
                 offset += palData.Length;

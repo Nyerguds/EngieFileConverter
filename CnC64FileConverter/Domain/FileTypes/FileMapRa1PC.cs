@@ -12,9 +12,9 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "RAMap"; } }
+        public override String ShortTypeName { get { return "RA Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "PC RA1 map file"; } }
+        public override String ShortTypeDescription { get { return "RA1 PC map file"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "mrp", "ini" }; } }
         public override Int32 Width { get { return this.width; } }
@@ -50,7 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
             throw new NotImplementedException();
         }

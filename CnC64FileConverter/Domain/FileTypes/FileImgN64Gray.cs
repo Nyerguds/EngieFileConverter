@@ -10,9 +10,9 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     public class FileImgN64Gray: FileImgN64
     {
-        public override String ShortTypeName { get { return "N64ImgGray"; } }
+        public override String ShortTypeName { get { return "C&C64 IMG Gray"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
-        public override String ShortTypeDescription { get { return "C&C64 paletteless image"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 paletteless image"; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -34,14 +34,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             hdrReadBytesPerColor = 4;
             hdrColorFormat = 1;
             hdrColorsInPalette = 0;
-            this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             this.m_LoadedImage = ImageUtils.ConvertToPalettedGrayscale(img);
             this.LoadedFile = fullFilePath;
             this.LoadedFileName = displayFileName;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return SaveImg(fileToSave.GetBitmap(), 0, true);
         }
     }

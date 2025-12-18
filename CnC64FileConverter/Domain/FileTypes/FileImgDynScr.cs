@@ -14,34 +14,46 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FileImgDynScr : SupportedFileType
     {
         public override String[] FileExtensions { get { return new String[] { "scr" }; } }
-        public override String ShortTypeName { get { return "DynScr"; } }
+        public override String ShortTypeName { get { return "Dynamix SCR"; } }
         public override String ShortTypeDescription { get { return "Dynamix Screen file v1"; } }
 
         public override Int32 BitsPerColor { get { return this.m_bpp; } }
         public override Int32 ColorsInPalette { get { return m_loadedPalette ? this.m_Palette.Length : 0; } }
 
+        /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
+        public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
+        /// <summary>
+        /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
+        /// Dynamix SCR is one of the rare cases where the frames visualisation is completely extra. 
+        /// </summary>
+        public override Boolean IsFramesContainer { get { return false; } }
+        
+
         protected Boolean m_loadedPalette = false;
         protected Int32 m_bpp = 8;
+        private SupportedFileType[] m_FramesList;
 
-        public override void SetColors(Color[] palette)
+        public override void SetColors(Color[] palette, SupportedFileType updateSource)
         {
-            m_Palette = palette.ToArray();
-            base.SetColors(palette);
+            palette = palette.ToArray();
+            if (this.BitsPerColor == 4)
+                palette = Make4BitPalette(palette);
+            base.SetColors(palette, updateSource);
         }
 
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
             SetFileNames(filename);
-            LoadFile(fileData, filename, false);
+            LoadFile(fileData, filename, false, false);
         }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFile(fileData, null, false);
+            LoadFile(fileData, null, false, false);
         }
 
-        public void LoadFile(Byte[] fileData, String sourceFilename, Boolean v2)
+        public void LoadFile(Byte[] fileData, String sourceFilename, Boolean v2, Boolean asFrame)
         {
             String output = null;
             if (sourceFilename != null)
@@ -55,12 +67,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                         FilePaletteDyn palDyn = new FilePaletteDyn();
                         palDyn.LoadFile(palName);
                         m_Palette = palDyn.GetColors();
-                        //if (m_Palette.Length > 0)
-                        //    m_Palette[0] = Color.FromArgb(0, m_Palette[0]);
                         m_loadedPalette = true;
-                        LoadedFileName += "/PAL";
                     }
-                    catch (FileTypeLoadException)
+                    catch
                     {
                         /* ignore */
                     }
@@ -109,55 +118,105 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "bin.bin", bindata);
-            Byte[] fullData;
+            Byte[] fullData = null;
             PixelFormat pf;
+
             if (vgadata == null)
             {
                 fullData = bindata;
                 pf = PixelFormat.Format4bppIndexed;
                 if (m_Palette != null)
+                    this.m_Palette = Make4BitPalette(this.m_Palette);
+                if (m_loadedPalette)
+                    this.LoadedFileName += "/PAL";
+            }
+            else if (!asFrame)
+            {
+                this.m_FramesList = new SupportedFileType[2];
+                DynamixChunk[] content = new DynamixChunk[dimChunk == null ? 1 : 2];
+                Int32 chIndex = 0;
+                if (dimChunk != null)
                 {
-                    Color[] palette = new Color[16];
-                    for (Int32 i = 0; i < 16; i++)
-                        palette[i] = this.m_Palette[v2 ? i : i * 16 + 3];
-                    this.m_Palette = palette;
+                    content[0] = dimChunk;
+                    chIndex++;
                 }
+                content[chIndex] = new DynamixChunk("BIN", 0, (UInt32)vgadata.Length, vgadata);
+                DynamixChunk fourBitImage = DynamixChunk.BuildChunk("SCR", content);
+                FileImgDynScr fourbitFrame = new FileImgDynScr();
+                FileImgDynScr eightbitFrame = new FileImgDynScr();
+                fourbitFrame.SetFileNames(sourceFilename);
+                fourbitFrame.LoadFile(fourBitImage.WriteChunk(), sourceFilename, v2, true);
+                fourbitFrame.FrameParent = this;
+                eightbitFrame.SetFileNames(sourceFilename);
+                eightbitFrame.LoadFile(fileData, sourceFilename, v2, true);
+                if (m_loadedPalette)
+                    this.LoadedFileName += "/PAL";
+                eightbitFrame.FrameParent = this;
+                this.m_FramesList[0] = eightbitFrame;
+                this.m_FramesList[1] = fourbitFrame;
+                pf = PixelFormat.Format8bppIndexed;
+                this.m_LoadedImage = eightbitFrame.GetBitmap();
             }
             else
             {
                 fullData = new Byte[vgadata.Length * 2];
                 pf = PixelFormat.Format8bppIndexed;
+                // ENRICHED 4-BIT IMAGE LOGIC
+                // Basic principle: The data in the VGA chunk is already perfectly viewable as 4-bit image. The colour palettes
+                // are designed so each block of 16 colours consists of different tints of the same colour. The 16-colour palette
+                // for the VGA chunk alone can be constructed by taking a palette slice where each colour is 16 entries apart.
+
+                // This VGA data [AB] gets "ennobled" to 8-bit by adding detail data [ab] from the BIN chunk, to get bytes [Aa Bb].
+                // The colour palettes are designed so the vga file itself is already viewable as 4-bit image,
+                // by using a sub-palette slice where each colour is 16 entries apart.
                 for (Int32 i = 0; i < vgadata.Length; i++)
                 {
-                    // This can be written much simpler, but I expanded it to clearly show each step.
                     Int32 offs = i * 2;
-                    Byte binPix = bindata[i]; // 0x11
-                    Byte vgaPix = vgadata[i]; // 0x33
-                    //vga + bin = [vga|bin]; 3 + 1  => 31
-                    Byte binPix1 = (Byte)(binPix & 0x0F); // 0x01
-                    Byte vgaPix1 = (Byte)(vgaPix & 0x0F); // 0x03
-                    Byte finalPix1 = (Byte)((vgaPix1 << 4) + binPix1);
-                    Byte binPix2 = (Byte)((binPix & 0xF0) >> 4); // 0x10
-                    Byte vgaPix2 = (Byte)((vgaPix & 0xF0) >> 4); // 0x30
-                    Byte finalPix2 = (Byte)((vgaPix2 << 4) + binPix2);
-                    fullData[offs] = finalPix2;
-                    fullData[offs + 1] = finalPix1;
+                    // This can be written much simpler, but I expanded it to clearly show each step.
+                    Byte vgaPix = vgadata[i]; // 0xAB
+                    Byte binPix = bindata[i]; // 0xab
+                    Byte vgaPixHi = (Byte)((vgaPix & 0xF0) >> 4); // 0xA0
+                    Byte binPixHi = (Byte)((binPix & 0xF0) >> 4); // 0xa0
+                    Byte finalPixHi = (Byte)((vgaPixHi << 4) + binPixHi); // Aa
+                    Byte vgaPixLo = (Byte)(vgaPix & 0x0F); // 0x0B
+                    Byte binPixLo = (Byte)(binPix & 0x0F); // 0x0b
+                    Byte finalPixLo = (Byte)((vgaPixLo << 4) + binPixLo); // Bb
+                    // Final result: AB + ab == [Aa Bb] - 
+                    fullData[offs] = finalPixHi;
+                    fullData[offs + 1] = finalPixLo;
                 }
+                if (m_loadedPalette)
+                    this.LoadedFileName += "/PAL";
             }
             if (m_Palette == null)
-                m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, false, false);
-            this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, m_Palette, null);
+                m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
+            if (fullData != null)
+                this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, m_Palette, null);
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        protected Color[] Make4BitPalette(Color[] col)
         {
+            if (col.Length < 256)
+                return col.ToArray();
+            Color[] fourbitpal = new Color[16];
+            for (Int32 i = 0; i < 16; i++)
+                fourbitpal[i] = col[i * 16 + 3];
+            return fourbitpal;
+        }
+
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
+        {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return SaveToBytesAsThis(fileToSave, dontCompress, false);
         }
 
         public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress, Boolean v2)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             Bitmap image = fileToSave.GetBitmap();
             if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
                 throw new NotSupportedException("Only 4-bit or 8-bit images can be saved as Dynamix SCR!");

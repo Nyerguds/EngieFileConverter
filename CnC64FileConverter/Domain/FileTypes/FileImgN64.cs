@@ -39,9 +39,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 hdrColorsInPalette;
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64Img"; } }
+        public override String ShortTypeName { get { return "C&C64 IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
-        public override String ShortTypeDescription { get { return "C&C64 image"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 image"; } }
 
         public override Int32 ColorsInPalette { get { return hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
 
@@ -99,8 +99,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, fileToSave.ColorsInPalette == 0 && fileToSave.GetColors().Length != 0);
         }
 
@@ -153,7 +155,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     // No palette in file, but paletted color format. Generate grayscale palette.
                     Int32 bpp = this.BitsPerColor;
 
-                    this.m_Palette = PaletteUtils.GenerateGrayPalette(bpp, false, false);
+                    this.m_Palette = PaletteUtils.GenerateGrayPalette(bpp, null, false);
                     // Ignore original value here.
                     this.hdrBytesPerColor = 4;
                 }
@@ -248,7 +250,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             Int32 paletteOffset = paletteColors == 0 ? 0 : 16 + imageData.Length;
             Int32 palbpc = colorFormat > 1 ? 0 : (asNoPalGray8bpp ? 4 : 2);
-
+            // Collapse stride.
+            if (asNoPalGray8bpp && stride != width)
+                imageData = ImageUtils.ConvertTo8Bit(imageData, width, height, 0, 8, false, ref stride);
             // Header
             Byte[] fullData = new Byte[0x10 + imageData.Length + paletteData.Length];
             //DataOffset

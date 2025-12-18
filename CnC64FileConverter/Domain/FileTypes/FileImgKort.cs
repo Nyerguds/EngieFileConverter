@@ -17,7 +17,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return 240; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "KORTDat"; } }
+        public override String ShortTypeName { get { return "KORT Image"; } }
         public override String[] FileExtensions { get { return new String[] { "000", "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "016", "017" }; } }
         public override String ShortTypeDescription { get { return "KORT Image file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
@@ -64,12 +64,14 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] imageData = new Byte[len];
             for (Int32 y = 0; y < this.Height; y++)
                 Array.Copy(targetData, (this.Height - 1 - y) * this.Width, imageData, y * this.Width, this.Width);
-            this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, null, false);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_Palette, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             Bitmap image = fileToSave.GetBitmap();
             if (image.Width != 320 || image.Height != 240 || image.PixelFormat != PixelFormat.Format8bppIndexed)
                 throw new NotSupportedException("Only 8-bit 320x240 images can be saved as KORT image file!");

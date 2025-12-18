@@ -9,8 +9,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FileMapCc1N64 : FileMapCc1Pc
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64Map"; } }
-        public override String ShortTypeDescription { get { return "N64 C&C map file"; } }
+        public override String ShortTypeName { get { return "C&C64 Map"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 map file"; } }
         public override String[] FileExtensions { get { return new String[] { "map" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription }; } }
@@ -31,7 +31,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
             if (!(fileToSave is FileMapCc1Pc))
                 throw new NotSupportedException(String.Empty);
@@ -68,7 +68,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "ini" }; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64MapIni"; } }
+        public override String ShortTypeName { get { return "C&C64 Map ini"; } }
 
         public override void LoadFile(String filename)
         {

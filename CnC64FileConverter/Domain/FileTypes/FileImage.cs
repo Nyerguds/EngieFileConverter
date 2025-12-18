@@ -8,11 +8,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImage : SupportedFileType
     {
-        /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Image"; } }
-        /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return "Image file"; } }
-        /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions
         {
             get { return new String[] { "png", "bmp", "gif", "jpg", "jpeg" }; }
@@ -24,14 +21,11 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
         public override SupportedFileType PreferredExportType { get { return new FileImagePng(); } }
 
-        protected Int32 m_ColsInPal;
-
         public FileImage() { }
 
-        public void LoadFile(Bitmap image, Int32 colors, String filename)
+        public void LoadFile(Bitmap image, String filename)
         {
             m_LoadedImage = image;
-            m_ColsInPal = colors;
             SetFileNames(filename);
         }
 
@@ -60,8 +54,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             String filename = "test." + FileExtensions[0];
             return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);
         }

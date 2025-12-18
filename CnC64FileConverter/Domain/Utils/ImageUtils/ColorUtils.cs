@@ -5,7 +5,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
-using Nyerguds.GameData.Westwood;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -13,7 +12,7 @@ namespace Nyerguds.ImageManipulation
     {
         public static Color ColorFromUInt(UInt32 argb)
         {
-            return Color.FromArgb((Byte)((argb & 0xff000000) >> 0x18), (Byte)((argb & 0xff0000) >> 0x10), (Byte)((argb & 0xff00) >> 0x08), (Byte)(argb & 0xff));
+            return Color.FromArgb((Byte)((argb >> 0x18) & 0xFF), (Byte)((argb >> 0x10) & 0xFF), (Byte)((argb >> 0x08) & 0xFF), (Byte)(argb & 0xFF));
         }
 
         public static Color GetVisibleBorderColor(Color color)
@@ -42,7 +41,7 @@ namespace Nyerguds.ImageManipulation
             if (pf != PixelFormat.Format1bppIndexed && pf != PixelFormat.Format4bppIndexed && pf != PixelFormat.Format8bppIndexed)
                 return false;
             Int32 grayPfs = Math.Min(8, Image.GetPixelFormatSize(image.PixelFormat));
-            Color[] grayPalette = PaletteUtils.GenerateGrayPalette(grayPfs, false, false);
+            Color[] grayPalette = PaletteUtils.GenerateGrayPalette(grayPfs, null, false);
             Color[] pal = image.Palette.Entries;
             if (pal.Length != grayPalette.Length)
                 return false;
@@ -56,7 +55,7 @@ namespace Nyerguds.ImageManipulation
             return true;
         }
 
-        public static Color[] GetEightBitColorPalette(SixBitColor[] sixbitpalette)
+        public static Color[] GetEightBitColorPalette(ColorSixBit[] sixbitpalette)
         {
             Color[] eightbitpalette = new Color[sixbitpalette.Length];
             for (Int32 i = 0; i < sixbitpalette.Length; i++)
@@ -64,27 +63,27 @@ namespace Nyerguds.ImageManipulation
             return eightbitpalette;
         }
 
-        public static SixBitColor[] GetSixBitColorPalette(Color[] eightbitpalette)
+        public static ColorSixBit[] GetSixBitColorPalette(Color[] eightbitpalette)
         {
-            SixBitColor[] sixbitpalette = new SixBitColor[eightbitpalette.Length];
+            ColorSixBit[] sixbitpalette = new ColorSixBit[eightbitpalette.Length];
             for (Int32 i = 0; i < eightbitpalette.Length; i++)
-                sixbitpalette[i] = new SixBitColor(eightbitpalette[i]);
+                sixbitpalette[i] = new ColorSixBit(eightbitpalette[i]);
             return sixbitpalette;
         }
 
         public static void WriteSixBitPaletteFile(Color[] palette, String palfilename)
         {
-            SixBitColor[] newpal = GetSixBitColorPalette(palette);
+            ColorSixBit[] newpal = GetSixBitColorPalette(palette);
             WriteSixBitPaletteFile(newpal, palfilename);
         }
 
-        public static void WriteSixBitPaletteFile(SixBitColor[] palette, String palfilename)
+        public static void WriteSixBitPaletteFile(ColorSixBit[] palette, String palfilename)
         {
             Byte[] pal = GetSixBitPaletteData(palette);
             File.WriteAllBytes(palfilename, pal);
         }
 
-        public static Byte[] GetSixBitPaletteData(SixBitColor[] palette)
+        public static Byte[] GetSixBitPaletteData(ColorSixBit[] palette)
         {
             Byte[] pal = new Byte[768];
             Int32 end = Math.Min(768, palette.Length);
@@ -123,25 +122,25 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
-        public static SixBitColor[] ReadSixBitPaletteFile(String palfilename)
+        public static ColorSixBit[] ReadSixBitPaletteFile(String palfilename)
         {
             Byte[] readBytes = File.ReadAllBytes(palfilename);
             return ReadSixBitPalette(readBytes);
         }
 
-        public static SixBitColor[] ReadSixBitPalette(Byte[] paletteData)
+        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData)
         {
             const String invalid = "This is not a valid six-bit palette file.";
             if (paletteData.Length != 768)
                 throw new ArgumentException(invalid);
 
-            SixBitColor[] pal = new SixBitColor[256];
+            ColorSixBit[] pal = new ColorSixBit[256];
             try
             {
                 for (Int32 i = 0; i < pal.Length; i++)
                 {
                     Int32 index = i * 3;
-                    pal[i] = new SixBitColor(paletteData[index], paletteData[index + 1], paletteData[index + 2]);
+                    pal[i] = new ColorSixBit(paletteData[index], paletteData[index + 1], paletteData[index + 2]);
                 }
                 return pal;
             }

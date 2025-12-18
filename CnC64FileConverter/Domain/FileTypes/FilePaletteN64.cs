@@ -11,9 +11,9 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteN64 : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64Pal"; } }
+        public override String ShortTypeName { get { return "C&C64 Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "N64 C&C palette"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
         public override Int32 Width { get { return 16; } }
@@ -75,7 +75,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
             throw new NotSupportedException("Use specific PA4 or PA8 type.");
         }
@@ -92,12 +92,14 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteN64Pa4 : FilePaletteN64
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64Pal4"; } }
-        public override String ShortTypeDescription { get { return "N64 C&C 4-bit palettes file"; } }
+        public override String ShortTypeName { get { return "C&C64 Pal 4-bit"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 4-bit palettes file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return this.SaveToBytesAsThis(fileToSave, dontCompress, false);
         }
     }
@@ -105,8 +107,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteN64Pa8 : FilePaletteN64
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64Pal8"; } }
-        public override String ShortTypeDescription { get { return "N64 C&C 8-bit palette file"; } }
+        public override String ShortTypeName { get { return "C&C64 Pal 8-bit"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 8-bit palette file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa8" }; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -126,8 +128,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             return this.SaveToBytesAsThis(fileToSave, dontCompress, true);
         }
 

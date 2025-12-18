@@ -49,6 +49,7 @@
             this.tsmiOpen = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSave = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiExport = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiSaveFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiEdit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiCopy = new System.Windows.Forms.ToolStripMenuItem();
@@ -71,7 +72,6 @@
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
             this.picImage = new RedCell.UI.Controls.PixelBox();
-            this.tsmiSaveFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numZoom)).BeginInit();
@@ -82,7 +82,7 @@
             // lblFilename
             // 
             this.lblFilename.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblFilename.Location = new System.Drawing.Point(444, 24);
+            this.lblFilename.Location = new System.Drawing.Point(664, 24);
             this.lblFilename.Name = "lblFilename";
             this.lblFilename.Size = new System.Drawing.Size(94, 23);
             this.lblFilename.TabIndex = 100;
@@ -92,7 +92,7 @@
             // lblWidth
             // 
             this.lblWidth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblWidth.Location = new System.Drawing.Point(444, 100);
+            this.lblWidth.Location = new System.Drawing.Point(664, 100);
             this.lblWidth.Name = "lblWidth";
             this.lblWidth.Size = new System.Drawing.Size(94, 23);
             this.lblWidth.TabIndex = 102;
@@ -102,7 +102,7 @@
             // lblHeight
             // 
             this.lblHeight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblHeight.Location = new System.Drawing.Point(444, 123);
+            this.lblHeight.Location = new System.Drawing.Point(664, 123);
             this.lblHeight.Name = "lblHeight";
             this.lblHeight.Size = new System.Drawing.Size(94, 23);
             this.lblHeight.TabIndex = 104;
@@ -112,7 +112,7 @@
             // lblColorformat
             // 
             this.lblColorformat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblColorformat.Location = new System.Drawing.Point(444, 146);
+            this.lblColorformat.Location = new System.Drawing.Point(664, 146);
             this.lblColorformat.Name = "lblColorformat";
             this.lblColorformat.Size = new System.Drawing.Size(94, 23);
             this.lblColorformat.TabIndex = 108;
@@ -122,7 +122,7 @@
             // lblValFilename
             // 
             this.lblValFilename.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValFilename.Location = new System.Drawing.Point(444, 47);
+            this.lblValFilename.Location = new System.Drawing.Point(664, 47);
             this.lblValFilename.Name = "lblValFilename";
             this.lblValFilename.Size = new System.Drawing.Size(240, 23);
             this.lblValFilename.TabIndex = 101;
@@ -132,7 +132,7 @@
             // lblColorsInPal
             // 
             this.lblColorsInPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblColorsInPal.Location = new System.Drawing.Point(444, 169);
+            this.lblColorsInPal.Location = new System.Drawing.Point(664, 169);
             this.lblColorsInPal.Name = "lblColorsInPal";
             this.lblColorsInPal.Size = new System.Drawing.Size(94, 23);
             this.lblColorsInPal.TabIndex = 112;
@@ -142,9 +142,9 @@
             // lblValWidth
             // 
             this.lblValWidth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValWidth.Location = new System.Drawing.Point(544, 100);
+            this.lblValWidth.Location = new System.Drawing.Point(747, 100);
             this.lblValWidth.Name = "lblValWidth";
-            this.lblValWidth.Size = new System.Drawing.Size(140, 23);
+            this.lblValWidth.Size = new System.Drawing.Size(157, 23);
             this.lblValWidth.TabIndex = 103;
             this.lblValWidth.Text = "---";
             this.lblValWidth.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -152,9 +152,9 @@
             // lblValHeight
             // 
             this.lblValHeight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValHeight.Location = new System.Drawing.Point(544, 123);
+            this.lblValHeight.Location = new System.Drawing.Point(747, 123);
             this.lblValHeight.Name = "lblValHeight";
-            this.lblValHeight.Size = new System.Drawing.Size(140, 23);
+            this.lblValHeight.Size = new System.Drawing.Size(157, 23);
             this.lblValHeight.TabIndex = 105;
             this.lblValHeight.Text = "---";
             this.lblValHeight.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -162,9 +162,9 @@
             // lblValColorFormat
             // 
             this.lblValColorFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValColorFormat.Location = new System.Drawing.Point(544, 146);
+            this.lblValColorFormat.Location = new System.Drawing.Point(747, 146);
             this.lblValColorFormat.Name = "lblValColorFormat";
-            this.lblValColorFormat.Size = new System.Drawing.Size(140, 23);
+            this.lblValColorFormat.Size = new System.Drawing.Size(157, 23);
             this.lblValColorFormat.TabIndex = 109;
             this.lblValColorFormat.Text = "---";
             this.lblValColorFormat.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -172,9 +172,9 @@
             // lblValColorsInPal
             // 
             this.lblValColorsInPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValColorsInPal.Location = new System.Drawing.Point(544, 169);
+            this.lblValColorsInPal.Location = new System.Drawing.Point(747, 169);
             this.lblValColorsInPal.Name = "lblValColorsInPal";
-            this.lblValColorsInPal.Size = new System.Drawing.Size(140, 23);
+            this.lblValColorsInPal.Size = new System.Drawing.Size(157, 23);
             this.lblValColorsInPal.TabIndex = 113;
             this.lblValColorsInPal.Text = "---";
             this.lblValColorsInPal.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -182,7 +182,7 @@
             // lblZoom
             // 
             this.lblZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblZoom.Location = new System.Drawing.Point(292, 435);
+            this.lblZoom.Location = new System.Drawing.Point(512, 447);
             this.lblZoom.Name = "lblZoom";
             this.lblZoom.Size = new System.Drawing.Size(72, 20);
             this.lblZoom.TabIndex = 23;
@@ -193,7 +193,7 @@
             // 
             this.lblTransparentColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTransparentColorVal.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.lblTransparentColorVal.Location = new System.Drawing.Point(277, 435);
+            this.lblTransparentColorVal.Location = new System.Drawing.Point(497, 447);
             this.lblTransparentColorVal.Name = "lblTransparentColorVal";
             this.lblTransparentColorVal.Size = new System.Drawing.Size(20, 20);
             this.lblTransparentColorVal.TabIndex = 118;
@@ -202,7 +202,7 @@
             // lblTransparentColor
             // 
             this.lblTransparentColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblTransparentColor.Location = new System.Drawing.Point(196, 435);
+            this.lblTransparentColor.Location = new System.Drawing.Point(416, 447);
             this.lblTransparentColor.Name = "lblTransparentColor";
             this.lblTransparentColor.Size = new System.Drawing.Size(75, 20);
             this.lblTransparentColor.TabIndex = 23;
@@ -212,7 +212,7 @@
             // lblType
             // 
             this.lblType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblType.Location = new System.Drawing.Point(444, 77);
+            this.lblType.Location = new System.Drawing.Point(664, 77);
             this.lblType.Name = "lblType";
             this.lblType.Size = new System.Drawing.Size(94, 23);
             this.lblType.TabIndex = 102;
@@ -222,10 +222,9 @@
             // lblValType
             // 
             this.lblValType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValType.AutoSize = true;
-            this.lblValType.Location = new System.Drawing.Point(544, 82);
+            this.lblValType.Location = new System.Drawing.Point(747, 73);
             this.lblValType.Name = "lblValType";
-            this.lblValType.Size = new System.Drawing.Size(16, 13);
+            this.lblValType.Size = new System.Drawing.Size(157, 30);
             this.lblValType.TabIndex = 120;
             this.lblValType.Text = "---";
             this.lblValType.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -237,7 +236,7 @@
             this.tsmiEdit});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(684, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(904, 24);
             this.menuStrip1.TabIndex = 121;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -259,7 +258,7 @@
             this.tsmiOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
             this.tsmiOpen.Size = new System.Drawing.Size(202, 22);
             this.tsmiOpen.Text = "&Open File";
-            this.tsmiOpen.Click += new System.EventHandler(this.BtnOpen_Click);
+            this.tsmiOpen.Click += new System.EventHandler(this.TsmiOpen_Click);
             // 
             // tsmiSave
             // 
@@ -267,7 +266,7 @@
             this.tsmiSave.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
             this.tsmiSave.Size = new System.Drawing.Size(202, 22);
             this.tsmiSave.Text = "&Save File...";
-            this.tsmiSave.Click += new System.EventHandler(this.BtnSave_Click);
+            this.tsmiSave.Click += new System.EventHandler(this.TsmiSave_Click);
             // 
             // tsmiExport
             // 
@@ -275,7 +274,15 @@
             this.tsmiExport.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
             this.tsmiExport.Size = new System.Drawing.Size(202, 22);
             this.tsmiExport.Text = "Quick Conv&ert...";
-            this.tsmiExport.Click += new System.EventHandler(this.BtnSaveExport_Click);
+            this.tsmiExport.Click += new System.EventHandler(this.TsmiSaveExport_Click);
+            // 
+            // tsmiSaveFrames
+            // 
+            this.tsmiSaveFrames.Name = "tsmiSaveFrames";
+            this.tsmiSaveFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
+            this.tsmiSaveFrames.Size = new System.Drawing.Size(202, 22);
+            this.tsmiSaveFrames.Text = "Save as &Frames...";
+            this.tsmiSaveFrames.Click += new System.EventHandler(this.TsmiSaveFrames_Click);
             // 
             // tsmiExit
             // 
@@ -283,7 +290,7 @@
             this.tsmiExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
             this.tsmiExit.Size = new System.Drawing.Size(202, 22);
             this.tsmiExit.Text = "Exit";
-            this.tsmiExit.Click += new System.EventHandler(this.BtnExit_Click);
+            this.tsmiExit.Click += new System.EventHandler(this.TsmiExit_Click);
             // 
             // tsmiEdit
             // 
@@ -372,7 +379,7 @@
             // lblFrame
             // 
             this.lblFrame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblFrame.Location = new System.Drawing.Point(12, 435);
+            this.lblFrame.Location = new System.Drawing.Point(12, 447);
             this.lblFrame.Name = "lblFrame";
             this.lblFrame.Size = new System.Drawing.Size(40, 20);
             this.lblFrame.TabIndex = 124;
@@ -382,7 +389,7 @@
             // lblNrOfFrames
             // 
             this.lblNrOfFrames.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblNrOfFrames.Location = new System.Drawing.Point(129, 435);
+            this.lblNrOfFrames.Location = new System.Drawing.Point(129, 447);
             this.lblNrOfFrames.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
             this.lblNrOfFrames.Name = "lblNrOfFrames";
             this.lblNrOfFrames.Size = new System.Drawing.Size(40, 20);
@@ -391,9 +398,9 @@
             // 
             // btnResetPalette
             // 
-            this.btnResetPalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnResetPalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnResetPalette.Enabled = false;
-            this.btnResetPalette.Location = new System.Drawing.Point(568, 430);
+            this.btnResetPalette.Location = new System.Drawing.Point(788, 442);
             this.btnResetPalette.Name = "btnResetPalette";
             this.btnResetPalette.Size = new System.Drawing.Size(49, 23);
             this.btnResetPalette.TabIndex = 313;
@@ -403,9 +410,9 @@
             // 
             // btnSavePalette
             // 
-            this.btnSavePalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnSavePalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnSavePalette.Enabled = false;
-            this.btnSavePalette.Location = new System.Drawing.Point(623, 430);
+            this.btnSavePalette.Location = new System.Drawing.Point(843, 442);
             this.btnSavePalette.Name = "btnSavePalette";
             this.btnSavePalette.Size = new System.Drawing.Size(49, 23);
             this.btnSavePalette.TabIndex = 314;
@@ -415,11 +422,11 @@
             // 
             // cmbPalettes
             // 
-            this.cmbPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmbPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmbPalettes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbPalettes.Enabled = false;
             this.cmbPalettes.FormattingEnabled = true;
-            this.cmbPalettes.Location = new System.Drawing.Point(447, 432);
+            this.cmbPalettes.Location = new System.Drawing.Point(667, 444);
             this.cmbPalettes.Name = "cmbPalettes";
             this.cmbPalettes.Size = new System.Drawing.Size(115, 21);
             this.cmbPalettes.TabIndex = 126;
@@ -433,7 +440,7 @@
             0,
             0,
             0});
-            this.numFrame.Location = new System.Drawing.Point(58, 437);
+            this.numFrame.Location = new System.Drawing.Point(58, 449);
             this.numFrame.Minimum = new decimal(new int[] {
             1,
             0,
@@ -451,11 +458,11 @@
             // 
             // palColorViewer
             // 
-            this.palColorViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.palColorViewer.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.palColorViewer.AutoSize = true;
             this.palColorViewer.ColorSelectMode = Nyerguds.Util.UI.ColorSelMode.None;
             this.palColorViewer.LabelSize = new System.Drawing.Size(12, 12);
-            this.palColorViewer.Location = new System.Drawing.Point(447, 195);
+            this.palColorViewer.Location = new System.Drawing.Point(667, 207);
             this.palColorViewer.Name = "palColorViewer";
             this.palColorViewer.PadBetween = new System.Drawing.Point(2, 2);
             this.palColorViewer.Palette = null;
@@ -474,7 +481,7 @@
             0,
             0,
             0});
-            this.numZoom.Location = new System.Drawing.Point(370, 435);
+            this.numZoom.Location = new System.Drawing.Point(590, 447);
             this.numZoom.Minimum = new decimal(new int[] {
             1,
             0,
@@ -502,7 +509,7 @@
             this.pnlImageScroll.Location = new System.Drawing.Point(12, 30);
             this.pnlImageScroll.Margin = new System.Windows.Forms.Padding(0);
             this.pnlImageScroll.Name = "pnlImageScroll";
-            this.pnlImageScroll.Size = new System.Drawing.Size(426, 397);
+            this.pnlImageScroll.Size = new System.Drawing.Size(646, 409);
             this.pnlImageScroll.TabIndex = 3;
             this.pnlImageScroll.TabStop = true;
             this.pnlImageScroll.MouseScroll += new System.Windows.Forms.MouseEventHandler(this.PnlImageScroll_MouseScroll);
@@ -520,20 +527,12 @@
             this.picImage.Visible = false;
             this.picImage.Click += new System.EventHandler(this.PicImage_Click);
             // 
-            // tsmiSaveFrames
-            // 
-            this.tsmiSaveFrames.Name = "tsmiSaveFrames";
-            this.tsmiSaveFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
-            this.tsmiSaveFrames.Size = new System.Drawing.Size(202, 22);
-            this.tsmiSaveFrames.Text = "Save as &Frames...";
-            this.tsmiSaveFrames.Click += new System.EventHandler(this.BtnSaveFrames_Click);
-            // 
             // FrmCnC64FileConverter
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(684, 462);
+            this.ClientSize = new System.Drawing.Size(904, 474);
             this.Controls.Add(this.btnResetPalette);
             this.Controls.Add(this.btnSavePalette);
             this.Controls.Add(this.cmbPalettes);
@@ -561,7 +560,7 @@
             this.Controls.Add(this.menuStrip1);
             this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
             this.MainMenuStrip = this.menuStrip1;
-            this.MinimumSize = new System.Drawing.Size(700, 500);
+            this.MinimumSize = new System.Drawing.Size(700, 512);
             this.Name = "FrmCnC64FileConverter";
             this.Text = "C&C64 File Converter - Created by Nyerguds";
             this.Shown += new System.EventHandler(this.FrmCnC64FileConverter_Shown);

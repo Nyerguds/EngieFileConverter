@@ -4,7 +4,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImageJpg : FileImage
     {
-        public override String ShortTypeName { get { return "ImageJPG"; } }
+        public override String ShortTypeName { get { return "JPEG"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription
         {

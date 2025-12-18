@@ -14,7 +14,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         protected abstract Int32 Bpp { get; }
         public override String[] FileExtensions { get { return new String[] { "da" + Bpp }; } }
-        public override String ShortTypeDescription { get { return "N64 " + Bpp + "-bit tile data"; } }
+        public override String ShortTypeName { get { return "C&C64 " + Bpp + "-bit tiles"; } }
+        public override String ShortTypeDescription { get { return "C&C N64 " + Bpp + "-bit tile data"; } }
         protected abstract FilePaletteN64 PaletteType { get; }
         protected String ExtData { get { return "da" + Bpp; } }
         protected String ExtPalIndex { get { return "nd" + Bpp; } }
@@ -24,10 +25,14 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Byte[][] m_rawTiles;
         protected Byte[] m_palIndexFile;
 
-        /// <summary>Enables frame controls on the UI.</summary>
-        public override Boolean ContainsFrames { get { return true; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_tilesList.Cast<SupportedFileType>().ToArray(); } }
+        /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
+        public override Boolean IsFramesContainer { get { return true; } }
+        /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
+        public override Boolean HasCompositeFrame { get { return true; } }
+
+
 
         public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : this.m_Palette.Length; } }
         public override Int32 BitsPerColor { get { return 8; } }
@@ -134,7 +139,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return PixelFormat.DontCare;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
             throw new NotSupportedException("Saving as this type is not supported.");
         }
@@ -178,7 +183,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     throw new NotSupportedException("Bad mapping in " + this.ExtTileIds + " file!");
                 String outputName = ti.TileName + "_" + tile.CellData.LowByte.ToString("D3") + "_pal" + tile.PaletteIndex.ToString("D2") + ext;
                 String outputPath = Path.Combine(outputFolder, outputName);
-                outputType.SaveAsThis(tile, outputPath, true);
+                outputType.SaveAsThis(tile, outputPath, new SaveOption[0], true);
             }
         }
 
@@ -199,8 +204,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class N64Tile : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "N64Tile"; } }
-        public override String ShortTypeDescription { get { return "N64 " +this.Bpp + "-bit terrain tile";} }
+        public override String ShortTypeName { get { return "C&C64 Tile"; } }
+        public override String ShortTypeDescription { get { return "C&C64 " + this.Bpp + "-bit terrain tile";} }
         public override String[] FileExtensions { get { return new String[0]; } }
 
         public String SourceFileName { get; private set; }
@@ -240,7 +245,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             throw new NotSupportedException("Loading as this type is not supported.");
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
             throw new NotSupportedException("Saving as this type is not supported.");
         }

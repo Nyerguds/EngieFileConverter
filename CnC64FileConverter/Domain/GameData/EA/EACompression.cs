@@ -1,133 +1,71 @@
 ﻿using System;
-using Nyerguds.Util;
+using System.Collections.Generic;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.GameData.KotB
 {
-    /// <summary>
-    /// Dynamix compression / decompression class. Offers functionality to decompress chunks using RLE or LZW decompression,
-    /// and has functions to compress to RLE.
-    /// </summary>
-    public class DynamixCompression
+    public class EACompression
     {
-        /// <summary>
-        /// Decompresses Dynamix chunk data. The chunk data should start with the compression
-        /// type byte, followed by a 32-bit integer specifying the uncompressed length.
-        /// </summary>
-        /// <param name="chunkData">Chunk data to decompress. </param>
-        /// <returns>The uncompressed data.</returns>
-        public static Byte[] DecodeChunk(Byte[] chunkData)
-        {
-            if (chunkData.Length < 5)
-                throw new FileTypeLoadException("Chunk is too short to read compression header!");
-            Byte compression = chunkData[0];
-            Int32 uncompressedLength = (Int32)ArrayUtils.ReadIntFromByteArray(chunkData, 1, 4, true);
-            return Decode(chunkData, 5, null, compression, uncompressedLength);
-        }
 
-        /// <summary>
-        /// Decompresses Dynamix data.
-        /// </summary>
-        /// <param name="buffer">Buffer to decompress</param>
-        /// <param name="startOffset">Start offset of the data in the buffer</param>
-        /// <param name="endOffset">End offset of the data in the buffer</param>
-        /// <param name="compression">Compression type: 0 for uncompressed, 1 for RLE, 2 for LZA</param>
-        /// <param name="decompressedSize">Decompressed size.</param>
-        /// <returns>The uncompressed data.</returns>
-        public static Byte[] Decode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 compression, Int32 decompressedSize)
-        {
-            Int32 start = startOffset ?? 0;
-            Int32 end = endOffset ?? buffer.Length;
-            if (end < start)
-                throw new ArgumentException("End offset cannot be smaller than start offset!", "endOffset");
-            if (start < 0 || start > buffer.Length)
-                throw new ArgumentOutOfRangeException("startOffset");
-            if (end < 0 || end > buffer.Length)
-                throw new ArgumentOutOfRangeException("endOffset");
-            switch (compression)
-            {
-                case 0:
-                    Byte[] outBuff = new Byte[decompressedSize];
-                    Int32 len = Math.Min(end - start, decompressedSize);
-                    Array.Copy(buffer, start, outBuff, 0, len);
-                    return outBuff;
-                case 1:
-                    return RleDecode(buffer, startOffset, endOffset, decompressedSize);
-                case 2:
-                    return LzwDecode(buffer, startOffset, endOffset, decompressedSize);
-                default:
-                    throw new ArgumentException("Unknown compression type: \"" + compression + "\".", "compression");
-            }
-        }
-
-        public static Byte[] LzwDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
-        {
-            DynamixLzwDecoder lzwDec = new DynamixLzwDecoder();
-            Byte[] outputBuffer = new Byte[decompressedSize];
-            lzwDec.LzwDecode(buffer, startOffset, endOffset, outputBuffer);
-            return outputBuffer;
-        }
-
-        public static Byte[] RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
-        {
-            Byte[] outputBuffer = new Byte[decompressedSize];
-            RleDecode(buffer, startOffset, endOffset, outputBuffer);
-            return outputBuffer;
-        }
-
-        public static void RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Byte[] bufferOut)
+        public static Byte[] RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset)
         {
             Int32 inPtr = startOffset ?? 0;
             Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
             Int32 outPtr = 0;
+            Int32 expandSize = buffer.Length;
+            Byte[] bufferOut = new Byte[expandSize*3];
 
             // RLE implementation:
-            // highest bit set = followed by range of repeating bytes
-            // highest bit not set = followed by range of non-repeating bytes
+            // highest bit not set = followed by range of repeating bytes
+            // highest bit set = followed by range of non-repeating bytes
             // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
 
-            while (outPtr < bufferOut.Length && inPtr < inPtrEnd)
+            while (inPtr < inPtrEnd)
             {
                 // get next code
                 Int32 code = buffer[inPtr++];
                 Int32 run = code & 0x7f;
-                // RLE run
-                if ((code & 0x80) != 0)
+                if (run == 0) // Illegal command
+                    return null;
+                // Repeat
+                if ((code & 0x80) == 0)
                 {
                     if (inPtr >= inPtrEnd)
-                        return;
+                        break;
                     Int32 rle = buffer[inPtr++];
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (outPtr >= bufferOut.Length)
-                            return;
+                            bufferOut = ExpandBuffer(bufferOut, expandSize);
                         bufferOut[outPtr++] = (Byte)rle;
                     }
                 }
-                // raw run
+                // Copy
                 else
                 {
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (inPtr >= inPtrEnd)
-                            return;
+                            break;
                         Int32 data = buffer[inPtr++];
                         if (outPtr >= bufferOut.Length)
-                            return;
+                            bufferOut = ExpandBuffer(bufferOut, expandSize);
                         bufferOut[outPtr++] = (Byte)data;
                     }
+                    if (inPtr >= inPtrEnd)
+                        break;
                 }
             }
+            Byte[] finalOut = new Byte[outPtr];
+            Array.Copy(bufferOut, finalOut, outPtr);
+            return finalOut;
         }
 
-        /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data.
-        /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <returns>The run-length encoded data</returns>
-        public static Byte[] LzwEncode(Byte[] buffer)
+        private static Byte[] ExpandBuffer(Byte[] source, Int32 expand)
         {
-            DynamixLzwEncoder enc= new DynamixLzwEncoder();
-            return enc.Compress(buffer);
+            Int32 len = source.Length;
+            Byte[] expanded = new Byte[len + expand];
+            Array.Copy(source, expanded, len);
+            return expanded;
         }
 
         /// <summary>
@@ -159,8 +97,8 @@ namespace Nyerguds.GameData.Dynamix
             Byte[] bufferOut = new Byte[(buffer.Length * 3) / 2];
 
             // RLE implementation:
-            // highest bit set = followed by range of repeating bytes
-            // highest bit not set = followed by range of non-repeating bytes
+            // highest bit not set = followed by range of repeating bytes
+            // highest bit set = followed by range of non-repeating bytes
             // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
             Int32 len = buffer.Length;
             Boolean repeatDetected = false;
@@ -177,7 +115,7 @@ namespace Nyerguds.GameData.Dynamix
                     inPtr += minimumRepeating;
                     // Increase inptr to the last repeated.
                     for (; inPtr < end && buffer[inPtr] == cur; inPtr++) { }
-                    bufferOut[outPtr++] = (Byte)((inPtr - start) | 0x80);
+                    bufferOut[outPtr++] = (Byte)(inPtr - start);
                     bufferOut[outPtr++] = cur;
                 }
                 else
@@ -194,7 +132,7 @@ namespace Nyerguds.GameData.Dynamix
                             repeatDetected = true;
                             break;
                         }
-                        bufferOut[outPtr++] = (Byte)(inPtr - start);
+                        bufferOut[outPtr++] = (Byte)((inPtr - start) | 0x80);
                         for (Int32 i = start; i < inPtr; i++)
                             bufferOut[outPtr++] = buffer[i];
                     }

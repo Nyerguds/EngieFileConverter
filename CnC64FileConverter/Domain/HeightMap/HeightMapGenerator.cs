@@ -115,7 +115,7 @@ namespace CnC64FileConverter.Domain.HeightMap
                 }
                 heightMapData[i] = (Byte)Math.Min(Math.Max(0, val), 255);
             }
-            Color[] palette = PaletteUtils.GenerateGrayPalette(8, false, false);
+            Color[] palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             if (forPlateau)
             {
                 heightMapData = ImageUtils.Match8BitDataToPalette(heightMapData, 64, 64, palette, LEVEL_COLORS);
@@ -123,7 +123,7 @@ namespace CnC64FileConverter.Domain.HeightMap
             }
             Bitmap bm = ImageUtils.BuildImage(heightMapData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Empty);
             FileImagePng returnImg = new FileImagePng();
-            returnImg.LoadFile(bm, palette.Length, pngFileName);
+            returnImg.LoadFile(bm, pngFileName);
             return returnImg;
         }
 

@@ -19,32 +19,31 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 hdrHeight;
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "DynBmp"; } }
+        public override String ShortTypeName { get { return "Dynamix Bmp"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
         public override String ShortTypeDescription { get { return "Dynamix BMP animations file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get { return 8; } }
-        protected SupportedFileType[] m_TilesList = new SupportedFileType[0];
+        protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
-        /// <summary>Enables frame controls on the UI.</summary>
-        public override Boolean ContainsFrames { get { return m_TilesList.Length > 1; } }
-        /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_TilesList.ToArray(); } }
-        /// <summary>If the type supports frames, this determines whether an overview-frame is available as index '-1'. If not, index 0 is accessed directly.</summary>
-        public override Boolean RenderCompositeFrame { get { return false; } }
-
+        /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
+        public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
+        /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
+        public override Boolean IsFramesContainer { get { return true; } }
+        /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
+        public override Boolean HasCompositeFrame { get { return false; } }
 
         public FileImgDynBmp() { }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
 
@@ -53,12 +52,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
-        {
-            return SaveImg(fileToSave.GetBitmap());
-        }
-
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             DynamixChunk mainChunk = DynamixChunk.ReadChunk(fileData, "BMP");
             if (mainChunk == null || mainChunk.Address != 0 || mainChunk.DataLength + 8 != fileData.Length)
@@ -90,27 +84,32 @@ namespace CnC64FileConverter.Domain.FileTypes
             frameData2 = new Byte[fullDataSize]; Array.Copy(frameData, 0, frameData2, 0, Math.Min(frameData.Length, fullDataSize));
             //File.WriteAllBytes("test.bm", frameData2);
             Int32 offset = 0;
-            m_TilesList = new SupportedFileType[frames];
+            this.m_FramesList = new SupportedFileType[frames];
             for (Int32 i = 0; i < frames; i++)
             {
                 Int32 curSize = widths[i] * heights[i];
                 Byte[] image = new Byte[curSize];
                 Array.Copy(frameData2, offset, image, 0, curSize);
                 offset += curSize;
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
-                Bitmap curImage = ImageUtils.BuildImage(image, widths[i], heights[i], widths[i], PixelFormat.Format8bppIndexed, this.m_Palette, null);
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
+                Bitmap frameImage = ImageUtils.BuildImage(image, widths[i], heights[i], widths[i], PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFile(curImage, 1 << BitsPerColor, "frame" + i.ToString("D5"));
-                this.m_TilesList[i] = frame;
-                if (m_LoadedImage == null)
-                    m_LoadedImage = curImage;
+                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.SetBitsPerColor(this.BitsPerColor);
+                frame.SetColorsInPalette(0);
+                this.m_FramesList[i] = frame;
+                //if (m_LoadedImage == null)
+                //    m_LoadedImage = curImage;
             }
         }
 
-        protected Byte[] SaveImg(Bitmap image)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
-            return null;
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
+            throw new NotSupportedException("Saving to this type is not supported.");
         }
+
 
     }
 }

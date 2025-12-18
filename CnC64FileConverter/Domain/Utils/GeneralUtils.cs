@@ -20,6 +20,30 @@ namespace Nyerguds.Util
             return true;
         }
 
+
+        /// <summary>
+        /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is 1
+        /// If the value is null or the parse fails, the default is False.
+        /// </summary>
+        /// <param name="value">String to parse</param>
+        /// <returns>True if the string's first letter matches J, Y, O, 1 or T</returns>
+        public static Boolean IsTrueValue(String value)
+        {
+            return IsTrueValue(value, false);
+        }
+        /// <summary>
+        /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is 1
+        /// </summary>
+        /// <param name="value">String to parse</param>
+        /// <param name="defaultVal">Default value to return in case parse fails</param>
+        /// <returns>True if the string's first letter matches J, Y, O, 1 or T</returns>
+        public static Boolean IsTrueValue(String value, Boolean defaultVal)
+        {
+            if (String.IsNullOrEmpty(value))
+                return defaultVal;
+            return Regex.IsMatch(value, "^(([TJYO].*)|(0*1))$", RegexOptions.IgnoreCase);
+        }
+
         public static Boolean IsHexadecimal(String str)
         {
             return Regex.IsMatch(str, "^[0-9A-F]*$", RegexOptions.IgnoreCase);

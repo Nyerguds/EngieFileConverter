@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
 
 namespace Nyerguds.GameData.Dynamix
 {
@@ -34,34 +32,42 @@ namespace Nyerguds.GameData.Dynamix
         };
         //*/
         
-        public static void RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Byte[] bufferOut, Int32 height, Int32 stride)
+        /// <summary>
+        /// Decodes AGOS Run-Length Encoded (RLE) data. Requires the width and stride since images are encoded in columns.
+        /// </summary>
+        /// <param name="buffer">Input buffer.</param>
+        /// <param name="startOffset">Optional start offset. Defaults to 0.</param>
+        /// <param name="endOffset">Optional end offset. Defaults to buffer length.</param>
+        /// <param name="height">Height of the image to decode.</param>
+        /// <param name="stride">Stride of the image to decode.</param>
+        public static Byte[] RleDecodeImage(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 height, Int32 stride)
         {
             Int32 inPtr = startOffset ?? 0;
             Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
             Int32 outPtr = 0;
+            Byte[] bufferOut = new Byte[stride * height];
 
-            // AGOS RLE implementation:
-            // highest bit not set = followed by range of repeating bytes. Amount is (code + 1)
-            // highest bit set = followed by range of non-repeating bytes Amount is (0x100 - code)
-            // The bytes are written to the output array vertically; column by column.
+            // AGOS RLE implementation: reads code for either repeat or copy.
+            // highest bit not set = followed by a byte to repeat. Repeat amount is (code + 1)
+            // highest bit set = followed by range bytes to copy. Copy amount is (0x100 - code)
+            // The bytes are written to the output array vertically; column by column, without
+            // regard to the bits per pixel.
 
             while (outPtr < bufferOut.Length && inPtr < inPtrEnd)
             {
                 // get next code
                 Int32 code = buffer[inPtr++];
-                if (code == -1)
-                    return;
                 // RLE run
                 if ((code & 0x80) == 0)
                 {
                     if (inPtr >= inPtrEnd)
-                        return;
+                        return bufferOut;
                     Int32 run = code + 1;
                     Int32 rle = buffer[inPtr++];
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (outPtr >= bufferOut.Length)
-                            return;
+                            return bufferOut;
                         bufferOut[outPtr % height * stride + outPtr / height] = (Byte)rle;
                         outPtr++;
                     }
@@ -73,42 +79,44 @@ namespace Nyerguds.GameData.Dynamix
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (inPtr >= inPtrEnd)
-                            return;
+                            return bufferOut;
                         Int32 data = buffer[inPtr++];
                         if (outPtr >= bufferOut.Length)
-                            return;
+                            return bufferOut;
                         bufferOut[outPtr % height * stride + outPtr / height] = (Byte)data;
                         outPtr++;
                     }
                 }
             }
+            return bufferOut;
         }
 
-
         /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// Applies AGOS Run-Length Encoding (RLE) to the given data.
         /// </summary>
         /// <param name="buffer">Input buffer</param>
-        /// <param name="height">Height of the image in the buffer</param>
         /// <param name="stride">Stride of the image in the buffer</param>
         /// <returns>The run-length encoded data</returns>
-        public static Byte[] RleEncode(Byte[] buffer, Int32 height, Int32 stride)
+        public static Byte[] RleEncodeImage(Byte[] buffer, Int32 stride)
         {
-            return RleEncode(buffer, 2, height, stride);
+            return RleEncodeImage(buffer, 3, stride);
         }
 
         /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// Applies AGOS Run-Length Encoding (RLE) to the given data.
         /// </summary>
         /// <param name="buffer">Input buffer</param>
         /// <param name="minimumRepeating">Minimum amount of repeating bytes before compression is applied.</param>
-        /// <param name="height">Height of the image in the buffer</param>
         /// <param name="stride">Stride of the image in the buffer</param>
         /// <returns>The run-length encoded data</returns>
-        public static Byte[] RleEncode(Byte[] buffer, Int32 minimumRepeating, Int32 height, Int32 stride)
+        public static Byte[] RleEncodeImage(Byte[] buffer, Int32 minimumRepeating, Int32 stride)
         {
             if (minimumRepeating < 2)
                 minimumRepeating = 2;
+            Int32 len = buffer.Length;
+            Int32 height = len / stride;
+            if (len > height * stride)
+                height++;
             Int32 inPtr = 0;
             Int32 outPtr = 0;
             // Ensure big enough buffer. Sanity check will be done afterwards.
@@ -119,7 +127,6 @@ namespace Nyerguds.GameData.Dynamix
             // highest bit set = followed by range of non-repeating bytes Code is (0x100 - Amount)
             // The bytes are read from the input array vertically; column by column.
 
-            Int32 len = buffer.Length;
             Boolean repeatDetected = false;
             while (inPtr < len)
             {

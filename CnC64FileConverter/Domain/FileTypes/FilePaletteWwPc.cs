@@ -12,9 +12,9 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteWwPc : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "PCPal"; } }
+        public override String ShortTypeName { get { return "Westwood pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "PC C&C palette"; } }
+        public override String ShortTypeDescription { get { return "Westwood palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions {  get { return new String[]{ "pal" }; } }
 
@@ -28,7 +28,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileData.Length != 768)
                 throw new FileTypeLoadException("Incorrect file size.");
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            SixBitColor[] palette = null;
+            ColorSixBit[] palette = null;
             Exception e = null;
             try
             {
@@ -73,8 +73,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException(String.Empty);
             Color[] palEntries = fileToSave.GetColors();
@@ -88,7 +90,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 else
                     cols[i] = Color.Black;
             }
-            SixBitColor[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
+            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
             return ColorUtils.GetSixBitPaletteData(sbcp);
         }
 

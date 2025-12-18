@@ -12,45 +12,38 @@ using System.Text;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileElvVgaFrames : SupportedFileType
+    public class FileAdvVgaFrames : SupportedFileType
     {
-        public override Int32 Width { get { return hdrWidth; } }
-        public override Int32 Height { get { return hdrHeight; } }
-        protected Int32 hdrWidth;
-        protected Int32 hdrHeight;
+        public override Int32 Width { get { return 0; } }
+        public override Int32 Height { get { return 0; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "ElvFrm"; } }
+        public override String ShortTypeName { get { return "AdvSoft VGA"; } }
         public override String[] FileExtensions { get { return new String[] { "VGA" }; } }
-        public override String ShortTypeDescription { get { return "Elvira VGA file"; } }
+        public override String ShortTypeDescription { get { return "AdventureSoft VGA file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get { return 4; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
-        /// <summary>Enables frame controls on the UI.</summary>
-        public override Boolean ContainsFrames { get { return true; } }
-        /// <summary>Retrieves the sub-frames inside this file.</summary>
+        /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
-        /// <summary>If the type supports frames, this determines whether an overview-frame is available as index '-1'. If not, index 0 is accessed directly.</summary>
-        public override Boolean RenderCompositeFrame { get { return false; } }
-
+        /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
+        public override Boolean IsFramesContainer { get { return true; } }
+        /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
+        public override Boolean HasCompositeFrame { get { return false; } }
 
         //public FileFramesElv() { }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, filename);
             SetFileNames(filename);
-            // For FileImageFrame this combines the frame name and the given path.
-            foreach (SupportedFileType frame in this.m_FramesList)
-                frame.SetFileNames(filename);
-            
         }
 
         public override Boolean ColorsChanged()
@@ -58,7 +51,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return false;
         }
         
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             if (fileData.Length < 16)
                 throw new FileTypeLoadException("Not long enough for header.");
@@ -92,10 +85,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 widths.Add(imagewidth);
                 readOffset += 8;
             }
-
             Int32 frames = offsets.Count;
             this.m_FramesList = new SupportedFileType[frames];
-            this.m_Palette = PaletteUtils.GenerateGrayPalette(4, false, false);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
             for (Int32 i = 0; i < frames; i++)
             {
                 Int32 imageOffset = offsets[i];
@@ -111,11 +103,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 dataSize = dataEnd - imageOffset;
                 Int32 dataStride = ImageUtils.GetMinimumStride(imageWidth, 4);
                 Int32 neededDataSize = imageHeight * dataStride;
-                Bitmap curImage;
+                Bitmap frameImage;
 
                 if ((imageHeight == 0 && imageWidth == 0) || imageOffset == 0 || dataSize == 0)
                 {
-                    curImage = null;
+                    frameImage = null;
                 }
                 else if (!compressed)
                 {
@@ -123,33 +115,28 @@ namespace CnC64FileConverter.Domain.FileTypes
                         throw new FileTypeLoadException("Invalid data length.");
                     Byte[] data = new Byte[neededDataSize];
                     Array.Copy(fileData, imageOffset, data, 0, neededDataSize);
-                    curImage = ImageUtils.BuildImage(data, imageWidth, imageHeight, dataStride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+                    frameImage = ImageUtils.BuildImage(data, imageWidth, imageHeight, dataStride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
                 }
                 else
                 {
                     Byte[] data = new Byte[dataSize];
                     Array.Copy(fileData, imageOffset, data, 0, dataSize);
-
                     Int32 stride = ImageUtils.GetMinimumStride(imageWidth, 4);
-                    Byte[] outbuff = new Byte[stride * imageHeight];
-                    AgosCompression.RleDecode(data, null, null, outbuff, imageHeight, stride);
-                    curImage = ImageUtils.BuildImage(outbuff, imageWidth, imageHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+                    Byte[] outbuff = AgosCompression.RleDecodeImage(data, null, null, imageHeight, stride);
+                    frameImage = ImageUtils.BuildImage(outbuff, imageWidth, imageHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
                 }
                 FileImageFrame frame = new FileImageFrame();
-                String name = i.ToString("D5");
-                frame.LoadFile(curImage, this.m_Palette.Length, null);
-                frame.SetFrameFileName(name);
-                frame.FrameParent = this;
-                if (curImage == null)
-                    frame.SetBitsPerColor(4);
+                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.SetColorsInPalette(0);
+                frame.SetBitsPerColor(4);
                 this.m_FramesList[i] = frame;
             }
         }
         
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
-            if (!fileToSave.ContainsFrames)
-                throw new NotSupportedException("Elvira VGA saving for single frame is not supported!");
+            if (fileToSave.Frames == null)
+                throw new NotSupportedException("AdventureSoft VGA saving for single frame is not supported!");
 
             Int32 nrOfFr = fileToSave.Frames.Length;
             Byte[][] data = new Byte[nrOfFr][];
@@ -173,7 +160,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     offsets[i] = 0;
                 }
                 else if (frame.BitsPerColor != 4)
-                    throw new NotSupportedException("Elvira VGA frames need to be 4 BPP files!");
+                    throw new NotSupportedException("AdventureSoft VGA frames need to be 4 BPP images!");
                 else
                 {
                     Int32 width = image.Width;
@@ -191,7 +178,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     compressed[i] = false;
                     if (!dontCompress)
                     {
-                        Byte[] dataCompr = AgosCompression.RleEncode(byteData, height, stride);
+                        Byte[] dataCompr = AgosCompression.RleEncodeImage(byteData, stride);
                         if (dataCompr.Length < byteData.Length)
                         {
                             data[i] = dataCompr;

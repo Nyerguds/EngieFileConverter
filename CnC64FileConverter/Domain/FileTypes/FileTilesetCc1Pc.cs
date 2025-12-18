@@ -13,8 +13,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FileTilesetCc1PC : SupportedFileType
     {
         public override String[] FileExtensions { get { return new String[] { "tmp", "tem", "win", "des", "sno" }; } }
-        public override String ShortTypeName { get { return "PCTile"; } }
-        public override String ShortTypeDescription { get { return "PC Tileset File"; } }
+        public override String ShortTypeName { get { return "C&C Tileset"; } }
+        public override String ShortTypeDescription { get { return "C&C PC Tileset File"; } }
 
         public override Int32 BitsPerColor { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
@@ -47,12 +47,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             return this.m_TileUseList.ToArray();
         }
 
-        /// <summary>Enables frame controls on the UI.</summary>
-        public override Boolean ContainsFrames { get { return true; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return m_TilesList.Cast<SupportedFileType>().ToArray(); } }
-
-
+        /// <summary>
+        /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
+        /// C&amp;C tileset files are bit of an edge case, though, since they contains no overall dimensions. Files with known tile names as filename get their X and Y from the tile info.
+        /// </summary>
+        public override Boolean IsFramesContainer { get { return true; } }
+        /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
+        public override Boolean HasCompositeFrame { get { return true; } }
+        
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
@@ -65,7 +69,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
             // TODO: add frames support?
             if (fileToSave.BitsPerColor != 8)
@@ -153,7 +157,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Tile image data outside file range!");
             m_TilesList = new List<PCTile>();
             if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             // ONly way to set a palette is through SetPaletre, and that ensures 256 colours.
             this.m_Palette[0] = Color.FromArgb(0, this.m_Palette[0]);
             this.m_Tiles = new Byte[this.hdrNrOfTiles][];

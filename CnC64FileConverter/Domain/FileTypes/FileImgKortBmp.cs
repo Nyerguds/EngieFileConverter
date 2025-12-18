@@ -14,38 +14,39 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override Int32 Width { get { return 320; } }
         public override Int32 Height { get { return 240; } }
-        protected SupportedFileType[] m_frames;
+        protected SupportedFileType[] m_FramesList;
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "KORTBmp"; } }
+        public override String ShortTypeName { get { return "KORT BMP"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
-        public override String ShortTypeDescription { get { return "KORT animation file"; } }
+        public override String ShortTypeDescription { get { return "KORT frames file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get { return 8; } }
 
-        /// <summary>Enables frame controls on the UI.</summary>
-        public override Boolean ContainsFrames { get { return true; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_frames; } }
-        /// <summary>If the type supports frames, this determines whether an overview-frame is available as index '-1'. If not, index 0 is accessed directly.</summary>
-        public override Boolean RenderCompositeFrame { get { return false; } }
+        public override SupportedFileType[] Frames { get { return m_FramesList; } }
+        /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
+        public override Boolean IsFramesContainer { get { return true; } }
+        /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
+        public override Boolean HasCompositeFrame { get { return false; } }
+
 
 
         public FileImgKortBmp() { }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData);
+            LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             Int32 datalen = fileData.Length;
             if (datalen < 4)
@@ -57,9 +58,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fixed0016 != 0x0016)
                 throw new FileTypeLoadException("Bad value in header.");
             if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             Int32 offset = 4;
-            m_frames = new SupportedFileType[nrOfFrames];
+            m_FramesList = new SupportedFileType[nrOfFrames];
             for (Int32 i = 0; i < nrOfFrames; i++)
             {
                 if (offset + 12 >= datalen)
@@ -81,23 +82,28 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Byte[] flippedData = new Byte[dataSize];
                 for (Int32 y = 0; y < frHeight; y++)
                     Array.Copy(frameData, (frHeight - 1 - y) * frWidth, flippedData, y * frWidth, frWidth);
-                Bitmap frameBitmap = ImageUtils.BuildImage(flippedData, frWidth, frHeight, ImageUtils.GetMinimumStride(frWidth, 8), PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
+                Bitmap frameImage = ImageUtils.BuildImage(flippedData, frWidth, frHeight, ImageUtils.GetMinimumStride(frWidth, 8), PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFile(frameBitmap, 256, "frame_" + frameNumber.ToString("D5"));
-                frame.FrameParent = this;
-                this.m_frames[i] = frame;
+                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.SetBitsPerColor(this.BitsPerColor);
+                frame.SetColorsInPalette(0);
+                this.m_FramesList[i] = frame;
                 offset += dataSize;
             }
             this.m_LoadedImage = null;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
         {
-            if (!fileToSave.ContainsFrames)
+            if (fileToSave == null || fileToSave.Frames == null)
                 throw new NotSupportedException("No frames in input type!");
             foreach (SupportedFileType frame in fileToSave.Frames)
-                if (frame == null || frame.BitsPerColor != 8)
+            {
+                if (frame == null)
+                    throw new NotSupportedException("KORT BMP can't handle empty frames!");
+                if (frame.BitsPerColor != 8)
                     throw new NotSupportedException("Not all frames in input type are 8-bit images!");
+            }
             Int32 frames = fileToSave.Frames.Length;
             Byte[][] frameData = new Byte[frames][];
             Int32[] widths = new Int32[frames];

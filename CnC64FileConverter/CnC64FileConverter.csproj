@@ -79,7 +79,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
+    <Compile Include="Domain\FileTypes\FileImgKotB.cs" />
+    <Compile Include="Domain\FileTypes\FileImgMythosVgs.cs" />
+    <Compile Include="Domain\FileTypes\SaveOption.cs" />
     <Compile Include="Domain\GameData\Agos\AgosCompression.cs" />
+    <Compile Include="Domain\GameData\EA\EACompression.cs" />
     <Compile Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\GameData\Westwood\WWCompression.cs" />
     <Compile Include="Domain\FileTypes\FileImageFrame.cs" />
@@ -89,8 +93,8 @@
     <Compile Include="Domain\FileTypes\FileImgDynScrV2.cs" />
     <Compile Include="Domain\FileTypes\FilePaletteDyn.cs" />
     <Compile Include="Domain\FileTypes\FileTilesetCc1PC.cs" />
-    <Compile Include="Domain\FileTypes\FileElvVgaFrames.cs" />
-    <Compile Include="Domain\FileTypes\FileElvIcons.cs" />
+    <Compile Include="Domain\FileTypes\FileAdvVgaFrames.cs" />
+    <Compile Include="Domain\FileTypes\FileAdvIcons.cs" />
     <Compile Include="Domain\FileTypes\FileImgDynBmp.cs" />
     <Compile Include="Domain\FileTypes\FileImgCps.cs" />
     <Compile Include="Domain\FileTypes\FileImgWwLcw.cs" />
@@ -145,7 +149,7 @@
     <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\XiaolinWu\WuColorCube.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\XiaolinWu\WuColorQuantizer.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorUtils.cs" />
-    <Compile Include="Domain\GameData\Westwood\SixBitColor.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorSixBit.cs" />
     <Compile Include="Domain\FileTypeBroadcaster.cs" />
     <Compile Include="Domain\Utils\Crc32.cs" />
     <Compile Include="Domain\Utils\GeneralUtils.cs" />
