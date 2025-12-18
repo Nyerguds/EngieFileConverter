@@ -97,16 +97,14 @@ namespace Nyerguds.Util.UI
                             continue;
                         Color[] subPalette = new Color[16];
                         Array.Copy(fullPal, i * 16, subPalette, 0, 16);
-                        //if (subPalette.All(x => x.R == 0 && x.G == 0 && x.B == 0))
-                        //    subPalette = ImageUtils.GenerateRainbowPalette(4, false, true, true, false).Entries;
-                        subPalette[0] = Color.FromArgb(0x00, subPalette[0]);
+                        //subPalette[0] = Color.FromArgb(0x00, subPalette[0]);
                         palettes.Add(new PaletteDropDownInfo(name, 4, subPalette, file.Name, i, prefixIndex, suffixSource));
                     }
                 }
                 else
                 {
                     // add as one 256 colour palette
-                    fullPal[0] = Color.FromArgb(0x00, fullPal[0]);
+                    //fullPal[0] = Color.FromArgb(0x00, fullPal[0]);
                     palettes.Add(new PaletteDropDownInfo(file.Name, 8, fullPal, file.Name, 0, false, false));
                 }
             }

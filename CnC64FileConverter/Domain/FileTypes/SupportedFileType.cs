@@ -61,16 +61,16 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public virtual void LoadFile(SupportedFileType file)
         {
-            Byte[] thisBytes = SaveToBytesAsThis(file);
+            Byte[] thisBytes = this.SaveToBytesAsThis(file, true);
             LoadFile(thisBytes);
         }
 
-        public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath)
+        public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath, Boolean dontCompress)
         {
-            Byte[] data = SaveToBytesAsThis(fileToSave);
+            Byte[] data = this.SaveToBytesAsThis(fileToSave, dontCompress);
             File.WriteAllBytes(savePath, data);
         }
-        public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave);
+        public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress);
 
         protected void SetFileNames(String path)
         {
@@ -103,7 +103,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 || this.m_LoadedImage.Palette.Entries.Length == 0)
                 throw new NotSupportedException("This image has no palette.");
             ColorPalette cp = this.m_LoadedImage.Palette;
-            if (this.m_backupPalette == null)
+            if (this.ColorsInPalette != 0 && this.m_backupPalette == null)
                 this.m_backupPalette = GetColors();
             for (Int32 i = 0; i < cp.Entries.Length; i++)
             {
@@ -158,7 +158,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileIconsElv),
             typeof(FileImgDynBmp),
             typeof(FileImgDynScr),
+            typeof(FileImgDynScrV2),
             typeof(FilePaletteDyn),
+            typeof(FileImgKort),
         };
 
         private static Type[] m_autoDetectTypes =
@@ -181,9 +183,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FilePalettePc),
             typeof(FilePaletteN64Pa8),
             typeof(FilePaletteN64Pa4),
-            typeof(FileImgDynBmp),
             typeof(FileFramesElv),
+            typeof(FileImgKort),
             typeof(FileImgDynScr),
+            typeof(FileImgDynScrV2),
+            typeof(FileImgDynBmp),
             typeof(FilePaletteDyn),
             typeof(FileIconsElv),
         };
@@ -206,6 +210,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FilePaletteN64Pa8),
             typeof(FileIconsElv),
             typeof(FileImgDynScr),
+            typeof(FileImgDynScrV2),
+            typeof(FilePaletteDyn),
+            typeof(FileImgKort),
         };
 
         static SupportedFileType()

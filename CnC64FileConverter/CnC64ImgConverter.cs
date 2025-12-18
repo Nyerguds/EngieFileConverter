@@ -43,6 +43,7 @@ namespace CnC64FileConverter
             Boolean hasconsole = AttachConsole(-1);
             Boolean showErrors = true;
             Boolean showFeedback = false;
+            Boolean noCompress = false;
             Boolean tilesets = false;
             
             Int32 i;
@@ -64,6 +65,8 @@ namespace CnC64FileConverter
                     showFeedback = true;
                 if (String.Equals(args[i], "/T", StringComparison.InvariantCultureIgnoreCase))
                     tilesets = true;
+                if (String.Equals(args[i], "/R", StringComparison.InvariantCultureIgnoreCase))
+                    noCompress = true;
                 if (String.Equals(args[i], "/P", StringComparison.InvariantCultureIgnoreCase) && paletteFile == null)
                     readPaletteFile = true;
             }
@@ -150,7 +153,7 @@ namespace CnC64FileConverter
                         ((FileTilesN64Bpp4)inputImage).ConvertToTiles(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output), outputType);
                     }
                     else
-                        outputType.SaveAsThis(inputImage, outputFull);
+                        outputType.SaveAsThis(inputImage, outputFull, noCompress);
                 }
                 catch (NotSupportedException ex)
                 {

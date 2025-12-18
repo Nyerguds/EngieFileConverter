@@ -137,7 +137,7 @@ namespace Nyerguds.Util.UI
             return true;
         }
 
-        private Decimal LimitRange(Decimal value)
+        public Decimal LimitRange(Decimal value)
         {
             if (value > this.Maximum)
                 value = this.Maximum;

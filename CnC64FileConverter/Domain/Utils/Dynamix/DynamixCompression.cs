@@ -16,6 +16,8 @@ namespace Nyerguds.Util
         /// <returns>The uncompressed data.</returns>
         public static Byte[] DecodeChunk(Byte[] chunkData)
         {
+            if (chunkData.Length < 5)
+                throw new FileTypeLoadException("Chunk is too short to read compression header!");
             Byte compression = chunkData[0];
             Int32 uncompressedLength = (Int32)ArrayUtils.ReadIntFromByteArray(chunkData, 1, 4, true);
             return Decode(chunkData, 5, null, compression, uncompressedLength);
@@ -95,13 +97,11 @@ namespace Nyerguds.Util
                         return;
                     Int32 run = code & 0x7f;
                     Int32 rle = buffer[inPtr++];
-
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (outPtr >= bufferOut.Length)
                             return;
                         bufferOut[outPtr++] = (Byte)rle;
-
                     }
                 }
                 // raw run

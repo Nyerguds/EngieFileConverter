@@ -89,7 +89,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveImg(fileToSave.GetBitmap());
         }

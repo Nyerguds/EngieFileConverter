@@ -61,7 +61,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             String filename = "test." + FileExtensions[0];
             return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);

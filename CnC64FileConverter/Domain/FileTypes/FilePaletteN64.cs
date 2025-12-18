@@ -75,12 +75,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !m_palette.SequenceEqual(this.m_backupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             throw new NotSupportedException("Use specific PA4 or PA8 type.");
         }
 
-        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
+        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress, Boolean expandToFullSize)
         {
             Color[] palEntries = fileToSave.GetColors();
             if (palEntries == null || palEntries.Length == 0)
@@ -96,9 +96,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "N64 C&C 4-bit palettes file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
-            return SaveToBytesAsThis(fileToSave, false);
+            return this.SaveToBytesAsThis(fileToSave, dontCompress, false);
         }
     }
 
@@ -126,9 +126,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_palette, Color.Empty);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
-            return SaveToBytesAsThis(fileToSave, true);
+            return this.SaveToBytesAsThis(fileToSave, dontCompress, true);
         }
 
     }

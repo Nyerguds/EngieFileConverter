@@ -2,6 +2,7 @@
 using Nyerguds.CCTypes;
 using Nyerguds.Util;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -30,10 +31,10 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileData.Length < 0x10)
                 throw new FileTypeLoadException("File is not long enough to be a valid SCR file.");
-            DynamixChunk palChunk = DynamixChunk.GetChunk(fileData, "PAL", true);
+            DynamixChunk palChunk = DynamixChunk.ReadChunk(fileData, "PAL");
             if (palChunk == null || palChunk.Address != 0)
                 throw new FileTypeLoadException("File does not start with a PAL chunk!");
-            DynamixChunk vgaChunk = DynamixChunk.GetChunk(palChunk.Data, "VGA", true);
+            DynamixChunk vgaChunk = DynamixChunk.ReadChunk(palChunk.Data, "VGA");
             if (vgaChunk == null)
                 throw new FileTypeLoadException("File does not contain a VGA chunk!");
             if (vgaChunk.DataLength != 768)
@@ -44,21 +45,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             try
             {
                 palette = ColorUtils.ReadSixBitPalette(vgaChunk.Data);
-                /*/
-                // code to make 16-color palettes out of it
-                SixBitColor[] swap = new SixBitColor[256];
-                for (Int32 y = 0; y < 16; y++)
-                {
-                    for (Int32 x = 0; x < 16; x++)
-                    {
-                        Int32 offset = y * 16 + x;
-                        Int32 swapOffset = x * 16 + y;
-
-                        swap[swapOffset] = palette[offset];
-                    }
-                }
-                palette = swap;
-                //*/
             }
             catch (ArgumentException ex) { e = ex; }
             catch (NotSupportedException ex2) { e = ex2; }
@@ -99,7 +85,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !m_palette.SequenceEqual(this.m_backupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException(String.Empty);
@@ -115,21 +101,26 @@ namespace CnC64FileConverter.Domain.FileTypes
                     cols[i] = Color.Black;
             }
             SixBitColor[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
-            Byte[] chunkData = ColorUtils.GetSixBitPaletteData(sbcp);
+            Byte[] paletteData = ColorUtils.GetSixBitPaletteData(sbcp);
             // write as Dynamix chunks
+            DynamixChunk vgaChunk = new DynamixChunk("VGA", paletteData);
+            DynamixChunk palChunk = DynamixChunk.BuildChunk("PAL", vgaChunk);
+            return palChunk.WriteChunk();
+            /*/
             Int32 offset = 0;
-            Byte[] fullData = new Byte[16 + chunkData.Length];
+            Byte[] fullData = new Byte[16 + paletteData.Length];
             Array.Copy(Encoding.ASCII.GetBytes("PAL:"), 0, fullData, offset, 4);
             offset += 4;
             ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)(fullData.Length - 8));
             offset += 4;
             Array.Copy(Encoding.ASCII.GetBytes("VGA:"), 0, fullData, offset, 4);
             offset += 4;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)chunkData.Length);
+            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)paletteData.Length);
             offset += 4;
-            Array.Copy(chunkData, 0, fullData, offset, chunkData.Length);
+            Array.Copy(paletteData, 0, fullData, offset, paletteData.Length);
             //offset += chunkData.Length;
             return fullData;
+            //*/
         }
 
     }

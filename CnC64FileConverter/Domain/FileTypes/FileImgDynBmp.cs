@@ -87,18 +87,18 @@ namespace CnC64FileConverter.Domain.FileTypes
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveImg(fileToSave.GetBitmap());
         }
 
         protected void LoadFromFileData(Byte[] fileData)
         {
-            DynamixChunk mainChunk = DynamixChunk.GetChunk(fileData, "BMP", true);
+            DynamixChunk mainChunk = DynamixChunk.ReadChunk(fileData, "BMP");
             if (mainChunk == null || mainChunk.Address != 0 || mainChunk.DataLength + 8 != fileData.Length)
                 throw new FileTypeLoadException("BMP chunk not found: not a valid Dynamix BMP file header.");
             Byte[] data = mainChunk.Data;
-            DynamixChunk infChunk = DynamixChunk.GetChunk(data, "INF", true);
+            DynamixChunk infChunk = DynamixChunk.ReadChunk(data, "INF");
             if (infChunk == null)
                 throw new FileTypeLoadException("INF chunk not found: not a valid Dynamix BMP file header.");
             Byte[] frameInfo = infChunk.Data;
@@ -114,7 +114,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             this.hdrWidth = widths.Max();
             this.hdrHeight = heights.Max();
-            DynamixChunk vqtChunk = DynamixChunk.GetChunk(data, "VQT", true);
+            DynamixChunk vqtChunk = DynamixChunk.ReadChunk(data, "VQT");
             if (vqtChunk == null)
                 throw new FileTypeLoadException("VQT chunk not found: not a valid Dynamix BMP file header.");
             Byte[] frameData = vqtChunk.Data;

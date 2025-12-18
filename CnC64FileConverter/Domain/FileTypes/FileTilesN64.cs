@@ -154,7 +154,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return PixelFormat.DontCare;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             throw new NotSupportedException("Saving as this type is not supported.");
         }
@@ -198,7 +198,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     throw new NotSupportedException("Bad mapping in " + this.ExtTileIds + " file!");
                 String outputName = ti.TileName + "_" + tile.CellData.LowByte.ToString("D3") + "_pal" + tile.PaletteIndex.ToString("D2") + ext;
                 String outputPath = Path.Combine(outputFolder, outputName);
-                outputType.SaveAsThis(tile, outputPath);
+                outputType.SaveAsThis(tile, outputPath, true);
             }
         }
 
@@ -278,7 +278,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             throw new NotSupportedException("Loading as this type is not supported.");
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             throw new NotSupportedException("Saving as this type is not supported.");
         }

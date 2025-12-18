@@ -31,7 +31,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             if (!(fileToSave is FileMapPc))
                 throw new NotSupportedException(String.Empty);

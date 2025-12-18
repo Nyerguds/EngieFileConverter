@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -8,27 +9,124 @@ namespace Nyerguds.Util
     {
         public String Identifier { get; private set; }
         public Int32 Address { get; private set; }
-
-        public Int32 DataAddress
+        public Boolean BitFlag { get; set; }
+        public Byte[] Data
         {
-            get
+            get { return this.m_data; }
+            set
             {
-                return Address + 8;
+                Byte[] dataCopy = new Byte[value.Length];
+                Array.Copy(value, 0, dataCopy, 0, value.Length);
+                this.m_data = dataCopy;
             }
         }
+        public Int32 Length { get { return Data.Length + 8; } }
+        public Int32 DataLength { get { return Data.Length; } }
 
-        public Int32 DataLength { get; private set; }
-        public Byte[] Data { get; private set; }
+        private Byte[] m_data;
 
-        public static DynamixChunk GetChunk(Byte[] data, String chunkName, Boolean retrieveContents)
+        /// <summary>
+        /// Creates a chunk.
+        /// </summary>
+        /// <param name="identifier">Chunk identifier.</param>
+        public DynamixChunk(String identifier)
         {
-            DynamixChunk dc = new DynamixChunk();
-            dc.Address = FindChunk(data, chunkName);
-            if (dc.Address == -1)
+            if (identifier.Length != 3 || Encoding.UTF8.GetBytes(identifier).Length != 3)
+                throw new ArgumentException("Identifier must be a 3 ASCII characters!", "identifier");
+            this.Identifier = identifier;
+        }
+
+        /// <summary>
+        /// Creates a chunk with data in it.
+        /// </summary>
+        /// <param name="identifier">Chunk identifier.</param>
+        /// <param name="data">Data to copy into the chunk data.</param>
+        public DynamixChunk(String identifier, Byte[] data)
+            : this(identifier)
+        {
+            this.Data = data;
+        }
+
+        /// <summary>
+        /// Creates a chunk with a 5-byte compression header. This compression header is written at the start of the data array.
+        /// </summary>
+        /// <param name="identifier">Chunk identifier.</param>
+        /// <param name="compressionType">Compression type.</param>
+        /// <param name="uncompressedSize">Size of the uncompressed data.</param>
+        /// <param name="data">Compressed data to copy into the chunk data.</param>
+        public DynamixChunk(String identifier, Byte compressionType, UInt32 uncompressedSize, Byte[] data)
+            : this(identifier)
+        {
+            Byte[] fullData = new Byte[data.Length + 5];
+            fullData[0] = compressionType;
+            ArrayUtils.WriteIntToByteArray(fullData, 1, 4, true, uncompressedSize);
+            Array.Copy(data, 0, fullData, 5, data.Length);
+            this.m_data = fullData;
+        }
+
+        /// <summary>
+        /// Returns the full chunk as byte array.
+        /// </summary>
+        /// <returns>The full chunk as byte array.</returns>
+        public Byte[] WriteChunk()
+        {
+            Byte[] data = new Byte[Length];
+            this.WriteChunk(data, 0);
+            return data;
+        }
+
+        /// <summary>
+        /// Writes this chunk into a target array.
+        /// </summary>
+        /// <param name="target">Target array</param>
+        /// <param name="offset">Offset in the target array</param>
+        /// <returns>The offset right behind the written data in the target array.</returns>
+        public Int32 WriteChunk(Byte[] target, Int32 offset)
+        {
+            Array.Copy(Encoding.ASCII.GetBytes(Identifier + ":"), 0, target, offset, 4);
+            offset += 4;
+            ArrayUtils.WriteIntToByteArray(target, offset, 4, true, (UInt32)(DataLength));
+            offset += 4;
+            if (BitFlag)
+                target[offset - 1] |= 0x80;
+            Array.Copy(Data, 0, target, offset, DataLength);
+            return offset + DataLength;
+        }
+
+        /// <summary>
+        /// Builds a chunk container which has other chunks as its data. The other chunk
+        /// objects are not preserved in this operation; they are just saved as bytes.
+        /// </summary>
+        /// <param name="chunkName">Chunk name</param>
+        /// <param name="contents">Chunk contents</param>
+        /// <returns>The new chunk</returns>
+        public static DynamixChunk BuildChunk(String chunkName, params DynamixChunk[] contents)
+        {
+            DynamixChunk mainChunk = new DynamixChunk(chunkName);
+            Int32 fullDataSize = contents.Sum(x => x.Length);
+            Byte[] fullData = new Byte[fullDataSize];
+            Int32 offset = 0;
+            foreach (DynamixChunk chunk in contents)
+                offset = chunk.WriteChunk(fullData, offset);
+            mainChunk.m_data = fullData;
+            return mainChunk;
+        }
+
+        /// <summary>
+        /// Finds and reads a chunk from data.
+        /// </summary>
+        /// <param name="data">The data to read from.</param>
+        /// <param name="chunkName">The chunk to find.</param>
+        /// <returns>The chunk as DynamixChunk object.</returns>
+        public static DynamixChunk ReadChunk(Byte[] data, String chunkName)
+        {
+            Int32 address = FindChunk(data, chunkName);
+            if (address == -1)
                 return null;
-            dc.Identifier = chunkName;
-            dc.DataLength = GetChunkDataLength(data, dc.Address);
-            dc.Data = retrieveContents ? GetChunkData(data, dc.Address) : null;
+            DynamixChunk dc = new DynamixChunk(chunkName);
+            dc.Address = address;
+            dc.BitFlag = (data[7] & 0x80) != 0;
+            dc.Data = GetChunkData(data, dc.Address);
             return dc;
         }
 
@@ -48,7 +146,7 @@ namespace Nyerguds.Util
             // Using UTF-8 as extra check to make sure the name does not contain > 127 values.
             Byte[] chunkNamebytes = Encoding.UTF8.GetBytes(chunkName + ":");
             if (chunkName.Length != 3 || chunkNamebytes.Length != 4)
-                throw new ArgumentException("Chunk name must be 4 ASCII characters!", "chunkName");
+                throw new ArgumentException("Chunk name must be 3 ASCII characters!", "chunkName");
             Int32 offset = 0;
             Int32 end = data.Length;
             Byte[] testBytes = new Byte[4];

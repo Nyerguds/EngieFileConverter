@@ -500,6 +500,7 @@
             this.pnlImageScroll.Size = new System.Drawing.Size(426, 397);
             this.pnlImageScroll.TabIndex = 3;
             this.pnlImageScroll.TabStop = true;
+            this.pnlImageScroll.MouseScroll += new System.Windows.Forms.MouseEventHandler(this.PnlImageScroll_MouseScroll);
             // 
             // picImage
             // 

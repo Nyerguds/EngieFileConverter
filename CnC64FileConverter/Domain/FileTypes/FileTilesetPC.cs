@@ -79,7 +79,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException("Can only save 8 BPP images as this type.");

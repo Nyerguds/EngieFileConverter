@@ -1,5 +1,4 @@
-﻿using CnC64FileConverter.Domain;
-using CnC64FileConverter.Domain.HeightMap;
+﻿using CnC64FileConverter.Domain.HeightMap;
 using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
@@ -7,10 +6,8 @@ using Nyerguds.Util.UI;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace CnC64FileConverter.UI
@@ -301,6 +298,7 @@ namespace CnC64FileConverter.UI
         
         private void Save(Boolean export)
         {
+            Boolean saveRaw = (Control.ModifierKeys & Keys.Shift) != 0;
             if (m_LoadedFile == null)
                 return;
             SupportedFileType selectedItem;
@@ -317,7 +315,8 @@ namespace CnC64FileConverter.UI
                 return;
             try
             {
-                selectedItem.SaveAsThis(loadedFile, filename);
+                //TODO somehow detect holding [shift]?
+                selectedItem.SaveAsThis(loadedFile, filename, saveRaw);
             }
             catch (NotSupportedException ex)
             {
@@ -625,6 +624,18 @@ namespace CnC64FileConverter.UI
             this.cmbPalettes.DataSource = bppPalettes;
             if (index >= 0)
                 this.cmbPalettes.SelectedIndex = index;
+        }
+
+        private void PnlImageScroll_MouseScroll(Object sender, MouseEventArgs e)
+        {
+            Keys k = Control.ModifierKeys;
+            if ((k & Keys.Control) != 0)
+            {
+                this.numZoom.EnteredValue = this.numZoom.LimitRange(this.numZoom.EnteredValue + (e.Delta / 120));
+                HandledMouseEventArgs args = e as HandledMouseEventArgs;
+                if (args != null)
+                    args.Handled = true;
+            }
         }
 
         private void PalColorViewer_ColorLabelMouseDoubleClick(object sender, PaletteClickEventArgs e)

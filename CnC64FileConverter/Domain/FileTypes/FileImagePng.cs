@@ -25,7 +25,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             get { return new String[] { ShortTypeDescription }; }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             Color[] pal = fileToSave.GetColors();
             return BitmapHandler.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length);

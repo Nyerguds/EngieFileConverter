@@ -14,14 +14,14 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override String[] FileExtensions { get { return new String[] { "scr" }; } }
         public override String ShortTypeName { get { return "DynScr"; } }
-        public override String ShortTypeDescription { get { return "Dynamix Screen file"; } }
+        public override String ShortTypeDescription { get { return "Dynamix Screen file v1"; } }
 
         public override Int32 BitsPerColor { get { return this.m_bpp; } }
         public override Int32 ColorsInPalette { get { return m_loadedPalette ? this.m_Palette.Length : 0; } }
 
-        private Boolean m_loadedPalette = false;
+        protected Boolean m_loadedPalette = false;
         protected Color[] m_Palette = null;
-        private Int32 m_bpp = 8;
+        protected Int32 m_bpp = 8;
 
         public override void SetColors(Color[] palette)
         {
@@ -32,16 +32,16 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void LoadFile(String filename)
         {
             Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFile(fileData, filename);
             SetFileNames(filename);
+            LoadFile(fileData, filename, false);
         }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFile(fileData, null);
+            LoadFile(fileData, null, false);
         }
 
-        public void LoadFile(Byte[] fileData, String sourceFilename)
+        public void LoadFile(Byte[] fileData, String sourceFilename, Boolean v2)
         {
             String output = null;
             if (sourceFilename != null)
@@ -55,199 +55,188 @@ namespace CnC64FileConverter.Domain.FileTypes
                         FilePaletteDyn palDyn = new FilePaletteDyn();
                         palDyn.LoadFile(palName);
                         m_Palette = palDyn.GetColors();
-                        if (m_Palette.Length > 0)
-                            m_Palette[0] = Color.FromArgb(0, m_Palette[0]);
+                        //if (m_Palette.Length > 0)
+                        //    m_Palette[0] = Color.FromArgb(0, m_Palette[0]);
                         m_loadedPalette = true;
                         LoadedFileName += "/PAL";
                     }
-                    catch (FileTypeLoadException) { /* ignore */ }
+                    catch (FileTypeLoadException)
+                    {
+                        /* ignore */
+                    }
                 }
             }
             if (fileData.Length < 0x10)
                 throw new FileTypeLoadException("File is not long enough to be a valid SCR file.");
-            DynamixChunk scrChunk = DynamixChunk.GetChunk(fileData, "SCR", true);
-            /*/
-            // Test to dump compressed data from ADS file
-            if (scrChunk == null)
-            {
-
-                DynamixChunk adsChunk = DynamixChunk.GetChunk(fileData, "ADS", true);
-                if (adsChunk != null)
-                {
-                    scrChunk = DynamixChunk.GetChunk(adsChunk.Data, "SCR", true);
-                    if (scrChunk != null)
-                    {
-                        Byte compression = scrChunk.Data[0];
-                        Int32 uncompressedLength = (Int32)ArrayUtils.ReadIntFromByteArray(scrChunk.Data, 1, 4, true);
-                        Byte[] bindata = DynamixCompression.Decode(scrChunk.Data, 5, null, compression, uncompressedLength);
-                        //File.WriteAllBytes("scrimagebin.bin", bindata);
-                        File.WriteAllBytes((output ?? "scrimage") + "ads-scr.bin", bindata);
-                    }
-                }
-            }
-            //*/
-            if (scrChunk == null ||scrChunk.Address != 0)
+            DynamixChunk scrChunk = DynamixChunk.ReadChunk(fileData, "SCR");
+            if (scrChunk == null || scrChunk.Address != 0)
                 throw new FileTypeLoadException("File does not start with an SCR chunk!");
-            String firstChunk = new String(new Char[] { (Char)fileData[0x08], (Char)fileData[0x09], (Char)fileData[0x0A], (Char)fileData[0x0B] });
-            if ("BIN:".Equals(firstChunk) || "VGA:".Equals(firstChunk))
+            String firstChunk = new String(new Char[] {(Char)fileData[0x08], (Char)fileData[0x09], (Char)fileData[0x0A], (Char)fileData[0x0B]});
+            Int32 width = 320;
+            Int32 height = 200;
+            if ("DIM:".Equals(firstChunk))
             {
-                DynamixChunk vgaChunk = DynamixChunk.GetChunk(scrChunk.Data, "VGA", true);
-                if (vgaChunk == null)
-                    throw new FileTypeLoadException("Cannot find VGA chunk!");
-                Byte[] vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
-                //save debug output
-                //File.WriteAllBytes((output ?? "scrimage") + "vga.bin", vgadata);
-                Byte[] bindata = null;
-                DynamixChunk binChunk = DynamixChunk.GetChunk(scrChunk.Data, "BIN", true);
-                if (binChunk == null)
-                    this.m_bpp = 4;
-                else
-                {
-                    if (binChunk.DataLength < 5)
-                        throw new FileTypeLoadException("BIN chunk too short!");
-                    bindata = DynamixCompression.DecodeChunk(binChunk.Data);
-                }
-                //save debug output
-                //File.WriteAllBytes((output ?? "scrimage") + "bin.bin", bindata);
-
-                //Byte[] uncompressedPic = SaveToBytes(bindata, 0, (UInt32)bindata.Length, vgadata, 0, (UInt32)vgadata.Length);
-                //File.WriteAllBytes((output ?? "scrimage") + "_auto_uncompress.scr", uncompressedPic);
-
-                Byte[] fullData;
-                PixelFormat pf;
-                if (bindata == null)
-                {
-                    fullData = vgadata;
-                    pf = PixelFormat.Format4bppIndexed;
-                    if (m_Palette == null)
-                        m_Palette = PaletteUtils.GenerateGrayPalette(4, true, false);
-                    else
-                    {
-                        Color[] palette = new Color[16];
-                        for (int i = 0; i < 16; i++)
-                            palette[i] = this.m_Palette[i * 16 + 3];
-                        this.m_Palette = palette;
-                    }
-                }
-                else
-                {
-                    fullData = new Byte[vgadata.Length * 2];
-                    pf = PixelFormat.Format8bppIndexed;
-                    if (m_Palette == null)
-                        m_Palette = PaletteUtils.GenerateGrayPalette(8, true, false);
-                    for (Int32 i = 0; i < vgadata.Length; i++)
-                    {
-                        Int32 offs = i * 2;
-                        Byte binPix = bindata[i]; // 0x11
-                        Byte vgaPix = vgadata[i]; // 0x33
-                        //vga + bin = [vga|bin]; 3 + 1  => 31
-                        Byte binPix1 = (Byte)(binPix & 0x0F); // 0x01
-                        Byte vgaPix1 = (Byte)(vgaPix & 0x0F); // 0x03
-                        Byte finalPix1 = (Byte)((vgaPix1 << 4) + binPix1);
-                        Byte binPix2 = (Byte)((binPix & 0xF0) >> 4); // 0x10
-                        Byte vgaPix2 = (Byte)((vgaPix & 0xF0) >> 4); // 0x30
-                        Byte finalPix2 = (Byte)((vgaPix2 << 4) + binPix2);
-                        fullData[offs] = finalPix2;
-                        fullData[offs + 1] = finalPix1;
-                    }
-                }
-                this.m_LoadedImage = ImageUtils.BuildImage(fullData, 320, 200, 320 * this.m_bpp / 8, pf, m_Palette, null);
-                //save debug output
-                //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
+                if (!v2)
+                    throw new FileTypeLoadException("Dimensions chunk is only supported in v2 format.");
             }
-            else if ("VQT:".Equals(firstChunk))
-            {
+            else if (v2)
+                throw new FileTypeLoadException("Cannot find image dimensions chunk!");
+            if ("VQT:".Equals(firstChunk))
                 throw new FileTypeLoadException("SCR files with VQT section are currently not supported.");
-                /*/
-                DynamixChunk vqtChunk = DynamixChunk.GetChunk(scrChunk.Data, "VQT", true);
-                if (vqtChunk == null)
-                    throw new FileTypeLoadException("Cannot find VQT chunk!");
-                //*/
+
+            DynamixChunk dimChunk = DynamixChunk.ReadChunk(scrChunk.Data, "DIM");
+            if (dimChunk != null && dimChunk.DataLength == 4)
+            {
+                width = (Int32)ArrayUtils.ReadIntFromByteArray(dimChunk.Data, 0, 2, true);
+                height = (Int32)ArrayUtils.ReadIntFromByteArray(dimChunk.Data, 2, 2, true);
+            }
+            DynamixChunk binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "BIN");
+            if (binChunk == null)
+                throw new FileTypeLoadException("Cannot find BIN chunk!");
+            Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
+            //save debug output
+            //File.WriteAllBytes((output ?? "scrimage") + "vga.bin", vgadata);
+            Byte[] vgadata = null;
+            DynamixChunk vgaChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
+            if (vgaChunk == null)
+            {
+                this.m_bpp = 4;
             }
             else
-                throw new FileTypeLoadException("Cannot find data chunk!");
-            // ??? Magic ???
+            {
+                this.m_bpp = 8;
+                vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
+            }
+            //save debug output
+            //File.WriteAllBytes((output ?? "scrimage") + "bin.bin", bindata);
+            Byte[] fullData;
+            PixelFormat pf;
+            if (vgadata == null)
+            {
+                fullData = bindata;
+                pf = PixelFormat.Format4bppIndexed;
+                if (m_Palette != null)
+                {
+                    Color[] palette = new Color[16];
+                    for (Int32 i = 0; i < 16; i++)
+                        palette[i] = this.m_Palette[v2 ? i : i * 16 + 3];
+                    this.m_Palette = palette;
+                }
+            }
+            else
+            {
+                fullData = new Byte[vgadata.Length * 2];
+                pf = PixelFormat.Format8bppIndexed;
+                for (Int32 i = 0; i < vgadata.Length; i++)
+                {
+                    Int32 offs = i * 2;
+                    Byte binPix = bindata[i]; // 0x11
+                    Byte vgaPix = vgadata[i]; // 0x33
+                    //vga + bin = [vga|bin]; 3 + 1  => 31
+                    Byte binPix1 = (Byte)(binPix & 0x0F); // 0x01
+                    Byte vgaPix1 = (Byte)(vgaPix & 0x0F); // 0x03
+                    Byte finalPix1 = (Byte)((vgaPix1 << 4) + binPix1);
+                    Byte binPix2 = (Byte)((binPix & 0xF0) >> 4); // 0x10
+                    Byte vgaPix2 = (Byte)((vgaPix & 0xF0) >> 4); // 0x30
+                    Byte finalPix2 = (Byte)((vgaPix2 << 4) + binPix2);
+                    fullData[offs] = finalPix2;
+                    fullData[offs + 1] = finalPix1;
+                }
+            }
+            if (m_Palette == null)
+                m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, false, false);
+            this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, m_Palette, null);
+            //save debug output
+            //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
+        {
+            return SaveToBytesAsThis(fileToSave, dontCompress, false);
+        }
+
+        public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress, Boolean v2)
         {
             Bitmap image = fileToSave.GetBitmap();
-            if (image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
+            if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
+                throw new NotSupportedException("Only 4-bit or 8-bit images can be saved as Dynamix SCR!");
+
+            if (!v2 && (image.Width != 320 || image.Height != 200))
+                throw new NotSupportedException("Only 320x200 images can be saved as Dynamix SCR v1!");
+            List<DynamixChunk> chunks = new List<DynamixChunk>();
+            if (v2)
+            {
+                Byte[] dimensions = new Byte[4];
+                ArrayUtils.WriteIntToByteArray(dimensions, 0, 2, true, (UInt32)image.Width);
+                ArrayUtils.WriteIntToByteArray(dimensions, 2, 2, true, (UInt32)image.Height);
+                DynamixChunk dimChunk = new DynamixChunk("DIM", dimensions);
+                chunks.Add(dimChunk);
+            }
             Int32 stride;
             Byte[] data = ImageUtils.GetImageData(image, out stride);
-            Byte[] dataHi = new Byte[data.Length / 2];
-            Byte[] dataLo = new Byte[data.Length / 2];
-            for (Int32 i = 0; i < data.Length; i++)
+            if (image.PixelFormat == PixelFormat.Format4bppIndexed)
             {
-                Byte pixData = data[i];
-                Int32 pixHi = pixData & 0xF0;
-                Int32 pixLo = pixData & 0x0F;
-                if (i % 2 == 0)
-                    pixLo = pixLo << 4;
-                else
-                    pixHi = pixHi >> 4;
-                Int32 pixOffs = i/2;
-                dataHi[pixOffs] |= (Byte)pixHi;
-                dataLo[pixOffs] |= (Byte)pixLo;
+                UInt32 dataLen = (UInt32)data.Length;
+                Byte compression = 0;
+                if (!dontCompress)
+                {
+                    Byte[] dataCompr = DynamixCompression.RleEncode(data);
+                    if (dataCompr.Length < dataLen)
+                    {
+                        data = dataCompr;
+                        compression = 1;
+                    }
+                }
+                DynamixChunk binChunk = new DynamixChunk("BIN", compression, dataLen, data);
+                chunks.Add(binChunk);
             }
-            UInt32 dataHiLen = (UInt32)dataHi.Length;
-            UInt32 dataLoLen = (UInt32)dataLo.Length;
-            Byte compressionHi = 0;
-            Byte compressionLo = 0;
-            // optional: add compression
-            Byte[] dataHiCompr = DynamixCompression.RleEncode(dataHi);
-            if (dataHiCompr.Length < dataHiLen)
+            else
             {
-                dataHi = dataHiCompr;
-                compressionHi = 1;
+                Byte[] dataVga = new Byte[data.Length / 2];
+                Byte[] dataBin = new Byte[data.Length / 2];
+                for (Int32 i = 0; i < data.Length; i++)
+                {
+                    Byte pixData = data[i];
+                    Int32 pixHi = pixData & 0xF0;
+                    Int32 pixLo = pixData & 0x0F;
+                    if (i % 2 == 0)
+                        pixLo = pixLo << 4;
+                    else
+                        pixHi = pixHi >> 4;
+                    Int32 pixOffs = i / 2;
+                    dataVga[pixOffs] |= (Byte)pixHi;
+                    dataBin[pixOffs] |= (Byte)pixLo;
+                }
+                UInt32 dataLenVga = (UInt32)dataVga.Length;
+                UInt32 dataLenBin = (UInt32)dataBin.Length;
+                Byte compressionVga = 0;
+                Byte compressionBin = 0;
+                // optional: add compression
+                if (!dontCompress)
+                {
+                    Byte[] dataHiCompr = DynamixCompression.RleEncode(dataVga);
+                    if (dataHiCompr.Length < dataLenVga)
+                    {
+                        dataVga = dataHiCompr;
+                        compressionVga = 1;
+                    }
+                    Byte[] dataLoCompr = DynamixCompression.RleEncode(dataBin);
+                    if (dataLoCompr.Length < dataLenBin)
+                    {
+                        dataBin = dataLoCompr;
+                        compressionBin = 1;
+                    }
+                }
+                DynamixChunk binChunk = new DynamixChunk("BIN", compressionBin, dataLenBin, dataBin);
+                chunks.Add(binChunk);
+                DynamixChunk vgaChunk = new DynamixChunk("VGA", compressionVga, dataLenVga, dataVga);
+                chunks.Add(vgaChunk);
             }
-            Byte[] dataLoCompr = DynamixCompression.RleEncode(dataLo);
-            if (dataLoCompr.Length < dataLoLen)
-            {
-                dataLo = dataLoCompr;
-                compressionLo = 1;
-            }
-            // save
-            return SaveToBytes(dataLo, compressionLo, dataLoLen, dataHi, compressionHi, dataHiLen);
+            DynamixChunk scrChunk = DynamixChunk.BuildChunk("SCR", chunks.ToArray());
+            scrChunk.BitFlag = true;
+            return scrChunk.WriteChunk();
         }
-
-        private Byte[] SaveToBytes(Byte[] dataBin, Byte compressionBin, UInt32 dataLenBin, Byte[] dataVga, Byte compressionVga, UInt32 dataLenVga)
-        {
-            Int32 offset = 0;
-            Byte[] fullData = new Byte[34 + dataVga.Length + dataBin.Length];
-            Array.Copy(Encoding.ASCII.GetBytes("SCR:"), 0, fullData, offset, 4);
-            offset += 4;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)(fullData.Length - 8) + 0x80000000);
-            offset += 4;
-
-            Array.Copy(Encoding.ASCII.GetBytes("BIN:"), 0, fullData, offset, 4);
-            offset += 4;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)dataBin.Length + 5);
-            offset += 4;
-            fullData[offset] = compressionBin;
-            offset += 1;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, dataLenBin);
-            offset += 4;
-            Array.Copy(dataBin, 0, fullData, offset, dataBin.Length);
-            offset += dataBin.Length;
-
-            Array.Copy(Encoding.ASCII.GetBytes("VGA:"), 0, fullData, offset, 4);
-            offset += 4;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, (UInt32)dataVga.Length + 5);
-            offset += 4;
-            fullData[offset] = compressionVga;
-            offset += 1;
-            ArrayUtils.WriteIntToByteArray(fullData, offset, 4, true, dataLenVga);
-            offset += 4;
-            Array.Copy(dataVga, 0, fullData, offset, dataVga.Length);
-            //offset += dataHi.Length;
-            return fullData;
-        }
-        
-        private void ReadHeader(Byte[] headerBytes)
-        {
-        }
+       
     }
 
 }

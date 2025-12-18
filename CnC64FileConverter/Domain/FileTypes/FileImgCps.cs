@@ -62,7 +62,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
                 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveCps(fileToSave.GetBitmap(), fileToSave.GetColors(), fileToSave.ColorsInPalette == 0 && fileToSave.GetColors().Length != 0);
         }
@@ -103,7 +103,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.hasPalette = true;
             }
             if (this.m_palette == null)
-                this.m_palette = this.m_palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
+                this.m_palette = PaletteUtils.GenerateGrayPalette(this.BitsPerColor, false, false);
             Byte[] imageData = new Byte[bufferSize];
             Int32 dataOffset = 10 + paletteLength;
             try

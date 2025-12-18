@@ -19,7 +19,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 hdrHeight;
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "ElvImg"; } }
+        public override String ShortTypeName { get { return "ElvIco"; } }
         public override String[] FileExtensions { get { return new String[] { "DAT" }; } }
         public override String ShortTypeDescription { get { return "Elvira ICON.DAT file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
@@ -76,7 +76,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveImg(fileToSave.GetBitmap());
         }

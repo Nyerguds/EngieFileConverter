@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -6,6 +7,13 @@ namespace Nyerguds.Util.UI
 {
     public class SelectablePanel : Panel
     {
+        /// <summary>
+        /// When set, and the handling function sets its Handled property, this overrides the MouseWheel event.
+        /// </summary>
+        [Browsable(true)]
+        [EditorBrowsable(EditorBrowsableState.Advanced)]
+        public event MouseEventHandler MouseScroll;
+
         public SelectablePanel()
         {
             this.SetStyle(ControlStyles.Selectable, true);
@@ -67,6 +75,18 @@ namespace Nyerguds.Util.UI
             base.OnScroll(se);
             this.PerformLayout();
             this.Invalidate();
+        }
+
+        protected override void OnMouseWheel(MouseEventArgs e)
+        {
+            HandledMouseEventArgs args = e as HandledMouseEventArgs;
+            if (args != null)
+                args.Handled = true;
+            HandledMouseEventArgs arg = new HandledMouseEventArgs(e.Button, e.Clicks, e.X, e.Y, e.Delta);
+            if (MouseScroll != null)
+                MouseScroll(this, arg);
+            if (!arg.Handled)
+                base.OnMouseWheel(e);
         }
 
         protected override void OnResize(EventArgs eventargs)

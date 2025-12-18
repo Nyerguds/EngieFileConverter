@@ -75,11 +75,14 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Domain\CCTypes\CnCShp.cs" />
     <Compile Include="Domain\CCTypes\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\CCTypes\WWCompression.cs" />
+    <Compile Include="Domain\FileTypes\FileImgKort.cs" />
+    <Compile Include="Domain\FileTypes\FileImgDynScrV2.cs" />
     <Compile Include="Domain\FileTypes\FilePaletteDyn.cs" />
     <Compile Include="Domain\FileTypes\FileTilesetPC.cs" />
     <Compile Include="Domain\FileTypes\FileFramesElv.cs" />

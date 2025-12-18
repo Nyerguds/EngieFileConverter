@@ -50,7 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             throw new NotImplementedException();
         }

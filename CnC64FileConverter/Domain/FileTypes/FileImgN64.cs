@@ -100,7 +100,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !m_palette.SequenceEqual(this.m_backupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             return SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, fileToSave.ColorsInPalette == 0 && fileToSave.GetColors().Length != 0);
         }

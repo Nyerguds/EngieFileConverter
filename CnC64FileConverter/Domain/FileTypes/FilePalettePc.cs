@@ -75,7 +75,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !m_palette.SequenceEqual(this.m_backupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean dontCompress)
         {
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException(String.Empty);
