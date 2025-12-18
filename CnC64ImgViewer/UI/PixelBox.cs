@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
@@ -17,6 +19,21 @@ namespace RedCell.UI.Controls
         {
             // Set default.
             InterpolationMode = InterpolationMode.Default;
+        }
+
+        void PixelBox_Paint(object sender, PaintEventArgs e)
+        {
+
+            /*/
+            using (Brush brush = new SolidBrush(this.BackColor))
+            {
+                switch 
+                Double scaleFactor = Math.Min(this.Width / this.Image.Width, this.Height / this.Image.Height);
+
+                e.Graphics.DrawRectangle(
+            }
+            //e.Graphics.DrawImage(BMP, New Rectangle(0, 0, BMP.Width * PScale, BMP.Height * PScale), New Rectangle(0, 0, BMP.Width, BMP.Height), GraphicsUnit.Pixel)
+            //*/
         }
         #endregion
 
@@ -38,6 +55,8 @@ namespace RedCell.UI.Controls
         protected override void OnPaint (PaintEventArgs pe)
         {
             pe.Graphics.InterpolationMode = InterpolationMode;
+            // docs on this are wrong; putting it to Half makes it not shift the whole thing up and to the left by half a (zoomed) pixel.
+            pe.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
             base.OnPaint(pe);
         }
         #endregion

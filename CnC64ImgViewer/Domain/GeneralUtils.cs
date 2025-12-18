@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace CnC64ImgViewer.Domain
@@ -30,6 +32,18 @@ namespace CnC64ImgViewer.Domain
                 path = relativePath;
             // resolves any internal "..\" to get the true full path.
             return Path.GetFullPath(path);
+        }
+
+        public static String ProgramVersion()
+        {
+            FileVersionInfo ver = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
+            //Version v = AssemblyName.GetAssemblyName(Assembly.GetExecutingAssembly().Location).Version;
+            String version = String.Format("v{0}.{1}", ver.FileMajorPart, ver.FileMinorPart);
+            if (ver.FileBuildPart > 0)
+                version += "." + ver.FileBuildPart;
+            if (ver.FilePrivatePart > 0)
+                version += "." + ver.FilePrivatePart;
+            return version;
         }
     }
 }

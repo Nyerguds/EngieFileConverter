@@ -49,10 +49,10 @@
             this.lblZoom = new System.Windows.Forms.Label();
             this.lblTransparentColorVal = new System.Windows.Forms.Label();
             this.lblTransparentColor = new System.Windows.Forms.Label();
+            this.btnViewPalette = new System.Windows.Forms.Button();
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
             this.picImage = new RedCell.UI.Controls.PixelBox();
-            this.btnViewPalette = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numZoom)).BeginInit();
             this.pnlImageScroll.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picImage)).BeginInit();
@@ -271,6 +271,18 @@
             this.lblTransparentColor.Text = "Transparency color:";
             this.lblTransparentColor.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // btnViewPalette
+            // 
+            this.btnViewPalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnViewPalette.Enabled = false;
+            this.btnViewPalette.Location = new System.Drawing.Point(521, 203);
+            this.btnViewPalette.Name = "btnViewPalette";
+            this.btnViewPalette.Size = new System.Drawing.Size(75, 23);
+            this.btnViewPalette.TabIndex = 119;
+            this.btnViewPalette.Text = "View palette";
+            this.btnViewPalette.UseVisualStyleBackColor = true;
+            this.btnViewPalette.Click += new System.EventHandler(this.btnViewPalette_Click);
+            // 
             // numZoom
             // 
             this.numZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -280,11 +292,6 @@
             0,
             0});
             this.numZoom.Location = new System.Drawing.Point(252, 330);
-            this.numZoom.Maximum = new decimal(new int[] {
-            10,
-            0,
-            0,
-            0});
             this.numZoom.Minimum = new decimal(new int[] {
             1,
             0,
@@ -330,17 +337,6 @@
             this.picImage.Visible = false;
             this.picImage.Click += new System.EventHandler(this.picImage_Click);
             // 
-            // btnViewPalette
-            // 
-            this.btnViewPalette.Enabled = false;
-            this.btnViewPalette.Location = new System.Drawing.Point(521, 203);
-            this.btnViewPalette.Name = "btnViewPalette";
-            this.btnViewPalette.Size = new System.Drawing.Size(75, 23);
-            this.btnViewPalette.TabIndex = 119;
-            this.btnViewPalette.Text = "View palette";
-            this.btnViewPalette.UseVisualStyleBackColor = true;
-            this.btnViewPalette.Click += new System.EventHandler(this.btnViewPalette_Click);
-            // 
             // FrmCnC64ImgViewer
             // 
             this.AllowDrop = true;
@@ -374,7 +370,7 @@
             this.Icon = global::CnC64ImgViewer.Properties.Resources.cnc64logo;
             this.MinimumSize = new System.Drawing.Size(700, 300);
             this.Name = "FrmCnC64ImgViewer";
-            this.Text = "N64 IMG format viewer - Created by Nyerguds";
+            this.Text = "N64 IMG Viewer - Created by Nyerguds";
             this.Shown += new System.EventHandler(this.FrmCnC64ImgViewer_Shown);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Frm_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Frm_DragEnter);

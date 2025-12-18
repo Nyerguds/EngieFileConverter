@@ -26,6 +26,7 @@ namespace CnC64ImgViewer
         public FrmCnC64ImgViewer()
         {
             InitializeComponent();
+            this.Text = "N64 IMG Viewer " + GeneralUtils.ProgramVersion() + " - Created by Nyerguds";
             picImage.BackColor = backgroundFillColor;
             lblTransparentColorVal.BackColor = backgroundFillColor;
         }
@@ -60,10 +61,35 @@ namespace CnC64ImgViewer
         {
             filename = path;
             Byte[] data = File.ReadAllBytes(path);
-            rawImage = ImgFile.LoadFromFileData(data);
+            String error = null;
+            Bitmap bm = null;
+            try
+            {
+                rawImage = new ImgFile(data);
+                if (rawImage != null)
+                    bm = rawImage.GetBitmap();
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                rawImage = null;
+            }
             if (rawImage == null)
             {
+                String emptystr = "---";
+                lblValFilename.Text = emptystr;
+                lblValWidth.Text = emptystr;
+                lblValHeight.Text = emptystr;
+                lblValBytesPerCol.Text = emptystr;
+                lblValColorFormat.Text = emptystr;
+                lblValColorsInPal.Text = emptystr;
+                lblValImageData.Text = emptystr;
+                lblValPaletteData.Text = emptystr;
                 picImage.Image = null;
+                RefreshImage();
+                btnSave.Enabled = false;
+                btnViewPalette.Enabled = false;
+                MessageBox.Show(this, "Image loading failed" + (error == null ? "." : ": " + error), this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             lblValFilename.Text = Path.GetFileName(filename);
@@ -72,9 +98,8 @@ namespace CnC64ImgViewer
             lblValBytesPerCol.Text = rawImage.ReadBytesPerColor.ToString();
             lblValColorFormat.Text = rawImage.ColorFormat > 2 ? "Unknown" : ("[" + rawImage.ColorFormat + "] " + rawImage.GetBpp() + " BPP" + (rawImage.ColorFormat < 2? " (paletted)" : String.Empty));
             lblValColorsInPal.Text = rawImage.ColorsInPalette.ToString() + (rawImage.PaletteOffset == 0 && rawImage.ColorsInPalette != 0 && rawImage.ReadColorsInPalette  == 0 ? " (0 in header)" : String.Empty);
-            lblValImageData.Text = (rawImage.ImageData != null ? rawImage.ImageData.Length : 0).ToString() + " bytes";
+            lblValImageData.Text = (rawImage.ImageData != null ? rawImage.ReadImageDataLength : 0).ToString() + " bytes";
             lblValPaletteData.Text = (rawImage.PaletteOffset != 0 && rawImage.PaletteData != null ? rawImage.PaletteData.Length : 0).ToString() + " bytes";
-            Bitmap bm = rawImage.GetBitmap();
             picImage.Image = bm;
             RefreshImage();
             Boolean loadOk = bm != null;
@@ -136,7 +161,6 @@ namespace CnC64ImgViewer
             picImage.Visible = loadOk;
             picImage.Width = loadOk ? bm.Width * (Int32)numZoom.Value : 100;
             picImage.Height = loadOk ? bm.Height * (Int32)numZoom.Value : 100;
-            picImage.BackColor = loadOk && ImageUtils.HasTransparency(bm) ? backgroundFillColor : SystemColors.Control;
         }
 
         private void picImage_Click(object sender, EventArgs e)
@@ -150,12 +174,13 @@ namespace CnC64ImgViewer
             cdl.Color = this.backgroundFillColor;
             cdl.FullOpen = true;
             cdl.CustomColors = this.customcolors;
-            DialogResult res = cdl.ShowDialog();
+            DialogResult res = cdl.ShowDialog(this);
             customcolors = cdl.CustomColors;
             if (res == DialogResult.OK || res == DialogResult.Yes)
             {
                 this.backgroundFillColor = cdl.Color;
                 lblTransparentColorVal.BackColor = backgroundFillColor;
+                picImage.BackColor = backgroundFillColor;
                 numZoom_ValueChanged(null, null);
             }
         }

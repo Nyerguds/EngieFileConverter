@@ -27,62 +27,62 @@ namespace CnC64ImgViewer.Domain
         }
         public Int32 ReadColorsInPalette { get; private set; }
         public Byte[] ImageData { get; private set; }
+        public Int32 ReadImageDataLength { get; private set; }
         public Byte[] PaletteData { get; private set; }
 
-        private ImgFile()
+        public ImgFile(Byte[] fileData)
         {
-
+            LoadFromFileData(fileData);
         }
 
-        public static ImgFile LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(Byte[] fileData)
         {
             if (fileData.Length < 16)
-                return null;
-            ImgFile img = new ImgFile();
-            img.ReadHeader(fileData);
-            if (img.DataOffset != 16)
-                return null;
-            try
+                throw new Exception("File is not long enough to be a valid IMG file.");
+            this.ReadHeader(fileData);
+            if (this.DataOffset != 16)
+                throw new Exception("File does not have a valid IMG header.");
+            Int32 imageDataSize = (this.Width * this.Height * this.GetBpp()) / 8;
+            this.ReadImageDataLength = imageDataSize;
+            Byte[] imageData = new Byte[imageDataSize];
+
+            Int32 expectedSize = this.DataOffset + imageDataSize;
+            if (this.ColorFormat == 0 || this.ColorFormat == 1 && this.PaletteOffset != 0)
+                expectedSize = Math.Max(expectedSize, this.PaletteOffset + this.BytesPerColor * this.ReadColorsInPalette);
+
+            if (fileData.Length < expectedSize)
+                throw new Exception(String.Format("File data is too short. Got {0} bytes, expected {1} bytes.", fileData.Length, expectedSize));
+            Array.Copy(fileData, this.DataOffset, imageData, 0, Math.Min(fileData.Length - this.DataOffset, imageDataSize));
+            if (this.ColorFormat == 2)
+                imageData = Convert16bTo32b(imageData, this.Width * this.Height);
+            this.ImageData = imageData;
+            if (this.PaletteOffset != 0)
             {
-                Int32 imageDataSize = (img.Width * img.Height * img.GetBpp()) / 8;
-                Byte[] imageData = new Byte[imageDataSize];
-                Array.Copy(fileData, img.DataOffset, imageData, 0, imageDataSize);
-                if (img.ColorFormat == 2)
-                    imageData = Convert16bTo32b(imageData, img.Width * img.Height);
-                img.ImageData = imageData;
-                if (img.PaletteOffset != 0)
-                {
-                    Int32 palSize = img.BytesPerColor * img.ColorsInPalette;
-                    Byte[] paletteData = new Byte[palSize];
-                    Array.Copy(fileData, img.PaletteOffset, paletteData, 0, palSize);
-                    img.PaletteData = paletteData;
-                }
-                else if (img.ColorFormat != 2)
-                {
-                    Int32 palSize = img.ColorsInPalette;
-                    if (palSize == 0)
-                        palSize = (Int32)Math.Pow(2, Image.GetPixelFormatSize(img.GetPixelFormat()));
-                    // generate greyscale palette. Ignore original value here.
-                    img.BytesPerColor = 4;
-                    Byte[] paletteData = new Byte[palSize * 4];
-                    Double fraction = 256.0 / (Double)(palSize-1);
-                    Int32 steps = 255 / (palSize - 1);
-                    for (Int32 i = 0; i < palSize; i++)
-                    {
-                        Int32 offs = i * 4;
-                        Byte grayval = (Byte)Math.Min(255, Math.Round((Double)i * steps, MidpointRounding.AwayFromZero));
-                        paletteData[offs + 0] = 255;
-                        paletteData[offs + 1] = grayval;
-                        paletteData[offs + 2] = grayval;
-                        paletteData[offs + 3] = grayval;
-                    }
-                    img.PaletteData = paletteData;
-                }
-                return img;
+                Int32 palSize = this.BytesPerColor * this.ColorsInPalette;
+                Byte[] paletteData = new Byte[palSize];
+                Array.Copy(fileData, this.PaletteOffset, paletteData, 0, palSize);
+                this.PaletteData = paletteData;
             }
-            catch
+            else if (this.ColorFormat != 2)
             {
-                return null;
+                Int32 palSize = this.ColorsInPalette;
+                if (palSize == 0)
+                    palSize = (Int32)Math.Pow(2, Image.GetPixelFormatSize(this.GetPixelFormat()));
+                // generate greyscale palette. Ignore original value here.
+                this.BytesPerColor = 4;
+                Byte[] paletteData = new Byte[palSize * 4];
+                Double fraction = 256.0 / (Double)(palSize - 1);
+                Int32 steps = 255 / (palSize - 1);
+                for (Int32 i = 0; i < palSize; i++)
+                {
+                    Int32 offs = i * 4;
+                    Byte grayval = (Byte)Math.Min(255, Math.Round((Double)i * steps, MidpointRounding.AwayFromZero));
+                    paletteData[offs + 0] = 255;
+                    paletteData[offs + 1] = grayval;
+                    paletteData[offs + 2] = grayval;
+                    paletteData[offs + 3] = grayval;
+                }
+                this.PaletteData = paletteData;
             }
         }
 

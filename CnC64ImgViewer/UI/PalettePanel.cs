@@ -26,6 +26,10 @@ namespace CnC64ImgViewer.Ui
         protected Char m_EmptyIndicatorChar = 'X';
         protected Color m_EmptyIndicatorCharColor = Color.Red;
 
+        protected Color m_TransparencyIndicatorBackColor = Color.Empty;
+        protected Char m_TransparencyIndicatorChar = 'T';
+        protected Color m_TransparencyIndicatorCharColor = Color.Blue;
+
         protected Boolean m_ShowColorToolTips = true;
         protected Boolean m_Selectable = true;
         protected Boolean m_Multiselect = false;
@@ -128,12 +132,33 @@ namespace CnC64ImgViewer.Ui
             get { return m_EmptyIndicatorCharColor; }
             set { m_EmptyIndicatorCharColor = value; Refresh(); }
         }
+
+        [Description("Color used to indicate entries that are transparent  on the palette. Set to Color.Empty to use the value of the actual color itself. This will automatically generate a visible color for the indicator character."), Category("Palette panel")]
+        public Color TransparencyIndicatorBackColor
+        {
+            get { return m_TransparencyIndicatorBackColor; }
+            set { m_TransparencyIndicatorBackColor = value; Refresh(); }
+        }
+
+        [Description("Character put on labels to indicate entries that are transparent on the palette."), Category("Palette panel")]
+        public Char TransparencyIndicatorChar
+        {
+            get { return m_TransparencyIndicatorChar; }
+            set { m_TransparencyIndicatorChar = value; Refresh(); }
+        }
+
+        [Description("Color of the character put on labels to indicate entries that are transparent on the palette."), Category("Palette panel")]
+        public Color TransparencyIndicatorCharColor
+        {
+            get { return m_TransparencyIndicatorCharColor; }
+            set { m_TransparencyIndicatorCharColor = value; Refresh(); }
+        }
         
         [Description("Show tooltips on the labels, giving the index and color values."), Category("Palette panel")]
         public Boolean ShowColorToolTips
         {
             get { return this.m_ShowColorToolTips; }
-            set { this.m_ShowColorToolTips = value; Refresh(); }
+            set { this.m_ShowColorToolTips = value; ResetTooltips(); }
         }
 
         [Description("Allow selecting of colors on the palette."), Category("Palette panel")]
@@ -207,7 +232,6 @@ namespace CnC64ImgViewer.Ui
         {
             this.SuspendLayout();
             DrawPalette();
-            ResetTooltips();
             this.ResumeLayout(false);
         }
 
@@ -215,8 +239,22 @@ namespace CnC64ImgViewer.Ui
         {
             if (this.m_ShowColorToolTips)
             {
-                for (int i = 0; i < m_ColorLabels.Length; i++)
-                    this.SetColorToolTip(i);
+                for (Int32 i = 0; i < m_ColorLabels.Length; i++)
+                {
+                    Color col = Color.Empty;
+                    Boolean emptyCol = false;
+                    String lbl = String.Empty;
+                    if (m_Palette != null)
+                    {
+                        col = GetColor(i);
+                        if (col.IsEmpty)
+                            emptyCol = true;
+                    }
+                    else
+                        emptyCol = true;
+                    Boolean transparentCol = !emptyCol && col.A == 0;
+                    this.SetColorToolTip(i, emptyCol, transparentCol);
+                }
             }
             else
                 this.toolTipColor.RemoveAll();
@@ -237,53 +275,64 @@ namespace CnC64ImgViewer.Ui
 
                     Color col = m_EmptyIndicatorBackColor;
                     Boolean emptyCol = false;
+                    Boolean transparentCol = false;
                     String lbl = String.Empty;
                     if (HasColor)
                     {
-                        if (HasRemap && m_ShowRemappedPalette)
-                        {
-                            Int32 filterIndex = m_Remap[index];
-                            if (index < m_Remap.Length && filterIndex >= 0 && filterIndex < m_Palette.Length)
-                                col = m_Palette[filterIndex];
-                            else
-                                emptyCol = true;
-                        }
-                        else if (index < m_Palette.Length)
-                        {
-                            col = m_Palette[index];
-                        }
-                        else
-                            emptyCol = true;
+                        col = GetColor(index);
                         if (col.IsEmpty)
                             emptyCol = true;
                     }
                     else
                         emptyCol = true;
 
-                    if (emptyCol == true)
-                        lbl = m_EmptyIndicatorChar.ToString();
+                    if (!emptyCol && col.A == 0)
+                        transparentCol = true;
 
                     Boolean selectThis = m_SelectedIndices.Contains(index);
                     if (newPalette)
-                        this.m_ColorLabels[index] = this.GenerateLabel(x, y, col, lbl, selectThis);
+                        this.m_ColorLabels[index] = this.GenerateLabel(x, y, col, emptyCol, transparentCol, selectThis);
                     else
-                        this.SetLabelProperties(this.m_ColorLabels[index], x, y, col, lbl, selectThis);
+                        this.SetLabelProperties(this.m_ColorLabels[index], x, y, col, emptyCol, transparentCol, selectThis);
                     if (m_ShowColorToolTips)
-                        this.SetColorToolTip(index);
+                        this.SetColorToolTip(index, emptyCol, transparentCol);
                     if (newPalette) 
                         this.Controls.Add(m_ColorLabels[index]);
                 }
             }
+            if (!m_ShowColorToolTips)
+                this.toolTipColor.RemoveAll();
             Int32 sizeX = m_Padding.Left + LabelSize.Width * 16 + PadBetween.X * 15 + m_Padding.Right;
             Int32 sizeY = m_Padding.Top + LabelSize.Height * 16 + PadBetween.Y * 15 + m_Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);
         }
 
-        protected virtual void SetColorToolTip(Int32 index)
+
+        protected Color GetColor(Int32 index)
+        {
+            Color col;
+            if (m_Remap != null && m_ShowRemappedPalette)
+            {
+                Int32 filterIndex = m_Remap[index];
+                if (index < m_Remap.Length && filterIndex >= 0 && filterIndex < m_Palette.Length)
+                    col = m_Palette[filterIndex];
+                else
+                    col = Color.Empty;
+            }
+            else if (index < m_Palette.Length)
+            {
+                col = m_Palette[index];
+            }
+            else
+                col = Color.Empty;
+            return col;
+        }
+
+        protected virtual void SetColorToolTip(Int32 index, Boolean isEmpty, Boolean isTransparent)
         {
             Label lbl = m_ColorLabels[index];
             String tooltipString;
-            if (m_Palette == null || index < 0 || index >= m_Palette.Length || String.Equals(lbl.Text, m_EmptyIndicatorChar.ToString()))
+            if (isEmpty)
             {
                 tooltipString = "No color set";
             }
@@ -293,25 +342,46 @@ namespace CnC64ImgViewer.Ui
                 tooltipString = "#" + index;
                 if (m_Remap != null && m_ShowRemappedPalette && m_Remap[index] >= 0)
                     tooltipString += " -> #" + m_Remap[index];
-                tooltipString += " (" + c.R + "," + c.G + "," + c.B + ")" + (c.A != 255 ? " (" + (c.A == 0 ? "Transparent" : "Alpha: " + c.A) + ")" : String.Empty);
+                tooltipString += " (" + c.R + "," + c.G + "," + c.B + ")";
+                if (isTransparent)
+                    tooltipString += " (Transparent)";
             }
             this.toolTipColor.SetToolTip(lbl, tooltipString);
         }
 
-        protected virtual Label GenerateLabel(Int32 x, Int32 y, Color color, String text, Boolean addBorder)
+        protected virtual Label GenerateLabel(Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean isTransparent, Boolean addBorder)
         {
             Label lbl = new System.Windows.Forms.Label();
-            SetLabelProperties(lbl, x, y, color, text, addBorder);
+            SetLabelProperties(lbl, x, y, color, isEmpty, isTransparent, addBorder);
             lbl.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ColorMouseClick);
             lbl.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.ColorMouseDoubleClick);
             lbl.Paint += new System.Windows.Forms.PaintEventHandler(this.lblColor_Paint);
             return lbl;
         }
 
-        protected virtual void SetLabelProperties(Label lbl, Int32 x, Int32 y, Color color, String text, Boolean addBorder)
+        protected virtual void SetLabelProperties(Label lbl, Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean isTransparent, Boolean addBorder)
         {
             Int32 index = y * 16 + x;
-            lbl.BackColor = color.IsEmpty ? m_EmptyIndicatorBackColor : color;
+            if (isEmpty)
+            {
+                lbl.BackColor = m_EmptyIndicatorBackColor;
+                lbl.Text = m_EmptyIndicatorChar.ToString();
+                lbl.ForeColor = m_EmptyIndicatorCharColor;
+            }
+            else if (isTransparent)
+            {
+                Boolean bgisEmpty = m_TransparencyIndicatorBackColor == Color.Empty;
+                lbl.BackColor = bgisEmpty ? Color.FromArgb(255, color.R, color.G, color.B) : m_TransparencyIndicatorBackColor;
+                lbl.Text = m_TransparencyIndicatorChar.ToString();
+                lbl.ForeColor = bgisEmpty ? ImageUtils.GetVisibleBorderColor(lbl.BackColor) : m_TransparencyIndicatorCharColor;
+            }
+            else
+            {
+                lbl.BackColor = color;
+                lbl.Text = String.Empty;
+                lbl.ForeColor = Color.Black;
+            }
+            
             lbl.BorderStyle = addBorder ? BorderStyle.FixedSingle : BorderStyle.None;
             lbl.Location = new Point(m_Padding.Left + (LabelSize.Width + PadBetween.X) * x,
                                         m_Padding.Top + (LabelSize.Height + PadBetween.Y) * y);
@@ -320,10 +390,7 @@ namespace CnC64ImgViewer.Ui
             lbl.TabIndex = index;
             lbl.Margin = new System.Windows.Forms.Padding(0);
             lbl.Tag = index;
-            lbl.Text = text;
             lbl.TextAlign = ContentAlignment.MiddleCenter;
-            lbl.ForeColor = m_EmptyIndicatorCharColor;
-            
         }
 
         protected virtual void lblColor_Paint(Object sender, PaintEventArgs e)
