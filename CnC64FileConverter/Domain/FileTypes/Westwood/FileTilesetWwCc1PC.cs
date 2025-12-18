@@ -33,7 +33,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int16 hdrID2;
         protected Int32 hdrIndexImages;
         protected Int32 hdrIndexTilesetImagesList;
-        protected List<PCTile> m_TilesList;
+        protected List<FileTileCc1Pc> m_TilesList;
         protected Byte[][] m_Tiles;
         protected Boolean[] m_TileUseList;
         protected Int32 m_CompositeFrameTilesWidth = 1;
@@ -163,7 +163,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 actualImages = imagesList.Max(x => x == 0xFF ? -1 : (Int32)x) + 1;
             if (this.hdrImgStart + actualImages * tileSize > fileLen)
                 throw new FileTypeLoadException("Tile image data outside file range!");
-            m_TilesList = new List<PCTile>();
+            m_TilesList = new List<FileTileCc1Pc>();
             if (this.m_Palette == null)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             // ONly way to set a palette is through SetPaletre, and that ensures 256 colours.
@@ -190,7 +190,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 this.m_Tiles[i] = tileData;
                 Bitmap tileImage = ImageUtils.BuildImage(tileData, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
-                m_TilesList.Add(new PCTile(this, sourceFileName, tileImage, (Byte)i));
+                m_TilesList.Add(new FileTileCc1Pc(this, sourceFileName, tileImage, (Byte)i));
             }
             Int32 xDim = -1;
             if (sourceFileName != null)
@@ -249,12 +249,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
     }
 
-    public class PCTile: N64Tile
+    public class FileTileCc1Pc: FileTileCc1N64
     {
         public override Int32 BitsPerColor { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
 
-        public PCTile(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index)
+        public FileTileCc1Pc(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index)
             : base(origin, sourceFileName, tileImage, null, index, 0)
         { }
 

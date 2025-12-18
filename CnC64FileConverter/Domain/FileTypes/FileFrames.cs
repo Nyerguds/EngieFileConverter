@@ -10,7 +10,7 @@ using Nyerguds.Util.UI;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileImageFrames : FileImage
+    public class FileFrames : FileImage
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.None; } }
@@ -52,7 +52,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.FramesList.Add(frame);
         }
 
-        public static FileImageFrames CheckForFrames(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames)
+        public static FileFrames CheckForFrames(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames)
         {
             minName = null;
             maxName = null;
@@ -95,7 +95,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Only one frame; not a range. Abort.
             if (maxNum == minNum)
                 return null;
-            FileImageFrames framesContainer = new FileImageFrames();
+            FileFrames framesContainer = new FileFrames();
             String frName = namepart;
             if (frName.Length == 0)
             {

@@ -41,7 +41,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.m_Info = info;
-            this.lblDescription.Text = this.m_Info.UiString;
+            this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
             String[] options = this.m_Info.InitValue.Split(',');
             Int32 select;
             Int32.TryParse(this.m_Info.SaveData, out select);

@@ -20,7 +20,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.m_Info = info;
-            this.chkOption.Text = this.m_Info.UiString;
+            this.chkOption.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
             this.chkOption.Checked = GeneralUtils.IsTrueValue(this.m_Info.SaveData);
         }
         

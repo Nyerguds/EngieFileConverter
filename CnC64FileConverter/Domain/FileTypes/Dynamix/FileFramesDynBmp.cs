@@ -13,7 +13,7 @@ using Nyerguds.GameData.Dynamix;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileImgDynBmp : SupportedFileType
+    public class FileFramesDynBmp : SupportedFileType
     {
         protected Int32 m_bpp;
 
@@ -240,7 +240,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
-                FileImageFrames frameSave = new FileImageFrames();
+                FileFrames frameSave = new FileFrames();
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }
@@ -256,7 +256,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
-                FileImageFrames frameSave = new FileImageFrames();
+                FileFrames frameSave = new FileFrames();
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }

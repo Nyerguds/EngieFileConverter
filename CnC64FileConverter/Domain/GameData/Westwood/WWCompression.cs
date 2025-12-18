@@ -258,7 +258,10 @@ namespace Nyerguds.GameData.Westwood
             Int32 getend = input.Length;
             // "Worst case length" code by OmniBlade. We'll just use a buffer of
             // that max length and cut it down to the actual used size at the end.
-            Byte[] output = new Byte[LCWWorstCase(getend)];
+            // Not using it- it's not big enough in case of some small images.
+            //LCWWorstCase(getend)
+            Int32 worstcase = Math.Max(10000, getend * 2);
+            Byte[] output = new Byte[worstcase];
             // relative LCW starts with 0 as flag to decoder.
             // this is only used by later games for decoding hi-color vqa files.
             if (relative)
@@ -418,12 +421,15 @@ namespace Nyerguds.GameData.Westwood
             // Techncically it can just be cropped at the end, though this value is used to
             // automatically cut off repeat-commands that go too far.
             Int32 writeEnd = output.Length;
+            Int32 readEnd = input.Length;
 
             //Decide if the stream uses relative 3 and 5 byte commands
 	        //Extension allows effective compression of data > 64k
 	        //https://github.com/madmoose/scummvm/blob/bladerunner/engines/bladerunner/decompress_lcw.cpp
             // this is only used by later games for decoding hi-color vqa files.
             // For other stuff (like shp), just check in advance to decide if the data is too big.
+            if (readOffset >= readEnd)
+                return writeOffset;
 	        if (input[readOffset] == 0)
 	        {
 		        relative = true;
@@ -432,6 +438,8 @@ namespace Nyerguds.GameData.Westwood
 	        //DEBUG_SAY("LCW Decompression... \n");
 	        while (writeOffset < writeEnd)
 	        {
+                if (readOffset >= readEnd)
+	                return writeOffset;
 		        Byte flag = input[readOffset++];
 		        UInt16 cpysize;
                 UInt16 offset;
@@ -444,15 +452,22 @@ namespace Nyerguds.GameData.Westwood
 				        //long set 0b11111110
 				        if (flag == 0xFE)
 				        {
+                            if (readOffset + 1 >= readEnd)
+                                return writeOffset;
                             cpysize = input[readOffset++];
                             cpysize += (UInt16)((input[readOffset++]) << 8);
 					        if (cpysize > writeEnd - writeOffset)
                                 cpysize = (UInt16)(writeEnd - writeOffset);
-
+                            if (readOffset >= readEnd)
+                                return writeOffset;
 					        //DEBUG_SAY("0b11111110 Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 3, dest - start, cpysize);
-                            for (int i=writeOffset; i < writeOffset+cpysize; i++)
-                                output[i] = input[readOffset];
-                            readOffset++;
+				            for (int i = writeOffset; i < writeOffset + cpysize; i++)
+				            {
+                                if (i >= writeEnd)
+                                    return writeOffset;
+				                output[i] = input[readOffset];
+				            }
+				            readOffset++;
 					        writeOffset += cpysize;
 				        }
 				        else
@@ -461,10 +476,14 @@ namespace Nyerguds.GameData.Westwood
 					        //long move, abs 0b11111111
 					        if (flag == 0xFF)
 					        {
+                                if (readOffset + 1 >= readEnd)
+                                    return writeOffset;
                                 cpysize = input[readOffset++];
 						        cpysize += (UInt16)((input[readOffset++]) << 8);
 						        if (cpysize > writeEnd - writeOffset)
 							        cpysize = (UInt16)(writeEnd - writeOffset);
+                                if (readOffset + 1 >= readEnd)
+                                    return writeOffset;
                                 offset = input[readOffset++];
 						        offset += (UInt16)((input[readOffset++]) << 8);
 
@@ -474,14 +493,20 @@ namespace Nyerguds.GameData.Westwood
 						        else
 							        s = offset;
 						        //DEBUG_SAY("0b11111111 Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 5, dest - start, cpysize, offset);
-						        for (; cpysize > 0; --cpysize)
-							        output[writeOffset++] = output[s++];
-					        //short move abs 0b11??????
+					            for (; cpysize > 0; --cpysize)
+					            {
+                                    if (writeOffset >= writeEnd)
+                                        return writeOffset;
+					                output[writeOffset++] = output[s++];
+					            }
+					            //short move abs 0b11??????
 					        }
 					        else
 					        {
 						        if (cpysize > writeEnd - writeOffset)
 							        cpysize = (UInt16)(writeEnd - writeOffset);
+                                if (readOffset + 1 >= readEnd)
+                                    return writeOffset;
                                 offset = input[readOffset++];
 						        offset += (UInt16)((input[readOffset++]) << 8);
 						        //extended format for VQA32
@@ -490,8 +515,12 @@ namespace Nyerguds.GameData.Westwood
 						        else
 							        s = offset;
 						        //DEBUG_SAY("0b11?????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 3, dest - start, cpysize, offset);
-						        for (; cpysize > 0; --cpysize)
-                                    output[writeOffset++] = output[s++];
+					            for (; cpysize > 0; --cpysize)
+					            {
+                                    if (writeOffset >= writeEnd)
+                                        return writeOffset;
+					                output[writeOffset++] = output[s++];
+					            }
 					        }
 				        }
 			        //short copy 0b10??????
@@ -507,8 +536,12 @@ namespace Nyerguds.GameData.Westwood
 				        if (cpysize > writeEnd - writeOffset)
 					        cpysize = (UInt16)(writeEnd - writeOffset);
 				        //DEBUG_SAY("0b10?????? Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 1, dest - start, cpysize);
-				        for (; cpysize > 0; --cpysize)
-					        output[writeOffset++]= input[readOffset++];
+			            for (; cpysize > 0; --cpysize)
+			            {
+                            if (readOffset >= readEnd || writeOffset >= writeEnd)
+                                return writeOffset;
+			                output[writeOffset++] = input[readOffset++];
+			            }
 			        }
 		        //short move rel 0b0???????
 		        }
@@ -517,10 +550,14 @@ namespace Nyerguds.GameData.Westwood
 			        cpysize = (UInt16)((flag >> 4) + 3);
 			        if (cpysize > writeEnd - writeOffset)
 				        cpysize = (UInt16)(writeEnd - writeOffset);
+                    if (readOffset >= readEnd)
+                        return writeOffset;
 			        offset = (UInt16)(((flag & 0xF) << 8) + input[readOffset++]);
 			        //DEBUG_SAY("0b0??????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 2, dest - start, cpysize, offset);
 			        for (; cpysize > 0; --cpysize)
-			        {
+                    {
+                        if (writeOffset >= writeEnd || writeOffset < offset)
+                            return writeOffset;
 				        output[writeOffset] = output[writeOffset - offset];
 				        writeOffset++;
 			        }
@@ -562,7 +599,7 @@ namespace Nyerguds.GameData.Westwood
                 Int32 testbp = getbp;
 
                 //Only evaluate other options if we don't have a matched pair
-                while (source[testsp] != @base[testbp] && testsp < getsendp)
+                while (testsp < getsendp && source[testsp] != @base[testbp])
                 {
                     if ((source[testsp] ^  @base[testbp]) == lastxor)
                     {
@@ -646,7 +683,7 @@ namespace Nyerguds.GameData.Westwood
                 }
 
                 //Handle regions that match exactly
-                while (source[testsp] == @base[testbp] && testsp < getsendp)
+                while (testsp < getsendp && source[testsp] == @base[testbp])
                 {
                     skipcount++;
                     testsp++;
@@ -694,14 +731,16 @@ namespace Nyerguds.GameData.Westwood
         /// </summary>
         /// <param name="data">The data to apply the xor to</param>
         /// <param name="xorSource">The the delta data to apply</param>
-        public static void ApplyXorDelta(Byte[] data, Byte[] xorSource)
+        public static void ApplyXorDelta(Byte[] data, Byte[] xorSource, Int32 xorEnd)
         {
             // Nyer's C# conversion: replacements for write and read for pointers.
             Int32 putp = 0;
             Int32 getp = 0;
             Byte value = 0;
-
-            while (true)
+            Int32 dataEnd = data.Length;
+            if(xorEnd == 0)
+                xorEnd = xorSource.Length;
+            while (putp < dataEnd && getp < xorEnd)
             {
                 //DEBUG_SAY("XOR_Delta Put pos: %u, Get pos: %u.... ", putp - scast<sint8*>(dest), getp - scast<sint8*>(source));
                 Byte cmd = xorSource[getp++];
@@ -713,15 +752,15 @@ namespace Nyerguds.GameData.Westwood
                     //0b00000000
                     if (cmd == 0)
                     {
+                        if (getp >= xorEnd)
+                            return;
                         count = (UInt16)(xorSource[getp++] & 0xFF);
+                        if (getp >= xorEnd)
+                            return;
                         value = xorSource[getp++];
                         xorval = true;
                         //DEBUG_SAY("0b00000000 Val Count %d ", count);
                         //0b0???????
-                    }
-                    else
-                    {
-                        //DEBUG_SAY("0b0??????? XOR Count %d ", count);
                     }
                 }
                 else
@@ -734,7 +773,8 @@ namespace Nyerguds.GameData.Westwood
                         //DEBUG_SAY("0b1??????? Skip Count %d\n", count);
                         continue;
                     }
-
+                    if (getp + 1 >= xorEnd)
+                        return;
                     count = (UInt16)((xorSource[getp] & 0xFF) + (xorSource[getp + 1] << 8));
                     getp += 2;
 
@@ -754,22 +794,21 @@ namespace Nyerguds.GameData.Westwood
                         //DEBUG_SAY("0b100000000 0? Skip Count %d\n", count);
                         continue;
                     }
+                    //0b10000000 11
+                    if ((count & 0x4000) != 0)
+                    {
+                        count &= 0x3FFF;
+                        if (getp >= xorEnd)
+                            return;
+                        value = xorSource[getp++];
+                        //DEBUG_SAY("0b10000000 11 Val Count %d ", count);
+                        xorval = true;
+                        //0b10000000 10
+                    }
                     else
                     {
-                        //0b10000000 11
-                        if ((count & 0x4000) != 0)
-                        {
-                            count &= 0x3FFF;
-                            value = xorSource[getp++];
-                            //DEBUG_SAY("0b10000000 11 Val Count %d ", count);
-                            xorval = true;
-                            //0b10000000 10
-                        }
-                        else
-                        {
-                            count &= 0x3FFF;
-                            //DEBUG_SAY("0b10000000 10 XOR Count %d ", count);
-                        }
+                        count &= 0x3FFF;
+                        //DEBUG_SAY("0b10000000 10 XOR Count %d ", count);
                     }
                 }
 
@@ -778,6 +817,8 @@ namespace Nyerguds.GameData.Westwood
                     //DEBUG_SAY("XOR Val %d\n", value);
                     for (; count > 0; --count)
                     {
+                        if (putp >= dataEnd)
+                            return; 
                         data[putp++] ^= value;
                     }
                 }
@@ -786,12 +827,13 @@ namespace Nyerguds.GameData.Westwood
                     //DEBUG_SAY("XOR Source to Dest\n");
                     for (; count > 0; --count)
                     {
+                        if (putp >= dataEnd || getp >= xorEnd)
+                            return;
                         data[putp++] ^= xorSource[getp++];
                     }
                 }
             }
         }
-
 
     }
 }

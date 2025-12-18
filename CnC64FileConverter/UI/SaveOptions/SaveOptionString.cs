@@ -41,7 +41,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.m_Info = info;
-            this.lblDescription.Text = this.m_Info.UiString;
+            this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
             this.txtValue.Text = this.m_Info.SaveData;
         }
         
@@ -106,7 +106,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         {
             // What a mess just to make the center size...
 
-            Double scaleFactor = (Double)this.DisplayRectangle.Width / (Double)initialWidthToScale;
+            Double scaleFactor = (Double)this.DisplayRectangle.Width / initialWidthToScale;
             Int32 newWidthLbl = (Int32)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
             Int32 newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
 

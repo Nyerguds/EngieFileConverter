@@ -12,7 +12,7 @@ using System.Text;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileAdvVgaFrames : SupportedFileType
+    public class FileFramesAdvVga : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet; } }

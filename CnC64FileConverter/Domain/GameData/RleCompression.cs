@@ -3,10 +3,30 @@
 namespace Nyerguds.Util.GameData
 {
     /// <summary>
-    /// Basic implementation of Run-Length Encoding.
-    /// Highest bit set is the Repeat code, and the used run length is always (code & 0x7F).
+    /// Basic implementation of Run-Length Encoding with the highest bit set for the Repeat code.
+    /// The used run length is always (code & 0x7F).
     /// </summary>
-    public class RleCompression: RleImplementation<RleCompression> { }
+    public class RleCompressionHighBitRepeat : RleImplementation<RleCompressionHighBitRepeat> { }
+
+    /// <summary>
+    /// Basic implementation of Run-Length Encoding with the highest bit set for the Copy code.
+    /// The used run length is always (code & 0x7F).
+    /// This uses the original GetCode/WriteCode functions but simply flips their "Repeat" boolean.
+    /// </summary>
+    public class RleCompressionHighBitCopy : RleImplementation<RleCompressionHighBitCopy>
+    {
+        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
+        {
+            Boolean success = base.GetCode(buffer, ref inPtr, bufferEnd, out isRepeat, out amount);
+            isRepeat = !isRepeat;
+            return success;
+        }
+
+        protected override Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, UInt32 bufferEnd, Boolean forRepeat, UInt32 amount)
+        {
+            return base.WriteCode(bufferOut, ref outPtr, bufferEnd, !forRepeat, amount);
+        }
+    }
 
     /// <summary>
     /// Basic Run-Length Encoding algorithm. Written by Maarten Meuris, aka Nyerguds.
@@ -26,40 +46,40 @@ namespace Nyerguds.Util.GameData
         public virtual UInt32 MaxCopyValue { get { return 0x7F; } }
 
         /// <summary>
-        /// Reads a code, determines the repeat / skip command and the amount of bytes to to repeat/skip,
+        /// Reads a code, determines the repeat / copy command and the amount of bytes to repeat / copy,
         /// and advances the read pointer to the location behind the read code.
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
         /// <param name="inPtr">Input pointer.</param>
         /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be read from.</param>
-        /// <param name="IsRepeat">Returns true for repeat code, false for copy code.</param>
+        /// <param name="isRepeat">Returns true for repeat code, false for copy code.</param>
         /// <param name="amount">Returns the amount to copy or repeat.</param>
         /// <returns>True if the read succeeded, false if it failed.</returns>
-        protected virtual Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean IsRepeat, out UInt32 amount)
+        protected virtual Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
         {
             if (inPtr >= bufferEnd)
             {
-                IsRepeat = false;
+                isRepeat = false;
                 amount = 0;
                 return false;
             }
             Byte code = buffer[inPtr++];
-            IsRepeat = (code & 0x80) != 0;
+            isRepeat = (code & 0x80) != 0;
             amount = (UInt32)(code & 0x7f);
             return true;
         }
 
         /// <summary>
-        /// Writes the copy/skip code to be put before the actual byte(s) to repeat/skip,
+        /// Writes the repeat / copy code to be put before the actual byte(s) to repeat / copy,
         /// and advances the write pointer to the location behind the written code.
         /// </summary>
         /// <param name="bufferOut">Output buffer to write to.</param>
-        /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be written to.</param>
         /// <param name="outPtr">Pointer for the output buffer.</param>
+        /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be written to.</param>
         /// <param name="forRepeat">True if this is a repeat code, false if this is a copy code.</param>
         /// <param name="amount">Amount to write into the repeat or copy code.</param>
         /// <returns>True if the write succeeded, false if it failed.</returns>
-        protected virtual Boolean WriteCode(Byte[] bufferOut, UInt32 bufferEnd, ref UInt32 outPtr, Boolean forRepeat, UInt32 amount)
+        protected virtual Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, UInt32 bufferEnd, Boolean forRepeat, UInt32 amount)
         {
             if (outPtr >= bufferEnd)
                 return false;
@@ -72,7 +92,6 @@ namespace Nyerguds.Util.GameData
         #endregion
 
         #region static functions
-
         /// <summary>
         /// Decodes RLE-encoded data.
         /// </summary>
@@ -97,10 +116,10 @@ namespace Nyerguds.Util.GameData
         /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
         /// <returns>The amount of written bytes in bufferOut.</returns>
-        public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Byte[] bufferOut, Boolean abortOnError)
+        public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, ref Byte[] bufferOut, Boolean abortOnError)
         {
             T rle = new T();
-            return rle.RleDecodeData(buffer, startOffset, endOffset, bufferOut, abortOnError);
+            return rle.RleDecodeData(buffer, startOffset, endOffset, ref bufferOut, abortOnError);
         }
 
         /// <summary>
@@ -128,7 +147,7 @@ namespace Nyerguds.Util.GameData
         public Byte[] RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
             Byte[] outputBuffer = new Byte[decompressedSize];
-            Int32 result = this.RleDecodeData(buffer, startOffset, endOffset, outputBuffer, abortOnError);
+            Int32 result = this.RleDecodeData(buffer, startOffset, endOffset, ref outputBuffer, abortOnError);
             if (result == -1)
                 return null;
             return outputBuffer;
@@ -143,57 +162,80 @@ namespace Nyerguds.Util.GameData
         /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return -1.</param>
         /// <returns>The amount of written bytes in bufferOut.</returns>
-        public Int32 RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Byte[] bufferOut, Boolean abortOnError)
+        public Int32 RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, ref Byte[] bufferOut, Boolean abortOnError)
         {
             UInt32 inPtr = startOffset ?? 0;
             UInt32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, (UInt32)buffer.Length) : (UInt32)buffer.Length;
-            Int32 outPtr = 0;
-            Int32 maxOutLen = bufferOut.Length;
+            
+            UInt32 outPtr = 0;
+            Boolean autoExpand = bufferOut == null;
+            UInt32 bufLenOrig = inPtrEnd - inPtr;
+            if (autoExpand)
+                bufferOut = new Byte[bufLenOrig * 4];
+            UInt32 maxOutLen = autoExpand? UInt32.MaxValue : (UInt32)bufferOut.Length;
+            Boolean error = false;
 
             // RLE implementation:
             // highest bit set = followed by range of repeating bytes
             // highest bit not set = followed by range of non-repeating bytes
             // In both cases, the "code" specifies the amount of bytes; either to repeat, or to copy.
 
-            while (outPtr < maxOutLen && inPtr < inPtrEnd)
+            while (inPtr < inPtrEnd && outPtr < maxOutLen)
             {
                 // get next code
                 UInt32 run;
                 Boolean repeat;
-                if (!this.GetCode(buffer, ref inPtr, inPtrEnd, out repeat, out run))
-                    return -1;
-                if (run == 0 && abortOnError)
-                    return -1;
+                if (!this.GetCode(buffer, ref inPtr, inPtrEnd, out repeat, out run) || (run == 0 && abortOnError))
+                {
+                    error = true;
+                    break;
+                }
                 //End ptr after run
-                UInt32 runEnd = Math.Min((UInt32)(outPtr + run), (UInt32)maxOutLen);
+                UInt32 runEnd = Math.Min(outPtr + run, maxOutLen);
+                if (autoExpand && runEnd > bufferOut.Length)
+                    bufferOut = ExpandBuffer(bufferOut, Math.Max(bufLenOrig, runEnd));
                 // Repeat run
                 if (repeat)
                 {
                     if (inPtr >= inPtrEnd)
-                        return outPtr;
+                        break;
                     Int32 repeatVal = buffer[inPtr++];
                     for (; outPtr < runEnd; outPtr++)
                         bufferOut[outPtr] = (Byte)repeatVal;
                     if (outPtr == maxOutLen)
-                        return outPtr;
+                        break;
                 }
                 // Raw copy
                 else
                 {
+                    Boolean abort = false;
                     for (; outPtr < runEnd; outPtr++)
                     {
                         if (inPtr >= inPtrEnd)
-                            return outPtr;
+                        {
+                            abort = true;
+                            break;
+                        }
                         Int32 data = buffer[inPtr++];
                         bufferOut[outPtr] = (Byte)data;
                     }
+                    if (abort)
+                        break;
                     if (outPtr == maxOutLen)
-                        return outPtr;
+                        break;
                 }
             }
-            return outPtr;
+            if (error)
+                return -1;
+            if (autoExpand)
+            {
+                Byte[] newBuf = new Byte[outPtr];
+                Array.Copy(bufferOut, 0, newBuf, 0, outPtr);
+                bufferOut = newBuf;
+            }
+            return (Int32)outPtr;
         }
-        
+
         /// <summary>
         /// Applies Run-Length Encoding (RLE) to the given data. This particular function achieves especially good compression by only
         /// switching from a Copy command to a Repeat command if more than two repeating bytes are found, or if the maximum copy amount
@@ -216,7 +258,6 @@ namespace Nyerguds.Util.GameData
             // Some implementations also decrement the repeat code value to allow storing one or two more bytes.
             UInt32 maxRepeat = this.MaxRepeatValue;
             UInt32 maxCopy = this.MaxCopyValue;
-
             // Standard RLE implementation:
             // highest bit set = followed by range of repeating bytes
             // highest bit not set = followed by range of non-repeating bytes
@@ -228,16 +269,16 @@ namespace Nyerguds.Util.GameData
                 // Handle 2 cases: repeat was already detected, or a new repeat detect needs to be done.
                 if (detectedRepeat >= 2 || (detectedRepeat = RepeatingAhead(buffer, len, inPtr, 2)) == 2)
                 {
-                    // Found more than (minimumRepeating) bytes. Worth compressing. Apply run-length encoding.
+                    // Found more than 2 bytes. Worth compressing. Apply run-length encoding.
                     UInt32 start = inPtr;
                     UInt32 end = Math.Min(inPtr + maxRepeat, len);
                     Byte cur = buffer[inPtr];
-                    // Already checked these in the HasRepeatingAhead function.
+                    // Already checked these in the RepeatingAhead function.
                     inPtr += detectedRepeat;
                     // Increase inptr to the last repeated.
                     for (; inPtr < end && buffer[inPtr] == cur; inPtr++) { }
                     // WriteCode is split off into a function to allow overriding it in specific implementations.
-                    if (!this.WriteCode(bufferOut, bufLen, ref outPtr, true, (inPtr - start)) || outPtr + 1 >= bufLen)
+                    if (!this.WriteCode(bufferOut, ref outPtr, bufLen, true, (inPtr - start)) || outPtr + 1 >= bufLen)
                         break;
                     // Add value to repeat
                     bufferOut[outPtr++] = cur;
@@ -247,6 +288,9 @@ namespace Nyerguds.Util.GameData
                 else
                 {
                     Boolean abort = false;
+                    // if detectedRepeat is not greater than 1 after writing a code,
+                    // that means the maximum copy length was reached. Keep repeating
+                    // until the copy is aborted for a repeat.
                     while (detectedRepeat == 1 && inPtr < len)
                     {
                         UInt32 start = inPtr;
@@ -258,22 +302,22 @@ namespace Nyerguds.Util.GameData
                         {
                             // detected bytes to compress after this one: abort.
                             detectedRepeat = RepeatingAhead(buffer, len, inPtr, 3);
-                            // Do not switch to Repeat on just two bytes: if the data behind it is non-repeating it adds an extra Copy command.
-                            if (detectedRepeat < 3)
+                            // Only switch to Repeat when finding three repeated bytes: if the data
+                            // behind a repeat of two is non-repeating, it adds an extra Copy command.
+                            if (detectedRepeat == 3)
+                                break;
+                            // Optimise: apply a 1-byte or 2-byte skip to ptr right away.
+                            inPtr += detectedRepeat;
+                            // A detected repeat of two could make it go beyond the maximum accepted number of
+                            // stored bytes per code. This fixes that. These repeating bytes are always saved as
+                            // Repeat code, since a new command needs to be added after ending this one anyway.
+                            // If you'd use the copy max amount instead, the 2-repeat would be cut in two Copy
+                            // commands, wasting one byte if another repeating range would start after it.
+                            if (inPtr > maxend)
                             {
-                                // Optimise: apply a 1-byte or 2-byte skip to ptr right away.
-                                inPtr += detectedRepeat;
-                                // A detected repeat of two could make it go beyond the maximum accepted number of
-                                // stored bytes per code. This fixes that. These repeating bytes are always saved as
-                                // Repeat code, since a new command needs to be added after ending this one anyway.
-                                if (inPtr >= maxend)
-                                {
-                                    inPtr -= detectedRepeat;
-                                    break;
-                                }
-                                continue;
+                                inPtr -= detectedRepeat;
+                                break;
                             }
-                            break;
                         }
                         UInt32 amount = inPtr - start;
                         if (amount == 0)
@@ -281,8 +325,12 @@ namespace Nyerguds.Util.GameData
                             abort = true;
                             break;
                         }
+                        // Need to reset this if the copy commands aborts for full size, so a last-detected repeat
+                        // value of 2 at the end of a copy range isn't propagated to a new repeat command.
+                        if (amount == maxCopy)
+                            detectedRepeat = 0;
                         // WriteCode is split off into a function to allow overriding it in specific implementations.
-                        abort = !this.WriteCode(bufferOut, bufLen, ref outPtr, false, amount) || outPtr + amount >= bufLen;
+                        abort = !this.WriteCode(bufferOut, ref outPtr, bufLen, false, amount) || outPtr + amount >= bufLen;
                         if (abort)
                             break;
                         // Add values to copy
@@ -300,6 +348,14 @@ namespace Nyerguds.Util.GameData
         #endregion
 
         #region internal tools
+
+        private Byte[] ExpandBuffer(Byte[] bufferOut, UInt32 expandSize)
+        {
+            Byte[] newBuf = new Byte[bufferOut.Length + expandSize];
+            Array.Copy(bufferOut, 0, newBuf, 0, bufferOut.Length);
+            return newBuf;
+        }
+
         /// <summary>
         /// Checks if there are enough repeating bytes ahead.
         /// </summary>
@@ -317,5 +373,5 @@ namespace Nyerguds.Util.GameData
             return minAmount;
         }
         #endregion
-   }
+    }
 }

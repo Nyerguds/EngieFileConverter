@@ -10,7 +10,7 @@ using System.Text;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileImgKortBmp : SupportedFileType
+    public class FileFramesKortBmp : SupportedFileType
     {
 
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
@@ -95,7 +95,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
-                FileImageFrames frameSave = new FileImageFrames();
+                FileFrames frameSave = new FileFrames();
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }

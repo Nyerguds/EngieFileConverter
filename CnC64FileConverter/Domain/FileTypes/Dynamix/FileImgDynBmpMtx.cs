@@ -10,7 +10,7 @@ using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileImgDynBmpMtx : FileImgDynBmp
+    public class FileImgDynBmpMtx : FileFramesDynBmp
     {
         public override FileClass FileClass { get { return FileClass.FrameSet | (this.m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit); } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.Image4Bit; } }
@@ -168,7 +168,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 4 + i * 2, 2, true, (UInt32)frameMatrix[i] + 0);
             
             // Make FileImageFrames object filled with frames
-            FileImageFrames frs = new FileImageFrames();
+            FileFrames frs = new FileFrames();
             for (Int32 i = 0; i < currentActual; i++)
             {
                 FileImageFrame fr = new FileImageFrame();

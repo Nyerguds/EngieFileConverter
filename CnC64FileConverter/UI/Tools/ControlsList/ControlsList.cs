@@ -33,8 +33,12 @@ namespace Nyerguds.Util.Ui
             this.lblTypeName.Text = cci.Name;
             foreach (U vsi in cci.Properties)
             {
-                T eb = cci.MakeControl(vsi, ebc);
-                this.AddControl(eb, false);
+                try
+                {
+                    T eb = cci.MakeControl(vsi, ebc);
+                    this.AddControl(eb, false);
+                }
+                catch (NotImplementedException) { /* ignore */ }
             }
             this.PerformLayout();
         }

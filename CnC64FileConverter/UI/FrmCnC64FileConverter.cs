@@ -220,7 +220,7 @@ namespace CnC64FileConverter.UI
             String minName;
             String maxName;
             Boolean hasEmptyFrames;
-            FileImageFrames fr = FileImageFrames.CheckForFrames(path, currentType, out minName, out maxName, out hasEmptyFrames);
+            FileFrames fr = FileFrames.CheckForFrames(path, currentType, out minName, out maxName, out hasEmptyFrames);
             if (fr == null)
                 return currentType;
             String emptywarning = hasEmptyFrames ? "\nSome of these frames are empty files. Not every save format supports empty frames." : String.Empty;
@@ -264,8 +264,8 @@ namespace CnC64FileConverter.UI
             this.tsmiToHeightMapAdv.Enabled = loadedFile is FileMapWwCc1Pc;
             this.tsmiTo65x65HeightMap.Enabled = hasFile && loadedFile.GetBitmap() != null && loadedFile.Width == 64 && loadedFile.Height == 64;
             // 4 is the supertype; 8 the derivative
-            this.tsmiTilesetsToFrames.Enabled = loadedFile is FileTilesN64Bpp4;
-            this.tsmiTilesetsToTilesetFiles.Enabled = loadedFile is FileTilesN64Bpp4;
+            this.tsmiTilesetsToFrames.Enabled = loadedFile is FileTilesWwCc1N64Bpp4;
+            this.tsmiTilesetsToTilesetFiles.Enabled = loadedFile is FileTilesWwCc1N64Bpp4;
 
             if (!hasFile)
             {
@@ -300,7 +300,7 @@ namespace CnC64FileConverter.UI
             Int32 actualColors = palette == null? 0 : palette.Length;
             Boolean needsPalette = exposedColours != actualColors;
             this.lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColours + " in file)" : String.Empty);
-            this.lblValInfo.Text = loadedFile.ExtraInfo;
+            this.lblValInfo.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ExtraInfo);
             this.cmbPalettes.Enabled = needsPalette;
             this.picImage.Image = loadedFile.GetBitmap();
             this.RefreshPalettes(false, false);

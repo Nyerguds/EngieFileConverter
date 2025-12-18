@@ -11,7 +11,7 @@ using System.Text;
 namespace CnC64FileConverter.Domain.FileTypes
 {
 
-    public class FileAdvIcons : SupportedFileType
+    public class FileFramesAdvIco : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet | FileClass.Image4Bit; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image4Bit; } }

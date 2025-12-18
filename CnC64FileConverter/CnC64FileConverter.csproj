@@ -41,6 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -81,24 +82,24 @@
     <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
     <Compile Include="Domain\FileTypes\EA\FileImgKotB.cs" />
-    <Compile Include="Domain\FileTypes\Mythos\FileImgMythosVgs.cs" />
+    <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwWsa.cs" />
     <Compile Include="Domain\GameData\Agos\AgosCompression.cs" />
-    <Compile Include="Domain\GameData\EA\EACompression.cs" />
     <Compile Include="Domain\GameData\LzwCompression.cs" />
     <Compile Include="Domain\GameData\RleCompression.cs" />
     <Compile Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\GameData\Westwood\WWCompression.cs" />
     <Compile Include="Domain\FileTypes\FileImageFrame.cs" />
-    <Compile Include="Domain\FileTypes\FileImageFrames.cs" />
-    <Compile Include="Domain\FileTypes\MVP\FileImgKortBmp.cs" />
+    <Compile Include="Domain\FileTypes\FileFrames.cs" />
+    <Compile Include="Domain\FileTypes\MVP\FileFramesKortBmp.cs" />
     <Compile Include="Domain\FileTypes\MVP\FileImgKort.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScrV2.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FilePaletteDyn.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTilesetWwCc1PC.cs" />
-    <Compile Include="Domain\FileTypes\AdvSoft\FileAdvVgaFrames.cs" />
-    <Compile Include="Domain\FileTypes\AdvSoft\FileAdvIcons.cs" />
-    <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmp.cs" />
+    <Compile Include="Domain\FileTypes\AdvSoft\FileFramesAdvVga.cs" />
+    <Compile Include="Domain\FileTypes\AdvSoft\FileFramesAdvIco.cs" />
+    <Compile Include="Domain\FileTypes\Dynamix\FileFramesDynBmp.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwCps.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwLcw.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileMapWwRa1PC.cs" />
@@ -110,8 +111,8 @@
     <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwCc1N64.cs" />
     <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
     <Compile Include="Domain\GameData\Westwood\WestwoodRle.cs" />
-    <Compile Include="Domain\HeightMap\HeightMapGenerator.cs" />
-    <Compile Include="Domain\HeightMap\TerrainHeight.cs" />
+    <Compile Include="HeightMap\HeightMapGenerator.cs" />
+    <Compile Include="HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
     <Compile Include="Domain\GameData\Dynamix\DynamixChunk.cs" />
     <Compile Include="Domain\GameData\Dynamix\DynamixCompression.cs" />

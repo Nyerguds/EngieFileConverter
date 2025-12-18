@@ -120,8 +120,8 @@ namespace Nyerguds.GameData.Dynamix
         {
             Byte[] outputBuffer = new Byte[decompressedSize];
             // Uses standard RLE implementation.
-            RleCompression rle = new RleCompression();
-            rle.RleDecodeData(buffer, startOffset, endOffset, outputBuffer, abortOnError);
+            RleCompressionHighBitRepeat rle = new RleCompressionHighBitRepeat();
+            rle.RleDecodeData(buffer, startOffset, endOffset, ref outputBuffer, abortOnError);
             return outputBuffer;
         }
         
@@ -144,7 +144,7 @@ namespace Nyerguds.GameData.Dynamix
         public static Byte[] RleEncode(Byte[] buffer)
         {
             // Uses standard RLE implementation.
-            RleCompression rle = new RleCompression();
+            RleCompressionHighBitRepeat rle = new RleCompressionHighBitRepeat();
             return rle.RleEncodeData(buffer);
         }
     }

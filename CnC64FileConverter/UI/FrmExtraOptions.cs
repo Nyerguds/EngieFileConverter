@@ -21,13 +21,14 @@ namespace CnC64FileConverter.UI
             this.Text = FrmCnC64FileConverter.GetTitle(false);
             this.m_soi = new SaveOptionInfo();
         }
-        internal void Init(SaveOptionInfo soi)
+
+        public void Init(SaveOptionInfo soi)
         {
             this.m_soi = soi;
             this.lstOptions.Populate(this.m_soi, this);
         }
 
-        internal SaveOption[] GetSaveOptions()
+        public SaveOption[] GetSaveOptions()
         {
             return this.m_soi.Properties;
         }

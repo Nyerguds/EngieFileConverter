@@ -5,10 +5,9 @@ namespace CnC64FileConverter.Domain.GameData.Westwood
 {
     /// <summary>
     /// Westwood RLE implementation:
-    /// highest bit set = followed by range of repeating bytes, but seen as (256-value)
-    /// highest bit not set = followed by range of non-repeating bytes
-    /// Value is 0: read 2 more bytes as Int16 to repeat.
-    /// In all cases, the "code" specifies the amount of bytes; either to write, or to skip.
+    /// highest code bit set = followed by a single byte to repeat. Amount is (0x100-Code)
+    /// highest code bit not set = followed by range of non-repeating bytes. Amount to copy and skip is the code value.
+    /// Code is 0 = read 2 more bytes to get an Int16 amount, and perform a repeat command on the byte following that.
     /// </summary>
     public class WestwoodRle : RleImplementation<WestwoodRle>
     {
@@ -34,7 +33,7 @@ namespace CnC64FileConverter.Domain.GameData.Westwood
         /// <param name="startOffset">Start offset in buffer</param>
         /// <param name="endOffset">End offset in buffer</param>
         /// <param name="decompressedSize">The expected size of the decompressed data.</param>
-        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding them as big-endian.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, decoding them as little-endian.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
         /// <returns>A byte array of the given output size, filled with the decompressed data.</returns>
         public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean swapWords, Boolean abortOnError)
@@ -50,53 +49,60 @@ namespace CnC64FileConverter.Domain.GameData.Westwood
         /// <param name="startOffset">Start offset in buffer</param>
         /// <param name="endOffset">End offset in buffer</param>
         /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
-        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding them as big-endian.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, decoding them as little-endian.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return -1.</param>
         /// <returns>The amount of written bytes in bufferOut</returns>
         public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Byte[] bufferOut, Boolean swapWords, Boolean abortOnError)
         {
             WestwoodRle rle = new WestwoodRle(swapWords);
-            return rle.RleDecodeData(buffer, startOffset, endOffset, bufferOut, abortOnError);
+            return rle.RleDecodeData(buffer, startOffset, endOffset, ref bufferOut, abortOnError);
         }
 
         /// <summary>
-        /// Reads a code, determines the repeat / skip command and the amount of bytes to to repeat/skip,
+        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// </summary>
+        /// <param name="buffer">Input buffer.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding them as little-endian.</param>
+        /// <returns>The run-length encoded data.</returns>
+        public static Byte[] RleEncode(Byte[] buffer, Boolean swapWords)
+        {
+            WestwoodRle rle = new WestwoodRle(swapWords);
+            return rle.RleEncodeData(buffer);
+        }
+
+        /// <summary>
+        /// Reads a code, determines the repeat / skip command and the amount of bytes to repeat/skip,
         /// and advances the read pointer to the location behind the read code.
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
         /// <param name="inPtr">Input pointer.</param>
         /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be read from.</param>
-        /// <param name="IsRepeat">Returns true for repeat code, false for copy code.</param>
+        /// <param name="isRepeat">Returns true for repeat code, false for copy code.</param>
         /// <param name="amount">Returns the amount to copy or repeat.</param>
         /// <returns>True if the read succeeded, false if it failed.</returns>
-        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean IsRepeat, out UInt32 amount)
+        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
         {
             if (inPtr >= bufferEnd)
             {
-                IsRepeat = false;
+                isRepeat = false;
                 amount = 0;
                 return false;
             }
             Byte code = buffer[inPtr++];
-            IsRepeat = ((code & 0x80) != 0 || code == 0);
-            if (IsRepeat)
-            {
-                if (code == 0)
-                {
-                    // Westwood extension for 16-bit repeat values.
-                    if (inPtr + 2 >= bufferEnd)
-                    {
-                        amount = 0;
-                        return false;
-                    }
-                    amount = (UInt32)(m_SwapWords ? buffer[inPtr++] + (buffer[inPtr++] << 8) : (buffer[inPtr++] << 8) + buffer[inPtr++]);
-                }
-                else
-                    amount = (UInt32)(0x100 - code);
-            }
+            isRepeat = ((code & 0x80) != 0 || code == 0);
+            if (!isRepeat)
+                amount = code;
+            else if (code != 0)
+                amount = (UInt32)(0x100 - code);
             else
             {
-                amount = code;
+                // Westwood extension for 16-bit repeat values.
+                if (inPtr + 2 >= bufferEnd)
+                {
+                    amount = 0;
+                    return false;
+                }
+                amount = (UInt32)(m_SwapWords ? buffer[inPtr++] + (buffer[inPtr++] << 8) : (buffer[inPtr++] << 8) + buffer[inPtr++]);
             }
             return true;
         }
@@ -111,7 +117,7 @@ namespace CnC64FileConverter.Domain.GameData.Westwood
         /// <param name="forRepeat">True if this is a repeat code, false if this is a copy code.</param>
         /// <param name="amount">Amount to write into the repeat or copy code.</param>
         /// <returns>True if the write succeeded, false if it failed.</returns>
-        protected override Boolean WriteCode(Byte[] bufferOut, UInt32 bufferEnd, ref UInt32 outPtr, Boolean forRepeat, UInt32 amount)
+        protected override Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, UInt32 bufferEnd, Boolean forRepeat, UInt32 amount)
         {
             if (outPtr >= bufferEnd)
                 return false;
@@ -119,13 +125,11 @@ namespace CnC64FileConverter.Domain.GameData.Westwood
             {
                 if (amount < 0x80)
                 {
-                    if (bufferEnd <= outPtr)
-                        return false;
                     bufferOut[outPtr++] = (Byte)((0x100 - amount) | 0x80);
                 }
                 else
                 {
-                    if (bufferOut.Length <= outPtr + 2)
+                    if (outPtr + 2 >= bufferEnd)
                         return false;
                     Byte lenHi = (Byte)((amount >> 8) & 0xFF);
                     Byte lenLo = (Byte)(amount & 0xFF);

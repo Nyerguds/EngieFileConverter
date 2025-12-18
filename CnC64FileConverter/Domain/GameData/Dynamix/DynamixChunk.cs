@@ -159,7 +159,11 @@ namespace Nyerguds.GameData.Dynamix
                 if (chunkNamebytes.SequenceEqual(testBytes))
                     return offset;
                 Int32 chunkLength = GetChunkDataLength(data, offset);
+                if (chunkLength < 0)
+                    return -1;
                 offset += 8 + chunkLength;
+                if (offset < 0)
+                    return -1;
             }
             return -1;
         }

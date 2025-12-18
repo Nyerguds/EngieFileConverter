@@ -57,6 +57,10 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.4: (20/10/2017 13:37)
+-Fixed some checks in the file load to make them fail properly instead of giving internal errors.
+-Added Westwood WSA format, though the detection might not be 100% correct yet.
+
 v1.2.3: (26/09/2017 19:05)
 -Fixed oversight in the KotB format. The written files now work correctly in the game.
 

@@ -145,9 +145,9 @@ namespace CnC64FileConverter
                             }
                         }
                     }
-                    if (inputImage is FileTilesN64Bpp4)
+                    if (inputImage is FileTilesWwCc1N64Bpp4)
                     {
-                        ((FileTilesN64Bpp4)inputImage).ConvertToTiles(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output), outputType);
+                        ((FileTilesWwCc1N64Bpp4)inputImage).ConvertToTiles(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output), outputType);
                     }
                     else
                         outputType.SaveAsThis(inputImage, outputFull, new SaveOption[0]);

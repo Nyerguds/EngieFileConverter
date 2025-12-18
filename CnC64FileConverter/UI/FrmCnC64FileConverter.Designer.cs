@@ -427,7 +427,7 @@
             this.lblValInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblValInfo.Location = new System.Drawing.Point(667, 215);
             this.lblValInfo.Name = "lblValInfo";
-            this.lblValInfo.Size = new System.Drawing.Size(237, 39);
+            this.lblValInfo.Size = new System.Drawing.Size(237, 69);
             this.lblValInfo.TabIndex = 315;
             // 
             // cmbPalettes
@@ -572,7 +572,7 @@
             this.Controls.Add(this.menuStrip1);
             this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
             this.MainMenuStrip = this.menuStrip1;
-            this.MinimumSize = new System.Drawing.Size(700, 562);
+            this.MinimumSize = new System.Drawing.Size(700, 593);
             this.Name = "FrmCnC64FileConverter";
             this.Text = "C&C64 File Converter - Created by Nyerguds";
             this.Shown += new System.EventHandler(this.FrmCnC64FileConverter_Shown);

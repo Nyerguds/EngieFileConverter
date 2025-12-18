@@ -6,7 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.KotB;
+using Nyerguds.Util.GameData;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -23,7 +23,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Kings of the Beach PAK file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerColor { get { return 4; } }
-        public Boolean WasCutOff { get; private set; }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
@@ -31,16 +30,15 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (image == null)
                 return new SaveOption[0];
             Int32 stride;
-            Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride);
-            Int32 lastLineOffs = stride * (image.Height-1);
-            byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, image.Width, 1, lastLineOffs, 4, true, ref stride);
+            Byte[] imageBytes = ImageUtils.GetImageData(image, out stride);
+            // Check if last line is completely made of colour #0 pixels.
+            Int32 lastLineOffs = stride * (image.Height - 1);
+            Byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, image.Width, 1, lastLineOffs, 4, true, ref stride);
             for (Int32 x = 0; x < image.Width; x++)
                 if (lastLine[x] != 0)
                     return new SaveOption[0];
-            return new SaveOption[] {new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "1") };
+            return new SaveOption[] { new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "1") };
         }
-
-        public FileImgKotB() { }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -63,9 +61,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Error decompressing file.");
             if (fileData.Length < 4)
                 throw new FileTypeLoadException("File too short to decompress header!");
-            UInt32 dataLen = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fileData.Length - 2, 2, true);
-            Byte[] decompressed = new Byte[dataLen];
-            Int32 decompressedLength = EACompression.RleDecode(fileData, 0, (UInt32)(fileData.Length-2), decompressed, true);
+            Int32 dataEnd = fileData.Length - 2;
+            UInt32 dataLen = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, dataEnd, 2, true);
+            if (dataLen < 2)
+                throw new FileTypeLoadException("Decompressed size in file does not match expected data length.");
+            Byte[] decompressed = null;
+            Int32 decompressedLength = RleCompressionHighBitCopy.RleDecode(fileData, 0, (UInt32)dataEnd, ref decompressed, true);
+            if (decompressedLength == -1)
+                throw new FileTypeLoadException("Decompression failed: illegal RLE value encountered.");
             if (decompressedLength != dataLen)
                 throw new FileTypeLoadException("Decompressed size does not match length in file.");
             Int32 byteWidth = decompressed[0];
@@ -96,10 +99,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Data cutoff is not exactly on one line!");
             Int32 cutoffHeight = (decompressedLength - 2) / fourLinesStride;
             if (cutoffHeight < imgHeight)
-            {
                 this.ExtraInfo = "Data cut off at " + cutoffHeight + " lines";
-                this.WasCutOff = true;
-            }
             // Final 1-bit image is four times the image width. Convert to 1 byte per bit for editing convenience.
             Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, imgWidth * 4, cutoffHeight, 2, 1, true, ref fourLinesStride);
             // Array for 4-bit image where each byte is one pixel. Will be converted to true 4bpp later.
@@ -107,15 +107,18 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Combine the bits into the new array.
             for (Int32 y = 0; y < cutoffHeight; y++)
             {
-                Int32 offset = fourLinesStride * y;
+                Int32 offset1 = fourLinesStride * y;
+                Int32 offset2 = offset1 + imgWidth;
+                Int32 offset3 = offset2 + imgWidth;
+                Int32 offset4 = offset3 + imgWidth;
                 Int32 finalOffset = imgWidth * y;
                 for (Int32 x = 0; x < imgWidth; x++)
                 {
                     // Take the 4 bits by skipping imgWidth bytes for each next one.
-                    Byte bit1 = oneBitQuadImage[offset + x];
-                    Byte bit2 = (Byte)(oneBitQuadImage[offset + imgWidth + x] << 1);
-                    Byte bit3 = (Byte)(oneBitQuadImage[offset + imgWidth * 2 + x] << 2);
-                    Byte bit4 = (Byte)(oneBitQuadImage[offset + imgWidth * 3 + x] << 3);
+                    Byte bit1 = oneBitQuadImage[offset1 + x];
+                    Byte bit2 = (Byte)(oneBitQuadImage[offset2 + x] << 1);
+                    Byte bit3 = (Byte)(oneBitQuadImage[offset3 + x] << 2);
+                    Byte bit4 = (Byte)(oneBitQuadImage[offset4 + x] << 3);
                     pixelImage[finalOffset + x] = (Byte)(bit1 | bit2 | bit3 | bit4);
                 }
             }
@@ -170,8 +173,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                         break;
                 }
             }
-            if (imgHeight == image.Height)
-                trimEnd = false;
             Byte[] oneBitQuadImage = new Byte[eightBitWidth * imgHeight];
             for (Int32 y = 0; y < imgHeight; y++)
             {
@@ -191,7 +192,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             finalData[1] = (Byte)saveHeight;
             Array.Copy(finalImageData, 0, finalData, 2, finalImageData.Length);
             //return finalData;
-            Byte[] compressedData = EACompression.RleEncode(finalData);
+            Byte[] compressedData = RleCompressionHighBitCopy.RleEncode(finalData);
             Int32 dataEnd = compressedData.Length;
             Byte[] finalCompressedData = new Byte[dataEnd + 2];
             Array.Copy(compressedData, finalCompressedData, dataEnd);

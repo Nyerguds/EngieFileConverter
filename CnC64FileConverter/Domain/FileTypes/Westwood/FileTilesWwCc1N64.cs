@@ -23,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected String ExtPalIndex { get { return "nd" + Bpp; } }
         protected String ExtPalFile { get { return "pa" + Bpp; } }
         protected String ExtTileIds { get { return "tl" + Bpp; } }
-        protected N64Tile[] m_tilesList = new N64Tile[0];
+        protected FileTileCc1N64[] m_tilesList = new FileTileCc1N64[0];
         protected Byte[][] m_rawTiles;
         protected Byte[] m_palIndexFile;
 
@@ -100,7 +100,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             Int32 len = palIndexFile.Length;
             Color[] fullPalette = palette.GetColors();
-            N64Tile[] list = new N64Tile[len];
+            FileTileCc1N64[] list = new FileTileCc1N64[len];
             Int32 stride = ImageUtils.GetMinimumStride(24, Bpp);
             Int32 tileSize = stride * 24;
             Int32 singlePalSize = 1 << Bpp;
@@ -122,7 +122,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Bitmap currentTile = ImageUtils.BuildImage(imageData, 24, 24, stride, pf, subPalette, Color.Black);
                 Byte highByte = tileIdsFile[i * 2];
                 Byte lowByte = tileIdsFile[i * 2 + 1];
-                list[i] = new N64Tile(this, baseFileName, currentTile, highByte, lowByte, palIndexFile[i]);
+                list[i] = new FileTileCc1N64(this, baseFileName, currentTile, highByte, lowByte, palIndexFile[i]);
                 Int32 tilesStrideOut;
                 m_rawTiles[i] = ImageUtils.CopyFrom8bpp(tilesData, tilesWidth, tilesHeight, tilesStride, out tilesStrideOut, new Rectangle(0, i * 24, 24, 24));
             }
@@ -178,7 +178,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (outputType is FileImageJpg)
                 throw new NotSupportedException("JPEG? No. Fuck off. Don't do that to those poor 24x24 paletted images.");
             String ext = "." + outputType.FileExtensions[0];
-            foreach (N64Tile tile in this.m_tilesList)
+            foreach (FileTileCc1N64 tile in this.m_tilesList)
             {
                 TileInfo ti;
                 if (!MapConversion.TILEINFO.TryGetValue(tile.CellData.HighByte, out ti))
@@ -191,21 +191,21 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     }
 
-    public class FileTilesN64Bpp4 : FileTilesWwCc1N64
+    public class FileTilesWwCc1N64Bpp4 : FileTilesWwCc1N64
     {
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit; } }
         protected override Int32 Bpp { get { return 4; } }
         protected override FilePaletteWwCc1N64 PaletteType { get { return new FilePaletteWwCc1N64Pa4(); } }
     }
 
-    public class FileTilesN64Bpp8 : FileTilesWwCc1N64
+    public class FileTilesWwCc1N64Bpp8 : FileTilesWwCc1N64
     {
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected override Int32 Bpp { get { return 8; } }
         protected override FilePaletteWwCc1N64 PaletteType { get { return new FilePaletteWwCc1N64Pa8(); } }
     }
 
-    public class N64Tile : SupportedFileType
+    public class FileTileCc1N64 : SupportedFileType
     {
         public override FileClass FileClass { get { return this.Bpp == 4 ? FileClass.Image4Bit : FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.None; } }
@@ -220,7 +220,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public TileInfo TileInfo { get; private set; }
         public Int32 Bpp { get { return Image.GetPixelFormatSize((m_LoadedImage.PixelFormat)); } }
 
-        public N64Tile(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte? highByte, Byte lowByte, Int32 paletteIndex)
+        public FileTileCc1N64(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte? highByte, Byte lowByte, Int32 paletteIndex)
         {
             this.FrameParent = origin;
             this.SourceFileName = sourceFileName;

@@ -7,12 +7,10 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Dynamix;
-using Nyerguds.Util.GameData;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileImgMythosVgs: SupportedFileType
+    public class FileFramesMythosVgs: SupportedFileType
     {
         public const String PAL_IDENTIFIER = "VGA palette";
         public override Int32 Width { get { return 0; } }
@@ -224,7 +222,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
-                FileImageFrames frameSave = new FileImageFrames();
+                FileFrames frameSave = new FileFrames();
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }

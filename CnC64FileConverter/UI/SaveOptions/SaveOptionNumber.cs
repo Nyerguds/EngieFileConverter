@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using CnC64FileConverter.Domain.FileTypes;
+using Nyerguds.Util;
 using Nyerguds.Util.Ui;
 
 namespace CnC64FileConverter.UI.SaveOptions
@@ -22,7 +23,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         public override void UpdateInfo(SaveOption info)
         {
             this.m_Info = info;
-            this.lblName.Text = this.m_Info.UiString;
+            this.lblName.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
             this.txtValue.Text = this.m_Info.SaveData;
             String init = this.m_Info.InitValue;
             this.m_minimum = null;
