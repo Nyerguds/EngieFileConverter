@@ -127,6 +127,9 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.16 (11/12/2025 13:00 CET)
+-Added support for visualising HeroQuest (1991) quests.
+
 v1.5.15 (04/07/2024 20:00 CET)
 -Fixed a crash when loading embedded palettes from certain file formats.
 

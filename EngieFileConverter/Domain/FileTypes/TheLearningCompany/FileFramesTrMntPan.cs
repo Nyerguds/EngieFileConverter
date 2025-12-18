@@ -44,6 +44,8 @@ namespace EngieFileConverter.Domain.FileTypes
         const int TILES_MAX = 0x7FF;
         const byte FLAG_VALUE = 0xA5;
 
+        const string SIGNATURE = "ENGIE";
+
         public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -135,15 +137,30 @@ namespace EngieFileConverter.Domain.FileTypes
             sb.Append("X tiles: ").Append(tilesX)
                 .Append("\nY tiles: ").Append(tilesY)
                 .Append("\nTileset image data:\n * ").Append(writeOffs).Append(" bytes\n * ").Append(imageDataLen / 32).Append(" tiles");
-            /*/
-            if (hiddenData.Count > 0)
+            //*/
+            int hiddenBytes = hiddenData.Count;
+            if (hiddenBytes > 0)
             {
-                sb.Append("\nHidden data @ ");
-                
-                string[] values = hiddenData.Select(val => val.ToString()).ToArray();
-                string[] chars = hiddenData.Where(val => fileData[val] > 0x1F && fileData[val] < 0x80).Select(val => ((char)fileData[val]).ToString()).ToArray();
-                sb.Append(string.Join(", ", values));
-                sb.Append("\n = \"").Append(string.Join(string.Empty, chars)).Append("\"");
+                int lastData = readOffs - 1;
+                int sigLen = SIGNATURE.Length;
+                bool hasSignature = hiddenBytes >= sigLen
+                    && hiddenData[hiddenBytes - 1] == lastData
+                    && hiddenData[hiddenBytes - sigLen] == lastData - ((sigLen-1) * 3)
+                    && hiddenData.Skip(hiddenBytes - sigLen).Select(val => (char)fileData[val]).SequenceEqual(SIGNATURE);
+                if (hasSignature)
+                {
+                    sb.Append("\nProgram signature \"").Append(SIGNATURE).Append("\" found at end of compressed image data.");
+                    hiddenData.RemoveRange(hiddenBytes - sigLen, sigLen);
+                    hiddenBytes = hiddenData.Count;
+                }
+                if (hiddenBytes > 0)
+                {
+                    string[] values = hiddenData.Select(val => val.ToString()).ToArray();
+                    string[] chars = hiddenData.Where(val => fileData[val] > 0x1F && fileData[val] < 0x80).Select(val => ((char)fileData[val]).ToString()).ToArray();
+                    sb.Append("\nHidden data @ ");
+                    sb.Append(string.Join(", ", values));
+                    sb.Append("\n = \"").Append(string.Join(string.Empty, chars)).Append("\"");
+                }
             }
             //*/
             this.ExtraInfo = sb.ToString();
@@ -257,28 +274,29 @@ namespace EngieFileConverter.Domain.FileTypes
             int width;
             int height;
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out width, out height);
-            // no options for cutting up the frame if there's multiple frames
-            if (fileToSave.IsFramesContainer || frames.Length > 1)
+            List<Option> opts = new List<Option>();
+            // Only give options for cutting up the frame if there's only a single frame.
+            if (frames.Length == 1)
             {
-                return new Option[0];
+                if (width / height > 0 && width % height == 0)
+                {
+                    width = height;
+                }
+                else if (height / width > 0 && height % width == 0)
+                {
+                    height = width;
+                }
+                else if (width % 128 == 0 && height % 128 == 0)
+                {
+                    width = 128;
+                    height = 128;
+                }
+                
+                opts.Add(new Option("WDT", OptionInputType.Number, "Frame width", "8,", width.ToString()));
+                opts.Add(new Option("HGT", OptionInputType.Number, "Frame height", "8,", height.ToString()));
             }
-            if (width / height > 0 && width % height == 0)
-            {
-                width = height;
-            }
-            else if (height / width > 0 && height % width == 0)
-            {
-                height = width;
-            }
-            else if (width % 128 == 0 && height % 128 == 0)
-            {
-                width = 128;
-                height = 128;
-            }
-            Option[] opts = new Option[2];
-            opts[0] = new Option("WDT", OptionInputType.Number, "Frame width", "8,", width.ToString(), true);
-            opts[1] = new Option("HGT", OptionInputType.Number, "Frame height", "8,", height.ToString(), true);
-            return opts;
+            opts.Add(new Option("SIG", OptionInputType.Boolean, "Add program signature in data", null, "1"));
+            return opts.ToArray();
         }
 
         public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
@@ -290,6 +308,7 @@ namespace EngieFileConverter.Domain.FileTypes
             int frameWidth = width;
             int frameHeight = height;
             byte[][] frameBytes8bpp;
+            bool addSignature = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "SIG"));
             if (nrOfFrames == 1 && !fileToSave.IsFramesContainer)
             {
                 // one frame: chop into sub-frames
@@ -361,7 +380,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         byte[] curTile = ImageUtils.CopyFrom8bpp(frameData, frameWidth, frameHeight, frameWidth, new Rectangle(x, y, 8, 8));
                         int tileIndex = FindUniqueTile(uniqueTiles, curTile);
                         if (tileIndex > TILES_MAX)
-                            throw new ArgumentException(string.Format(ERR_TILES_OVERFLOW, TILES_MAX), "fileToSave");
+                            throw new FileTypeSaveException(ERR_TILES_OVERFLOW, TILES_MAX);
                         resultFrame[tileOffset] = tileIndex;
                         tileOffset++;
                     }
@@ -374,8 +393,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 uniqueTiles[i] = ImageUtils.ConvertFrom8Bit(uniqueTiles[i], 8, 8, 4, true);
             }
-            // Optimisation? Could sort so long beginnings and ends match up
-            //OptimiseFramesPair(resultFrames, uniqueTiles);
+            // Optimisation. Sort so long beginnings and ends match up.
             OptimiseFramesChain(resultFrames, uniqueTiles);
 
             // Put image data into one large array.
@@ -447,6 +465,7 @@ namespace EngieFileConverter.Domain.FileTypes
             byte[] comprImgData = new byte[tilesetEnd * 2];
             while (imgSourceOffs < tilesetEnd)
             {
+                // Expand array if needed
                 if (comprImgOffset + 3 >= comprImgData.Length)
                 {
                     byte[] newArr = new byte[comprImgData.Length + tilesetEnd];
@@ -481,7 +500,30 @@ namespace EngieFileConverter.Domain.FileTypes
                 // For repeats of 2 and 3, just write one and repeat the whole loop.
                 comprImgData[comprImgOffset++] = curVal;
                 imgSourceOffs += repeat;
-
+            }
+            if (comprImgOffset > ushort.MaxValue)
+            {
+                throw new FileTypeSaveException(ERR_COMPR_TOO_LARGE, ushort.MaxValue);
+            }
+            int sigLen = SIGNATURE.Length;
+            int sigEnd = comprImgOffset + sigLen * 3;
+            // Skip this if it tips the scale on the overflow size.
+            if (addSignature && sigEnd < ushort.MaxValue)
+            {
+                // Add signature
+                byte[] sigData = SIGNATURE.ToCharArray().Select(c => (byte)c).ToArray();
+                if (sigEnd > comprImgData.Length)
+                {
+                    byte[] newArr = new byte[sigEnd];
+                    Array.Copy(comprImgData, newArr, comprImgData.Length);
+                    comprImgData = newArr;
+                }
+                for (int i = 0; i < sigLen; i++)
+                {
+                    comprImgData[comprImgOffset++] = FLAG_VALUE;
+                    comprImgData[comprImgOffset++] = 0;
+                    comprImgData[comprImgOffset++] = sigData[i];
+                }
             }
             // Assemble everything. Header is 8 bytes.
             byte[] fileDataFinal = new byte[8 + resultFrameDataOffset + comprImgOffset];
@@ -557,117 +599,6 @@ namespace EngieFileConverter.Domain.FileTypes
             return -1;
         }
 
-        private void OptimiseFramesPair(int[][] frames, List<byte[]> tiles)
-        {
-            // Optimise: for each byte value, find the tiles with the longest start and end comprised of repeats of that
-            // value, and put them end-to-end so longer compressed ranges can be achieved in the final tileset image data.
-            int tilesetLength = tiles.Count;
-            // map byte value to dictionary of lengths, with for each length the list of tiles.
-            int[] tileStartLengths = new int[tilesetLength];
-            Dictionary<byte, Dictionary<int, List<int>>> startLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
-            int[] tileEndLengths = new int[tilesetLength];
-            Dictionary<byte, Dictionary<int, List<int>>> endLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
-            for (int i = 0; i < tilesetLength; ++i)
-            {
-                byte[] currTile = tiles[i];
-                // check start length of tile.
-                byte checkVal = currTile[0];
-                Dictionary<int, List<int>> lengthsForByteStart;
-                if (!startLengths.TryGetValue(checkVal, out lengthsForByteStart))
-                    startLengths[checkVal] = lengthsForByteStart = new Dictionary<int, List<int>>();
-                int len = 1;
-                while (len < 32 && currTile[len] == checkVal)
-                    len++;
-                tileStartLengths[i] = len;
-                List<int> tilesForStartLength;
-                if (!lengthsForByteStart.TryGetValue(len, out tilesForStartLength))
-                    lengthsForByteStart[len] = tilesForStartLength = new List<int>();
-                tilesForStartLength.Add(i);
-                // check end length of tile.
-                checkVal = currTile[31];
-                Dictionary<int, List<int>> lengthsForByteEnd;
-                if (!endLengths.TryGetValue(checkVal, out lengthsForByteEnd))
-                    endLengths[checkVal] = lengthsForByteEnd = new Dictionary<int, List<int>>();
-                len = 30;
-                while (len >= 0 && currTile[len] == checkVal)
-                    len--;
-                len = 31 - len;
-                tileEndLengths[i] = len;
-                List<int> tilesForEndLength;
-                if (!lengthsForByteEnd.TryGetValue(len, out tilesForEndLength))
-                    lengthsForByteEnd[len] = tilesForEndLength = new List<int>();
-                tilesForEndLength.Add(i);
-            }
-            Dictionary<int, int> tileRemap = new Dictionary<int, int>();
-            int tilemapIndex = 0;
-            foreach (byte startval in startLengths.Keys.OrderBy(b => b))
-            {
-                if (!endLengths.ContainsKey(startval))
-                    continue;
-                Dictionary<int, List<int>> lengthsForByteStart = startLengths[startval];
-                List<int> startLengthsDesc = lengthsForByteStart.Keys.OrderByDescending(b => b).SelectMany(b => lengthsForByteStart[b])
-                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
-                Dictionary<int, List<int>> lengthsForByteEnd = endLengths[startval];
-                List<int> endLengthsAsc = lengthsForByteEnd.Keys.OrderBy(b => b).SelectMany(b => lengthsForByteEnd[b])
-                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
-                // iterate over minimum
-                List<int> iterate = new List<int>(startLengthsDesc.Count < endLengthsAsc.Count ? startLengthsDesc : endLengthsAsc);
-                List<int> otherList = startLengthsDesc.Count < endLengthsAsc.Count ? endLengthsAsc : startLengthsDesc;
-                // remove duplicates in the two lists.
-                foreach (int tileNr in iterate.Where(t => otherList.Contains(t)))
-                {
-                    // Maximize usable pairs by always removing from largest list.
-                    if (endLengthsAsc.Count >= startLengthsDesc.Count)
-                        endLengthsAsc.Remove(tileNr);
-                    else
-                        startLengthsDesc.Remove(tileNr);
-                }
-                //  This logic is honestly extremely rough; it does not check if the resulting
-                //  joined amounts even exceed a length of 3. But it works; all files in the
-                //  game become smaller when re-saved.
-                int end = Math.Min(startLengthsDesc.Count, endLengthsAsc.Count);
-                for (int i = 0; i < end; ++i)
-                {
-                    int tile1 = startLengthsDesc[i];
-                    int tile2 = endLengthsAsc[i];
-
-                    int tile1StartLength = tileStartLengths[tile1];
-                    int tile2EndLength = tileEndLengths[tile2];
-                    // Check if one of the tiles is 100% filled with the value. This can only happen once per value.
-                    bool addedExtra = false;
-                    if (tile1StartLength == 32 && endLengthsAsc.Count > startLengthsDesc.Count)
-                    {
-                        tileRemap.Add(endLengthsAsc[end], tilemapIndex++);
-                        addedExtra = true;
-                    }
-                    tileRemap.Add(tile1, tilemapIndex++);
-                    tileRemap.Add(tile2, tilemapIndex++);
-                    if (!addedExtra && tile2EndLength == 32 && startLengthsDesc.Count > endLengthsAsc.Count)
-                    {
-                        tileRemap.Add(startLengthsDesc[end], tilemapIndex++);
-                    }
-                }
-            }
-            // Apply remap, filling in any unsorted tiles on the fly.
-            // Remap tileset
-            List<byte[]> origTiles = new List<byte[]>(tiles);
-            for (int i = 0; i < tilesetLength; ++i)
-            {
-                if (!tileRemap.ContainsKey(i))
-                    tileRemap.Add(i, tilemapIndex++);
-                tiles[tileRemap[i]] = origTiles[i];
-            }
-            // Remap tilemaps
-            for (int fr = 0; fr < frames.Length; ++fr)
-            {
-                int[] frame = frames[fr];
-                for (int i = 0; i < frame.Length; ++i)
-                {
-                    frame[i] = tileRemap[frame[i]];
-                }
-            }
-        }
-
         private void OptimiseFramesChain(int[][] frames, List<byte[]> tiles)
         {
             // Optimise: chain images with the largest repeats at the first one's end and the second one's start,
@@ -738,7 +669,6 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             int tilesetLength = tileInfo.Length;
             byte searchVal = tileInfo[currentTile].EndByte;
-            int searchLen = tileInfo[currentTile].EndLength;
             int foundTile = Enumerable.Range(0, tilesetLength).Select(i => (int?)i).Where(t => tileInfo[t.Value].StartByte == searchVal && !tileRemap.ContainsKey(t.Value))
                 .OrderByDescending(t => tileInfo[t.Value].StartLength).FirstOrDefault() ?? -1;
             // return tile with max added length
@@ -792,35 +722,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 TestFourBit(bm, i);
             }
             return frames;
-        }
-
-        public static void TestFourBit(Bitmap bm, int i)
-        {
-            TestFourBit(bm, i, false, out _);
-        }
-
-        public static byte[] TestFourBit(Bitmap bm, int i, bool returnContent, out int stride)
-        {
-            stride = 0;
-            if (bm.PixelFormat == PixelFormat.Format8bppIndexed)
-            {
-                byte[] imgData = ImageUtils.GetImageData(bm, out stride, true);
-                int dlen = imgData.Length;
-                for (int off = 0; off < dlen; ++off)
-                {
-                    if (imgData[off] > 0x0F)
-                        throw new FileTypeSaveException("Error in frame {2}: " + ERR_BPP_LOW_INPUT, 4, 15, i);
-                }
-                return returnContent ? ImageUtils.ConvertFrom8Bit(imgData, bm.Width, bm.Height, 4, false, ref stride) : null;
-            }
-            else if (bm.PixelFormat == PixelFormat.Format4bppIndexed)
-            {
-                return returnContent ? ImageUtils.GetImageData(bm, out stride, true) : null;
-            }
-            else
-            {
-                throw new FileTypeSaveException("Error in frame {1}: " + ERR_BPP_INPUT_4_8, i);
-            }
         }
 
         private class TileInfo

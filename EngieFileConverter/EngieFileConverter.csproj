@@ -110,7 +110,7 @@
     <Compile Include="Domain\FileTypes\Epic\FileFramesJazzFontC.cs" />
     <Compile Include="Domain\FileTypes\FileTypesFactory.cs" />
     <Compile Include="Domain\FileTypes\General\FileFramesInt33Cursor.cs" />
-    <Compile Include="Domain\FileTypes\Hq221b\FileImgHqQuest.cs" />
+    <Compile Include="Domain\FileTypes\Hq221b\FileMapHqQuest.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosRmm.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosLbv.cs" />
     <Compile Include="Domain\FileTypes\Penguin\FileFramesDogsDb.cs" />
@@ -368,9 +368,7 @@
     <Compile Include="UI\FrmFileConverter.Designer.cs">
       <DependentUpon>FrmFileConverter.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\FrmFileConverterTests.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="UI\FrmFileConverterTests.cs" />
     <Compile Include="FileConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\Util\PixelZoomPanel.cs">

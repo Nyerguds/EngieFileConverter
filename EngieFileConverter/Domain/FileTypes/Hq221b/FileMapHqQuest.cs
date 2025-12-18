@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-    public class FileImgHqQuest : SupportedFileType
+    public class FileMapHqQuest : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
@@ -21,10 +21,10 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const int mapHeight = 19;
         protected const int _cellSize = 12;
         protected const int _wallThickness = 2;
-        public override String IdCode { get { return "HqDat"; } }
+        public override String IdCode { get { return "HqBin"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "HeroQuest Quest"; } }
-        public override String[] FileExtensions { get { return new String[] { "dat" }; } }
+        public override String[] FileExtensions { get { return new String[] { "bin" }; } }
         public override String LongTypeName { get { return "HeroQuest Quest File"; } }
         public override Boolean NeedsPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 8; } }
@@ -167,10 +167,34 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             Byte[] rooms = new byte[mapSize];
             Array.Copy(fileData, roomsOffset, rooms, 0, mapSize);
-            int cellCount = rooms.Count(r => r != 0);
-            int cellCountBig = rooms.Count(r => r >= 21);
-            int cellCountCor = rooms.Count(r => r != 0 && r < 21);
-            byte[] usedRooms = rooms.Distinct().Where(r => r != 0).ToArray();
+            int maxroom = 0x2A;
+            bool[] seenRooms = new bool[maxroom + 1];
+            bool[] seenRoomsOpened = new bool[maxroom + 1];
+            bool[] seenRoomsClosed = new bool[maxroom + 1];
+            int cellCount = 0;
+            int cellCountBig = 0;
+            int cellCountCor = 0;
+            for (int i = 1; i < rooms.Length; ++i)
+            {
+                byte data = rooms[i];
+                byte roomnr = (byte)(data & 0x3F);
+                bool open = (data & 0xC0) == 0xC0;
+                if (roomnr <= maxroom)
+                {
+                    seenRooms[roomnr] = true;
+                    bool[] toMark = open ? seenRoomsOpened : seenRoomsClosed;
+                    toMark[roomnr] = true;
+                }
+                rooms[i] = roomnr;
+                if (roomnr != 0)
+                {
+                    cellCount++;
+                    if (roomnr < 21) cellCountCor++;
+                    else cellCountBig++;
+                }
+            }
+            byte[] usedRooms = Enumerable.Range(1, seenRooms.Length - 1).Where(rn => seenRooms[rn]).Select(rn => (byte)rn).ToArray();
+            byte[] openRooms = Enumerable.Range(1, seenRoomsOpened.Length - 1).Where(rn => seenRoomsOpened[rn]).Select(rn => (byte)rn).ToArray();
             int roomsCount = usedRooms.Count();
             int roomsCountBig = usedRooms.Count(r => r >= 21);
             int roomsCountCor = usedRooms.Count(r => r < 21);
@@ -202,23 +226,29 @@ namespace EngieFileConverter.Domain.FileTypes
                 questNr = Int32.Parse(match.Groups[1].Value);
             }
             this.ReadPopulation(fileData, popSectionOffset, out monsters, out wanderingMonster, out objects, out texts);
-            this.ExtraInfo = texts == null ? null : texts[0];
-            if (this.ExtraInfo != null)
-                this.ExtraInfo += "\n";
-            this.ExtraInfo += "Wandering monster: " + wanderingMonster.ToString()
-                + "\nCells: " + cellCount + " (corridor: " + cellCountCor + "; rooms: " + cellCountBig + ")"
-                + "\nRooms: " + roomsCount + " (corridor: " + roomsCountCor + "; rooms: " + roomsCountBig + ")"
-                + "\nSearch: " + (treasureRooms.Length == 0 ? "-" : String.Join(", ", treasureRooms.Select(i => "r" + i + ": " + ((EventType)eventsTreasure[i]).ToString()).ToArray()))
-                + "\nScan: " + (hiddenRooms.Length == 0 ? "-" : String.Join(", ", hiddenRooms.Select(i => "r" + i + ": " + ((EventType)eventsHidden[i]).ToString()).ToArray()));
+            List<string> extrainfo = new List<string>();
+            if (texts != null && texts.Count > 0) extrainfo.Add(texts[0]);
+            extrainfo.Add("Wandering monster: " + wanderingMonster.ToString());
+            extrainfo.Add("Cells: " + cellCount + " (corridor: " + cellCountCor + "; rooms: " + cellCountBig + ")");
+            extrainfo.Add("Rooms: " + roomsCount + " (corridor: " + roomsCountCor + "; rooms: " + roomsCountBig + ")");
+            if (seenRoomsOpened.Any())
+            {
+                extrainfo.Add("Open rooms: " + String.Join(", ",
+                    openRooms.Select(or => or.ToString() + (seenRoomsOpened[or] && seenRoomsClosed[or] ? " (partial)" : String.Empty)).ToArray()));
+            }
+            extrainfo.Add("Search: " + (treasureRooms.Length == 0 ? "-" : String.Join(", ", treasureRooms.Select(i => "r" + i + ": " + ((EventType)eventsTreasure[i]).ToString()).ToArray())));
+            extrainfo.Add("Scan: " + (hiddenRooms.Length == 0 ? "-" : String.Join(", ", hiddenRooms.Select(i => "r" + i + ": " + ((EventType)eventsHidden[i]).ToString()).ToArray())));
             int width;
             int height;
             int stride;
             byte[] imageData = GenerateImageData(_cellSize, _wallThickness, rooms, walls, heroes, monsters, objects, out width, out height, out stride);
+            // Paints a dot on all rooms that are inaccessible.
             //ScanInaccessible(imageData, _cellSize, stride, rooms, walls, heroes, objects, questNr, true, false);
             if (texts != null && texts.Count > 1)
             {
-                this.ExtraInfo += "\n\n" + String.Join("\n", texts.Skip(1).ToArray());
+                extrainfo.Add("\n" + String.Join("\n", texts.Skip(1).ToArray()));
             }
+            this.ExtraInfo = String.Join("\n", extrainfo.ToArray());
             this.m_LoadedImage = GenerateImage(imageData, width, height, stride);
         }
 
@@ -416,8 +446,6 @@ namespace EngieFileConverter.Domain.FileTypes
             return false;
         }
 
-
-
         private byte[] GenerateImageData(int cellSize, int wallThickness, Byte[] rooms, Byte[] walls, Dictionary<Point, char> heroes, Dictionary<Point, MonsterType> monsters, Dictionary<Point, ObjectType> objects, out int width, out int height, out int stride)
         {
             width = mapWidth * cellSize;
@@ -430,10 +458,14 @@ namespace EngieFileConverter.Domain.FileTypes
             int lineblockSize = cellSize * cellSize * mapWidth;
             Point[] northWall = MakeWall(cellSize, 0, cellSize, 0, wallThickness, cellSize, true, false);
             Point[] westWall = MakeWall(cellSize, 0, cellSize, 0, wallThickness, cellSize, false, false);
+            Point[] northGrid = MakeWall(cellSize, 0, cellSize, 0, 1, cellSize, true, false);
+            Point[] westGrid = MakeWall(cellSize, 0, cellSize, 0, 1, cellSize, false, false);
+            Point[][] wallTypes = new[] { northWall, westWall, northGrid, westGrid };
             int startPoint = cellSize < 2 ? 0 : Math.Max(1, cellSize / 6);
             int doorSize = Math.Max(1, cellSize - startPoint * 2);
             Point[] northDoor = MakeWall(cellSize, startPoint, doorSize, 0, wallThickness, cellSize, true, false);
             Point[] westDoor = MakeWall(cellSize, startPoint, doorSize, 0, wallThickness, cellSize, false, false);
+            Point[][] doorTypes = new[] { northDoor, westDoor };
             int offset = wallThickness;
             int centerSize = cellSize - wallThickness;
             for (int y = 0; y < mapHeight; ++y)
@@ -446,7 +478,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     byte wallValue = walls[lineOffs];
                     Point cur = new Point(x, y);
                     WallInfo door = (WallInfo)wallValue;
-                    PaintWallsInfo(mapImage, lineCellOffs, width, cellSize, room, door, northWall, westWall, northDoor, westDoor);
+                    PaintWallsInfo(mapImage, lineCellOffs, width, cellSize, room, door, wallTypes, doorTypes, false);
                     //*/
                     if (heroes != null && heroes.TryGetValue(cur, out char letter))
                     {
@@ -519,6 +551,7 @@ namespace EngieFileConverter.Domain.FileTypes
             palette[(int)SpecialPalette.Flag2] = Color.FromArgb(0xFF, 0xC0, 0xFF);
             palette[(int)SpecialPalette.Flag3] = Color.FromArgb(0x0C, 0xFF, 0xFF);
             palette[(int)SpecialPalette.Flag4] = Color.FromArgb(0xFF, 0xC0, 0xC0);
+            palette[(int)SpecialPalette.Grid] = Color.FromArgb(0x80, 0x00, 0x80);
             return ImageUtils.BuildImage(mapImage, imgWidth, imgHeight, imgStride, PixelFormat.Format8bppIndexed, palette, Color.Black);
         }
 
@@ -610,6 +643,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Flag2 = 0x39,
             Flag3 = 0x3A,
             Flag4 = 0x3B,
+            Grid = 0x3C,
         }
 
         private void ReadPopulation(byte[] fileData, int popSectionOffset, out Dictionary<Point, MonsterType> monsters, out MonsterType wanderingMonster, out Dictionary<Point, ObjectType> objects, out List<String> texts)
@@ -867,8 +901,14 @@ namespace EngieFileConverter.Domain.FileTypes
             return points.ToArray();
         }
 
-        private void PaintWallsInfo(byte[] mapImage, int startPoint, int stride, int cellSize, byte room, WallInfo wallInfo, Point[] northWall, Point[] westWall, Point[] northDoor, Point[] westDoor)
+        private void PaintWallsInfo(byte[] mapImage, int startPoint, int stride, int cellSize, byte room, WallInfo wallInfo, Point[][] wallTypes, Point[][] doorTypes, bool paintGrid)
         {
+            Point[] northWall = wallTypes[0];
+            Point[] westWall = wallTypes[1];
+            Point[] northGrid = wallTypes[2];
+            Point[] westGrid = wallTypes[3];
+            Point[] northDoor = doorTypes[0];
+            Point[] westDoor = doorTypes[1];
             int writeOffs = startPoint;
             for (int y = 0; y < cellSize; ++y)
             {
@@ -880,16 +920,32 @@ namespace EngieFileConverter.Domain.FileTypes
                 writeOffs += stride;
             }
             bool notDrawn = (wallInfo & WallInfo.DontDraw) != 0;
-            List<Point[]> walls = new List<Point[]>();
+            List<Point[]> wallsExist = new List<Point[]>();
+            List<Point[]> wallsGrid = paintGrid ? new List<Point[]>() : null;
             if ((wallInfo & (WallInfo.WallNorth | WallInfo.DoorNorth)) != 0)
-            {                
-                walls.Add(northWall);
+            {
+                wallsExist.Add(northWall);
+            }
+            else if (wallsGrid != null)
+            {
+                wallsGrid.Add(northGrid);
             }
             if ((wallInfo & (WallInfo.WallWest | WallInfo.DoorWest)) != 0)
             {
-                walls.Add(westWall);
+                wallsExist.Add(westWall);
             }
-            foreach (Point[] paintWall in walls)
+            else if (wallsGrid != null)
+            {
+                wallsGrid.Add(westGrid);
+            }
+            if (wallsGrid != null)
+            {
+                foreach (Point[] paintWall in wallsGrid)
+                {
+                    PaintPoints(mapImage, startPoint, stride, (byte)SpecialPalette.Grid, paintWall);
+                }
+            }
+            foreach (Point[] paintWall in wallsExist)
             {
                 PaintPoints(mapImage, startPoint, stride, (byte)(notDrawn ? SpecialPalette.HiddenWall : SpecialPalette.Wall), paintWall);
             }
@@ -909,6 +965,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 PaintPoints(mapImage, startPoint, stride, doorColor, paintDoor);
             }
         }
+        
         private void PaintPoints(byte[] mapImage, int startPoint, int stride, byte color, params Point[] pixels)
         {
             PaintPoints(mapImage, startPoint, stride, 0, 0, color, pixels);

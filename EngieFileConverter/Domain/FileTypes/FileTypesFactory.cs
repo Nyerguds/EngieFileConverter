@@ -87,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
 #if false
             typeof(FileImgMythosRmm), // Do not enable; too much chance on false positive.
 #endif
-            typeof(FileImgHqQuest),
+            typeof(FileMapHqQuest),
             typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
         };
 
@@ -120,6 +120,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileTilesWwCc1N64Bpp8),
             typeof(FileTilesetWwCc1PC),
             typeof(FileTilesetWwRA1),
+            typeof(FileMapHqQuest),
             typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
             typeof(FileImageExec),

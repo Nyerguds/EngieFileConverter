@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
@@ -8,9 +7,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("EngieFileConverter")]
 [assembly: AssemblyDescription("Engie File Converter")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Nyerguds Industries")]
+[assembly: AssemblyCompany("Nyerguds")]
 [assembly: AssemblyProduct("EngieFileConverter")]
-[assembly: AssemblyCopyright("Copyright © 2016-2018 Nyerguds")]
+[assembly: AssemblyCopyright("Copyright © 2016-2025 Nyerguds")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,4 +32,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.5.15.0")]
+[assembly: AssemblyFileVersion("1.5.16.0")]

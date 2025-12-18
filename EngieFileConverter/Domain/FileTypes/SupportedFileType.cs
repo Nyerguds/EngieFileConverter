@@ -56,6 +56,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_UNKN_COMPR = "Unknown compression type.";
         protected const String ERR_UNKN_COMPR_X = "Unknown compression type \"{0}\".";
         protected const String ERR_BPP_DIMENSIONS = "Only {0}-bit {1}×{2} images can be saved as {3}.";
+        protected const String ERR_COMPR_TOO_LARGE = "The content after compression exceeds {0} bytes; it is too large to be saved in this type.";
         protected String ErrFixedBppAndSize { get { return String.Format(ERR_BPP_DIMENSIONS, this.BitsPerPixel, this.Width, this.Height, ShortTypeName); } }
 
         #endregion
@@ -389,6 +390,40 @@ namespace EngieFileConverter.Domain.FileTypes
                 palette = null;
             }            
             return palette;
+        }
+
+        public static void TestFourBit(Bitmap bm, int frame)
+        {
+            GetFourBitData(bm, frame, true, false, out _);
+        }
+
+        public static byte[] GetFourBitData(Bitmap bm, int frame, bool throwErr, bool returnContent, out int stride)
+        {
+            stride = 0;
+            switch (bm.PixelFormat)
+            {
+                case PixelFormat.Format4bppIndexed:
+                    return returnContent ? ImageUtils.GetImageData(bm, out stride, true) : null;
+                case PixelFormat.Format8bppIndexed:
+                    byte[] imgData = ImageUtils.GetImageData(bm, true);
+                    int dlen = imgData.Length;
+                    for (int off = 0; off < dlen; ++off)
+                    {
+                        if (imgData[off] > 0x0F)
+                        {
+                            if (throwErr)
+                                throw new FileTypeSaveException("Error in frame {2}: " + ERR_BPP_LOW_INPUT, 4, 15, frame);
+                            else
+                                return null;
+                        }
+                    }
+                    return returnContent ? ImageUtils.ConvertFrom8Bit(imgData, bm.Width, bm.Height, 4, false, ref stride) : null;
+                default:
+                    if (throwErr)
+                        throw new FileTypeSaveException("Error in frame {1}: " + ERR_BPP_INPUT_4_8, frame);
+                    else
+                        return null;
+            }
         }
 
         /// <summary>

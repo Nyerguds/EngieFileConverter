@@ -185,7 +185,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                     if (frame.Width > 254)
                         throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_WIDE_DIM, 254);
-                    FileFramesTrMntPan.TestFourBit(bm, i);
+                    TestFourBit(bm, i);
                 }
                 frameOpts = frOpts.ToString().TrimEnd('\r', '\n');
             }
@@ -271,7 +271,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if (bm.Width > 254)
                     throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_WIDE_DIM, 254);
-                byte[] frameBytes = FileFramesTrMntPan.TestFourBit(bm, i, true, out int frStride);
+                byte[] frameBytes = GetFourBitData(bm, i, true, true, out int frStride);
                 List<byte> curFrameData = new List<byte>();
                 int frHeight = bm.Height;
                 for (int y = 0; y < frHeight; y++) {
