@@ -325,10 +325,12 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePaletteWwPsx),
             typeof(FileFramesDfPic),
             typeof(FileFramesIgcSlb), // Experimental
+            typeof(FileImgIgcGx2),
             typeof(FileImgIgcDmp),
             typeof(FileImgNova),
             typeof(FileImgStris),
             typeof(FileImgBif),
+            typeof(FileImgJmx),
             typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.            
         };
 
@@ -376,10 +378,12 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePaletteWwPsx),
             typeof(FileFramesDfPic),
             typeof(FileFramesIgcSlb), // Experimental
+            typeof(FileImgIgcGx2),
             typeof(FileImgIgcDmp), // Fully done, but save isn't really plausible for the combined format.
             typeof(FileImgNova),
             typeof(FileImgStris),
             typeof(FileImgBif),
+            typeof(FileImgJmx),
         };
 
         private static Type[] m_supportedSaveTypes =
@@ -432,6 +436,8 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImgIgcDmp),
             typeof(FileImgNova),
             typeof(FileImgBif),
+            typeof(FileImgJmx),
+            typeof(FileImgIgcGx2),
         };
 
 #if DEBUG

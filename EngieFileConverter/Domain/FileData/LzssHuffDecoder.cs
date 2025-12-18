@@ -2,6 +2,9 @@
 
 namespace Nyerguds.FileData.Compression
 {
+    /// <summary>
+    /// Decoder only. Need to get my hands on an encoder for this...
+    /// </summary>
     public class LzssHuffDecoder
     {
         /**************************************************************
@@ -306,8 +309,6 @@ namespace Nyerguds.FileData.Compression
 
         private void StartHuff()
         {
-
-
             for (Int32 index = 0; index < NChar; ++index)
             {
                 this._freq[index] = 1;
@@ -456,7 +457,6 @@ namespace Nyerguds.FileData.Compression
             this._getbuf = 0;
         }
 
-
         public Byte[] Decode(Byte[] input, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
         {
             this.buf_in = input;
@@ -464,8 +464,6 @@ namespace Nyerguds.FileData.Compression
             this.buf_end = endOffset ?? input.Length;
             this.bits_size = 0;
             this.bits_data = 0;
-
-
             UInt32 outPtr = 0;
             UInt32 len = (UInt32) decompressedSize;
             Byte[] bufOut = new Byte[decompressedSize];
@@ -528,7 +526,6 @@ namespace Nyerguds.FileData.Compression
                 // ERROR!
                 if (this.buf_ptr >= this.buf_end)
                     return UInt32.MaxValue;
-
                 // 8-bit buffer
                 if (this.bits_size == 0)
                 {

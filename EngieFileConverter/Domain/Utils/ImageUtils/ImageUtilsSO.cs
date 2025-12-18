@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace Nyerguds.ImageManipulation
 {
     /// <summary>
-    /// Code written for StackOverflow and not actively used in projects. Currently set to not compile into the project.
+    /// Code written for StackOverflow and not actively used in projects. Currently set to only compile in debug mode.
     /// If code from this actually gets used it should be moved into the main ImageUtils class.
     /// </summary>
     /// <remarks>
@@ -17,25 +17,6 @@ namespace Nyerguds.ImageManipulation
     /// </remarks>
     public static class ImageUtilsSO
     {
-
-        public static Bitmap MatrixToGrayImage(Byte[] matrix, Int32 width, Int32 height)
-        {
-            Bitmap bmp = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
-            BitmapData data = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
-            Int64 scan0 = data.Scan0.ToInt64();
-            for (Int32 y = 0; y < height; ++y)
-                Marshal.Copy(matrix, y * width, new IntPtr(scan0 + y * data.Stride), width);
-            bmp.UnlockBits(data);
-            // Add palette:
-            // Get original palette. Note that this makes a COPY of the ColorPalette object.
-            ColorPalette pal = bmp.Palette;
-            // Generate grayscale colours:
-            for (Int32 i = 0; i < 256; ++i)
-                pal.Entries[i] = Color.FromArgb(i, i, i);
-            // Assign the edited palette to the bitmap.
-            bmp.Palette = pal;
-            return bmp;
-        }
 
         /// <summary>
         /// Create bitmap from two-dimensional Int32 array.

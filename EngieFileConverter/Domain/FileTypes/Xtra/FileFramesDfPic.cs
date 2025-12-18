@@ -10,7 +10,9 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     /// <summary>
     /// DaisyField pictures, from SeXoniX.
-    /// Interesting format in that it "encrypts" the image and its palette using a remapping table.
+    /// Interesting format in that it "encrypts" the image.
+    /// Thanks to CTPAX-X Team / -=CHE@TER=- for giving me the hint
+    /// that this was a simple XOR operation, and not a remapping.
     /// </summary>
     public class FileFramesDfPic : SupportedFileType
     {
@@ -31,22 +33,6 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
 
-        protected static Byte[] ImageMappingBasis = new Byte[] { 0x5, 0x4, 0x7, 0x6, 0x1, 0x0, 0x3, 0x2, 0xD, 0xC, 0xF, 0xE, 0x9, 0x8, 0xB, 0xA };
-        protected static Byte[] ImageMapping;
-        protected static Byte[] ReverseImageMapping;
-
-        static FileFramesDfPic()
-        {
-            ImageMapping = new Byte[0x100];
-            ReverseImageMapping = new Byte[0x100];
-            for (Int32 i = 0; i < 0x100; ++i)
-            {
-                Int32 val = ((ImageMappingBasis[i / 0x10] << 4) & 0xF0 | ImageMappingBasis[i % 0x10] & 0x0F);
-                ImageMapping[i] = (Byte) val;
-                ReverseImageMapping[val] = (Byte) i;
-            }
-            //String fullMapping = String.Join(", ", ImageMapping.Select(b => "0x" + b.ToString("X2")).ToArray());
-        }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -85,11 +71,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     // All values are between 0x40 and 0x80;
                     if (curVal < 0x40 || curVal >= 0x80)
                         throw new FileTypeLoadException("Not a DaisyField PIC file!");
-                    framePalData[i] = ImageMapping[curVal];
+                    framePalData[i] = (Byte)(curVal ^ 0x55);
                 }
                 Color[] frPalette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(framePalData, 0));
                 for (Int32 i = 0; i < frameSize; i++)
-                    frameData[i] = ImageMapping[frameData[i]];
+                    frameData[i] = (Byte)(frameData[i] ^ 0x55);
                 Bitmap curFrImg = ImageUtils.BuildImage(frameData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, frPalette, null);
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, f);
@@ -131,13 +117,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap fr = frame.GetBitmap();
                 Byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fr.Palette.Entries));
                 for (Int32 j = 0; j < palSize; j++)
-                    sixBitCols[j] = ReverseImageMapping[sixBitCols[j]];
+                    sixBitCols[j] = (Byte)(sixBitCols[j] ^ 0x55);
                 Array.Copy(sixBitCols, 0, outBytes, writeOffset, palSize);
                 writeOffset += palSize;
                 Int32 stride;
                 Byte[] imageBytes = ImageUtils.GetImageData(fr, out stride, true);
                 for (Int32 j = 0; j < frameSize; j++)
-                    imageBytes[j] = ReverseImageMapping[imageBytes[j]];
+                    imageBytes[j] = (Byte)(imageBytes[j] ^ 0x55);
                 Array.Copy(imageBytes, 0, outBytes, writeOffset, frameSize);
                 writeOffset += frameSize;
             }

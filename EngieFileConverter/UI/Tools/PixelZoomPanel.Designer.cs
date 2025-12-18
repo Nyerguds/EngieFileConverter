@@ -98,9 +98,8 @@
             0,
             0,
             0});
-            this.numZoom.ZoomMode = true;
             this.numZoom.ValueUpDown += new System.EventHandler<Nyerguds.Util.UI.UpDownEventArgs>(this.numZoom_ValueUpDown);
-            this.numZoom.ValueChanged += new System.EventHandler(this.NumZoomValueChanged);
+            this.numZoom.ValueEntered += new System.EventHandler<Nyerguds.Util.UI.ValueEnteredEventArgs>(this.NumZoomValueEntered);
             // 
             // pnlImageScroll
             // 

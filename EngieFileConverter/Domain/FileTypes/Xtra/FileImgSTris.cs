@@ -21,6 +21,16 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 ColorsInPalette { get { return this.m_PaletteLoaded ? base.ColorsInPalette : 0; } }
         protected Boolean m_PaletteLoaded;
 
+        protected static Byte[] DefPalette = {
+                        0x1A, 0x1A, 0x1A, 0x3F, 0x26, 0x10, 0x00, 0x33, 0x33, 0x00, 0x3F, 0x3F,
+                        0x3F, 0x27, 0x27, 0x3F, 0x17, 0x17, 0x3F, 0x08, 0x08, 0x33, 0x00, 0x00,
+                        0x27, 0x27, 0x3F, 0x17, 0x18, 0x3F, 0x08, 0x09, 0x3F, 0x00, 0x01, 0x39,
+                        0x3F, 0x27, 0x3F, 0x3F, 0x17, 0x3F, 0x3F, 0x00, 0x3F, 0x32, 0x00, 0x33,
+                        0x3F, 0x3F, 0x2E, 0x3F, 0x3D, 0x08, 0x39, 0x36, 0x00, 0x33, 0x31, 0x00,
+                        0x31, 0x3F, 0x10, 0x20, 0x33, 0x00, 0x1D, 0x2D, 0x00, 0x18, 0x27, 0x00,
+                        0x34, 0x20, 0x14, 0x2D, 0x1C, 0x11, 0x28, 0x19, 0x0F, 0x24, 0x17, 0x0D,
+                        0x00, 0x00, 0x00, 0x26, 0x26, 0x26, 0x36, 0x36, 0x36, 0x3F, 0x3F, 0x3F };
+        
         protected readonly Byte[] m_EndSequence = new Byte[] { 
             0xE9, 0xEF, 0xDE, 0x33, 0xC9, 0x8E, 0x06, 0xBF,
             0x64, 0xBE, 0x20, 0x63, 0x8B, 0xFE, 0xAC, 0x3C,
@@ -42,13 +52,13 @@ namespace EngieFileConverter.Domain.FileTypes
             // Basic format for the 224x200 images. There are also 320x200 ones, without the palette or padding zeroes.
             //0000   UInt16       Fixed value 00FD
             //0002   UInt16       Fixed value 0090 or 00A0. Bit flags?
-            //0004   Byte         Padding zero (if value at #2 is 0x90)
+            //0004   Byte         Padding zero
             //0005   UInt16       File size after the current point.
-            //0007   Byte         Seemed like the image height on some files, but didn't match on others.
-            //0008   Byte[0x300]  6-bit Palette (if value at #2 is 0x90)
-            //0308   Byte         Padding zero (if value at #2 is 0x90)
+            //0007   Byte         (if #2 is 0x90) Seemed like the image height on some files, but didn't match on others.
+            //0008   Byte[0x300]  (if #2 is 0x90) 6-bit Palette
+            //0308   Byte         (if #2 is 0x90) Padding zero
             //0309   Byte[]       Image data
-            //       Byte[]       fixed footer? (if value at #2 is 0x90)
+            //       Byte[]       (if #2 is 0x90) fixed footer?
             
             if (fileData.Length < 0x309)
                 throw new FileTypeLoadException("Too short to be an " + this.ShortTypeName + ".");
@@ -85,8 +95,10 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else if (magic02 == 0xA0)
             {
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
-                this.m_PaletteLoaded = false;
+                Byte[] palArr = new Byte[0x300];
+                Array.Copy(DefPalette, 0, palArr, 224 * 3, 32 * 3);
+                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(palArr, 0));
+                this.m_PaletteLoaded = true;
                 width = 320;
                 height = size / width;
             }
@@ -103,6 +115,16 @@ namespace EngieFileConverter.Domain.FileTypes
         
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
+            // Basic format for the 224x200 images. There are also 320x200 ones, without the palette or padding zeroes.
+            //0000   UInt16       Fixed value 00FD
+            //0002   UInt16       Fixed value 0090 or 00A0. Bit flags?
+            //0004   Byte         Padding zero
+            //0005   UInt16       File size after the current point.
+            //0007   Byte         (if #2 is 0x90) Seemed like the image height on some files, but didn't match on others.
+            //0008   Byte[0x300]  (if #2 is 0x90) 6-bit Palette
+            //0308   Byte         (if #2 is 0x90) Padding zero
+            //0309   Byte[]       Image data
+            //       Byte[]       (if #2 is 0x90) fixed footer?
             throw new NotImplementedException();
         }
 

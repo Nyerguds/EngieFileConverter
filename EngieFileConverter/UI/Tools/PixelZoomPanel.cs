@@ -112,7 +112,8 @@ namespace Nyerguds.Util.UI
                 ClipboardImage.SetClipboardImage(bm, bmnt, null);
         }
 
-        private void NumZoomValueChanged(Object sender, EventArgs e)
+
+        private void NumZoomValueEntered(object sender, ValueEnteredEventArgs e)
         {
             if (this.m_updating)
                 return;
@@ -227,21 +228,18 @@ namespace Nyerguds.Util.UI
             if ((k & Keys.Control) != 0)
             {
                 Int32 diff = (e.Delta / 120);
+                if (diff == 0 && e.Delta != 0)
+                    diff = e.Delta > 0 ? 1 : -1;
                 Decimal value = this.numZoom.Constrain(this.numZoom.Value + diff);
-                if (diff > 0)
+                if (diff != 0)
                 {
-                    if (this.numZoom.ZoomMode && value <= 1 && value > -2)
-                        value = 1;
-                }
-                else if (diff < 0)
-                {
-                    if (this.numZoom.ZoomMode && value < 1 && value >= -2)
-                        value = -2;
-                }
-                this.numZoom.EnteredValue = this.numZoom.Constrain(value);
+                    this.numZoom.EnteredValue = this.numZoom.Constrain(value);
+                    numZoom_ValueUpDown(this.numZoom, new UpDownEventArgs(diff > 0 ? UpDownAction.Up : UpDownAction.Down, diff, true));
+                }                
                 HandledMouseEventArgs args = e as HandledMouseEventArgs;
                 if (args != null)
                     args.Handled = true;
+
             }
         }
 
@@ -255,11 +253,11 @@ namespace Nyerguds.Util.UI
             EnhNumericUpDown zoom = sender as EnhNumericUpDown;
             if (zoom == null)
                 return;
-            Decimal val = zoom.Value;
+            Decimal val = zoom.EnteredValue;
             if (e.Direction == UpDownAction.Down && val < 1 && val > -2)
-                zoom.Value = -2;
+                zoom.EnteredValue = -2;
             else if (e.Direction == UpDownAction.Up && val <= 1 && val > -2)
-                zoom.Value = val <= -1 ? 1 : 2;
+                zoom.EnteredValue = val <= -1 ? 1 : 2;
         }
     }
 }

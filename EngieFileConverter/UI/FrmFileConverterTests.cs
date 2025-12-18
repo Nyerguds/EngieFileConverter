@@ -34,7 +34,6 @@ namespace EngieFileConverter.UI
             //this.CreateSierpinskiImage();
             //this.ColorPsx();
             //this.ExpandRAMap();
-            //this.ExtractRle();
             //this.GetColourPixel();
             //this.ExtractInts();
         }
@@ -133,7 +132,6 @@ namespace EngieFileConverter.UI
 
         private void CreateSierpinskiImage()
         {
-            FileImage loadImage = new FileImagePng();
             // Replace this with something creating/loading a bitmap
             using (Bitmap sierpinskiImage = ImageUtilsSO.GetSierpinski(800, 800))
                 LoadTestFile(sierpinskiImage);
@@ -157,7 +155,6 @@ namespace EngieFileConverter.UI
             Color[] palette = new Color[0x100];
             for (Int32 i = 0; i < 0x100; ++i)
                 palette[i] = Color.FromArgb(i, i, i);
-            FileImage loadImage = new FileImagePng();
             // Replace this with something creating/loading a bitmap
             using (Bitmap img = ImageUtils.BuildImage(imageBytes, 10, 20, 10, PixelFormat.Format8bppIndexed, palette, null))
                 LoadTestFile(img);
@@ -201,7 +198,6 @@ namespace EngieFileConverter.UI
                 return;
             Byte[] imageData = File.ReadAllBytes(filenameImage);
             Color[] palette = PaletteUtils.GenerateRainbowPalette(8, -1, null, true, 0, 160, true);
-            FileImage loadImage = new FileImagePng();
             using (Bitmap img = ImageUtils.BuildImage(imageData, 2048, 128, 2048, PixelFormat.Format8bppIndexed, palette, null))
                 LoadTestFile(img);
         }
@@ -263,7 +259,7 @@ namespace EngieFileConverter.UI
                 0x60, 0x62, 0x64, 0xFF, 0xFF, 0x6A, 0x6C, 0x6E,
                 0x70, 0x72, 0x74, 0x76, 0x78, 0x7A, 0x7C, 0x7E,
             };
-            using (Bitmap img = ImageUtilsSO.MatrixToGrayImage(matrix, 8,8))
+            using (Bitmap img = ImageUtils.BuildImage(matrix, 8, 8, 8, PixelFormat.Format8bppIndexed, PaletteUtils.GenerateGrayPalette(8, null, false), null))
                 LoadTestFile(img);
         }
         

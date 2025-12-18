@@ -10,7 +10,7 @@ namespace Nyerguds.Util.UI
 {
     /// <summary>
     /// Enhanced NumericUpDown that allows catching the specific "value up/down" and "value entered" events
-    /// instead of "value changed", to allow unnecessary calls on boxes where values are often typed in.
+    /// instead of "value changed", to avoid unnecessary calls on boxes where values are often typed in.
     /// Also offers a property to change the amount of items scrolled by the mouse scroll wheel.
     /// </summary>
     public class EnhNumericUpDown : NumericUpDown
@@ -33,12 +33,6 @@ namespace Nyerguds.Util.UI
         [DefaultValue(true)]
         [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
         public Boolean UpDownValidatesEnter { get { return this._UpDownValidatesEnter; } set { this._UpDownValidatesEnter = value; } }
-
-
-        [Category("Data")]
-        [DefaultValue(false)]
-        [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
-        public Boolean ZoomMode { get { return this._zoomMode; } set { this._zoomMode = value; } }
         
         /// <summary>
         /// Last validated entered value.
@@ -56,10 +50,9 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        private Decimal _EnteredValue = 0;
+        private Decimal _EnteredValue;
         private Boolean _ScrollValidatesEnter = true;
         private Boolean _UpDownValidatesEnter = true;
-        private Boolean _zoomMode = false;
         private TextBox _TextBox;
 
         public EnhNumericUpDown()
@@ -145,23 +138,24 @@ namespace Nyerguds.Util.UI
             HandledMouseEventArgs hme = e as HandledMouseEventArgs;
             if (hme != null)
                 hme.Handled = true;
-            // fix for negative value input.
-            if (this.MouseWheelIncrement < 0)
-                this.MouseWheelIncrement = 1;
-            UpDownAction action;
-            if (e.Delta > 0)
+            Int32 delta = e.Delta;
+            Int32 scroll = this.MouseWheelIncrement;
+            // Negative increment is perfectly allowed, but will simply be handled as opposite direction scrolling.
+            if (scroll < 0)
             {
-                Decimal value = this.Value + this.MouseWheelIncrement;
-                if (_zoomMode && this.Value < 1 && this.Value >= -2 && value <= 1)
-                    value = 1;
+                delta = -delta;
+                scroll = -scroll;
+            }
+            UpDownAction action;
+            if (delta > 0)
+            {
+                Decimal value = this.Value + scroll;
                 this.Value = Math.Min(this.Maximum, value);
                 action = UpDownAction.Up;
             }
-            else if (e.Delta < 0)
+            else if (delta < 0)
             {
-                Decimal value = this.Value - this.MouseWheelIncrement;
-                if (_zoomMode && this.Value <= 1 && this.Value > -2 && value > -2)
-                    value = -2;
+                Decimal value = this.Value - scroll;
                 this.Value = Math.Max(this.Minimum, value);
                 action = UpDownAction.Down;
             }
@@ -170,7 +164,7 @@ namespace Nyerguds.Util.UI
             if (this.ScrollValidatesEnter)
                 this.ValidateValue();
             if (this.ValueUpDown != null)
-                this.ValueUpDown(this, new UpDownEventArgs(action, this.MouseWheelIncrement, true));
+                this.ValueUpDown(this, new UpDownEventArgs(action, scroll, true));
         }
 
         private void CheckKeyPress(Object sender, KeyEventArgs e)

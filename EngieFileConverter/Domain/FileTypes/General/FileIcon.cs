@@ -56,12 +56,12 @@ namespace EngieFileConverter.Domain.FileTypes
             HeaderParseException hpe;
             try
             {
-                UInt16 hdrReserved = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-                UInt16 hdrType = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-                UInt16 hdrNumberOfImages = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
                 Int32 hdrSize = 6;
                 if (fileData.Length < hdrSize)
                     throw new HeaderParseException("Not long enough for header.");
+                UInt16 hdrReserved = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+                UInt16 hdrType = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+                UInt16 hdrNumberOfImages = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
                 //ICONDIR hdr = ArrayUtils.StructFromByteArray<ICONDIR>(fileData);
                 if (hdrReserved != 0)
                     throw new HeaderParseException("Invalid values in header.");

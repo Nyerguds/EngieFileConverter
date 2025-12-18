@@ -19,9 +19,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "ICG DMP file"; } }
+        public override String ShortTypeName { get { return "IGC DMP file"; } }
         public override String[] FileExtensions { get { return new String[] { "dmp" }; } }
-        public override String ShortTypeDescription { get { return "ICG DMP image file"; } }
+        public override String ShortTypeDescription { get { return "IGC DMP image file"; } }
         public override Int32 ColorsInPalette { get { return this.m_PaletteLoaded ? base.ColorsInPalette : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_PaletteLoaded;

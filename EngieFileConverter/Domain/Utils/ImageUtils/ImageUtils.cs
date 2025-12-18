@@ -1000,7 +1000,7 @@ namespace Nyerguds.ImageManipulation
             // [numPlanes] "bit frames" with a stride equal to the given byte width.
             Int32 planeLinesStride = planeStride * planes;
             // Final 1-bit image is four times the image width. Convert to 1 byte per bit for editing convenience.
-            Byte[] oneBitQuadImage = ConvertTo8Bit(dataPlanar, width * planes, height, start, planeBitRate, true, ref planeLinesStride);
+            Byte[] oneBitMulPlanesImage = ConvertTo8Bit(dataPlanar, width * planes, height, start, planeBitRate, true, ref planeLinesStride);
             // Array for 4-bit image where each byte is one pixel. Will be converted to true 4bpp later.
             Byte[] pixelImage = new Byte[width * height];
             // Combine the bits into the new array.
@@ -1016,7 +1016,7 @@ namespace Nyerguds.ImageManipulation
                     Byte bits = 0;
                     for (Int32 p = 0; p < planes; ++p)
                     {
-                        bits |= (Byte) (oneBitQuadImage[offset + x] << p);
+                        bits |= (Byte) (oneBitMulPlanesImage[offset + x] << p);
                         offset += width;
                     }
                     pixelImage[realOffset] = bits;
@@ -1692,9 +1692,9 @@ namespace Nyerguds.ImageManipulation
                 edImageData = ConvertTo8Bit(edImageData, fullWidth, fullHeight, 0, bpp, true, ref edImageStride);
                 if (doMatching)
                 {
-                    Int32 palLen = 1 << matchBpp;
-                    remapTable = new Byte[palLen];
                     Color[] orig = origPalette.Entries;
+                    Int32 palLen = orig.Length;
+                    remapTable = new Byte[palLen];
                     for (Int32 i = 0; i < palLen; ++i)
                     {
                         if (i >= orig.Length)

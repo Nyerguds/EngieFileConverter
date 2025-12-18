@@ -111,7 +111,7 @@ namespace Nyerguds.FileData.Compression
         {
             T rle = new T();
             Byte[] bufferOut = null;
-            rle.RleDecodeData(buffer, null, null, ref bufferOut, abortOnError);
+            rle.RleDecodeData(buffer, startOffset, endOffset, ref bufferOut, abortOnError);
             return bufferOut;
         }
 

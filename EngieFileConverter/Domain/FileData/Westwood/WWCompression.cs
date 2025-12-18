@@ -2,6 +2,9 @@
 
 namespace Nyerguds.FileData.Westwood
 {
+    /// <summary>
+    /// This class contains encoders and decoders for the Westwood XOR Delta and LCW compression schemes.
+    /// </summary>
     public static class WWCompression
     {
         ////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +183,7 @@ namespace Nyerguds.FileData.Westwood
                 }
 
                 //decide what encoding to use for current run
-                //If its less than 2 bytes long, we store as is with cmd1
+                //If it's less than 2 bytes long, we store as is with cmd1
                 if (block_size <= 2)
                 {
                     //short copy 0b10??????
@@ -258,7 +261,6 @@ namespace Nyerguds.FileData.Westwood
         {
             if (input == null || input.Length == 0 || output == null || output.Length == 0)
                 return 0;
-            Int32 origReadOffset = readOffset;
 	        Boolean relative = false;
             // Nyer's C# conversion: replacements for write and read for pointers.
 	        Int32 writeOffset = 0;
@@ -337,7 +339,6 @@ namespace Nyerguds.FileData.Westwood
                                 if (readOffset >= readEnd)
                                     return writeOffset;
                                 offset += (UInt16)((input[readOffset++]) << 8);
-                                
                                 //extended format for VQA32
 						        if (relative)
 							        s = writeOffset - offset;
@@ -465,15 +466,10 @@ namespace Nyerguds.FileData.Westwood
                     else
                     {
                         if (fillcount > 3)
-                        {
                             break;
-                        }
-                        else
-                        {
-                            lastxor = (Byte)(source[testsp] ^ @base[testbp]);
-                            fillcount = 1;
-                            ++xorcount;
-                        }
+                        lastxor = (Byte)(source[testsp] ^ @base[testbp]);
+                        fillcount = 1;
+                        ++xorcount;
                     }
                     testsp++;
                     testbp++;
@@ -487,8 +483,8 @@ namespace Nyerguds.FileData.Westwood
                 xorcount -= fillcount;
                 while (xorcount != 0)
                 {
-                    UInt16 count = 0;
-                    //Its cheaper to do the small cmd twice than do the large cmd once
+                    UInt16 count;
+                    //It's cheaper to do the small cmd twice than do the large cmd once
                     //for data that can be handled by two small cmds.
                     //cmd 0???????
                     if (xorcount < XOR_MED)
@@ -516,7 +512,7 @@ namespace Nyerguds.FileData.Westwood
                 //lets handle the bytes that are best done as xorfill
                 while (fillcount != 0)
                 {
-                    UInt16 count = 0;
+                    UInt16 count;
                     //cmd 00000000 ????????
                     if (fillcount <= XOR_MED)
                     {
@@ -548,8 +544,8 @@ namespace Nyerguds.FileData.Westwood
 
                 while (skipcount != 0)
                 {
-                    UInt16 count = 0;
-                    //Again its cheaper to do the small cmd twice than do the large cmd
+                    UInt16 count;
+                    //Again it's cheaper to do the small cmd twice than do the large cmd
                     //once for data that can be handled by two small cmds.
                     //cmd 1???????
                     if (skipcount < XOR_MED)
