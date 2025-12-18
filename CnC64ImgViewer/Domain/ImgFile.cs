@@ -44,7 +44,7 @@ namespace CnC64ImgViewer.Domain
                 if (img.PaletteOffset != 0)
                 {
                     Int32 palSize = img.BytesPerColor * img.ColorsInPalette;
-                    Byte[] paletteData = new Byte[imageDataSize];
+                    Byte[] paletteData = new Byte[palSize];
                     Array.Copy(fileData, img.PaletteOffset, paletteData, 0, palSize);
                     img.PaletteData = paletteData;
                 }
