@@ -148,7 +148,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 refIndex20 = -1;
                 if (frameOffsFormat == 0x80)
                 {
-                    WWCompression.LcwUncompress(fileData, ref frameOffs, frame);
+                    WWCompression.LcwDecompress(fileData, ref frameOffs, frame);
                 }
                 else
                 {

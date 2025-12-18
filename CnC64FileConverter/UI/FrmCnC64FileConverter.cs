@@ -193,12 +193,12 @@ namespace CnC64FileConverter.UI
                 List<String> filesChain = null;
                 if (!isEmptyFile && error == null && this.m_LoadedFile.IsFramesContainer && (filesChain = this.m_LoadedFile.GetFilesToLoadMissingData(path)) != null && filesChain.Count > 0)
                 {
-                    const String loadQuestion = "This file seems to be missing a starting point. Would you like to load it from \"{0}\"{1}?";
+                    const String loadQuestion = "The file \"{0}\" seems to be missing a starting point. Would you like to load it from \"{1}\"{2}?";
                     const String loadQuestionChain = " (chained through {0})";
                     String firstPath = filesChain.First();
                     String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
                     String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
-                    String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(firstPath), chainQuestion);
+                    String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(path), Path.GetFileName(firstPath), chainQuestion);
                     if (MessageBox.Show(this, loadQuestionFormat, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                     {
                         // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.

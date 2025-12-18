@@ -97,15 +97,17 @@ namespace CnC64FileConverter.Domain.FileTypes
                         imageData = lzw14.Decompress(fileData, dataOffset, bufferSize);
                         break;
                     case 3:
-                        imageData = WestwoodRle.RleDecode(fileData, (UInt32) dataOffset, null, bufferSize, false);
+                        imageData = WestwoodRle.RleDecode(fileData, (UInt32) dataOffset, null, bufferSize, false, true);
                         break;
                     case 4:
                         imageData = new Byte[bufferSize];
-                        WWCompression.LcwUncompress(fileData, ref dataOffset, imageData);
+                        WWCompression.LcwDecompress(fileData, ref dataOffset, imageData);
                         break;
                     default:
                         throw new FileTypeLoadException("Unsupported compression format, " + compression);
                 }
+                if (imageData == null)
+                    throw new FileTypeLoadException("Error decompressing image.");
                 this.ExtraInfo = "Compression: " + this.compressionTypes[this.CompressionType] + "\nIncludes palette: " + (this.hasPalette ? "yes" : "no");
             }
             catch (Exception e)

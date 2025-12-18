@@ -74,7 +74,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             try
             {
                 Int32 offset = DATAOFFSET;
-                WWCompression.LcwUncompress(fileData, ref offset, imageData);
+                WWCompression.LcwDecompress(fileData, ref offset, imageData);
             }
             catch (Exception e)
             {

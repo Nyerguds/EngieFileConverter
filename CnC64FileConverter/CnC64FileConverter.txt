@@ -61,6 +61,10 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.12: (24/06/2018 19:25)
+-Changed load chaining on the Mythos animation format so the found base frame is added.
+ Westwood WSA format reserves an empty frame for this anyway, so it remains unchanged.
+
 v1.2.11: (24/06/2018 17:00)
 -Changed chunk merging on Mythos VDA format to a save option.
 -Improved multiple-extensions support in saving dialog.

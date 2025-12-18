@@ -111,6 +111,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain)
         {
             Byte[] lastFrameData = null;
+            SupportedFileType lastFrame = null;
             foreach(String chainFilePath in loadChain)
             {
                 Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
@@ -118,17 +119,18 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     FileFramesMythosVda chainFile = new FileFramesMythosVda();
                     chainFile.LoadFile(chainFileBytes, chainFilePath, lastFrameData);
-                    if(chainFile.Frames.Length == null)
+                    if(chainFile.Frames.Length == 0)
                         return;
-                    Bitmap lastFrame = chainFile.Frames.Last().GetBitmap();
-                    if (lastFrame == null)
+                    lastFrame = chainFile.Frames.Last();
+                    Bitmap lastFrameImage = lastFrame.GetBitmap();
+                    if (lastFrameImage == null)
                         return;
                     Int32 stride;
-                    Int32 width = lastFrame.Width;
-                    Int32 height = lastFrame.Height;
+                    Int32 width = lastFrameImage.Width;
+                    Int32 height = lastFrameImage.Height;
                     if (width != 320 || height != 200)
                         return;
-                    lastFrameData = ImageUtils.GetImageData(lastFrame, out stride);
+                    lastFrameData = ImageUtils.GetImageData(lastFrameImage, out stride);
                     lastFrameData = ImageUtils.CollapseStride(lastFrameData, width, height, 8, ref stride);
                 }
                 catch (FileLoadException)
@@ -139,7 +141,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                 //public void LoadFile(Byte[] fileData, String filename, Byte[] initialFrameData)
             }
             this.LoadFile(fileData, originalPath, lastFrameData);
-            this.ExtraInfo += "\nData chained from " + Path.GetFileName(loadChain.First());
+            if (lastFrame != null && lastFrameData != null)
+            {
+                this.ExtraInfo += "\nData chained from " + Path.GetFileName(loadChain.First());
+                FileImageFrame last = lastFrame as FileImageFrame;
+                if (last != null)
+                    last.SetExtraInfo(last.ExtraInfo + "\nLoaded from previous file");
+                this.m_FramesList.Insert(0, lastFrame);
+            }
         }
 
         public override void LoadFile(Byte[] fileData, String filename)

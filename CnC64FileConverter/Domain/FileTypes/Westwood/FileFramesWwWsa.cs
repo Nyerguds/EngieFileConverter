@@ -271,13 +271,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                         if (continueData.Length != frameData.Length)
                             throw new FileTypeLoadException("Invalid size on substituted initial frame!");
                         Array.Copy(continueData, frameData, frameData.Length);
+                        specificInfo = "\nLoaded from previous file";
                     }
                     else
                     {
                         Array.Clear(frameData, 0, frameData.Length);
                         specificInfo = "\nContinues from a previous file";
-                    }
-                    this.ExtraInfo += specificInfo;                    
+                        this.ExtraInfo += specificInfo;   
+                    }                 
                 }
                 if (testContinue)
                     return;
@@ -287,7 +288,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 uncLen;
                 try
                 {
-                    uncLen = WWCompression.LcwUncompress(fileData, ref refOff, xorData);
+                    uncLen = WWCompression.LcwDecompress(fileData, ref refOff, xorData);
                 }
                 catch (Exception ex)
                 {
