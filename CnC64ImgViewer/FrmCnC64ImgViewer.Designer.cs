@@ -36,14 +36,12 @@
             this.lblImageData = new System.Windows.Forms.Label();
             this.lblPaletteData = new System.Windows.Forms.Label();
             this.lblValFilename = new System.Windows.Forms.Label();
-            this.lblUnknVal = new System.Windows.Forms.Label();
             this.lblColorsInPal = new System.Windows.Forms.Label();
             this.lblValWidth = new System.Windows.Forms.Label();
             this.lblValHeight = new System.Windows.Forms.Label();
             this.lblValBytesPerCol = new System.Windows.Forms.Label();
             this.lblValColorFormat = new System.Windows.Forms.Label();
             this.lblValImageData = new System.Windows.Forms.Label();
-            this.lblValUnknVal = new System.Windows.Forms.Label();
             this.lblValColorsInPal = new System.Windows.Forms.Label();
             this.lblValPaletteData = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();
@@ -54,6 +52,7 @@
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
             this.picImage = new RedCell.UI.Controls.PixelBox();
+            this.btnViewPalette = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numZoom)).BeginInit();
             this.pnlImageScroll.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picImage)).BeginInit();
@@ -112,7 +111,7 @@
             // lblImageData
             // 
             this.lblImageData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblImageData.Location = new System.Drawing.Point(378, 176);
+            this.lblImageData.Location = new System.Drawing.Point(378, 153);
             this.lblImageData.Name = "lblImageData";
             this.lblImageData.Size = new System.Drawing.Size(119, 23);
             this.lblImageData.TabIndex = 114;
@@ -122,7 +121,7 @@
             // lblPaletteData
             // 
             this.lblPaletteData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblPaletteData.Location = new System.Drawing.Point(378, 199);
+            this.lblPaletteData.Location = new System.Drawing.Point(378, 176);
             this.lblPaletteData.Name = "lblPaletteData";
             this.lblPaletteData.Size = new System.Drawing.Size(119, 23);
             this.lblPaletteData.TabIndex = 116;
@@ -139,20 +138,10 @@
             this.lblValFilename.Text = "---";
             this.lblValFilename.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // lblUnknVal
-            // 
-            this.lblUnknVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblUnknVal.Location = new System.Drawing.Point(378, 130);
-            this.lblUnknVal.Name = "lblUnknVal";
-            this.lblUnknVal.Size = new System.Drawing.Size(119, 23);
-            this.lblUnknVal.TabIndex = 110;
-            this.lblUnknVal.Text = "Unknown header byte:";
-            this.lblUnknVal.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
             // lblColorsInPal
             // 
             this.lblColorsInPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblColorsInPal.Location = new System.Drawing.Point(378, 153);
+            this.lblColorsInPal.Location = new System.Drawing.Point(378, 130);
             this.lblColorsInPal.Name = "lblColorsInPal";
             this.lblColorsInPal.Size = new System.Drawing.Size(119, 23);
             this.lblColorsInPal.TabIndex = 112;
@@ -202,27 +191,17 @@
             // lblValImageData
             // 
             this.lblValImageData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValImageData.Location = new System.Drawing.Point(518, 176);
+            this.lblValImageData.Location = new System.Drawing.Point(518, 153);
             this.lblValImageData.Name = "lblValImageData";
             this.lblValImageData.Size = new System.Drawing.Size(154, 23);
             this.lblValImageData.TabIndex = 115;
             this.lblValImageData.Text = "---";
             this.lblValImageData.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // lblValUnknVal
-            // 
-            this.lblValUnknVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValUnknVal.Location = new System.Drawing.Point(518, 130);
-            this.lblValUnknVal.Name = "lblValUnknVal";
-            this.lblValUnknVal.Size = new System.Drawing.Size(154, 23);
-            this.lblValUnknVal.TabIndex = 111;
-            this.lblValUnknVal.Text = "---";
-            this.lblValUnknVal.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
             // lblValColorsInPal
             // 
             this.lblValColorsInPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValColorsInPal.Location = new System.Drawing.Point(518, 153);
+            this.lblValColorsInPal.Location = new System.Drawing.Point(518, 130);
             this.lblValColorsInPal.Name = "lblValColorsInPal";
             this.lblValColorsInPal.Size = new System.Drawing.Size(154, 23);
             this.lblValColorsInPal.TabIndex = 113;
@@ -232,7 +211,7 @@
             // lblValPaletteData
             // 
             this.lblValPaletteData.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValPaletteData.Location = new System.Drawing.Point(518, 199);
+            this.lblValPaletteData.Location = new System.Drawing.Point(518, 176);
             this.lblValPaletteData.Name = "lblValPaletteData";
             this.lblValPaletteData.Size = new System.Drawing.Size(154, 23);
             this.lblValPaletteData.TabIndex = 117;
@@ -350,7 +329,17 @@
             this.picImage.TabStop = false;
             this.picImage.Visible = false;
             this.picImage.Click += new System.EventHandler(this.picImage_Click);
-            this.picImage.DoubleClick += new System.EventHandler(this.pictureBox1_DoubleClick);
+            // 
+            // btnViewPalette
+            // 
+            this.btnViewPalette.Enabled = false;
+            this.btnViewPalette.Location = new System.Drawing.Point(521, 203);
+            this.btnViewPalette.Name = "btnViewPalette";
+            this.btnViewPalette.Size = new System.Drawing.Size(75, 23);
+            this.btnViewPalette.TabIndex = 119;
+            this.btnViewPalette.Text = "View palette";
+            this.btnViewPalette.UseVisualStyleBackColor = true;
+            this.btnViewPalette.Click += new System.EventHandler(this.btnViewPalette_Click);
             // 
             // FrmCnC64ImgViewer
             // 
@@ -358,6 +347,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(684, 362);
+            this.Controls.Add(this.btnViewPalette);
             this.Controls.Add(this.lblTransparentColorVal);
             this.Controls.Add(this.lblTransparentColor);
             this.Controls.Add(this.lblZoom);
@@ -366,14 +356,12 @@
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.lblValPaletteData);
             this.Controls.Add(this.lblValColorsInPal);
-            this.Controls.Add(this.lblValUnknVal);
             this.Controls.Add(this.lblValImageData);
             this.Controls.Add(this.lblValColorFormat);
             this.Controls.Add(this.lblValBytesPerCol);
             this.Controls.Add(this.lblValHeight);
             this.Controls.Add(this.lblValWidth);
             this.Controls.Add(this.lblColorsInPal);
-            this.Controls.Add(this.lblUnknVal);
             this.Controls.Add(this.lblValFilename);
             this.Controls.Add(this.lblPaletteData);
             this.Controls.Add(this.lblImageData);
@@ -409,14 +397,12 @@
         private System.Windows.Forms.Label lblImageData;
         private System.Windows.Forms.Label lblPaletteData;
         private System.Windows.Forms.Label lblValFilename;
-        private System.Windows.Forms.Label lblUnknVal;
         private System.Windows.Forms.Label lblColorsInPal;
         private System.Windows.Forms.Label lblValWidth;
         private System.Windows.Forms.Label lblValHeight;
         private System.Windows.Forms.Label lblValBytesPerCol;
         private System.Windows.Forms.Label lblValColorFormat;
         private System.Windows.Forms.Label lblValImageData;
-        private System.Windows.Forms.Label lblValUnknVal;
         private System.Windows.Forms.Label lblValColorsInPal;
         private System.Windows.Forms.Label lblValPaletteData;
         private System.Windows.Forms.Button btnSave;
@@ -425,6 +411,7 @@
         private System.Windows.Forms.Label lblZoom;
         private System.Windows.Forms.Label lblTransparentColorVal;
         private System.Windows.Forms.Label lblTransparentColor;
+        private System.Windows.Forms.Button btnViewPalette;
     }
 }
 

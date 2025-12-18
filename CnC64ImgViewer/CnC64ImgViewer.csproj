@@ -71,6 +71,18 @@
     <Compile Include="UI\EnhNumericUpDown.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="UI\FrmPalette.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FrmPalette.designer.cs">
+      <DependentUpon>FrmPalette.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\PalettePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\PalettePanel.designer.cs">
+      <DependentUpon>PalettePanel.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\PixelBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -98,6 +110,12 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="UI\FrmPalette.resx">
+      <DependentUpon>FrmPalette.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\PalettePanel.resx">
+      <DependentUpon>PalettePanel.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -109,6 +127,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="CnC64ImgViewer.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="cnc64logo.ico" />
     <Content Include="cnc64logo.png" />
   </ItemGroup>

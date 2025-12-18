@@ -12,6 +12,26 @@ namespace ColorManipulation
     public static class ImageUtils
     {
 
+        public static Color GetVisibleBorderColor(Color color)
+        {
+            float sat = color.GetSaturation();
+            float bri = color.GetBrightness();
+            if (color.GetSaturation() < .16)
+            {
+                // this color is grey
+                if (color.GetBrightness() < .5)
+                    return Color.White;
+                else
+                    return Color.Black;
+            }
+            else return GetInvertedColor(color);
+        }
+
+        public static Color GetInvertedColor(Color color)
+        {
+            return Color.FromArgb((Int32)(0x00FFFFFFu ^ (UInt32)color.ToArgb()));
+        }
+
         private static Color[] ConvertToColors(Byte[] colorData, Bitmap sourceImage, Int32? depth)
         {
             Int32 colDepth;
@@ -239,20 +259,20 @@ namespace ColorManipulation
             if (bitmap.PixelFormat == PixelFormat.Format8bppIndexed || bitmap.PixelFormat == PixelFormat.Format4bppIndexed)
             {
                 ColorPalette pal = bitmap.Palette;
-                // Find the transparent index on the palette.
-                Int32 transCol = -1;
+                // Find the transparent indexea on the palette.
+                List<Int32> transCols = new List<Int32>();
                 for (int i = 0; i < pal.Entries.Length; i++)
                 {
                     Color col = pal.Entries[i];
                     if (col.A != 255)
                     {
                         // Color palettes should only have one index acting as transparency. Not sure if there's a better way of getting it...
-                        transCol = i;
+                        transCols.Add(i);
                         break;
                     }
                 }
                 // none of the entries in the palette have transparency information.
-                if (transCol == -1)
+                if (transCols.Count == 0)
                     return false;
                 // Check pixels for existence of the transparent index.
                 Int32 colDepth = Image.GetPixelFormatSize(bitmap.PixelFormat);
@@ -273,7 +293,7 @@ namespace ColorManipulation
                         if (linepos > lineMax)
                             continue;
                         Byte b = bytes[i];
-                        if (b == transCol)
+                        if (transCols.Contains((Int32)b))
                             return true;
                     }
                 }
@@ -295,11 +315,11 @@ namespace ColorManipulation
                         if (linepos > lineMax)
                             continue;
                         Byte b = bytes[i];
-                        if ((b & 0x0F) == transCol)
+                        if (transCols.Contains((Int32)(b & 0x0F)))
                             return true;
                         if (halfByte && linepos == lineMax) // reached last byte of the line. If only half a byte to check on that, abort and go on with loop.
                             continue;
-                        if (((b & 0xF0) >> 4) == transCol)
+                        if (transCols.Contains((Int32)((b & 0xF0) >> 4)))
                             return true;
                     }
                 }

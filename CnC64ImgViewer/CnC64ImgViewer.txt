@@ -1,0 +1,18 @@
+CnC64ImgViewer
+-------------- Created by by Nyerguds (19/11/2016)
+
+This viewer allows viewing and saving the .IMG format found in the Nintendo 64
+ROM of the Command & Conquer game.
+
+The files can be extracted from the ROM with the Universal Game Decompressor
+(GEDecompressor), made by SubDrag.
+http://www.goldeneyevault.com/viewfile.php?id=213
+
+Features:
+-Allows viewing IMG files with zoom, and adjustable background color.
+-Shows the internal header values of the file.
+-Can display the file's color palette
+-Preserves the color palette when saving 4-bit and 8-bit paletted images.
+-Supports drag & drop for opening files
+-Can be used as command line converter with the following syntax:
+    CnC64ImgViewer.exe infile.img outfile.png

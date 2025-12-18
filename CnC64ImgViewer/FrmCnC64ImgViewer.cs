@@ -1,4 +1,5 @@
 ﻿using CnC64ImgViewer.Domain;
+using CnC64ImgViewer.Ui;
 using ColorManipulation;
 using Nyerguds.Util.UI;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -67,17 +69,17 @@ namespace CnC64ImgViewer
             lblValFilename.Text = Path.GetFileName(filename);
             lblValWidth.Text = rawImage.Width.ToString();
             lblValHeight.Text = rawImage.Height.ToString();
-            lblValBytesPerCol.Text = rawImage.BytesPerColor.ToString();
+            lblValBytesPerCol.Text = rawImage.ReadBytesPerColor.ToString();
             lblValColorFormat.Text = rawImage.ColorFormat > 2 ? "Unknown" : ("[" + rawImage.ColorFormat + "] " + rawImage.GetBpp() + " BPP" + (rawImage.ColorFormat < 2? " (paletted)" : String.Empty));
-            lblValUnknVal.Text = rawImage.Unknown3.ToString();
-            lblValColorsInPal.Text = rawImage.ColorsInPalette.ToString();
+            lblValColorsInPal.Text = rawImage.ColorsInPalette.ToString() + (rawImage.PaletteOffset == 0 && rawImage.ColorsInPalette != 0 && rawImage.ReadColorsInPalette  == 0 ? " (0 in header)" : String.Empty);
             lblValImageData.Text = (rawImage.ImageData != null ? rawImage.ImageData.Length : 0).ToString() + " bytes";
-            lblValPaletteData.Text = (rawImage.PaletteData != null && rawImage.PaletteOffset != 0 ? rawImage.PaletteData.Length : 0).ToString() + " bytes";
+            lblValPaletteData.Text = (rawImage.PaletteOffset != 0 && rawImage.PaletteData != null ? rawImage.PaletteData.Length : 0).ToString() + " bytes";
             Bitmap bm = rawImage.GetBitmap();
             picImage.Image = bm;
             RefreshImage();
             Boolean loadOk = bm != null;
             btnSave.Enabled = loadOk;
+            btnViewPalette.Enabled = rawImage.GetColorPalette() != null;
             if (loadOk)
                 btnSave.Focus();
 
@@ -86,19 +88,6 @@ namespace CnC64ImgViewer
         private String GetColorFormatInfo(ImgFile image)
         {
             return rawImage.ColorFormat > 2 ? "Unknown" : (rawImage.ColorFormat + ": " + rawImage.GetBpp() + "BPP" + (rawImage.ColorFormat < 2? " (paletted)" : String.Empty));
-        }
-
-        private void pictureBox1_DoubleClick(object sender, EventArgs e)
-        {
-            /*/
-            if (picImage.Image == null || filename == null)
-                return;
-            String saveName = filename;
-            if (filename.EndsWith(".img", StringComparison.InvariantCultureIgnoreCase))
-                saveName = saveName.Substring(0, saveName.Length - 4);
-            saveName += ".png";
-            ImageUtils.SaveImage((Bitmap)picImage.Image, saveName);
-            //*/
         }
 
         private void FrmCnC64ImgViewer_Shown(object sender, EventArgs e)
@@ -169,6 +158,18 @@ namespace CnC64ImgViewer
                 lblTransparentColorVal.BackColor = backgroundFillColor;
                 numZoom_ValueChanged(null, null);
             }
+        }
+
+        private void btnViewPalette_Click(object sender, EventArgs e)
+        {
+            if (this.rawImage == null)
+                return;
+            ColorPalette palette = this.rawImage.GetColorPalette();
+            if (palette == null || palette.Entries.Length == 0)
+                return;
+            Color[] colors = palette.Entries;
+            FrmPalette paldialog = new FrmPalette(colors, null, false, false, false, null, false, false, false, false, null);
+            paldialog.ShowDialog(this);
         }
 
     }

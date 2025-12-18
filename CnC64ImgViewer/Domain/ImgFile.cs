@@ -14,9 +14,18 @@ namespace CnC64ImgViewer.Domain
         public Int16 Height { get; private set; }
         /// <summary>Bytes per color on the palette. 0 for no palette (color mode 2 only)</summary>
         public Byte BytesPerColor { get; private set; }
+        public Byte ReadBytesPerColor { get; private set; }
         public Byte ColorFormat { get; private set; } // 0 = 4bpp, 1=8bpp, 2 = 16bpp
-        public Byte Unknown3 { get; private set; }
-        public Int32 ColorsInPalette { get; private set; }
+        public Int32 ColorsInPalette
+        {
+            get
+            {
+                if (this.ReadColorsInPalette > 0 || this.ColorFormat >= 2)
+                    return this.ReadColorsInPalette;
+                return (Int32)Math.Pow(2, Image.GetPixelFormatSize(this.GetPixelFormat()));
+            }
+        }
+        public Int32 ReadColorsInPalette { get; private set; }
         public Byte[] ImageData { get; private set; }
         public Byte[] PaletteData { get; private set; }
 
@@ -50,10 +59,11 @@ namespace CnC64ImgViewer.Domain
                 }
                 else if (img.ColorFormat != 2)
                 {
-                    Int32 palSize = img.ColorFormat == 1 ? 256 : 16;
-                    // generate greyscale palette
+                    Int32 palSize = img.ColorsInPalette;
+                    if (palSize == 0)
+                        palSize = (Int32)Math.Pow(2, Image.GetPixelFormatSize(img.GetPixelFormat()));
+                    // generate greyscale palette. Ignore original value here.
                     img.BytesPerColor = 4;
-                    img.ColorsInPalette = 256;
                     Byte[] paletteData = new Byte[palSize * 4];
                     Double fraction = 256.0 / (Double)(palSize-1);
                     Int32 steps = 255 / (palSize - 1);
@@ -129,7 +139,7 @@ namespace CnC64ImgViewer.Domain
             return pf;
         }
 
-        private ColorPalette GetColorPalette()
+        public ColorPalette GetColorPalette()
         {
             Byte[] paletteData = this.PaletteData;
             Int32 bytespercol = this.BytesPerColor;
@@ -138,15 +148,12 @@ namespace CnC64ImgViewer.Domain
             ColorPalette cp = new Bitmap(Width, Height, GetPixelFormat()).Palette;
             if (bytespercol != 2 && bytespercol != 4)
                 return cp;
-            Boolean noTransColFound = true;
-            for (Int32 i = 0; i < this.ColorsInPalette; i++)
+            Int32 palSize = this.ColorsInPalette;
+            if (palSize == 0)
+                palSize = (Int32)Math.Pow(2, Image.GetPixelFormatSize(this.GetPixelFormat()));
+            for (Int32 i = 0; i < cp.Entries.Length; i++)
             {
-                if (cp.Entries.Length <= i)
-                    break;
-                Color c = GetColor(paletteData, i, bytespercol, noTransColFound);
-                if (c.A == 0)
-                    noTransColFound = false;
-                cp.Entries[i] = c;
+                cp.Entries[i] = GetColor(paletteData, i, bytespercol, true);
             }
             return cp;
         }
@@ -162,6 +169,8 @@ namespace CnC64ImgViewer.Domain
         private static Color GetColor(Byte[] data, Int32 index, Int32 colorLength, Boolean allowTransparency)
         {
             Int32 offset = index * colorLength;
+            if (offset >= data.Length)
+                return Color.Empty;
             Int32 alpha = 255;
             Int32 blue;
             Int32 green;
@@ -207,11 +216,10 @@ namespace CnC64ImgViewer.Domain
             this.PaletteOffset = ArrayUtils.GetBEIntFromByteArray(headerBytes, 4);
             this.Width = ArrayUtils.GetBEShortFromByteArray(headerBytes, 8);
             this.Height = ArrayUtils.GetBEShortFromByteArray(headerBytes, 10);
-            this.BytesPerColor = headerBytes[12];
+            this.ReadBytesPerColor = headerBytes[12];
+            this.BytesPerColor = this.ReadBytesPerColor;
             this.ColorFormat = headerBytes[13];
-            this.Unknown3 = headerBytes[14];
-            Byte cols = headerBytes[15];
-            this.ColorsInPalette = cols == 0 && PaletteOffset != 0 ? 256 : cols;
+            this.ReadColorsInPalette = ArrayUtils.GetBEShortFromByteArray(headerBytes, 14);
         }
     }
 }
