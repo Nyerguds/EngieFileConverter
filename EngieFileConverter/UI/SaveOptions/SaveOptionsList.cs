@@ -1,7 +1,7 @@
-﻿using CnC64FileConverter.Domain.FileTypes;
+﻿using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util.Ui;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     public class SaveOptionsList : ControlsList<SaveOptionControl, SaveOption>
     {

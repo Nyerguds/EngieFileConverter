@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace CnC64FileConverter.UI
+namespace EngieFileConverter.UI
 {
     public partial class FrmSetAlpha : Form
     {

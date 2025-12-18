@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Windows.Forms;
-using CnC64FileConverter.Domain.FileTypes;
+using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util.Ui;
 
-namespace CnC64FileConverter.UI
+namespace EngieFileConverter.UI
 {
     public partial class FrmExtraOptions : Form, ListedControlController<SaveOption>
     {
@@ -13,7 +13,7 @@ namespace CnC64FileConverter.UI
         public FrmExtraOptions()
         {
             this.InitializeComponent();
-            this.Text = FrmCnC64FileConverter.GetTitle(false);
+            this.Text = FrmFileConverter.GetTitle(false);
             this.m_soi = new SaveOptionInfo();
         }
 

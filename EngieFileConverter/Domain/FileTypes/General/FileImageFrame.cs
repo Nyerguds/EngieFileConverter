@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageFrame : FileImagePng
     {
@@ -19,12 +19,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
         public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
-        public override FileClass FileClass  { get { return this.m_FileClass; } }
+        public override FileClass FileClass  { get { return this.m_FileClass ?? base.FileClass; } }
         public override Int32 ColorsInPalette { get { return this.m_ColorsInPalette != - 1 ? this.m_ColorsInPalette : base.ColorsInPalette; } }
         public override Boolean[] TransparencyMask { get { return this.m_transparencyMask; } }
 
         public void SetBitsPerColor(Int32 bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
-        public void SetFileClass(FileClass fileClass) { this.m_FileClass = fileClass; }
+        public void SetFileClass(FileClass? fileClass) { this.m_FileClass = fileClass; }
         
         public void SetColorsInPalette(Int32 colorsInPalette) { this.m_ColorsInPalette = colorsInPalette; }
         public void SetTransparencyMask(Boolean[] transparencyMask) { this.m_transparencyMask = transparencyMask; }
@@ -33,7 +33,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected String frameName;
         protected String m_BaseType;
         protected String m_Description;
-        protected FileClass m_FileClass;
+        protected FileClass? m_FileClass;
         
         public void SetFrameFileName(String frameName)
         {

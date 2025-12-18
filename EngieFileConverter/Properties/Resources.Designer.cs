@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace CnC64FileConverter.Properties {
+namespace EngieFileConverter.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace CnC64FileConverter.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("CnC64FileConverter.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("EngieFileConverter.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -63,9 +63,9 @@ namespace CnC64FileConverter.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon cnc64logo {
+        internal static System.Drawing.Icon EngieIcon {
             get {
-                object obj = ResourceManager.GetObject("cnc64logo", resourceCulture);
+                object obj = ResourceManager.GetObject("EngieIcon", resourceCulture);
                 return ((System.Drawing.Icon)(obj));
             }
         }

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows.Forms;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     partial class SaveOptionString
     {

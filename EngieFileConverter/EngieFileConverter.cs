@@ -1,6 +1,4 @@
-﻿using CnC64FileConverter.Domain;
-using CnC64FileConverter.Domain.FileTypes;
-using CnC64FileConverter.UI;
+﻿using EngieFileConverter.Domain;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
@@ -12,29 +10,33 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using EngieFileConverter.Domain.FileTypes;
+using EngieFileConverter.UI;
 using Nyerguds.GameData.Westwood;
 
-namespace CnC64FileConverter
+namespace EngieFileConverter
 {
-    public static class CnC64ImgConverter
+    public static class EngieFileConverter
     {
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         public static Int32 Run(String[] args)
         {
+#if DEBUG
             if (args.Length > 1)
                 return ConvertImage(args);
+#endif
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FrmCnC64FileConverter(args));
+            Application.Run(new FrmFileConverter(args));
             return 0;
         }
 
         [DllImport("Kernel32.dll")]
         public static extern Boolean AttachConsole(Int32 processId);
 
-
+#if DEBUG
         public static Int32 ConvertImage(String[] args)
         {
             Boolean hasconsole = AttachConsole(-1);
@@ -297,6 +299,6 @@ namespace CnC64FileConverter
 
             return 0;
         }
-
+#endif
     }
 }

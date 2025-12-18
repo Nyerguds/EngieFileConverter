@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageBmp : FileImage
     {

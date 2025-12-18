@@ -4,7 +4,7 @@ using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.Linq;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImagePng: FileImage
     {

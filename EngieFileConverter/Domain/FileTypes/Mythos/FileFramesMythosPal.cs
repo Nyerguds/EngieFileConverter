@@ -5,7 +5,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using Nyerguds.ImageManipulation;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesMythosPal : FileFramesMythosVgs
     {

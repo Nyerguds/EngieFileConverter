@@ -2,7 +2,7 @@
 using System.Windows.Forms;
 using Nyerguds.Util.UI;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     partial class SaveOptionChoices
     {
@@ -38,8 +38,6 @@ namespace CnC64FileConverter.UI.SaveOptions
             // 
             // lblDescription
             // 
-            this.lblDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
             this.lblDescription.Location = new System.Drawing.Point(6, 3);
             this.lblDescription.Name = "lblDescription";
             this.lblDescription.Size = new System.Drawing.Size(179, 30);
@@ -49,7 +47,6 @@ namespace CnC64FileConverter.UI.SaveOptions
             // 
             // cmbChoices
             // 
-            this.cmbChoices.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.cmbChoices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbChoices.Location = new System.Drawing.Point(188, 8);
             this.cmbChoices.Name = "cmbChoices";

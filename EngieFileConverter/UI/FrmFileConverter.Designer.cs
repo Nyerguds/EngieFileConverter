@@ -1,6 +1,6 @@
-﻿namespace CnC64FileConverter.UI
+﻿namespace EngieFileConverter.UI
 {
-    partial class FrmCnC64FileConverter
+    partial class FrmFileConverter
     {
         /// <summary>
         /// Required designer variable.
@@ -39,9 +39,6 @@
             this.lblValHeight = new System.Windows.Forms.Label();
             this.lblValColorFormat = new System.Windows.Forms.Label();
             this.lblValColorsInPal = new System.Windows.Forms.Label();
-            this.lblZoom = new System.Windows.Forms.Label();
-            this.lblTransparentColorVal = new System.Windows.Forms.Label();
-            this.lblTransparentColor = new System.Windows.Forms.Label();
             this.lblType = new System.Windows.Forms.Label();
             this.lblValType = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
@@ -57,9 +54,6 @@
             this.tsmiToPlateaus = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiToHeightMapAdv = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiTo65x65HeightMap = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiTilesets = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiTilesetsToFrames = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiTilesetsToTilesetFiles = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiShadowSplit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiCombineShadows = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSplitShadows = new System.Windows.Forms.ToolStripMenuItem();
@@ -76,14 +70,11 @@
             this.cmbPalettes = new Nyerguds.Util.UI.ComboBoxSmartWidth();
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorViewer = new Nyerguds.Util.UI.PalettePanel();
-            this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
-            this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
-            this.picImage = new Nyerguds.Util.UI.PixelBox();
+            this.pzpImage = new Nyerguds.Util.UI.PixelZoomPanel();
+            this.tsmiImageToFrames = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiFramesToSingleImage = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numZoom)).BeginInit();
-            this.pnlImageScroll.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picImage)).BeginInit();
             this.SuspendLayout();
             // 
             // lblFilename
@@ -186,36 +177,6 @@
             this.lblValColorsInPal.Text = "---";
             this.lblValColorsInPal.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // lblZoom
-            // 
-            this.lblZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblZoom.Location = new System.Drawing.Point(512, 527);
-            this.lblZoom.Name = "lblZoom";
-            this.lblZoom.Size = new System.Drawing.Size(72, 20);
-            this.lblZoom.TabIndex = 23;
-            this.lblZoom.Text = "Zoom factor:";
-            this.lblZoom.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
-            // lblTransparentColorVal
-            // 
-            this.lblTransparentColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblTransparentColorVal.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.lblTransparentColorVal.Location = new System.Drawing.Point(497, 527);
-            this.lblTransparentColorVal.Name = "lblTransparentColorVal";
-            this.lblTransparentColorVal.Size = new System.Drawing.Size(20, 20);
-            this.lblTransparentColorVal.TabIndex = 118;
-            this.lblTransparentColorVal.Click += new System.EventHandler(this.LblTransparentColorVal_Click);
-            // 
-            // lblTransparentColor
-            // 
-            this.lblTransparentColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblTransparentColor.Location = new System.Drawing.Point(416, 527);
-            this.lblTransparentColor.Name = "lblTransparentColor";
-            this.lblTransparentColor.Size = new System.Drawing.Size(75, 20);
-            this.lblTransparentColor.TabIndex = 23;
-            this.lblTransparentColor.Text = "Background:";
-            this.lblTransparentColor.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            // 
             // lblType
             // 
             this.lblType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -262,31 +223,31 @@
             // 
             this.tsmiOpen.Name = "tsmiOpen";
             this.tsmiOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.tsmiOpen.Size = new System.Drawing.Size(202, 22);
-            this.tsmiOpen.Text = "&Open File";
+            this.tsmiOpen.Size = new System.Drawing.Size(200, 22);
+            this.tsmiOpen.Text = "&Open file";
             this.tsmiOpen.Click += new System.EventHandler(this.TsmiOpen_Click);
             // 
             // tsmiSave
             // 
             this.tsmiSave.Name = "tsmiSave";
             this.tsmiSave.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.tsmiSave.Size = new System.Drawing.Size(202, 22);
-            this.tsmiSave.Text = "&Save File...";
+            this.tsmiSave.Size = new System.Drawing.Size(200, 22);
+            this.tsmiSave.Text = "&Save file...";
             this.tsmiSave.Click += new System.EventHandler(this.TsmiSave_Click);
             // 
             // tsmiSaveFrames
             // 
             this.tsmiSaveFrames.Name = "tsmiSaveFrames";
             this.tsmiSaveFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F)));
-            this.tsmiSaveFrames.Size = new System.Drawing.Size(202, 22);
-            this.tsmiSaveFrames.Text = "Save as &Frames...";
+            this.tsmiSaveFrames.Size = new System.Drawing.Size(200, 22);
+            this.tsmiSaveFrames.Text = "Save as &frames...";
             this.tsmiSaveFrames.Click += new System.EventHandler(this.TsmiSaveFrames_Click);
             // 
             // tsmiExit
             // 
             this.tsmiExit.Name = "tsmiExit";
             this.tsmiExit.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.tsmiExit.Size = new System.Drawing.Size(202, 22);
+            this.tsmiExit.Size = new System.Drawing.Size(200, 22);
             this.tsmiExit.Text = "Exit";
             this.tsmiExit.Click += new System.EventHandler(this.TsmiExit_Click);
             // 
@@ -294,8 +255,9 @@
             // 
             this.tsmiEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiCopy,
+            this.tsmiImageToFrames,
+            this.tsmiFramesToSingleImage,
             this.tsmiHeightMapTools,
-            this.tsmiTilesets,
             this.tsmiShadowSplit,
             this.tsmiAnimation,
             this.tsmiTestBed});
@@ -307,7 +269,7 @@
             // 
             this.tsmiCopy.Name = "tsmiCopy";
             this.tsmiCopy.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
-            this.tsmiCopy.Size = new System.Drawing.Size(197, 22);
+            this.tsmiCopy.Size = new System.Drawing.Size(246, 22);
             this.tsmiCopy.Text = "Copy";
             this.tsmiCopy.Click += new System.EventHandler(this.tsmiCopy_Click);
             // 
@@ -319,14 +281,13 @@
             this.tsmiToHeightMapAdv,
             this.tsmiTo65x65HeightMap});
             this.tsmiHeightMapTools.Name = "tsmiHeightMapTools";
-            this.tsmiHeightMapTools.Size = new System.Drawing.Size(197, 22);
-            this.tsmiHeightMapTools.Text = "Height map generation";
+            this.tsmiHeightMapTools.Size = new System.Drawing.Size(246, 22);
+            this.tsmiHeightMapTools.Text = "N64 height map generation";
             // 
             // tsmiToHeightMap
             // 
             this.tsmiToHeightMap.Name = "tsmiToHeightMap";
-            this.tsmiToHeightMap.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
-            this.tsmiToHeightMap.Size = new System.Drawing.Size(322, 22);
+            this.tsmiToHeightMap.Size = new System.Drawing.Size(285, 22);
             this.tsmiToHeightMap.Text = "Map to &basic height map image";
             this.tsmiToHeightMap.Visible = false;
             this.tsmiToHeightMap.Click += new System.EventHandler(this.TsmiToHeightMap_Click);
@@ -334,48 +295,23 @@
             // tsmiToPlateaus
             // 
             this.tsmiToPlateaus.Name = "tsmiToPlateaus";
-            this.tsmiToPlateaus.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
-            this.tsmiToPlateaus.Size = new System.Drawing.Size(322, 22);
+            this.tsmiToPlateaus.Size = new System.Drawing.Size(285, 22);
             this.tsmiToPlateaus.Text = "Map to basic &levels image";
             this.tsmiToPlateaus.Click += new System.EventHandler(this.TsmiToPlateaus_Click);
             // 
             // tsmiToHeightMapAdv
             // 
             this.tsmiToHeightMapAdv.Name = "tsmiToHeightMapAdv";
-            this.tsmiToHeightMapAdv.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.H)));
-            this.tsmiToHeightMapAdv.Size = new System.Drawing.Size(322, 22);
+            this.tsmiToHeightMapAdv.Size = new System.Drawing.Size(285, 22);
             this.tsmiToHeightMapAdv.Text = "Map to &height map using levels";
             this.tsmiToHeightMapAdv.Click += new System.EventHandler(this.TsmiToHeightMapAdv_Click);
             // 
             // tsmiTo65x65HeightMap
             // 
             this.tsmiTo65x65HeightMap.Name = "tsmiTo65x65HeightMap";
-            this.tsmiTo65x65HeightMap.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
-            this.tsmiTo65x65HeightMap.Size = new System.Drawing.Size(322, 22);
+            this.tsmiTo65x65HeightMap.Size = new System.Drawing.Size(285, 22);
             this.tsmiTo65x65HeightMap.Text = "64x64 image to 65x65 height map &image";
             this.tsmiTo65x65HeightMap.Click += new System.EventHandler(this.TsmiTo65x65HeightMap_Click);
-            // 
-            // tsmiTilesets
-            // 
-            this.tsmiTilesets.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsmiTilesetsToFrames,
-            this.tsmiTilesetsToTilesetFiles});
-            this.tsmiTilesets.Name = "tsmiTilesets";
-            this.tsmiTilesets.Size = new System.Drawing.Size(197, 22);
-            this.tsmiTilesets.Text = "Tilesets";
-            this.tsmiTilesets.Visible = false;
-            // 
-            // tsmiTilesetsToFrames
-            // 
-            this.tsmiTilesetsToFrames.Name = "tsmiTilesetsToFrames";
-            this.tsmiTilesetsToFrames.Size = new System.Drawing.Size(202, 22);
-            this.tsmiTilesetsToFrames.Text = "Tilesets to single images";
-            // 
-            // tsmiTilesetsToTilesetFiles
-            // 
-            this.tsmiTilesetsToTilesetFiles.Name = "tsmiTilesetsToTilesetFiles";
-            this.tsmiTilesetsToTilesetFiles.Size = new System.Drawing.Size(202, 22);
-            this.tsmiTilesetsToTilesetFiles.Text = "Tilesets to tileset files";
             // 
             // tsmiShadowSplit
             // 
@@ -383,15 +319,15 @@
             this.tsmiCombineShadows,
             this.tsmiSplitShadows});
             this.tsmiShadowSplit.Name = "tsmiShadowSplit";
-            this.tsmiShadowSplit.Size = new System.Drawing.Size(197, 22);
-            this.tsmiShadowSplit.Text = "Shadow splitting";
+            this.tsmiShadowSplit.Size = new System.Drawing.Size(246, 22);
+            this.tsmiShadowSplit.Text = "TS shadow splitting";
             // 
             // tsmiCombineShadows
             // 
             this.tsmiCombineShadows.Name = "tsmiCombineShadows";
             this.tsmiCombineShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
             this.tsmiCombineShadows.Size = new System.Drawing.Size(217, 22);
-            this.tsmiCombineShadows.Text = "Combine shadows";
+            this.tsmiCombineShadows.Text = "Co&mbine shadows";
             this.tsmiCombineShadows.Click += new System.EventHandler(this.TsmiCombineShadows_Click);
             // 
             // tsmiSplitShadows
@@ -399,7 +335,7 @@
             this.tsmiSplitShadows.Name = "tsmiSplitShadows";
             this.tsmiSplitShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T)));
             this.tsmiSplitShadows.Size = new System.Drawing.Size(217, 22);
-            this.tsmiSplitShadows.Text = "Split shadows";
+            this.tsmiSplitShadows.Text = "Spli&t shadows";
             this.tsmiSplitShadows.Click += new System.EventHandler(this.TsmiSplitShadows_Click);
             // 
             // tsmiAnimation
@@ -407,7 +343,7 @@
             this.tsmiAnimation.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiPasteOnFrames});
             this.tsmiAnimation.Name = "tsmiAnimation";
-            this.tsmiAnimation.Size = new System.Drawing.Size(197, 22);
+            this.tsmiAnimation.Size = new System.Drawing.Size(246, 22);
             this.tsmiAnimation.Text = "Animation";
             // 
             // tsmiPasteOnFrames
@@ -415,13 +351,13 @@
             this.tsmiPasteOnFrames.Name = "tsmiPasteOnFrames";
             this.tsmiPasteOnFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
             this.tsmiPasteOnFrames.Size = new System.Drawing.Size(244, 22);
-            this.tsmiPasteOnFrames.Text = "Paste image on frames...";
+            this.tsmiPasteOnFrames.Text = "&Paste image on frames...";
             this.tsmiPasteOnFrames.Click += new System.EventHandler(this.TsmiPasteOnFrames_Click);
             // 
             // tsmiTestBed
             // 
             this.tsmiTestBed.Name = "tsmiTestBed";
-            this.tsmiTestBed.Size = new System.Drawing.Size(197, 22);
+            this.tsmiTestBed.Size = new System.Drawing.Size(246, 22);
             this.tsmiTestBed.Text = "Test bed";
             this.tsmiTestBed.Visible = false;
             this.tsmiTestBed.Click += new System.EventHandler(this.TsmiTestBed);
@@ -515,6 +451,9 @@
             0,
             -2147483648});
             this.numFrame.Name = "numFrame";
+            this.numFrame.SelectedText = "";
+            this.numFrame.SelectionLength = 0;
+            this.numFrame.SelectionStart = 0;
             this.numFrame.Size = new System.Drawing.Size(68, 20);
             this.numFrame.TabIndex = 123;
             this.numFrame.Value = new decimal(new int[] {
@@ -543,61 +482,40 @@
             this.palColorViewer.ColorLabelMouseDoubleClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseDoubleClick);
             this.palColorViewer.ColorLabelMouseClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseClick);
             // 
-            // numZoom
+            // pzpImage
             // 
-            this.numZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.numZoom.EnteredValue = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.numZoom.Location = new System.Drawing.Point(590, 527);
-            this.numZoom.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.numZoom.Name = "numZoom";
-            this.numZoom.Size = new System.Drawing.Size(68, 20);
-            this.numZoom.TabIndex = 4;
-            this.numZoom.Value = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.numZoom.ValueChanged += new System.EventHandler(this.NumZoom_ValueChanged);
-            // 
-            // pnlImageScroll
-            // 
-            this.pnlImageScroll.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.pzpImage.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pnlImageScroll.AutoScroll = true;
-            this.pnlImageScroll.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.pnlImageScroll.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pnlImageScroll.Controls.Add(this.picImage);
-            this.pnlImageScroll.Location = new System.Drawing.Point(12, 30);
-            this.pnlImageScroll.Margin = new System.Windows.Forms.Padding(0);
-            this.pnlImageScroll.Name = "pnlImageScroll";
-            this.pnlImageScroll.Size = new System.Drawing.Size(646, 489);
-            this.pnlImageScroll.TabIndex = 3;
-            this.pnlImageScroll.TabStop = true;
-            this.pnlImageScroll.MouseScroll += new System.Windows.Forms.MouseEventHandler(this.PnlImageScroll_MouseScroll);
+            this.pzpImage.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.pzpImage.BackgroundFillColor = System.Drawing.Color.Empty;
+            this.pzpImage.CustomColors = null;
+            this.pzpImage.Image = null;
+            this.pzpImage.ImageVisible = false;
+            this.pzpImage.Location = new System.Drawing.Point(12, 30);
+            this.pzpImage.Margin = new System.Windows.Forms.Padding(0);
+            this.pzpImage.Name = "pzpImage";
+            this.pzpImage.Size = new System.Drawing.Size(646, 522);
+            this.pzpImage.TabIndex = 316;
+            this.pzpImage.ZoomFactor = 1;
             // 
-            // picImage
+            // tsmiImageToFrames
             // 
-            this.picImage.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.picImage.Location = new System.Drawing.Point(0, 0);
-            this.picImage.Margin = new System.Windows.Forms.Padding(0);
-            this.picImage.Name = "picImage";
-            this.picImage.Size = new System.Drawing.Size(100, 100);
-            this.picImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picImage.TabIndex = 0;
-            this.picImage.TabStop = false;
-            this.picImage.Visible = false;
-            this.picImage.Click += new System.EventHandler(this.PicImage_Click);
+            this.tsmiImageToFrames.Name = "tsmiImageToFrames";
+            this.tsmiImageToFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
+            this.tsmiImageToFrames.Size = new System.Drawing.Size(246, 22);
+            this.tsmiImageToFrames.Text = "&Image to frames...";
+            this.tsmiImageToFrames.Click += new System.EventHandler(this.TsmiImageToFramesClick);
             // 
-            // FrmCnC64FileConverter
+            // tsmiFramesToSingleImage
+            // 
+            this.tsmiFramesToSingleImage.Name = "tsmiFramesToSingleImage";
+            this.tsmiFramesToSingleImage.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
+            this.tsmiFramesToSingleImage.Size = new System.Drawing.Size(246, 22);
+            this.tsmiFramesToSingleImage.Text = "F&rames to single image...";
+            this.tsmiFramesToSingleImage.Click += new System.EventHandler(this.TsmiFramesToSingleImageClick);
+            // 
+            // FrmFileConverter
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -612,10 +530,6 @@
             this.Controls.Add(this.numFrame);
             this.Controls.Add(this.palColorViewer);
             this.Controls.Add(this.lblValType);
-            this.Controls.Add(this.lblTransparentColorVal);
-            this.Controls.Add(this.lblTransparentColor);
-            this.Controls.Add(this.lblZoom);
-            this.Controls.Add(this.numZoom);
             this.Controls.Add(this.lblValColorsInPal);
             this.Controls.Add(this.lblValColorFormat);
             this.Controls.Add(this.lblValHeight);
@@ -628,22 +542,20 @@
             this.Controls.Add(this.lblType);
             this.Controls.Add(this.lblWidth);
             this.Controls.Add(this.lblFilename);
-            this.Controls.Add(this.pnlImageScroll);
             this.Controls.Add(this.menuStrip1);
-            this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
+            this.Controls.Add(this.pzpImage);
+            this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
+            this.KeyPreview = true;
             this.MainMenuStrip = this.menuStrip1;
             this.MinimumSize = new System.Drawing.Size(700, 593);
-            this.Name = "FrmCnC64FileConverter";
-            this.Text = "C&C64 File Converter - Created by Nyerguds";
-            this.Shown += new System.EventHandler(this.FrmCnC64FileConverter_Shown);
+            this.Name = "FrmFileConverter";
+            this.Text = "Engie File Converter - Created by Nyerguds";
+            this.Shown += new System.EventHandler(this.FrmFileConverter_Shown);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Frm_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Frm_DragEnter);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numZoom)).EndInit();
-            this.pnlImageScroll.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.picImage)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -651,8 +563,6 @@
 
         #endregion
 
-        private Nyerguds.Util.UI.PixelBox picImage;
-        private Nyerguds.Util.UI.SelectablePanel pnlImageScroll;
         private System.Windows.Forms.Label lblFilename;
         private System.Windows.Forms.Label lblWidth;
         private System.Windows.Forms.Label lblHeight;
@@ -663,10 +573,6 @@
         private System.Windows.Forms.Label lblValHeight;
         private System.Windows.Forms.Label lblValColorFormat;
         private System.Windows.Forms.Label lblValColorsInPal;
-        private Nyerguds.Util.UI.EnhNumericUpDown numZoom;
-        private System.Windows.Forms.Label lblZoom;
-        private System.Windows.Forms.Label lblTransparentColorVal;
-        private System.Windows.Forms.Label lblTransparentColor;
         private System.Windows.Forms.Label lblType;
         private System.Windows.Forms.Label lblValType;
         private System.Windows.Forms.MenuStrip menuStrip1;
@@ -684,15 +590,11 @@
         private Nyerguds.Util.UI.EnhNumericUpDown numFrame;
         private System.Windows.Forms.Label lblFrame;
         private System.Windows.Forms.Label lblNrOfFrames;
-        private System.Windows.Forms.ToolStripMenuItem tsmiTilesets;
-        private System.Windows.Forms.ToolStripMenuItem tsmiTilesetsToFrames;
-        private System.Windows.Forms.ToolStripMenuItem tsmiTilesetsToTilesetFiles;
         private Nyerguds.Util.UI.ComboBoxSmartWidth cmbPalettes;
         private System.Windows.Forms.Button btnResetPalette;
         private System.Windows.Forms.Button btnSavePalette;
         private System.Windows.Forms.ToolStripMenuItem tsmiCopy;
         private System.Windows.Forms.ToolTip toolTip1;
-        private System.Windows.Forms.ToolStripMenuItem tsmiSaveFrames;
         private System.Windows.Forms.Label lblInfo;
         private System.Windows.Forms.Label lblValInfo;
         private System.Windows.Forms.ToolStripMenuItem tsmiShadowSplit;
@@ -701,6 +603,10 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiAnimation;
         private System.Windows.Forms.ToolStripMenuItem tsmiPasteOnFrames;
         private System.Windows.Forms.ToolStripMenuItem tsmiTestBed;
+        private System.Windows.Forms.ToolStripMenuItem tsmiSaveFrames;
+        private Nyerguds.Util.UI.PixelZoomPanel pzpImage;
+        private System.Windows.Forms.ToolStripMenuItem tsmiImageToFrames;
+        private System.Windows.Forms.ToolStripMenuItem tsmiFramesToSingleImage;
     }
 }
 

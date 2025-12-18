@@ -8,7 +8,7 @@ using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesWwShpCc : SupportedFileType
     {
@@ -263,8 +263,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             for (Int32 i = 0; i < frames; i++)
             {
                 Int32 stride;
-                Byte[] uncompr = ImageUtils.GetImageData(fileToSave.Frames[i].GetBitmap(), out stride);
-                uncompr = ImageUtils.CollapseStride(uncompr, width, height, 8, ref stride);
+                Byte[] uncompr = ImageUtils.GetImageData(fileToSave.Frames[i].GetBitmap(), out stride, true);
                 framesUncompr[i] = uncompr;
                 // Detect identical frames.
                 if (!trimDuplicates)

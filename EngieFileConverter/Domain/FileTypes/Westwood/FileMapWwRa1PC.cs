@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using CnC64FileConverter.Domain.CCTypes;
+using EngieFileConverter.Domain.CCTypes;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileMapWwRa1Pc : SupportedFileType
     {

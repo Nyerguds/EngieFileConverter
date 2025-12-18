@@ -4,7 +4,7 @@ using System.IO;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileMapWwCc1N64 : FileMapWwCc1Pc
     {

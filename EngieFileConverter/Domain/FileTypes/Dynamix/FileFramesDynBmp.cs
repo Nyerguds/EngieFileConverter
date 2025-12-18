@@ -8,7 +8,7 @@ using Nyerguds.GameData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
 
     public class FileFramesDynBmp : SupportedFileType
@@ -321,7 +321,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 width = bm.Width;
                 Int32 height = bm.Height;
                 Byte[] frameData = ImageUtils.GetImageData(bm, out stride);
-                frameBytes[i] = ImageUtils.CollapseStride(frameData, width, height, bpp, ref stride);
+                frameBytes[i] = ImageUtils.CollapseStride(frameData, width, height, bpp, ref stride, true);
                 frameWidths[i] = width;
                 frameHeights[i] = height;
             }

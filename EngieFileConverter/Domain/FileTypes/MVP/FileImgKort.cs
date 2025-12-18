@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
 
     public class FileImgKort : SupportedFileType
@@ -75,8 +75,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (image.Width != 320 || image.Height != 240 || image.PixelFormat != PixelFormat.Format8bppIndexed)
                 throw new NotSupportedException("Only 8-bit 320x240 images can be saved as KORT image file!");
             Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride);
-            imageData = ImageUtils.CollapseStride(imageData, 320, 240, 8, ref stride);
+            // stride collapse is probably not needed... 320 is divisible by 4.
+            Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
             Int32 dataLen = imageData.Length;
             Byte[] flippedData = new Byte[dataLen];
             for (Int32 y = 0; y < this.Height; y++)

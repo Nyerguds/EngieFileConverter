@@ -1,9 +1,9 @@
 ﻿using System;
-using CnC64FileConverter.Domain.FileTypes;
+using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 using Nyerguds.Util.Ui;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     public partial class SaveOptionBoolean : SaveOptionControl
     {

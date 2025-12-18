@@ -7,7 +7,7 @@ using Nyerguds.GameData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImgDynBmpMtx : FileFramesDynBmp
     {

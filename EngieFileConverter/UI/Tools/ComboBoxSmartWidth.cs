@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace Nyerguds.Util.UI
@@ -21,28 +22,28 @@ namespace Nyerguds.Util.UI
             Boolean noDisplayMember = String.IsNullOrEmpty(this.DisplayMember);
             foreach (Object o in this.Items)
             {
+                if (o == null)
+                    continue;
                 String toCheck;
                 if (noDisplayMember)
-                    toCheck = o == null ? String.Empty : o.ToString();
+                    toCheck = o.ToString();
                 else
                 {
-                    Object val = null;
-                    try { val = o.GetType().GetProperty(this.DisplayMember).GetValue(o, null); }
-                    catch { /* ignore; if it fails, just consider it empty. */ }
+                    PropertyInfo pi = o.GetType().GetProperty(this.DisplayMember);
+                    Object val = pi == null ? null : pi.GetValue(o, null);
                     toCheck = val == null ? String.Empty : val.ToString();
                 }
-                if (toCheck.Length > 0)
-                {
-                    Int32 newWidth = TextRenderer.MeasureText(toCheck, this.Font).Width;
-                    Int32 newWidth2;
-                    using (Graphics g = this.CreateGraphics())
-                        newWidth2 = g.MeasureString(toCheck, this.Font).ToSize().Width;
-                    newWidth = Math.Max(newWidth, newWidth2);
-                    if (this.DrawMode == DrawMode.OwnerDrawFixed)
-                        newWidth += 4;
-                    if (newWidth > widestStringInPixels)
-                        widestStringInPixels = newWidth;
-                }
+                if (toCheck.Length <= 0)
+                    continue;
+                Int32 newWidth = TextRenderer.MeasureText(toCheck, this.Font).Width;
+                Int32 newWidth2;
+                using (Graphics g = this.CreateGraphics())
+                    newWidth2 = g.MeasureString(toCheck, this.Font).ToSize().Width;
+                newWidth = Math.Max(newWidth, newWidth2);
+                if (this.DrawMode == DrawMode.OwnerDrawFixed)
+                    newWidth += 4;
+                if (newWidth > widestStringInPixels)
+                    widestStringInPixels = newWidth;
             }
             if (hasScrollBar)
                 widestStringInPixels += SystemInformation.VerticalScrollBarWidth;

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CnC64FileConverter", "CnC64FileConverter.csproj", "{75423176-29BC-40D8-9D33-829E157F0824}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngieFileConverter", "EngieFileConverter.csproj", "{75423176-29BC-40D8-9D33-829E157F0824}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IniHandler", "..\Nyerguds.Ini\IniHandler.csproj", "{925C0B51-E256-4A5C-8B01-F46AA90982D5}"
 EndProject

@@ -51,15 +51,25 @@ namespace Nyerguds.Util.UI
         private Decimal _EnteredValue = 0;
         private Boolean _ScrollValidatesEnter = true;
         private Boolean _UpDownValidatesEnter = true;
+        private TextBox textBox;
 
         public EnhNumericUpDown()
         {
             this.MouseWheelIncrement = 1;
             this.KeyDown += this.CheckKeyPress;
-            this.TextChanged += this.EnhNumericUpDown_TextChanged;
+            foreach (Control control in this.Controls)
+            {
+                if (control is TextBox)
+                {
+                    this.textBox = control as TextBox;
+                    break;
+                }
+            }
         }
 
-        private void EnhNumericUpDown_TextChanged(Object sender, EventArgs e)
+        public TextBox TextBox { get { return this.textBox; } }
+        
+        protected override void OnTextChanged(EventArgs e)
         {
             Boolean allowminus = this.Minimum < 0;
             if (Regex.IsMatch(this.Text, allowminus ? "^-?\\d*$" : "^\\d*$"))
@@ -68,7 +78,6 @@ namespace Nyerguds.Util.UI
             System.Media.SystemSounds.Beep.Play();
             StringBuilder text = new StringBuilder();
             String txt = this.Text;
-            Boolean hasMinus = txt.StartsWith("-");
             Int32 firstIllegalChar = 0;
             for (Int32 i = 0; i < txt.Length; i++)
             {
@@ -81,14 +90,44 @@ namespace Nyerguds.Util.UI
                 }
                 text.Append(c);
             }
-            Int32 value;
-            if (Int32.TryParse(text.ToString(), out value))
+            String filteredText = text.ToString();
+            Decimal value;
+            if (Decimal.TryParse(filteredText, out value))
             {
-                value = Math.Max((Int32)this.Minimum, Math.Min((Int32)this.Maximum, value));
+                value = Math.Max((Int32)this.Minimum, Math.Min(this.Maximum, value));
                 // will trigger this function again, but that's okay, it'll immediately fail the regex and abort.
                 this.Text = value.ToString();
             }
-            this.Select(firstIllegalChar,0);
+            else
+                this.Text = filteredText;
+            this.Select(firstIllegalChar, 0);
+        }
+
+        /// <summary>Gets or sets the starting point of text selected in the text box.</summary>
+        public Int32 SelectionStart
+        {
+            get { return this.textBox.SelectionStart; }
+            set { this.textBox.SelectionStart = value; }
+        }
+
+        /// <summary>Gets or sets the number of characters selected in the text box.</summary>
+        public Int32 SelectionLength
+        {
+            get { return this.textBox.SelectionLength; }
+            set { this.textBox.SelectionLength = value; }
+        }
+
+        /// <summary>Gets or sets a value indicating the currently selected text in the control.</summary>
+        public String SelectedText
+        {
+            get { return this.textBox.SelectedText; }
+            set { this.textBox.SelectedText = value; }
+        }
+
+        public void SelectAll()
+        {
+            this.textBox.SelectionStart = 0;
+            this.textBox.SelectionLength = this.TextBox.TextLength;
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
@@ -139,7 +178,7 @@ namespace Nyerguds.Util.UI
         {
             if (value < this.Minimum)
                 value = this.Minimum;
-            if (value > this.Maximum)
+            else if (value > this.Maximum)
                 value = this.Maximum;
             return value;
         }

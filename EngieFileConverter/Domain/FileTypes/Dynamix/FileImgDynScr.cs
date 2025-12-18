@@ -8,7 +8,7 @@ using Nyerguds.GameData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImgDynScr : SupportedFileType
     {
@@ -276,7 +276,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 chunks.Add(dimChunk);
             }
             Int32 stride;
-            Byte[] data = ImageUtils.GetImageData(image, out stride);
+            // collapse stride should not be needed since this type only handles widths divisible by 8, but whatevs.
+            Byte[] data = ImageUtils.GetImageData(image, out stride, true);
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
                 throw new NotSupportedException("Unknown compression type " + compressionType);
 

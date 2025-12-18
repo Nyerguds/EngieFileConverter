@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CnC64FileConverter")]
-[assembly: AssemblyDescription("C&C Nintendo '64 File Converter")]
+[assembly: AssemblyTitle("EngieFileConverter")]
+[assembly: AssemblyDescription("Engie File Converter")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Nyerguds Industries")]
-[assembly: AssemblyProduct("CnC64FileConverter")]
+[assembly: AssemblyProduct("EngieFileConverter")]
 [assembly: AssemblyCopyright("Copyright © 2016-2018 Nyerguds")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -33,4 +33,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.2.20")]
+[assembly: AssemblyFileVersion("1.3.0")]

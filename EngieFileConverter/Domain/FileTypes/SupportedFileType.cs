@@ -7,7 +7,7 @@ using System.Linq;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public abstract class SupportedFileType : FileTypeBroadcaster, IDisposable
     {

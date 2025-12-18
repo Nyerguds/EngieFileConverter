@@ -317,31 +317,68 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The raw bytes of the image.</returns>
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride)
         {
-            return GetImageData(sourceImage, out stride, sourceImage.PixelFormat);
+            return GetImageData(sourceImage, out stride, sourceImage.PixelFormat, false);
         }
 
         /// <summary>
-        /// Gets the raw bytes from an image. Note that <paramref name="desiredPixelFormat"/> has limitations when it comes to indexed formats:
-        /// giving an indexed pixel format if the sourceImage is an indexed image with a lower bpp will throw an exception, since GDI+ does not support that,
-        /// and if you give an indexed pixel format and the source is non-indexed, the colours will be matched to the standard Windows palette for that format.
+        /// Gets the raw bytes from an image, in the given pixel format.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <param name="stride">Stride of the retrieved image data.</param>
         /// <param name="desiredPixelFormat">PixelFormat in which the data needs to be retrieved. Use <paramref name="sourceImage"/>.PixelFormat for no conversion.</param>
         /// <returns>The raw bytes of the image.</returns>
+        /// <remarks>
+        ///   Note that <paramref name="desiredPixelFormat"/> has limitations when it comes to indexed formats:
+        ///   giving an indexed pixel format if the sourceImage is an indexed image with a lower bpp will throw an exception, since GDI+ does not support that,
+        ///   and if you give an indexed pixel format and the source is non-indexed, the colours will be matched to the standard Windows palette for that format.
+        /// </remarks>
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat)
+        {
+            return GetImageData(sourceImage, out stride, desiredPixelFormat, false);
+        }
+
+        /// <summary>
+        /// Gets the raw bytes from an image in its original pixel format.
+        /// </summary>
+        /// <param name="sourceImage">The image to get the bytes from.</param>
+        /// <param name="stride">Stride of the retrieved image data.</param>
+        /// <param name="collapseStride">Collapse the stride to the minimum required for the image data.</param>
+        /// <returns>The raw bytes of the image.</returns>
+        public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, Boolean collapseStride)
+        {
+            return GetImageData(sourceImage, out stride, sourceImage.PixelFormat, collapseStride);
+        }
+        /// <summary>
+        /// Gets the raw bytes from an image, in the desired <see cref="System.Drawing.Imaging.PixelFormat">PixelFormat</see>.
+        /// </summary>
+        /// <param name="sourceImage">The image to get the bytes from.</param>
+        /// <param name="stride">Stride of the retrieved image data.</param>
+        /// <param name="desiredPixelFormat">PixelFormat in which the data needs to be retrieved. Use <paramref name="sourceImage"/>.PixelFormat for no conversion.</param>
+        /// <param name="collapseStride">Collapse the stride to the minimum required for the image data.</param>
+        /// <returns>The raw bytes of the image.</returns>
+        /// <remarks>
+        ///   Note that <paramref name="desiredPixelFormat"/> has limitations when it comes to indexed formats:
+        ///   giving an indexed pixel format if the sourceImage is an indexed image with a lower bpp will throw an exception, since GDI+ does not support that,
+        ///   and if you give an indexed pixel format and the source is non-indexed, the colours will be matched to the standard Windows palette for that format.
+        /// </remarks>
+        public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat, Boolean collapseStride)
         {
             if (sourceImage == null)
                 throw new ArgumentNullException("sourceImage", "Source image is null!");
             PixelFormat sourcePf = sourceImage.PixelFormat;
+            Int32 width = sourceImage.Width;
+            Int32 height = sourceImage.Height;
+
             if (sourcePf != desiredPixelFormat && (sourcePf & PixelFormat.Indexed) != 0 && (desiredPixelFormat & PixelFormat.Indexed) != 0
                 && Image.GetPixelFormatSize(sourcePf) > Image.GetPixelFormatSize(desiredPixelFormat))
                 throw new ArgumentException("Cannot convert from a higher to a lower indexed pixel format! Use ConvertTo8Bit / ConvertFrom8Bit instead!", "desiredPixelFormat");
-            BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, desiredPixelFormat);
+            BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, desiredPixelFormat);
             stride = sourceData.Stride;
-            Byte[] data = new Byte[stride * sourceImage.Height];
+            Byte[] data = new Byte[stride * height];
             Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
             sourceImage.UnlockBits(sourceData);
+            if (collapseStride)
+                data = CollapseStride(data, width, height, Image.GetPixelFormatSize(desiredPixelFormat), ref stride, true);
             return data;
         }
 
@@ -616,13 +653,13 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Copies a piece out of an 8-bit image. The stride of the output will always equal the width.
         /// </summary>
-        /// <param name="fileData">Byte data of the image.</param>
+        /// <param name="imageData">Byte data of the image.</param>
         /// <param name="width">Width of the image.</param>
         /// <param name="height">Height of the image.</param>
         /// <param name="stride">Stride of the image.</param>
         /// <param name="copyArea">The area to copy.</param>
         /// <returns></returns>
-        public static Byte[] CopyFrom8bpp(Byte[] fileData, Int32 width, Int32 height, Int32 stride, Rectangle copyArea)
+        public static Byte[] CopyFrom8bpp(Byte[] imageData, Int32 width, Int32 height, Int32 stride, Rectangle copyArea)
         {
             Byte[] copiedPicture = new Byte[copyArea.Width * copyArea.Height];
             Int32 maxY = Math.Min(height - copyArea.Y, copyArea.Height);
@@ -636,7 +673,7 @@ namespace Nyerguds.ImageManipulation
                     Int32 indexSource = (copyArea.Y + y) * stride + copyArea.X + x;
                     // This will always get a new index
                     Int32 indexDest = y * copyArea.Width + x;
-                    copiedPicture[indexDest] = fileData[indexSource];
+                    copiedPicture[indexDest] = imageData[indexSource];
                 }
             }
             return copiedPicture;
@@ -724,6 +761,22 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
+        /// Collapse stride to the minimum required, for any image type. Note that if the current stride is already the
+        /// minimum, the data will still be copied to a new array, so the input array is never referenced as result.
+        /// If you want to avoid this, use the overload with the "unsafe" parameter.
+        /// </summary>
+        /// <param name="data">Image data</param>
+        /// <param name="width">Width of the image</param>
+        /// <param name="height">Height of the image</param>
+        /// <param name="bitsLength">Bits per pixel</param>
+        /// <param name="stride">Stride of the image</param>
+        /// <returns>The data, collapsed to the minimum stride.</returns>
+        public static Byte[] CollapseStride(Byte[] data, Int32 width, Int32 height, Int32 bitsLength, ref Int32 stride)
+        {
+            return CollapseStride(data, width, height, bitsLength, ref stride, false);
+        }
+
+        /// <summary>
         /// Collapse stride to the minimum required, for any image type.
         /// </summary>
         /// <param name="data">Image data</param>
@@ -731,13 +784,19 @@ namespace Nyerguds.ImageManipulation
         /// <param name="height">Height of the image</param>
         /// <param name="bitsLength">Bits per pixel</param>
         /// <param name="stride">Stride of the image</param>
-        /// <returns></returns>
-        public static Byte[] CollapseStride(Byte[] data, Int32 width, Int32 height, Int32 bitsLength, ref Int32 stride)
+        /// <param name="unsafe">If true, and the minimum stride equals the given <paramref name="stride"/>, simply return the original reference to the <paramref name="data"/> array without making a copy.</param>
+        /// <returns>The data, collapsed to the minimum stride.</returns>
+        public static Byte[] CollapseStride(Byte[] data, Int32 width, Int32 height, Int32 bitsLength, ref Int32 stride, Boolean @unsafe)
         {
             Int32 newStride = GetMinimumStride(width, bitsLength);
             Byte[] newData = new Byte[newStride * height];
             if (newStride == stride)
-                return data;
+            {
+                if (@unsafe)
+                    return data;
+                Array.Copy(data, newData, data.Length);
+                return newData;
+            }
             for (Int32 y = 0; y < height; y++)
             {
                 Int32 oldOffs = stride * y;
@@ -1042,7 +1101,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="valueToTrim">Value to trim.</param>
         /// <param name="maxOffset">Maximum value that Y can contain in the file format it'll be saved to. Leave 0 to ignore.</param>
         /// <param name="adjustBuffer">True to actually apply the change to the given buffer. False to only adjust the ref parameters.</param>
-        /// <returns>The trimmed image, if adjustBuffer is true.</returns>
+        /// <returns>The trimmed image, if adjustBuffer is true. Otherwise, the original reference to the <paramref name="buffer"/> array.</returns>
         public static Byte[] OptimizeXWidth(Byte[] buffer, ref Int32 width, Int32 height, ref Int32 xOffset, Boolean AlsoTrimRight, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
         {
             // nothing to optimize.
@@ -1388,6 +1447,135 @@ namespace Nyerguds.ImageManipulation
             }
         }
         
+        public static Bitmap[] CutImageIntoFrames(Bitmap image, Int32 frameWidth, Int32 frameHeight, Int32 framesLimit)
+        {
+            PixelFormat pf = image.PixelFormat;
+            Int32 bpp = Image.GetPixelFormatSize(pf);
+            ColorPalette imPal = image.Palette;
+            Color[] imPalette = bpp > 8 ? null : imPal.Entries;
+            Int32 colorsInPal = imPalette == null ? 0 : imPalette.Length;
+            Boolean incompletePalette = bpp <= 8 && colorsInPal < (1 << bpp);
+            Int32 multiplier = bpp < 8 ? 1 : bpp / 8;
+
+            Int32 fullWidth = image.Width;
+            Int32 fullHeight = image.Height;
+            Int32 framesX = fullWidth / frameWidth;
+            Int32 framesY = fullHeight / frameHeight;
+            Int32 nrOfFrames = Math.Min(framesLimit, framesX * framesY);
+            Byte[] imageData = null;
+            Int32 stride = fullWidth;
+            Boolean indexed = bpp <= 8;
+            imageData = ImageUtils.GetImageData(image, out stride);
+            if (bpp < 8)
+                imageData = ImageUtils.ConvertTo8Bit(imageData, fullWidth, fullHeight, 0, bpp, true, ref stride);
+
+            Bitmap[] frames = new Bitmap[nrOfFrames];
+            for (Int32 i = 0; i < nrOfFrames; i++)
+            {
+                Int32 rectY = i / framesX;
+                Int32 rectX = i % framesX;
+                Rectangle section = new Rectangle(rectX * frameWidth * multiplier, rectY * frameHeight, frameWidth * multiplier, frameHeight);
+                Bitmap frameImage;
+                Byte[] frameData = ImageUtils.CopyFrom8bpp(imageData, fullWidth * multiplier, fullHeight, stride, section);
+                Int32 frameStride = frameWidth * multiplier;
+                if (bpp < 8)
+                    frameData = ImageUtils.ConvertFrom8Bit(frameData, frameWidth, frameHeight, bpp, true, ref frameStride);
+                frameImage = ImageUtils.BuildImage(frameData, frameWidth, frameHeight, frameStride, pf, imPalette, null);
+                if (incompletePalette)
+                    frameImage.Palette = imPal;
+                frames[i] = frameImage;
+            }
+            return frames;
+        }
+
+
+        public static Bitmap BuildImageFromFrames(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Int32 framesPerLine)
+        {
+            PixelFormat highestPf = PixelFormat.Undefined;
+            Int32 highestBpp = 0;
+            Color[] palette = null;
+            ColorPalette paletteRaw = null;
+            foreach (Bitmap img in images)
+            {
+                if (img == null)
+                    continue;
+                framesWidth = Math.Max(img.Width, framesWidth);
+                framesHeight = Math.Max(img.Height, framesHeight);
+                PixelFormat curPf = img.PixelFormat;
+                Int32 curBpp = Image.GetPixelFormatSize(curPf);
+                if (curBpp > highestBpp)
+                {
+                    highestPf = curPf;
+                    highestBpp = curBpp;
+                }
+                if (curBpp <= 8 && palette == null)
+                {
+                    paletteRaw = img.Palette;
+                    palette = paletteRaw.Entries;
+                }
+            }
+            Boolean useRaw = highestBpp <= 8 && palette.Length < (1 << highestBpp);
+            Int32 frames = images.Length;
+            Int32 lines = (frames + framesPerLine - 1) / framesPerLine;
+            Int32 fullWidth = framesWidth * framesPerLine;
+            Int32 fullHeight = framesHeight * lines;
+            Bitmap bp;
+            if (highestBpp > 8)
+            {
+                bp = new Bitmap(fullWidth, fullHeight, PixelFormat.Format32bppArgb);
+                using (Graphics g = Graphics.FromImage(bp))
+                {
+                    for (Int32 i = 0; i < frames; i++)
+                    {
+                        Bitmap cur = images[i];
+                        if (cur == null)
+                            continue;
+                        Int32 rectY = i / framesPerLine;
+                        Int32 rectX = i % framesPerLine;
+                        Rectangle section = new Rectangle(rectX * framesWidth, rectY * framesHeight, cur.Width, cur.Height);
+                        using (Bitmap tempImg = new Bitmap(cur))
+                            g.DrawImage(tempImg, section);
+                    }
+                }
+                if (highestBpp < 32 || highestPf != PixelFormat.Format32bppArgb)
+                {
+                    Int32 stride;
+                    Byte[] imageData = ImageUtils.GetImageData(bp, out stride, highestPf);
+                    bp.Dispose();
+                    bp = BuildImage(imageData, fullWidth, fullHeight, stride, highestPf, null, null);
+                }
+            }
+            else
+            {
+                Byte[] bpData = new Byte[fullWidth * fullHeight];
+                for (Int32 i = 0; i < frames; i++)
+                {
+                    Bitmap cur = images[i];
+                    if (cur == null)
+                        continue;
+                    Int32 curBpp = Image.GetPixelFormatSize(cur.PixelFormat);
+                    Int32 rectY = i / framesPerLine;
+                    Int32 rectX = i % framesPerLine;
+                    Int32 frWidth = cur.Width;
+                    Int32 frHeight = cur.Height;
+                    Rectangle section = new Rectangle(rectX * framesWidth, rectY * framesHeight, frWidth, frHeight);
+                    Int32 frStride;
+                    Byte[] frameData = GetImageData(cur, out frStride);
+                    if (curBpp < 8)
+                        frameData = ConvertTo8Bit(frameData, frWidth, frHeight, 0, curBpp, true, ref frStride);
+                    PasteOn8bpp(bpData, fullWidth, fullHeight, fullWidth, frameData, frWidth, frHeight, frStride, section, null, true);
+                }
+                Int32 stride = fullWidth;
+
+                if (highestBpp < 8)
+                    bpData = ConvertFrom8Bit(bpData, fullWidth, fullHeight, highestBpp, true, ref stride);
+                bp = BuildImage(bpData, fullWidth, fullHeight, stride, highestPf, palette, null);
+                if (useRaw)
+                    bp.Palette = paletteRaw;
+            }
+            return bp;
+        }
+
         /// <summary>
         /// Resize the image to the specified width and height.
         /// Found on stackoverflow: https://stackoverflow.com/questions/1922040/resize-an-image-c-sharp

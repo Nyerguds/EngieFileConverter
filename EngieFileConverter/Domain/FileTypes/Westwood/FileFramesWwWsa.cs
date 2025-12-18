@@ -8,7 +8,7 @@ using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
 
     public class FileFramesWwWsa : SupportedFileType
@@ -146,8 +146,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                             if (bm.Width != this.Width || bm.Height != this.Height)
                                 return;
                             Int32 stride;
-                            lastFrameData = ImageUtils.GetImageData(bm, out stride);
-                            lastFrameData = ImageUtils.CollapseStride(lastFrameData, bm.Width, bm.Height, 8, ref stride);
+                            lastFrameData = ImageUtils.GetImageData(bm, out stride, true);
                             if (lastFrameData != null)
                                 loadChain.Clear();
                         }
@@ -173,8 +172,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 height = lastFrame.Height;
                     if (width != this.Width || height != this.Height)
                         return;
-                    lastFrameData = ImageUtils.GetImageData(lastFrame, out stride);
-                    lastFrameData = ImageUtils.CollapseStride(lastFrameData, width, height, 8, ref stride);
+                    lastFrameData = ImageUtils.GetImageData(lastFrame, out stride, true);
                 }
             }
             this.LoadFromFileData(fileData, originalPath, m_Version, lastFrameData, false);
@@ -498,8 +496,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     Bitmap bm = fileToSave.Frames[i].GetBitmap();
                     Int32 stride;
-                    frameDataRaw = ImageUtils.GetImageData(bm, out stride);
-                    frameDataRaw = ImageUtils.CollapseStride(frameDataRaw, width, height, 8, ref stride);
+                    frameDataRaw = ImageUtils.GetImageData(bm, out stride, true);
                 }
                 else
                     frameDataRaw = firstFrameData;

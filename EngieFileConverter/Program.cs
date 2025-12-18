@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace CnC64FileConverter
+namespace EngieFileConverter
 {
     public class Program
     {
@@ -15,7 +15,7 @@ namespace CnC64FileConverter
         public static Int32 Main(String[] args)
         {
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-            return CnC64ImgConverter.Run(args);
+            return EngieFileConverter.Run(args);
         }
 
         /// <summary>

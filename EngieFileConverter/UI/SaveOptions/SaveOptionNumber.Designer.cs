@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows.Forms;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     partial class SaveOptionNumber
     {
@@ -32,13 +32,13 @@ namespace CnC64FileConverter.UI.SaveOptions
         private void InitializeComponent()
         {
             this.lblName = new System.Windows.Forms.Label();
-            this.txtValue = new System.Windows.Forms.TextBox();
+            this.numValue = new Nyerguds.Util.UI.EnhNumericUpDown();
+            ((System.ComponentModel.ISupportInitialize)(this.numValue)).BeginInit();
             this.SuspendLayout();
             // 
             // lblName
             // 
-            this.lblName.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.lblName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblName.Location = new System.Drawing.Point(6, 3);
             this.lblName.Name = "lblName";
@@ -46,33 +46,51 @@ namespace CnC64FileConverter.UI.SaveOptions
             this.lblName.TabIndex = 0;
             this.lblName.Text = "OPTION";
             this.lblName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblName.Resize += new System.EventHandler(this.lblName_Resize);
             // 
-            // txtValue
+            // numValue
             // 
-            this.txtValue.Anchor = System.Windows.Forms.AnchorStyles.Right;
-            this.txtValue.Location = new System.Drawing.Point(271, 8);
-            this.txtValue.Name = "txtValue";
-            this.txtValue.Size = new System.Drawing.Size(96, 20);
-            this.txtValue.TabIndex = 1;
-            this.txtValue.Text = "0";
-            this.txtValue.TextChanged += new System.EventHandler(this.txtValue_TextChanged);
+            this.numValue.Anchor = System.Windows.Forms.AnchorStyles.Right;
+            this.numValue.EnteredValue = new decimal(new int[] {
+            0,
+            0,
+            0,
+            0});
+            this.numValue.Location = new System.Drawing.Point(271, 10);
+            this.numValue.Maximum = new decimal(new int[] {
+            -1,
+            -1,
+            -1,
+            0});
+            this.numValue.Minimum = new decimal(new int[] {
+            -1,
+            -1,
+            -1,
+            -2147483648});
+            this.numValue.Name = "numValue";
+            this.numValue.SelectedText = "";
+            this.numValue.SelectionLength = 0;
+            this.numValue.SelectionStart = 0;
+            this.numValue.Size = new System.Drawing.Size(96, 20);
+            this.numValue.TabIndex = 2;
+            this.numValue.ValueChanged += new System.EventHandler(this.numValue_ValueChanged);
             // 
             // SaveOptionNumber
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.txtValue);
+            this.Controls.Add(this.numValue);
             this.Controls.Add(this.lblName);
             this.Name = "SaveOptionNumber";
             this.Size = new System.Drawing.Size(370, 36);
+            ((System.ComponentModel.ISupportInitialize)(this.numValue)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
         private Label lblName;
-        private TextBox txtValue;
+        private Nyerguds.Util.UI.EnhNumericUpDown numValue;
     }
 }

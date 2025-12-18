@@ -1,4 +1,4 @@
-﻿namespace CnC64FileConverter.UI
+﻿namespace EngieFileConverter.UI
 {
     partial class FrmSetAlpha
     {
@@ -100,7 +100,7 @@
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.numAlpha);
             this.Controls.Add(this.trbAlpha);
-            this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
+            this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
             this.Name = "FrmSetAlpha";
             this.Text = "Set Alpha";
             ((System.ComponentModel.ISupportInitialize)(this.trbAlpha)).EndInit();

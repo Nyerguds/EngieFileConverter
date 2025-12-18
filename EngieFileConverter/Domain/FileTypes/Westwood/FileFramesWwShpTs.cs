@@ -8,7 +8,7 @@ using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesWwShpTs : SupportedFileType
     {
@@ -222,12 +222,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 SupportedFileType frame = fileToSave.Frames[i];
                 Bitmap bm = frame.GetBitmap();
                 Int32 stride;
-                Byte[] imageData = ImageUtils.GetImageData(bm, out stride);
+                Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
                 Int32 xOffset = 0;
                 Int32 yOffset = 0;
                 Int32 newWidth = bm.Width;
                 Int32 newHeight = bm.Height;
-                imageData = ImageUtils.CollapseStride(imageData, newWidth, newHeight, 8, ref stride);
                 imageData = ImageUtils.OptimizeXWidth(imageData, ref newWidth, newHeight, ref xOffset, true, 0, 0xFFFF, true);
                 imageData = ImageUtils.OptimizeYHeight(imageData, newWidth, ref newHeight, ref yOffset, true, 0, 0xFFFF, true);
                 Int32 founddup = -1;
@@ -432,9 +431,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 width = frame.Width;
                 Int32 height = frame.Height;
                 Int32 stride;
-                Byte[] imageData = ImageUtils.GetImageData(bm, out stride);
-                Boolean shadowInFrame = imageData.Contains(sourceShadowIndex);
-                if (!shadowFound && shadowInFrame)
+                Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
+                if (!shadowFound && imageData.Contains(sourceShadowIndex))
                     shadowFound = true;
                 Byte[] imageDataShadow;
                 if (!shadowFound)
@@ -482,12 +480,23 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             foreach (SupportedFileType shadowFrame in shadowFrames)
                 newfile.AddFrame(shadowFrame);
-            newfile.SetColors(palette);
             return newfile;
         }
 
         public static FileFrames CombineShadows(SupportedFileType file, Byte sourceShadowIndex, Byte destShadowIndex)
         {
+            Int32 transIndex;
+            Boolean[] transMask = file.TransparencyMask;
+            if (transMask == null || !transMask.Any(i => i))
+                transIndex = 0;
+            else
+            {
+                transIndex = Enumerable.Repeat(0, transMask.Length).First(i => transMask[i]);
+            }
+            if (sourceShadowIndex == transIndex)
+                throw new ArgumentOutOfRangeException("sourceShadowIndex", "Source index cannot equal transparency index!");
+            if (destShadowIndex == transIndex)
+                throw new ArgumentOutOfRangeException("destShadowIndex", "Destination index cannot equal transparency index!");
             PreCheckSplitShadows(file, sourceShadowIndex, destShadowIndex, true);
             String name = String.Empty;
             if (file.LoadedFile != null)
@@ -499,7 +508,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             newfile.SetCommonPalette(true);
             newfile.SetBitsPerColor(8);
             newfile.SetColorsInPalette(file.ColorsInPalette);
-            Boolean[] transMask = file.TransparencyMask;
             newfile.SetTransparencyMask(transMask);
             Int32 combinedFrames = file.Frames.Length / 2;
             Color[] palette = null;
@@ -513,18 +521,25 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 width = frame.Width;
                 Int32 height = frame.Height;
                 Int32 stride;
-                Byte[] imageData = ImageUtils.GetImageData(bm, out stride);
+                Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
 
                 Bitmap shBm = shadowFrame.GetBitmap();
                 Int32 shWidth = shadowFrame.Width;
                 Int32 shHeight = shadowFrame.Height;
                 Int32 shStride;
-                Byte[] shadowData = ImageUtils.GetImageData(shBm, out shStride);
+                Byte[] shadowData = ImageUtils.GetImageData(shBm, out shStride, true);
                 // Convert to shadow-only image
-                shadowData = shadowData.Select(b => (Byte) (b != sourceShadowIndex ? 0 : destShadowIndex)).ToArray();
-                ImageUtils.PasteOn8bpp(imageData, width, height, stride, shadowData, shWidth, shHeight, shStride, new Rectangle(0, 0, shWidth, shHeight), transMask, true);
+                shadowData = shadowData.Select(b => (Byte)(b != sourceShadowIndex ? transIndex : destShadowIndex)).ToArray();
 
-                Bitmap imageCombined = ImageUtils.BuildImage(imageData, width, height, stride, bm.PixelFormat, palette, null);
+                Int32 finalWidth = Math.Max(width, shWidth);
+                Int32 finalHeight = Math.Max(height, shHeight);
+                Int32 finalstride = finalWidth;
+                // Create new array, then first paste shadow and then frame data.
+                Byte[] finalImageData = new Byte[finalstride * finalHeight];
+                ImageUtils.PasteOn8bpp(finalImageData, finalWidth, finalHeight, finalstride, shadowData, shWidth, shHeight, shStride, new Rectangle(0, 0, shWidth, shHeight), transMask, true);
+                ImageUtils.PasteOn8bpp(finalImageData, finalWidth, finalHeight, finalstride, imageData, width, height, stride, new Rectangle(0, 0, width, height), transMask, true);
+
+                Bitmap imageCombined = ImageUtils.BuildImage(finalImageData, finalWidth, finalHeight, finalstride, bm.PixelFormat, palette, null);
                 FileImageFrame frameCombined = new FileImageFrame();
                 frameCombined.LoadFileFrame(newfile, file, imageCombined, name, i);
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);

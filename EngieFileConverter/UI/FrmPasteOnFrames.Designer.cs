@@ -1,4 +1,4 @@
-﻿namespace CnC64FileConverter.UI
+﻿namespace EngieFileConverter.UI
 {
     partial class FrmPasteOnFrames
     {
@@ -76,8 +76,11 @@
             0});
             this.numCoordsY.Location = new System.Drawing.Point(232, 58);
             this.numCoordsY.Name = "numCoordsY";
+            this.numCoordsY.SelectedText = "";
+            this.numCoordsY.SelectionLength = 0;
+            this.numCoordsY.SelectionStart = 0;
             this.numCoordsY.Size = new System.Drawing.Size(60, 20);
-            this.numCoordsY.TabIndex = 9;
+            this.numCoordsY.TabIndex = 3;
             // 
             // numCoordsX
             // 
@@ -89,8 +92,11 @@
             0});
             this.numCoordsX.Location = new System.Drawing.Point(137, 58);
             this.numCoordsX.Name = "numCoordsX";
+            this.numCoordsX.SelectedText = "";
+            this.numCoordsX.SelectionLength = 0;
+            this.numCoordsX.SelectionStart = 0;
             this.numCoordsX.Size = new System.Drawing.Size(60, 20);
-            this.numCoordsX.TabIndex = 7;
+            this.numCoordsX.TabIndex = 2;
             // 
             // lblCoordinates
             // 
@@ -118,7 +124,7 @@
             this.btnOK.Location = new System.Drawing.Point(136, 226);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(75, 23);
-            this.btnOK.TabIndex = 20;
+            this.btnOK.TabIndex = 30;
             this.btnOK.Text = "OK";
             this.btnOK.UseVisualStyleBackColor = true;
             this.btnOK.Click += new System.EventHandler(this.BtnOkClick);
@@ -130,7 +136,7 @@
             this.btnCancel.Location = new System.Drawing.Point(217, 226);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 21;
+            this.btnCancel.TabIndex = 31;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             // 
@@ -152,7 +158,7 @@
             this.txtImage.Name = "txtImage";
             this.txtImage.ReadOnly = true;
             this.txtImage.Size = new System.Drawing.Size(243, 20);
-            this.txtImage.TabIndex = 11;
+            this.txtImage.TabIndex = 100;
             // 
             // btnSelectImage
             // 
@@ -160,7 +166,7 @@
             this.btnSelectImage.Location = new System.Drawing.Point(261, 26);
             this.btnSelectImage.Name = "btnSelectImage";
             this.btnSelectImage.Size = new System.Drawing.Size(31, 23);
-            this.btnSelectImage.TabIndex = 12;
+            this.btnSelectImage.TabIndex = 1;
             this.btnSelectImage.Text = "...";
             this.btnSelectImage.UseVisualStyleBackColor = true;
             this.btnSelectImage.Click += new System.EventHandler(this.BtnSelectImageClick);
@@ -181,7 +187,7 @@
             this.rbtMatchPalette.Location = new System.Drawing.Point(121, 164);
             this.rbtMatchPalette.Name = "rbtMatchPalette";
             this.rbtMatchPalette.Size = new System.Drawing.Size(90, 17);
-            this.rbtMatchPalette.TabIndex = 14;
+            this.rbtMatchPalette.TabIndex = 20;
             this.rbtMatchPalette.TabStop = true;
             this.rbtMatchPalette.Text = "Match palette";
             this.rbtMatchPalette.UseVisualStyleBackColor = true;
@@ -193,7 +199,7 @@
             this.rbtKeepIndices.Location = new System.Drawing.Point(121, 187);
             this.rbtKeepIndices.Name = "rbtKeepIndices";
             this.rbtKeepIndices.Size = new System.Drawing.Size(86, 17);
-            this.rbtKeepIndices.TabIndex = 15;
+            this.rbtKeepIndices.TabIndex = 21;
             this.rbtKeepIndices.TabStop = true;
             this.rbtKeepIndices.Text = "Keep indices";
             this.rbtKeepIndices.UseVisualStyleBackColor = true;
@@ -205,7 +211,7 @@
             this.txtFrames.Name = "txtFrames";
             this.txtFrames.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtFrames.Size = new System.Drawing.Size(280, 55);
-            this.txtFrames.TabIndex = 22;
+            this.txtFrames.TabIndex = 10;
             // 
             // FrmPasteOnFrames
             // 
@@ -229,7 +235,7 @@
             this.Controls.Add(this.lblCoordinates);
             this.Controls.Add(this.lblFramesRange);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
+            this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
             this.Name = "FrmPasteOnFrames";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Paste on frames";

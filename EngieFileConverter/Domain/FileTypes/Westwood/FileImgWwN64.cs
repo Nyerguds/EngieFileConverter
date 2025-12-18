@@ -5,7 +5,7 @@ using System.Linq;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImgWwN64 : SupportedFileType
     {
@@ -196,17 +196,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (image.Width > 0xFFFF || image.Height > 0xFFFF)
                 throw new NotSupportedException("Image is too large!");
             // 0 = 4bpp, 1 = 8bpp, 2 = 16bpp
-            Byte colorFormat = 2;
+            Byte colorFormat;
             Int32 width = image.Width;
             Int32 height = image.Height;
-            Int32 bpp = Image.GetPixelFormatSize(image.PixelFormat);
-            switch (bpp)
+            switch (Image.GetPixelFormatSize(image.PixelFormat))
             {
                 case 4:
                     colorFormat = 0;
                     break;
                 case 8:
                     colorFormat = 1;
+                    break;
+                default:
+                    colorFormat = 2;
                     break;
             }
             Byte[] imageData;
@@ -216,17 +218,13 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (image.PixelFormat != PixelFormat.Format16bppArgb1555)
                 {
                     using (Bitmap newImage = ImageUtils.PaintOn32bpp(image, null))
-                        imageData = ImageUtils.GetImageData(newImage, out stride, PixelFormat.Format16bppArgb1555);
-                    bpp = 16;
+                        imageData = ImageUtils.GetImageData(newImage, out stride, PixelFormat.Format16bppArgb1555, true);
                 }
                 else
-                    imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppArgb1555);
+                    imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppArgb1555, true);
             }
             else
-                imageData = ImageUtils.GetImageData(image, out stride);
-
-            // Collapse stride
-            imageData = ImageUtils.CollapseStride(imageData, width, height, bpp, ref stride);
+                imageData = ImageUtils.GetImageData(image, out stride, true);
             if (colorFormat == 2)
                 ImageUtils.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555, Format16BitRgba5551Be);
             Byte[] paletteData;

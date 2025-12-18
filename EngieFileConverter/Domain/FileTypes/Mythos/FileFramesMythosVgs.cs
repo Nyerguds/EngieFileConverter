@@ -9,7 +9,7 @@ using Nyerguds.GameData.Mythos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesMythosVgs: SupportedFileType
     {
@@ -419,11 +419,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = fileToSave.Frames[asPaletted ? i - 1 : i];
                 Int32 stride;
-                Byte[] frameBytes = ImageUtils.GetImageData(frame.GetBitmap(), out stride);
+                Byte[] frameBytes = ImageUtils.GetImageData(frame.GetBitmap(), out stride, true);
                 Int32 width = frame.Width;
                 Int32 height = frame.Height;
-                // Trim off stride
-                frameBytes = ImageUtils.CollapseStride(frameBytes, width, height, 8, ref stride);
                 Int32 xOffset = 0;
                 Int32 yOffset = 0;
                 widths[i] = frame.Width;

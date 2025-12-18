@@ -7,7 +7,7 @@ using Nyerguds.GameData.Agos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
 
     public class FileFramesAdvVga : SupportedFileType
@@ -179,8 +179,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 width = image.Width;
                     Int32 height = image.Height;
                     Int32 stride;
-                    Byte[] byteData = ImageUtils.GetImageData(image, out stride);
-                    byteData = ImageUtils.CollapseStride(byteData, width, height, 4, ref stride);
+                    Byte[] byteData = ImageUtils.GetImageData(image, out stride, true);
                     data[i] = byteData;
                     compressed[i] = false;
                     if (!noCompression)

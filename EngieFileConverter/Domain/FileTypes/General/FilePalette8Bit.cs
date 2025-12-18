@@ -5,7 +5,7 @@ using System.Linq;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FilePalette8Bit : SupportedFileType
     {

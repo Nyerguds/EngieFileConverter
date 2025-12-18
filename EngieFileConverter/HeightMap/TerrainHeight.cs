@@ -1,4 +1,4 @@
-﻿namespace CnC64FileConverter.Domain.HeightMap
+﻿namespace EngieFileConverter.Domain.HeightMap
 {
     public enum TerrainHeight
     {

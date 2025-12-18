@@ -8,7 +8,7 @@ using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesWwShpD2 : SupportedFileType
     {
@@ -288,9 +288,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 frmWidth = bm.Width;
                 Int32 frmHeight = bm.Height;
                 Int32 stride;
-                Byte[] imageData = ImageUtils.GetImageData(bm, out stride);
-                imageData = ImageUtils.CollapseStride(imageData, frmWidth, frmHeight, 8, ref stride);
-
+                Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
                 Boolean remapThis = addRemapAuto ? imageData.Any(b => b >= 144 && b <= 150) : remapIndex[i];
                 Byte[] remapTable;
                 Boolean largeTable;
@@ -330,7 +328,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frameHeaderLen += remapTable.Length;
                 }
                 Byte[] frameHeader = new Byte[frameHeaderLen];
-
                 Dune2ShpFrameFlags flags = Dune2ShpFrameFlags.Empty;
                 if (!isCompressed)
                     flags |= Dune2ShpFrameFlags.NoLcw;
@@ -338,10 +335,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     flags |= Dune2ShpFrameFlags.HasRemapTable;
                 if (largeTable)
                     flags |= Dune2ShpFrameFlags.CustomSizeRemap;
-
                 // The entire data length; header plus table plus byte for table size plus compressed data.
                 Int32 frmDataSize = frameHeaderLen + imageData.Length;
-
                 ArrayUtils.WriteIntToByteArray(frameHeader, 0x00, 2, true, (UInt32)flags);
                 frameHeader[0x02] = (Byte)frmHeight;
                 ArrayUtils.WriteIntToByteArray(frameHeader, 0x03, 2, true, (UInt32)frmWidth);

@@ -9,9 +9,9 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using System.IO;
-using CnC64FileConverter.Domain.FileTypes;
+using EngieFileConverter.Domain.FileTypes;
 
-namespace CnC64FileConverter.Domain.HeightMap
+namespace EngieFileConverter.Domain.HeightMap
 {
     public class HeightMapGenerator
     {

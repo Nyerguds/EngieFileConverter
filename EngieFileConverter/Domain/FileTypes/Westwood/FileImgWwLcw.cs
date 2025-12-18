@@ -7,7 +7,7 @@ using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
 
     public class FileImgWwLcw : SupportedFileType
@@ -96,8 +96,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             //using (Bitmap hiColImage = ImageUtils.PaintOn32bpp(image, Color.Black))
             {
                 Int32 stride;
-                imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppRgb555);
-                imageData = ImageUtils.CollapseStride(imageData, image.Width, image.Height, 16, ref stride);
+                imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppRgb555, true);
+                imageData = ImageUtils.CollapseStride(imageData, image.Width, image.Height, 16, ref stride, true);
             }
             Byte[] compressedData = WWCompression.LcwCompress(imageData);
             Byte[] fullData = new Byte[compressedData.Length + DATAOFFSET];

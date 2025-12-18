@@ -8,7 +8,7 @@ using Nyerguds.GameData.Mythos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesMythosVda : FileFramesMythosVgs
     {
@@ -43,23 +43,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                     return null;
             }
             // If a single png file of the same name is found it overrides normal chaining.
-            String pngName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + ".PNG");
-            if (File.Exists(pngName))
-            {
-                try
-                {
-                    using (FileImagePng pngFile = new FileImagePng())
-                    {
-                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
-                        if (pngFile.Width == 320 && pngFile.Height == 200)
-                            return new List<String>() {pngName};
-                    }
-                }
-                catch (FileLoadException)
-                {
-                    // ignore; continue with normal load
-                }
-            }
+            String pngName = TestForPngStartFrame(originalPath);
+            if (pngName != null)
+                return new List<String>() { pngName };
             String baseName;
             // Call file range detection algorithm already in place on FileFrames class.
             String[] frameNames = FileFrames.GetFrameFilesRange(originalPath, out baseName);
@@ -139,6 +125,38 @@ namespace CnC64FileConverter.Domain.FileTypes
                     }
                     // End point not reached; current file also needs a first frame. Store current file and continue chaining back.
                     chain.Add(curName);
+
+                    // Test for png. png is also end point.
+                    String pngChained = TestForPngStartFrame(curName);
+                    if (pngChained != null)
+                    {
+                        chain.Add(pngChained);
+                        chain.Reverse();
+                        return chain;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private String TestForPngStartFrame(String originalPath)
+        {
+            String pngName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + ".PNG");
+            if (File.Exists(pngName))
+            {
+                try
+                {
+                    using (FileImagePng pngFile = new FileImagePng())
+                    {
+                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
+                        Bitmap image = pngFile.GetBitmap();
+                        if (image.Width == 320 && image.Height == 200 && image.PixelFormat == PixelFormat.Format8bppIndexed)
+                            return pngName;
+                    }
+                }
+                catch (FileLoadException)
+                {
+                    // ignore; continue with normal load
                 }
             }
             return null;
@@ -149,37 +167,22 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] lastFrameData = null;
             String lastFrameInfo = String.Empty;
             String firstName = loadChain.First();
-            Boolean isPng = loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase);
-            if (isPng)
-            {
-                String pngName = loadChain[0];
-                if (File.Exists(pngName))
-                {
-                    try
-                    {
-                        using (FileImageFrame pngFile = new FileImageFrame())
-                        {
-                            // Uses specific PNG loading from its superclass, since
-                            // FileImageFrame inherits from png and still contains its mime type.
-                            pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
-                            pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
-                            lastFrameData = this.Get320x200FrameData(pngFile);
-                            if (lastFrameData != null)
-                            {
-                                lastFrameInfo = pngFile.ExtraInfo;
-                                loadChain.Clear();
-                            }
-                        }
-                    }
-                    catch { return; } // can't load as png file. Abort.
-                }
-            }
             Int32 lastIndex = loadChain.Count - 1;
+            Boolean fromPng = false;
             for (Int32 i = 0; i <= lastIndex; i++)
             {
                 String chainFilePath = loadChain[i];
                 try
                 {
+                    if (i == 0 && chainFilePath.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        lastFrameData = GetFrameDataFromPng(firstName, ref lastFrameInfo);
+                        if (lastFrameData != null)
+                        {
+                            fromPng = lastIndex == 0;
+                            continue;
+                        }
+                    }
                     Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
                     using (FileFramesMythosVda chainFile = new FileFramesMythosVda())
                     {
@@ -208,22 +211,44 @@ namespace CnC64FileConverter.Domain.FileTypes
                     lastFrameInfo += "\n";
                 FileImageFrame first = this.m_FramesList[0] as FileImageFrame;
                 if (first != null)
-                    first.SetExtraInfo((lastFrameInfo + (isPng ? "PNG loaded as base frame" : "Loaded from previous file")).TrimStart('\n'));
+                    first.SetExtraInfo((lastFrameInfo + (fromPng ? "PNG loaded as base frame" : "Loaded from previous file")).TrimStart('\n'));
             }
+        }
+
+        private Byte[] GetFrameDataFromPng(String pngName, ref String lastFrameInfo)
+        {
+            Byte[] lastFrameData = null;
+            if (File.Exists(pngName))
+            {
+                try
+                {
+                    using (FileImageFrame pngFile = new FileImageFrame())
+                    {
+                        // Uses specific PNG loading from its superclass, since
+                        // FileImageFrame inherits from png and still contains its mime type.
+                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
+                        pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
+                        lastFrameData = this.Get320x200FrameData(pngFile);
+                        
+                        if (lastFrameData != null)
+                            lastFrameInfo = pngFile.ExtraInfo;
+                    }
+                }
+                catch { /* can't load as png file. Abort.*/ }
+            }
+            return lastFrameData;
         }
 
         protected Byte[] Get320x200FrameData(SupportedFileType loadedFrame)
         {
-            if (loadedFrame.Width != 320 || loadedFrame.Height != 200)
+            if (loadedFrame == null)
                 return null;
             Bitmap lastFrameImage = loadedFrame.GetBitmap();
-            if (lastFrameImage.PixelFormat != PixelFormat.Format8bppIndexed)
+            if (lastFrameImage == null || lastFrameImage.Width != 320 || lastFrameImage.Height != 200 || lastFrameImage.PixelFormat != PixelFormat.Format8bppIndexed)
                 return null;
-            Int32 width = lastFrameImage.Width;
-            Int32 height = lastFrameImage.Height;
             Int32 stride;
-            Byte[] frameData = ImageUtils.GetImageData(lastFrameImage, out stride);
-            return ImageUtils.CollapseStride(frameData, width, height, 8, ref stride);
+            // stride collapse is probably not needed... 320 is divisible by 4.
+            return ImageUtils.GetImageData(lastFrameImage, out stride, true);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -427,8 +452,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 stride;
                     Int32 width = currentImage.Width;
                     Int32 height = currentImage.Height;
-                    Byte[] currentFrameData = ImageUtils.GetImageData(currentImage, out stride);
-                    currentFrameData = ImageUtils.CollapseStride(currentFrameData, width, height, 8, ref stride);
+                    Byte[] currentFrameData = ImageUtils.GetImageData(currentImage, out stride, true);
                     if (imageData == null)
                     {
                         if (xOffset == 0 && yOffset == 0 && width == 320 && height == 200)
@@ -584,12 +608,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (compressionType < 0 || compressionType > 2)
                 compressionType = 0;
             Bitmap origImage = fileToSave.Frames[0].GetBitmap();
-            Int32 origWidth = origImage.Width;
-            Int32 origHeight = origImage.Height;
+            // Forcing this to 320x200 for now.
+            Int32 origWidth = 320; //origImage.Width;
+            Int32 origHeight = 200; //origImage.Height;
             if (fileToSave.Frames.Any(x => x.Width != origWidth || x.Height != origHeight))
-                throw new NotSupportedException("All frames in the source file must have the same dimensions!");
+                throw new NotSupportedException("All frames in the source file must be 320x200!"); // have the same dimensions!");
             Int32 fullImageStride;
-            Byte[] previousImageData = ImageUtils.GetImageData(origImage, out fullImageStride);
+            Byte[] previousImageData = ImageUtils.GetImageData(origImage, out fullImageStride, true);
             Boolean[] previousImageNonTransIndex = previousImageData.Select(b => b != TransparentIndex).ToArray();
             Int32 previousImageStride = fullImageStride;
             List<List<VideoChunk>> frames = new List<List<VideoChunk>>();
@@ -603,7 +628,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 Int32 stride;
                 Bitmap currentImage = frame.GetBitmap();
-                Byte[] imageData = ImageUtils.GetImageData(currentImage, out stride);
+                Byte[] imageData = ImageUtils.GetImageData(currentImage, out stride, true);
                 Byte[] imageDataOpt = imageData.ToArray();
                 Int32 prevOffs = 0;
                 Int32 frameOffs = 0;
@@ -633,7 +658,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 yOffset = 0;
                     Int32 newWidth = origWidth;
                     Int32 newHeight = origHeight;
-                    imageDataOpt = ImageUtils.CollapseStride(imageDataOpt, newWidth, newHeight, 8, ref stride);
                     imageDataOpt = ImageUtils.OptimizeXWidth(imageDataOpt, ref newWidth, newHeight, ref xOffset, true, TransparentIndex, 0xFF, true);
                     imageDataOpt = ImageUtils.OptimizeYHeight(imageDataOpt, newWidth, ref newHeight, ref yOffset, true, TransparentIndex, 0xFFFF, true);
                     VideoChunk chunk = new VideoChunk(imageDataOpt, new Rectangle(xOffset, yOffset, newWidth, newHeight));

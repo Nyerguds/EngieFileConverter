@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using CnC64FileConverter.Domain.FileTypes;
-using CnC64FileConverter.UI.SaveOptions;
+using EngieFileConverter.Domain.FileTypes;
+using EngieFileConverter.UI.SaveOptions;
 using Nyerguds.Util.Ui;
 
-namespace CnC64FileConverter.UI
+namespace EngieFileConverter.UI
 {
     public class SaveOptionInfo : CustomControlInfo<SaveOptionControl, SaveOption>
     {

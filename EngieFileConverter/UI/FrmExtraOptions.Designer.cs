@@ -1,4 +1,6 @@
-﻿namespace CnC64FileConverter.UI
+﻿using EngieFileConverter.UI.SaveOptions;
+
+namespace EngieFileConverter.UI
 {
     partial class FrmExtraOptions
     {
@@ -31,7 +33,7 @@
             this.pnlOptions = new System.Windows.Forms.Panel();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOK = new System.Windows.Forms.Button();
-            this.lstOptions = new CnC64FileConverter.UI.SaveOptions.SaveOptionsList();
+            this.lstOptions = new SaveOptionsList();
             this.pnlOptions.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -87,7 +89,7 @@
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOK);
             this.Controls.Add(this.pnlOptions);
-            this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
+            this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
             this.MinimumSize = new System.Drawing.Size(400, 300);
             this.Name = "FrmExtraOptions";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Windows.Forms;
-using CnC64FileConverter.Domain.FileTypes;
+using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util.Ui;
 
-namespace CnC64FileConverter.UI
+namespace EngieFileConverter.UI
 {
     public class SaveOptionControl : UserControl
     {

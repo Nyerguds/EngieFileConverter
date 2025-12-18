@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using Nyerguds.ImageManipulation;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageJpg : FileImage
     {

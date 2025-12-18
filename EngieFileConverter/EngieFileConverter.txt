@@ -1,4 +1,4 @@
-CnC64FileConverter
+Engie File Converter
 -------------- Created by by Nyerguds (04/04/2017)
 
 This tool was originally created to allow viewing and converting image formats found in the
@@ -6,8 +6,10 @@ Nintendo 64 ROM of the Command & Conquer game. Since then, it has evolved into a
 modding suite supporting a large range of file formats from classic 90's era games.
 
 
-Special thanks to Kamuix and Chad1233 for their help in testing this, and to Moon Flower for the
-help in designing the palette manager.
+Special thanks to:
+-Kamuix and Chad1233 for their help in testing this
+-Moon Flower for the help in designing the palette manager
+-MrFlibble for restoring the beta C&C95 Engineer icon.
 
 
 If you like what I'm doing, and you have too much money, feel free to donate:
@@ -23,9 +25,6 @@ Features:
  high-colour images can't be saved as palette, and only maps can be saved as maps.
 -Preserves the color palette when saving 4-bit and 8-bit paletted images.
 -Supports drag & drop for opening files.
--Can be used as command line converter with the following syntax:
-    CnC64FileConverter.exe infile.img outfile.png
- This only works for file formats that can be identified purely by extension, though.
 -Has utilities to help generate height maps for missions.
 -Offers save options for the types that need them.
 
@@ -69,8 +68,20 @@ assistance from OmniBlade.
 Version history:
 ---------------
 This tool started as the CnC64ImageViewer, but later got expanded to a full conversion suite.
-At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file formats,
-it may become a more general game formats conversion tool.
+At that point, it became the CnC64FileConverter v1.0. As of v1.3, it has been renamed to
+Engie File Converter.
+
+
+Engie File Converter versions:
+
+v1.3.0: (10/08/2018 23:05)
+-Renamed the project. Original projected name was "Nyerguds's Game File Converter", or "NGFC"
+ which then mutated into "Engie FC", or "Engie File Converter".
+-Visage Animation load chaining now also works with a png file as base for a chain.
+-Fixed a problem with 16bpp formats in the "Paste on frames" function.
+-Disabled command line conversion; it was unfinished and unmaintained. Might fix it up later.
+-Added function to convert a single image to frames, by specifying the frame size.
+-Added function to convert frames to a single image, with the option to expand the frame sizes.
 
 CnC64FileConverter versions:
 

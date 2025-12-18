@@ -10,8 +10,8 @@ namespace Nyerguds.GameData.Westwood
     public static class MapConversion
     {
         public static readonly Dictionary<Int32, TileInfo> TILEINFO = ReadTileInfo();
-        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", CnC64FileConverter.Properties.Resources.th_desert);
-        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", CnC64FileConverter.Properties.Resources.th_temperate);
+        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", EngieFileConverter.Properties.Resources.th_desert);
+        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", EngieFileConverter.Properties.Resources.th_temperate);
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
         public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
 
@@ -22,7 +22,7 @@ namespace Nyerguds.GameData.Westwood
             if (File.Exists(file))
                 tilesetsData2 = File.ReadAllText(file);
             else
-                tilesetsData2 = CnC64FileConverter.Properties.Resources.tilesets2;
+                tilesetsData2 = EngieFileConverter.Properties.Resources.tilesets2;
 
             IniFile tilesetsFile2 = new IniFile(null, tilesetsData2, true, IniFile.ENCODING_DOS_US, true);
             Dictionary<Int32, TileInfo> tileInfo2 = new Dictionary<Int32, TileInfo>();
@@ -304,7 +304,7 @@ namespace Nyerguds.GameData.Westwood
             if (File.Exists(file))
                 tilesetsData = File.ReadAllText(file);
             else
-                tilesetsData = global::CnC64FileConverter.Properties.Resources.tilesets;
+                tilesetsData = global::EngieFileConverter.Properties.Resources.tilesets;
             IniFile tilesetsFile = new IniFile(null, tilesetsData, true, IniFile.ENCODING_DOS_US, true);
             Dictionary<Int32, TileInfo> tileInfo = new Dictionary<Int32, TileInfo>();
             for (Int32 currentId = 0; currentId < 0xFF; currentId++)

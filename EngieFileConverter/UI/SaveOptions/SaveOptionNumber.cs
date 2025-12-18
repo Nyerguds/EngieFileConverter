@@ -1,14 +1,25 @@
 ﻿using System;
 using System.Linq;
-using CnC64FileConverter.Domain.FileTypes;
+using System.Windows.Forms;
+using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 using Nyerguds.Util.Ui;
+using System.Drawing;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     public partial class SaveOptionNumber : SaveOptionControl
     {
-        private Boolean m_editingText = false;
+        private Int32 initialWidthLbl;
+        private Int32 initialWidthCmb;
+        private Int32 initialWidthToScale;
+        private Int32 m_PadLeft;
+        private Int32 m_PadMiddle;
+        private Int32 m_PadRight;
+        private Boolean m_Loading;
+
+
+        private volatile Boolean m_editingText;
         private Int32? m_minimum;
         private Int32? m_maximum;
 
@@ -17,14 +28,27 @@ namespace CnC64FileConverter.UI.SaveOptions
         public SaveOptionNumber(SaveOption info, ListedControlController<SaveOption> controller)
         {
             this.InitializeComponent();
+            this.InitResize();
             this.Init(info, controller);
+        }
+
+        private void InitResize()
+        {
+            Int32 initialPosTxt = this.numValue.Location.X;
+            this.initialWidthLbl = this.lblName.Width;
+            this.initialWidthCmb = this.numValue.Width;
+            Int32 initialWidthFrm = this.DisplayRectangle.Width;
+            this.m_PadLeft = this.lblName.Location.X;
+            this.m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthCmb;
+            this.m_PadMiddle = initialPosTxt - this.initialWidthLbl - this.m_PadLeft;
+            this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
         public override void UpdateInfo(SaveOption info)
         {
             this.Info = info;
             this.lblName.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
-            this.txtValue.Text = this.Info.SaveData;
+            this.numValue.Text = this.Info.SaveData;
             String init = this.Info.InitValue;
             this.m_minimum = null;
             this.m_maximum = null;
@@ -38,58 +62,35 @@ namespace CnC64FileConverter.UI.SaveOptions
             String max = init.Substring(cpos + 1);
             Int32 maxVal;
             if (!String.IsNullOrEmpty(min) && Int32.TryParse(min, out minVal))
-                this.m_minimum = minVal;
+                this.numValue.Minimum = minVal;
             if (!String.IsNullOrEmpty(max) && Int32.TryParse(max, out maxVal))
-                this.m_maximum = maxVal;
+                this.numValue.Maximum = maxVal;
         }
-
-        private void txtValue_TextChanged(Object sender, EventArgs e)
-        {
-            if (this.m_editingText)
-                return;
-            try
-            {
-                this.m_editingText = true;
-                // Filter to pure integers
-                String input = this.txtValue.Text.ToUpperInvariant();
-                Int32 selStart = this.txtValue.SelectionStart;
-                String output = new String(input.Where(x => x == '-' || x >= '0' && x <= '9').ToArray());
-                if (!String.Equals(this.txtValue.Text, output))
-                {
-                    if (Math.Min(selStart, output.Length) > 0 && selStart <= output.Length && output[selStart - 1] != input[selStart - 1])
-                        selStart--;
-                }
-                if (output.Length > 0 && !"-".Equals(output) && (this.m_minimum.HasValue || this.m_maximum.HasValue))
-                {
-                    Int32 val = Int32.Parse(output);
-                    if (this.m_minimum.HasValue)
-                        val = Math.Max(this.m_minimum.Value, val);
-                    if (this.m_maximum.HasValue)
-                        val = Math.Min(this.m_maximum.Value, val);
-                    output = val.ToString();
-                }
-                if (!String.Equals(this.txtValue.Text, output))
-                {
-                    // Fix selection
-                    this.txtValue.Text = output;
-                    this.txtValue.SelectionStart = Math.Min(selStart, this.txtValue.Text.Length);
-                }
-                // Update controller
-                if (this.Info == null)
-                    return;
-                this.Info.SaveData = (output.Length == 0 || "-".Equals(output)) ? "0" : this.txtValue.Text;
-                if (this.m_Controller != null)
-                    this.m_Controller.UpdateControlInfo(this.Info);
-            }
-            finally
-            {
-                this.m_editingText = false;
-            }
-        }
-
+        
         public override void FocusValue()
         {
-            this.txtValue.Select();
+            this.numValue.Select();
+        }
+
+        private void numValue_ValueChanged(object sender, EventArgs e)
+        {
+            // Update controller
+            if (this.Info == null)
+                return;
+            this.Info.SaveData = this.numValue.Value.ToString();
+            if (this.m_Controller != null)
+                this.m_Controller.UpdateControlInfo(this.Info);
+        }
+
+        private void lblName_Resize(Object sender, EventArgs e)
+        {
+            // What a mess just to make the center size...
+            Double scaleFactor = (Double)this.DisplayRectangle.Width / (Double)this.initialWidthToScale;
+            Int32 newWidthLbl = (Int32)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
+            Int32 newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
+            this.lblName.Width = newWidthLbl;
+            this.numValue.Location = new Point(this.m_PadLeft + newWidthLbl + this.m_PadMiddle, this.numValue.Location.Y);
+            this.numValue.Width = newWidthTxt;
         }
     }
 }

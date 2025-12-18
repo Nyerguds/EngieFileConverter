@@ -7,7 +7,7 @@ using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImgWwCps : SupportedFileType
     {
@@ -151,9 +151,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
                 throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
             Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride);
-            // Remove any stride
-            imageData = ImageUtils.CollapseStride(imageData, image.Width, image.Height, 8, ref stride);
+            Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
             Byte[] compressedData;
             switch (compressionType)
             {

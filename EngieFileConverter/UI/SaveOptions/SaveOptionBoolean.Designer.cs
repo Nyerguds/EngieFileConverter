@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows.Forms;
 
-namespace CnC64FileConverter.UI.SaveOptions
+namespace EngieFileConverter.UI.SaveOptions
 {
     partial class SaveOptionBoolean
     {
@@ -41,7 +41,7 @@ namespace CnC64FileConverter.UI.SaveOptions
             | System.Windows.Forms.AnchorStyles.Right)));
             this.chkOption.Location = new System.Drawing.Point(6, 3);
             this.chkOption.Name = "chkOption";
-            this.chkOption.Size = new System.Drawing.Size(361, 30);
+            this.chkOption.Size = new System.Drawing.Size(370, 30);
             this.chkOption.TabIndex = 2;
             this.chkOption.Text = "OPTION";
             this.chkOption.UseVisualStyleBackColor = true;

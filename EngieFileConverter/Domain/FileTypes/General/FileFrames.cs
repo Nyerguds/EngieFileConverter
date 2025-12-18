@@ -8,8 +8,9 @@ using System.Text.RegularExpressions;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
+using System.Drawing.Drawing2D;
 
-namespace CnC64FileConverter.Domain.FileTypes
+namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFrames : FileImage
     {
@@ -86,6 +87,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_ColorsInPalette = colorsInPalette;
         }
 
+        public void SetPalette(Color[] palette)
+        {
+            this.m_Palette = palette;
+        }
+
         public void SetTransparencyMask(Boolean[] transparencyMask)
         {
             this.m_TransparencyMask = transparencyMask;
@@ -148,26 +154,21 @@ namespace CnC64FileConverter.Domain.FileTypes
             return allNames;
         }
 
-        public static SupportedFileType CheckForFrames(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames, out Boolean isChainedFramesType)
+        public static FileFrames CheckForFrames(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames)
         {
             String baseName;
 
             minName = null;
             maxName = null;
             hasEmptyFrames = false;
-            isChainedFramesType = false;
             String[] frameNames = GetFrameFilesRange(path, out baseName);
             // No file or only one file; not a range. Abort.
             if (frameNames == null || frameNames.Length == 1)
                 return null;
-            // not used for now...
-            Boolean framesType = currentType != null && currentType.IsFramesContainer;
-            SupportedFileType chainedFrames = null;//framesType ? currentType.ChainLoadFiles(ref frameNames, path) : null;
-            isChainedFramesType = chainedFrames != null;
+            if (currentType != null && currentType.IsFramesContainer)
+                return null;
             minName = Path.GetFileName(frameNames[0]);
             maxName = Path.GetFileName(frameNames[frameNames.Length - 1]);
-            if (framesType)
-                return chainedFrames;
 
             FileFrames framesContainer = new FileFrames();
             framesContainer.SetFileNames(baseName);
@@ -239,8 +240,15 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <returns></returns>
         public static FileFrames PasteImageOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
         {
-            Int32 bpp = Image.GetPixelFormatSize(image.PixelFormat);
-            Color[] imPalette = bpp > 8 ? null : image.Palette.Entries;
+            Boolean wasCloned = false;
+            if (Image.GetPixelFormatSize(image.PixelFormat) > 8 && image.PixelFormat != PixelFormat.Format32bppArgb)
+            {
+                wasCloned = true;
+                // convert to PixelFormat.Format32bppArgb
+                image = new Bitmap(image);
+            }
+            Int32 pasteBpp = Image.GetPixelFormatSize(image.PixelFormat);
+            Color[] imPalette = pasteBpp > 8 ? null : image.Palette.Entries;
             Boolean[] imPalTrans = imPalette == null ? null : imPalette.Select(c => c.A == 0).ToArray();
             Boolean[] imTransMask = null;
             Int32 imWidth = image.Width;
@@ -249,7 +257,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 imStride = imWidth;
             // check if all frames have the same palette.
             Boolean equalPal = framesContainer.FramesHaveCommonPalette;
-            Color[] framesPal = null;
+            Color[] framePal = null;
+            Int32 frameBpp = 0;
             if (!equalPal)
             {
                 Boolean isEqual = true;
@@ -257,11 +266,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     if (frame == null)
                         continue;
-                    if (framesPal == null)
-                        framesPal = frame.GetColors();
+                    if (framePal == null)
+                        framePal = frame.GetColors();
                     else
                     {
-                        if (!framesPal.SequenceEqual(frame.GetColors()))
+                        if (!framePal.SequenceEqual(frame.GetColors()))
                         {
                             isEqual = false;
                             break;
@@ -272,7 +281,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     equalPal = true;
             }
             if (!equalPal)
-                framesPal = null;
+                framePal = null;
 
             Rectangle pastePos = new Rectangle(pasteLocation, new Size(imWidth, imHeight));
             String name = String.Empty;
@@ -284,7 +293,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             newfile.SetFileNames(name);
             newfile.SetCommonPalette(equalPal);
             newfile.SetBitsPerColor(framesContainer.BitsPerPixel);
-            newfile.SetColorsInPalette(framesContainer.ColorsInPalette);
+            newfile.SetColorsInPalette(equalPal && framePal != null ? framePal.Length : framesContainer.ColorsInPalette);
+            newfile.SetPalette(equalPal ? framePal : null);
             Boolean[] transMask = framesContainer.TransparencyMask;
             newfile.SetTransparencyMask(transMask);
             framesRange = framesRange.Distinct().OrderBy(x => x).ToArray();
@@ -297,21 +307,29 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (frame == null)
                     continue;
                 Bitmap frBm = frame.GetBitmap();
+                Int32 curFrameBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
                 Bitmap newBm;
                 // List is sorted. This is more efficient than "contains" every time.
                 if (nextPasteFrameIndex < framesToHandle && i == framesRange[nextPasteFrameIndex])
                 {
                     nextPasteFrameIndex++;
                     Int32 frWidth = frBm.Width;
-                    Int32 freight = frBm.Height;
+                    Int32 frHeight = frBm.Height;
 
                     if ((frBm.PixelFormat & PixelFormat.Indexed) == 0)
                     {
-                        newBm = new Bitmap(frBm.Width, frBm.Height, frBm.PixelFormat);
-                        using (Graphics g = Graphics.FromImage(newBm))
-                        {
-                            g.DrawImage(frBm, 0, 0, frWidth, freight);
+                        Bitmap tempBm = new Bitmap(frBm);
+                        using (Graphics g = Graphics.FromImage(tempBm))
                             g.DrawImage(image, pastePos);
+                        if (frBm.PixelFormat != PixelFormat.Format32bppArgb)
+                        {
+                            Byte[] drawBytes = ImageUtils.GetImageData(tempBm, out imStride, frBm.PixelFormat);
+                            newBm = ImageUtils.BuildImage(drawBytes, frWidth, frHeight, imStride, frBm.PixelFormat, null, null);
+                            tempBm.Dispose();
+                        }
+                        else
+                        {
+                            newBm = tempBm;
                         }
                     }
                     else
@@ -321,33 +339,37 @@ namespace CnC64FileConverter.Domain.FileTypes
                         Int32 frBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
                         Int32 frStride;
                         Byte[] frData = ImageUtils.GetImageData(frBm, out frStride);
-                        frData = ImageUtils.ConvertTo8Bit(frData, frWidth, freight, 0, frBpp, false, ref frStride);
+                        frData = ImageUtils.ConvertTo8Bit(frData, frWidth, frHeight, 0, frBpp, false, ref frStride);
                         // determine whether the image needs to be re-matched to the palette.
                         Boolean regenImage = false;
                         if (imData == null)
                             regenImage = true;
-                        else if (!equalPal)
+                        else if (!equalPal || curFrameBpp != frameBpp)
                         {
-                            if (framesPal == null)
+                            if (framePal == null)
                             {
                                 regenImage = true;
-                                framesPal = frPalette;
+                                framePal = frPalette;
                             }
                             else
                             {
-                                regenImage = !framesPal.SequenceEqual(frPalette);
+                                regenImage = !framePal.SequenceEqual(frPalette);
                                 if (regenImage)
-                                    framesPal = frame.GetColors();
+                                    framePal = frame.GetColors();
+                            }
+                            if (curFrameBpp != frameBpp)
+                            {
+                                regenImage = true;
                             }
                         }
-                        if (bpp <= 8)
+                        if (pasteBpp <= 8)
                         {
-                            Boolean keepInd = keepIndices && bpp <= frBpp;
+                            Boolean keepInd = keepIndices && pasteBpp <= frBpp;
                             if (regenImage)
                             {
                                 transGuide = frPalette.Select(col => col.A != 0xFF).ToArray();
                                 imData = ImageUtils.GetImageData(image, out imStride);
-                                imData = ImageUtils.ConvertTo8Bit(imData, imWidth, imHeight, 0, bpp, false, ref imStride);
+                                imData = ImageUtils.ConvertTo8Bit(imData, imWidth, imHeight, 0, pasteBpp, false, ref imStride);
                                 if (!keepInd)
                                 {
                                     imTransMask = imData.Select(px => imPalTrans[px]).ToArray();
@@ -372,10 +394,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                             }
                         }
                         // Paste using the transparency image mask.
-                        frData = ImageUtils.PasteOn8bpp(frData, frWidth, freight, frStride, imData, imWidth, imHeight, imStride, pastePos, transGuide, true, imTransMask);
-                        frData = ImageUtils.ConvertFrom8Bit(frData, frWidth, freight, frBpp, false, ref frStride);
-                        newBm = ImageUtils.BuildImage(frData, frWidth, freight, frStride, ImageUtils.GetIndexedPixelFormat(frBpp), frPalette, null);
+                        frData = ImageUtils.PasteOn8bpp(frData, frWidth, frHeight, frStride, imData, imWidth, imHeight, imStride, pastePos, transGuide, true, imTransMask);
+                        frData = ImageUtils.ConvertFrom8Bit(frData, frWidth, frHeight, frBpp, false, ref frStride);
+                        newBm = ImageUtils.BuildImage(frData, frWidth, frHeight, frStride, ImageUtils.GetIndexedPixelFormat(frBpp), frPalette, null);
                     }
+                    frameBpp = curFrameBpp;
                 }
                 else
                 {
@@ -390,6 +413,35 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameCombined.SetExtraInfo(frame.ExtraInfo);
                 newfile.AddFrame(frameCombined);
             }
+            if (wasCloned)
+                image.Dispose();
+            return newfile;
+        }
+
+        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames)
+        {
+            Bitmap[] framesArr = ImageUtils.CutImageIntoFrames(image, frameWidth, frameHeight, frames);
+
+            Int32 bpp = Image.GetPixelFormatSize(image.PixelFormat);
+            Color[] imPalette = bpp > 8 ? null : image.Palette.Entries;
+            Int32 colorsInPal = imPalette == null ? 0 : imPalette.Length;
+            Boolean indexed = bpp <= 8;
+            FileFrames newfile = new FileFrames();
+            newfile.SetFileNames(imagePath);
+            newfile.SetCommonPalette(indexed);
+            newfile.SetBitsPerColor(bpp);
+            newfile.SetPalette(imPalette);
+            newfile.SetTransparencyMask(null);
+            for (Int32 i = 0; i < framesArr.Length; i++)
+            {
+                FileImageFrame framePic = new FileImageFrame();
+                framePic.LoadFileFrame(newfile, newfile, framesArr[i], imagePath, i);
+                framePic.SetBitsPerColor(bpp);
+                framePic.SetColorsInPalette(colorsInPal);
+                framePic.SetTransparencyMask(null);
+                newfile.AddFrame(framePic);
+            }
+            newfile.m_LoadedImage = ImageUtils.CloneImage(image);
             return newfile;
         }
     }

@@ -6,12 +6,12 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.Util.UI;
 using System.IO;
+using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 
-namespace CnC64FileConverter.UI
+namespace EngieFileConverter.UI
 {
     public partial class FrmPasteOnFrames : Form
     {
@@ -40,6 +40,7 @@ namespace CnC64FileConverter.UI
                 this.rbtKeepIndices.Enabled = true;
             }
         }
+
         private void BtnSelectImageClick(Object sender, EventArgs e)
         {
             Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
@@ -51,7 +52,7 @@ namespace CnC64FileConverter.UI
                     filteredTypes.Add(saveType);
             }
             SupportedFileType selectedType;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", filteredTypes.ToArray(), this.LastSelectedFolder, "images", null, out selectedType);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), this.LastSelectedFolder, "images", null, out selectedType);
             if (filename == null)
                 return;
             this.LastSelectedFolder = Path.GetDirectoryName(filename);
@@ -67,7 +68,7 @@ namespace CnC64FileConverter.UI
                     if (selectedType == null)
                     {
                         String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
-                        MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, FrmCnC64FileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
                 }
@@ -88,7 +89,7 @@ namespace CnC64FileConverter.UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + ex.Message, FrmCnC64FileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + ex.Message, FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
             {
@@ -105,13 +106,13 @@ namespace CnC64FileConverter.UI
         {
             if (txtFrames.Text.Trim(",- \r\n\t".ToCharArray()).Length == 0)
             {
-                MessageBox.Show(this, "No frame ranges specified.", FrmCnC64FileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "No frame ranges specified.", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Int32[] frameRange = GeneralUtils.GetRangedNumbers(txtFrames.Text).Where(i => i < m_Frames).ToArray();
             if (frameRange.Length == 0)
             {
-                MessageBox.Show(this, "No valid frame ranges found in given text.", FrmCnC64FileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "No valid frame ranges found in given text.", FrmFileConverter.GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             this.FrameRange = frameRange;
