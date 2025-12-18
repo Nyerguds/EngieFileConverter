@@ -22,22 +22,22 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override String IdCode { get { return "TrMountPan"; } }
+        public override string IdCode { get { return "TrMountPan"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Treasure Mountain Pan"; } }
-        public override String[] FileExtensions { get { return new String[] { "pan" }; } }
-        public override String LongTypeName { get { return "Treasure Mountain Panning Image Set"; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Int32 BitsPerPixel { get { return 4; } }
+        public override string ShortTypeName { get { return "Treasure Mountain Pan"; } }
+        public override string[] FileExtensions { get { return new string[] { "pan" }; } }
+        public override string LongTypeName { get { return "Treasure Mountain Panning Image Set"; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 4; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
+        public override bool HasCompositeFrame { get { return false; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return null; } }
+        public override bool[] TransparencyMask { get { return null; } }
 
         const string ERR_FRAMES_MUL8 = "Frames of this format need to be a multiple of 8×8 pixels.";
         const string ERR_FRAMES_DIV = "Full image dimensions need to be exactly divisible by the given frame size.";
@@ -45,25 +45,25 @@ namespace EngieFileConverter.Domain.FileTypes
         const int TILES_MAX = 2047;
         const byte FLAG_VALUE = 0xA5;
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < 8)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
-            Int32 imgDataPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0) + 8;
-            Int32 tilesX = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
-            Int32 tilesY = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
-            Int32 imgLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
+            int imgDataPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0) + 8;
+            int tilesX = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+            int tilesY = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+            int imgLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
             int frameTilesLen = tilesX * tilesY;
             // flag-based decompression
             int readOffs = imgDataPos;
@@ -129,22 +129,22 @@ namespace EngieFileConverter.Domain.FileTypes
                 
                 string[] values = hiddenData.Select(val => val.ToString()).ToArray();
                 string[] chars = hiddenData.Where(val => fileData[val] > 0x1F && fileData[val] < 0x80).Select(val => ((char)fileData[val]).ToString()).ToArray();
-                sb.Append(String.Join(", ", values));
-                sb.Append("\n = \"").Append(String.Join(String.Empty, chars)).Append("\"");
+                sb.Append(string.Join(", ", values));
+                sb.Append("\n = \"").Append(string.Join(string.Empty, chars)).Append("\"");
             }
             this.ExtraInfo = sb.ToString();
             readOffs = 8;
             // Read frames until reaching the image data
-            List<Int32[]> frames = new List<Int32[]>();
+            List<int[]> frames = new List<int[]>();
             while (readOffs < imgDataPos)
             {
-                Int32[] framePointers = new Int32[frameTilesLen];
+                int[] framePointers = new int[frameTilesLen];
                 frames.Add(framePointers);
                 writeOffs = 0;
                 // Read tiles until the frame is filled.
                 while (writeOffs < frameTilesLen)
                 {
-                    Int32 info = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
+                    int info = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
                     readOffs += 2;
                     if (info != 0x0FFF)
                     {
@@ -154,7 +154,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         int pointer = (info & 0x0FFF) << 4;
                         int end = writeOffs + added + 1;
                         if (end > frameTilesLen)
-                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "repeated amount of tiles exceeds current tile map size."));
+                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "repeated amount of tiles exceeds current tile map size."));
                         end = Math.Min(end, frameTilesLen);
                         for (; writeOffs < end; ++writeOffs)
                         {
@@ -165,15 +165,15 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         // copy entire row from previous decompression.
                         if (writeOffs % tilesX != 0)
-                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "tile map line copy commands are only supported at the start of a line."));
-                        Int32 linecopy = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
+                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "tile map line copy commands are only supported at the start of a line."));
+                        int linecopy = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
                         readOffs += 2;
                         int rowStart = (linecopy & 0xFF) * tilesX;
                         int map = (linecopy & 0xFF00) >> 8;
                         int end = Math.Min(writeOffs + tilesX, frameTilesLen);
                         if (frames.Count <= map)
-                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "tile map line copy command references unbuilt tile map."));
-                        Int32[] copyPointers = frames[map];
+                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "tile map line copy command references unbuilt tile map."));
+                        int[] copyPointers = frames[map];
                         for (; writeOffs < end; ++writeOffs)
                         {
                             framePointers[writeOffs] = copyPointers[rowStart++];
@@ -196,8 +196,8 @@ namespace EngieFileConverter.Domain.FileTypes
             /*/
             // Build final images. Since the paste-method I got is only 8-bit, the image data is converted to 8-bit as in-between step.
             m_FramesList = new SupportedFileType[frames.Count];
-            Int32 frameWidth = tilesX * 8;
-            Int32 frameHeight = tilesY * 8;
+            int frameWidth = tilesX * 8;
+            int frameHeight = tilesY * 8;
             for (int i = 0; i < frames.Count; ++i)
             {
                 int[] frameData = frames[i];
@@ -208,13 +208,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     int curTileIndex = curTileRowStart;
                     for (int x = 0; x < tilesX; ++x)
                     {
-                        Byte[] tile4bpp = new Byte[32];
+                        byte[] tile4bpp = new byte[32];
                         // Y-coord in 8-wide image to actual byte pointer
                         int ptr = frameData[curTileIndex++];
                         if (ptr + 32 <= imageDataLen)
                         {
                             Array.Copy(imageData, ptr, tile4bpp, 0, tile4bpp.Length);
-                            Byte[] tile8bpp = ImageUtils.ConvertTo8Bit(imageData, 8, 8, ptr, 4, true);
+                            byte[] tile8bpp = ImageUtils.ConvertTo8Bit(imageData, 8, 8, ptr, 4, true);
                             ImageUtils.PasteOn8bpp(fullFrame, frameWidth, frameHeight, frameWidth, tile8bpp, 8, 8, 8, new Rectangle(x * 8, y * 8, 8, 8), null, true);
                         }
                     }
@@ -234,13 +234,13 @@ namespace EngieFileConverter.Domain.FileTypes
             //*/
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             int width;
             int height;
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out width, out height);
             // no options for cutting up the frame if there's multiple frames
-            if (frames.Length > 1)
+            if (fileToSave.IsFramesContainer || frames.Length > 1)
             {
                 return new Option[0];
             }
@@ -268,15 +268,15 @@ namespace EngieFileConverter.Domain.FileTypes
             int width;
             int height;
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out width, out height);
-            Int32 nrOfFrames = frames.Length;
-            Int32 frameWidth = width;
-            Int32 frameHeight = height;
+            int nrOfFrames = frames.Length;
+            int frameWidth = width;
+            int frameHeight = height;
             byte[][] frameBytes8bpp;
-            if (nrOfFrames == 1)
+            if (nrOfFrames == 1 && !fileToSave.IsFramesContainer)
             {
                 // one frame: chop into sub-frames
-                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "WDT"), out frameWidth);
-                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "HGT"), out frameHeight);
+                int.TryParse(Option.GetSaveOptionValue(saveOptions, "WDT"), out frameWidth);
+                int.TryParse(Option.GetSaveOptionValue(saveOptions, "HGT"), out frameHeight);
                 if (frameWidth % 8 != 0 || frameHeight % 8 != 0)
                     throw new ArgumentException(ERR_FRAMES_MUL8, "fileToSave");
                 if (width % frameWidth != 0 || height % frameHeight != 0)
@@ -324,26 +324,26 @@ namespace EngieFileConverter.Domain.FileTypes
 
             }
             // Chop up into unique tiles.
-            Int32[][] resultFrames = new Int32[nrOfFrames][];
+            int[][] resultFrames = new int[nrOfFrames][];
             List<byte[]> uniqueTiles = new List<byte[]>();
             int tilesWidth = frameWidth / 8;
             int tilesHeight = frameHeight / 8;
             int frameTilesSize = tilesWidth * tilesHeight;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 byte[] frameData = frameBytes8bpp[i];
-                Int32[] resultFrame = new int[frameTilesSize];
+                int[] resultFrame = new int[frameTilesSize];
                 resultFrames[i] = resultFrame;
                 int tileLineOffset = 0;
-                for (Int32 y = 0; y < frameHeight; y += 8)
+                for (int y = 0; y < frameHeight; y += 8)
                 {
                     int tileOffset = tileLineOffset;
-                    for (Int32 x = 0; x < frameWidth; x += 8)
+                    for (int x = 0; x < frameWidth; x += 8)
                     {
                         byte[] curTile = ImageUtils.CopyFrom8bpp(frameData, frameWidth, frameHeight, frameWidth, new Rectangle(x, y, 8, 8));
                         int tileIndex = FindUniqueTile(uniqueTiles, curTile);
                         if (tileIndex > TILES_MAX)
-                            throw new ArgumentException(String.Format(ERR_TILES_OVERFLOW, TILES_MAX), "fileToSave");
+                            throw new ArgumentException(string.Format(ERR_TILES_OVERFLOW, TILES_MAX), "fileToSave");
                         resultFrame[tileOffset] = tileIndex;
                         tileOffset++;
                     }
@@ -351,13 +351,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             // convert tiles back to 4-bit
-            Int32 tilesetLength = uniqueTiles.Count;
+            int tilesetLength = uniqueTiles.Count;
             for (int i = 0; i < tilesetLength; ++i)
             {
                 uniqueTiles[i] = ImageUtils.ConvertFrom8Bit(uniqueTiles[i], 8, 8, 4, true);
             }
             // Optimisation? Could sort so long beginnings and ends match up
-            //OptimiseFrames(resultFrames, uniqueTiles);
+            OptimiseFrames(resultFrames, uniqueTiles);
 
             // Put image data into one large array.
             byte[] tileset = new byte[tilesetLength * 32];
@@ -372,13 +372,13 @@ namespace EngieFileConverter.Domain.FileTypes
 
             // At this point, we have all the image data, and all the frames. The only thing left is to compress it all.
             // 1. Compress resultFrames. 2 bytes per tile is the absolute maximum possible.
-            Byte[] resultFrameData = new byte[nrOfFrames * frameTilesSize * 2];
+            byte[] resultFrameData = new byte[nrOfFrames * frameTilesSize * 2];
             int resultFrameDataOffset = 0;
-            for (Int32 fr = 0; fr < nrOfFrames; ++fr)
+            for (int fr = 0; fr < nrOfFrames; ++fr)
             {
-                Int32[] resultFrame = resultFrames[fr];
+                int[] resultFrame = resultFrames[fr];
                 int sourceDataLineOffs = 0;
-                for (Int32 y = 0; y < tilesHeight; ++y)
+                for (int y = 0; y < tilesHeight; ++y)
                 {
                     int sourceDataOffs = sourceDataLineOffs;
                     int lineEnd = sourceDataOffs + tilesWidth;
@@ -394,14 +394,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, 0x0FFF);
                         resultFrameDataOffset += 2;
-                        ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, (UInt16)earlierLine);
+                        ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, (ushort)earlierLine);
                         resultFrameDataOffset += 2;
                     }
                     else
                     {
                         sourceDataOffs += repeat;
                         int writeVal = (repeat - 1) << 12 | (curVal << 1);
-                        ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, (UInt16)writeVal);
+                        ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, (ushort)writeVal);
                         resultFrameDataOffset += 2;
                         while (sourceDataOffs < lineEnd)
                         {
@@ -412,7 +412,7 @@ namespace EngieFileConverter.Domain.FileTypes
                                 repeat++;
                             sourceDataOffs += repeat;
                             writeVal = (repeat - 1) << 12 | (curVal << 1);
-                            ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, (UInt16)writeVal);
+                            ArrayUtils.WriteUInt16ToByteArrayLe(resultFrameData, resultFrameDataOffset, (ushort)writeVal);
                             resultFrameDataOffset += 2;
                         }
                     }
@@ -430,7 +430,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 if (comprImgOffset + 3 >= comprImgData.Length)
                 {
-                    Byte[] newArr = new byte[comprImgData.Length + tilesetEnd];
+                    byte[] newArr = new byte[comprImgData.Length + tilesetEnd];
                     Array.Copy(comprImgData, newArr, comprImgData.Length);
                     comprImgData = newArr;
                 }
@@ -468,52 +468,122 @@ namespace EngieFileConverter.Domain.FileTypes
             byte[] fileDataFinal = new byte[8 + resultFrameDataOffset + comprImgOffset];
             Array.Copy(resultFrameData, 0, fileDataFinal, 8, resultFrameDataOffset);
             Array.Copy(comprImgData, 0, fileDataFinal, 8 + resultFrameDataOffset, comprImgOffset);
-            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 0, (UInt16)resultFrameDataOffset);
-            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 2, (UInt16)tilesWidth);
-            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 4, (UInt16)tilesHeight);
-            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 6, (UInt16)comprImgOffset);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 0, (ushort)resultFrameDataOffset);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 2, (ushort)tilesWidth);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 4, (ushort)tilesHeight);
+            ArrayUtils.WriteUInt16ToByteArrayLe(fileDataFinal, 6, (ushort)comprImgOffset);
             return fileDataFinal;
         }
 
-        private void OptimiseFrames(Int32[][] frames, List<Byte[]> tiles)
+        private void OptimiseFrames(int[][] frames, List<byte[]> tiles)
         {
-            // Optimise: for each byte value, see if any tile exists that is fully filled with that byte value.
-            // If so, find the tile with the longest range of that value at the end, and the tile with the longest
-            // range of that value at the start, and make sure they are positioned behind each other. This optimises
-            // the image compression later. Ensure that any swaps are applied to the frameData arrays as well.
-
-            // 1. Find all tiles that are full.
+            // Optimise: for each byte value, find the tiles with the longest start and end comprised of repeats of that
+            // value, and put them end-to-end so longer compressed ranges can be achieved in the final tileset image data.
             int tilesetLength = tiles.Count;
-            List<int> fullTiles = new List<int>();
+            // map byte value to dictionary of lengths, with for each length the list of tiles.
+            int[] tileStartLengths = new int[tilesetLength];
+            Dictionary<byte, Dictionary<int, List<int>>> startLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
+            int[] tileEndLengths = new int[tilesetLength];
+            Dictionary<byte, Dictionary<int, List<int>>> endLengths = new Dictionary<byte, Dictionary<int, List<int>>>();
             for (int i = 0; i < tilesetLength; ++i)
             {
                 byte[] currTile = tiles[i];
-                byte firstVal = currTile[0];
-                Boolean full = true;
-                for (int j = 1; j < 32; ++j)
+                // check start length of tile.
+                byte checkVal = currTile[0];
+                Dictionary<int, List<int>> lengthsForByteStart;
+                if (!startLengths.TryGetValue(checkVal, out lengthsForByteStart))
+                    startLengths[checkVal] = lengthsForByteStart = new Dictionary<int, List<int>>();
+                int len = 1;
+                while (len < 32 && currTile[len] == checkVal)
+                    len++;
+                tileStartLengths[i] = len;
+                List<int> tilesForStartLength;
+                if (!lengthsForByteStart.TryGetValue(len, out tilesForStartLength))
+                    lengthsForByteStart[len] = tilesForStartLength = new List<int>();
+                tilesForStartLength.Add(i);
+                // check end length of tile.
+                checkVal = currTile[31];
+                Dictionary<int, List<int>> lengthsForByteEnd;
+                if (!endLengths.TryGetValue(checkVal, out lengthsForByteEnd))
+                    endLengths[checkVal] = lengthsForByteEnd = new Dictionary<int, List<int>>();
+                len = 30;
+                while (len >= 0 && currTile[len] == checkVal)
+                    len--;
+                len = 31 - len;
+                tileEndLengths[i] = len;
+                List<int> tilesForEndLength;
+                if (!lengthsForByteEnd.TryGetValue(len, out tilesForEndLength))
+                    lengthsForByteEnd[len] = tilesForEndLength = new List<int>();
+                tilesForEndLength.Add(i);
+            }
+            Dictionary<int, int> tileRemap = new Dictionary<int, int>();
+            int tilemapIndex = 0;
+            foreach (byte startval in startLengths.Keys.OrderBy(b => b))
+            {
+                if (!endLengths.ContainsKey(startval))
+                    continue;
+                Dictionary<int, List<int>> lengthsForByteStart = startLengths[startval];
+                List<int> startLengthsDesc = lengthsForByteStart.Keys.OrderByDescending(b => b).SelectMany(b => lengthsForByteStart[b])
+                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
+                Dictionary<int, List<int>> lengthsForByteEnd = endLengths[startval];
+                List<int> endLengthsDesc = lengthsForByteEnd.Keys.OrderBy(b => b).SelectMany(b => lengthsForByteEnd[b])
+                    .Where(b => !tileRemap.ContainsKey(b)).ToList();
+                // iterate over minimum
+                List<int> iterate = new List<int>(startLengthsDesc.Count < endLengthsDesc.Count ? startLengthsDesc : endLengthsDesc);
+                List<int> otherList = startLengthsDesc.Count < endLengthsDesc.Count ? endLengthsDesc : startLengthsDesc;
+                // remove duplicates in the two lists.
+                foreach (int tileNr in iterate.Where(t => otherList.Contains(t)))
                 {
-                    if (currTile[j] != firstVal)
+                    // Maximize usable pairs by always removing from largest list.
+                    if (endLengthsDesc.Count >= startLengthsDesc.Count)
+                        endLengthsDesc.Remove(tileNr);
+                    else
+                        startLengthsDesc.Remove(tileNr);
+                }
+                //  This logic is honestly extremely rough; it does not check if the resulting
+                //  joined amounts even exceed a length of 3. But it works; all files in the
+                //  game become smaller when re-saved.
+                int end = Math.Min(startLengthsDesc.Count, endLengthsDesc.Count);
+                for (int i = 0; i < end; ++i)
+                {
+                    int tile1 = startLengthsDesc[i];
+                    int tile2 = endLengthsDesc[i];
+
+                    int tile1StartLength = tileStartLengths[tile1];
+                    int tile2EndLength = tileEndLengths[tile2];
+                    // Check if one of the tiles is 100% filled with the value. This will only happen once per value.
+                    bool addedExtra = false;
+                    if (tile1StartLength == 32 && endLengthsDesc.Count > startLengthsDesc.Count)
                     {
-                        full = false;
-                        break;
+                        tileRemap.Add(endLengthsDesc[end], tilemapIndex++);
+                        addedExtra = true;
+                    }
+                    tileRemap.Add(tile1, tilemapIndex++);
+                    tileRemap.Add(tile2, tilemapIndex++);
+                    if (!addedExtra && tile2EndLength == 32 && startLengthsDesc.Count > endLengthsDesc.Count)
+                    {
+                        tileRemap.Add(startLengthsDesc[end], tilemapIndex++);
                     }
                 }
-                if (full)
+            }
+            // Apply remap, filling in any unsorted tiles on the fly.
+            // Remap tileset
+            List<byte[]> origTiles = new List<byte[]>(tiles);
+            for (int i = 0; i < tilesetLength; ++i)
+            {
+                if (!tileRemap.ContainsKey(i))
+                    tileRemap.Add(i, tilemapIndex++);
+                tiles[tileRemap[i]] = origTiles[i];
+            }
+            // Remap tilemaps
+            for (int fr = 0; fr < frames.Length; ++fr)
+            {
+                int[] frame = frames[fr];
+                for (int i = 0; i < frame.Length; ++i)
                 {
-                    fullTiles.Add(i);
+                    frame[i] = tileRemap[frame[i]];
                 }
             }
-            // Found all full tiles.
-
-        }
-
-        private static int GetRepeat(int[] resultFrame, int sourceDataOffs, int maxAhead)
-        {
-            int curVal = resultFrame[sourceDataOffs];
-            int repeat = 1;
-            while (sourceDataOffs + repeat < maxAhead && resultFrame[sourceDataOffs + repeat] == curVal)
-                repeat++;
-            return repeat;
         }
 
         /// <summary>
@@ -524,7 +594,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <returns>The index at which the tile was found or added.</returns>
         private int FindUniqueTile(List<byte[]> uniqueTiles, byte[] curTile)
         {
-            Int32 length = uniqueTiles.Count;
+            int length = uniqueTiles.Count;
             for (int i = 0; i < length; i++)
             {
                 byte[] tile = uniqueTiles[i];
@@ -546,7 +616,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return length;
         }
 
-        private int FindEarlierLine(Int32[][] frames, int frameWidth, int frameHeight, int currentFrame, int currentOffset)
+        private int FindEarlierLine(int[][] frames, int frameWidth, int frameHeight, int currentFrame, int currentOffset)
         {
             int[] resultFrameRow = new int[frameWidth];
             Array.Copy(frames[currentFrame], currentOffset * frameWidth, resultFrameRow, 0, frameWidth);
@@ -583,10 +653,10 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // Preliminary checks
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames = frames.Length;
+            int nrOfFrames = frames.Length;
             width = -1;
             height = -1;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap bm;
@@ -621,7 +691,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
                 if (bm.PixelFormat == PixelFormat.Format8bppIndexed)
                 {
-                    Byte[] imgData = ImageUtils.GetImageData(bm, true);
+                    byte[] imgData = ImageUtils.GetImageData(bm, true);
                     int dlen = imgData.Length;
                     for (int off = 0; off < dlen; ++off)
                     {
