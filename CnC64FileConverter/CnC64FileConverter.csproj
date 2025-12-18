@@ -80,6 +80,7 @@
   <ItemGroup>
     <Content Include="Domain\CCTypes\CnCShp.cs" />
     <Compile Include="Domain\CCTypes\WWCompression.cs" />
+    <Compile Include="Domain\FileTypes\FileImgLCW.cs" />
     <Compile Include="Domain\FileTypes\FileTilesetPC.cs" />
     <Compile Include="Domain\CCTypes\HeightTerrainType.cs" />
     <Compile Include="Domain\CCTypes\TerrainType.cs" />
@@ -87,10 +88,44 @@
     <Compile Include="Domain\FileTypes\FileImgN64Gray.cs" />
     <Compile Include="Domain\FileTypes\FileTilesN64.cs" />
     <Compile Include="Domain\FileTypes\FilePaletteN64.cs" />
+    <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
     <Compile Include="Domain\HeightMap\HeightMapGenerator.cs" />
     <Compile Include="Domain\HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorHSL.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\ColorCaches\Common\ColorModel.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.IEnumerable.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.Image.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.PixelFormat.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\ColorModelHelper.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\FastRandom.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Guard.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\ImageBuffer.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixel.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\IIndexedPixel.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\Indexed\PixelData1Indexed.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\Indexed\PixelData4Indexed.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\Indexed\PixelData8Indexed.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\INonIndexedPixel.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataArgb1555.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataArgb64.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataArgb8888.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataGray16.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb48.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb555.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb565.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb888.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb8888.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\PixelTransform.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\QuantizationHelper.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\IPathProvider.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\ReversedPathProvider.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\SerpentinePathProvider.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\StandardPathProvider.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\BaseColorQuantizer.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\IColorQuantizer.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\XiaolinWu\WuColorCube.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\XiaolinWu\WuColorQuantizer.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorUtils.cs" />
     <Compile Include="Domain\CCTypes\SixBitColor.cs" />
     <Compile Include="Domain\FileTypeBroadcaster.cs" />
@@ -103,7 +138,6 @@
     <Compile Include="Domain\FileTypes\FileMapN64.cs" />
     <Compile Include="Domain\FileTypes\FilePalettePc.cs" />
     <Compile Include="Domain\FileTypes\FileMapPc.cs" />
-    <Compile Include="Domain\FileTypes\N64FileType.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ImageUtils.cs" />
     <Compile Include="Domain\FileTypes\FileImage.cs" />
     <Compile Include="Domain\FileTypes\FileImgN64.cs" />
@@ -111,8 +145,10 @@
     <Compile Include="Domain\CCTypes\CnCMap.cs" />
     <Compile Include="Domain\CCTypes\MapConversion.cs" />
     <Compile Include="Domain\CCTypes\TileInfo.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\KMeansPalettedTiles.cs" />
     <Compile Include="Domain\Utils\ImageUtils\PaletteUtils.cs" />
     <Compile Include="Domain\Utils\ImageUtils\PixelFormatter.cs" />
+    <Compile Include="Domain\Utils\KMeans.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="UI\FrmManagePalettes.cs">
       <SubType>Form</SubType>
@@ -207,6 +243,7 @@
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>copy /y "$(ProjectDir)..\Nyerguds.Ini\$(OutDir)IniHandler.dll" "$(ProjectDir)Resources"</PreBuildEvent>

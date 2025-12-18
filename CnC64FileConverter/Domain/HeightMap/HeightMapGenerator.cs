@@ -120,7 +120,7 @@ namespace CnC64FileConverter.Domain.HeightMap
             }
             Bitmap bm = ImageUtils.BuildImage(heightMapData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Empty);
             FileImagePng returnImg = new FileImagePng();
-            returnImg.LoadImage(bm, palette.Length, pngFileName);
+            returnImg.LoadFile(bm, palette.Length, pngFileName);
             return returnImg;
         }
 

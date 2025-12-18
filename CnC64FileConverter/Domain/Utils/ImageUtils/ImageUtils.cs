@@ -222,6 +222,24 @@ namespace Nyerguds.ImageManipulation
             return newImageData;
         }
 
+        public static Bitmap ConvertToPalette(Bitmap originalImage, Int32 bpp, Color[] palette)
+        {
+            PixelFormat pf;
+            switch (bpp)
+            {
+                case 1: pf = PixelFormat.Format1bppIndexed; break;
+                case 4: pf = PixelFormat.Format4bppIndexed; break;
+                case 8: pf = PixelFormat.Format8bppIndexed; break;
+                default: throw new NotSupportedException("Unsupported indexed pixel format '"+bpp+"'!");
+            }
+            Int32 stride;
+            if (originalImage.PixelFormat != PixelFormat.Format32bppArgb)
+                originalImage = PaintOn32bpp(originalImage, Color.Black);
+            Byte[] imageData = GetImageData(originalImage, out stride);
+            Byte[] palettedData = Convert32BitToPaletted(imageData, originalImage.Width, originalImage.Height, bpp, palette, ref stride);
+            return BuildImage(palettedData, originalImage.Width, originalImage.Height, stride, pf, palette, Color.Black);
+        }
+
         public static Byte[] Convert32BitToPaletted(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Color[] palette, ref Int32 stride)
         {
             if (width * 4 > stride)
@@ -569,7 +587,7 @@ namespace Nyerguds.ImageManipulation
 
         /// <summary>
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
-        /// The stride of the output will be exactly the same as the width.
+        /// The stride of the output will be exactly the same as the width. Can be used to cut the stride off 8-bit images.
         /// </summary>
         /// <param name="fileData">The file data.</param>
         /// <param name="width">Width of the image.</param>
@@ -680,6 +698,45 @@ namespace Nyerguds.ImageManipulation
             }
             stride = newStride;
             return dataXbit;
+        }
+
+
+        public static Bitmap Tile8BitImages(Byte[][] tiles, Int32 tileWidth, Int32 tileHeight, Int32 tileStride, Int32 nrOftiles, Color[] palette, Int32 tilesX)
+        {
+            Int32 yDim = nrOftiles / tilesX + (nrOftiles % tilesX == 0 ? 0 : 1);
+
+            // Build image, set in m_LoadedImage
+            Int32 fullImageWidth = tilesX * tileWidth;
+            Int32 fullImageHeight = yDim * tileHeight;
+            byte[] fullImageData = new Byte[fullImageWidth * fullImageHeight];
+            for (Int32 y = 0; y < yDim; y++)
+            {
+                for (Int32 x = 0; x < tilesX; x++)
+                {
+                    Int32 index = y * tilesX + x;
+                    if (index == nrOftiles)
+                        break;
+
+                    Byte[] curTile = tiles[index];
+                    ImageUtils.PasteOn8bpp(fullImageData, fullImageWidth, fullImageHeight, fullImageWidth,
+                        curTile, tileWidth, tileHeight, tileStride,
+                        new Rectangle(x * tileWidth, y * tileHeight, tileWidth, tileHeight), palette, true);
+                }
+            }
+            return ImageUtils.BuildImage(fullImageData, fullImageWidth, fullImageHeight, fullImageWidth, PixelFormat.Format8bppIndexed, palette, Color.Empty);
+        }
+
+        public static Bitmap[] GetFramesFromAnimatedGIF(Image image)
+        {
+            List<Bitmap> images = new List<Bitmap>();
+            Int32 length = image.GetFrameCount(FrameDimension.Time);
+            for (Int32 i = 0; i < length; i++)
+            {
+                image.SelectActiveFrame(FrameDimension.Time, i);
+                using (Bitmap frame = new Bitmap(image))
+                    images.Add(CloneImage(frame));
+            }
+            return images.ToArray();
         }
 
     }

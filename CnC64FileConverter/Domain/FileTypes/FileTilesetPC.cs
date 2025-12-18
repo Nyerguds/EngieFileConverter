@@ -11,7 +11,7 @@ using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileTilesetPC : N64FileType
+    public class FileTilesetPC : SupportedFileType
     {
         public override String[] FileExtensions { get { return new String[] { "tmp", "tem", "win", "des", "sno" }; } }
         public override String ShortTypeName { get { return "PCTile"; } }
@@ -33,9 +33,27 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 hdrIndexTilesetImagesList;
         protected List<PCTile> m_TilesList;
         protected Color[] m_Palette = null;
+        protected Byte[][] m_Tiles;
+        protected Boolean[] m_TileUseList;
 
-        public override N64FileType[] Frames { get { return m_TilesList.Cast<N64FileType>().ToArray(); } }
-        
+        public Byte[][] GetRawTiles()
+        {
+            Byte[][] tiles = new Byte[this.m_Tiles.Length][];
+            for (int i = 0; i < tiles.Length; i++)
+                tiles[i] = this.m_Tiles[i].ToArray();
+            return tiles;
+        }
+
+        public Boolean[] GetUsedEntriesList()
+        {
+            return this.m_TileUseList.ToArray();
+        }
+
+        /// <summary>Enables frame controls on the UI.</summary>
+        public override Boolean ContainsFrames { get { return true; } }
+        /// <summary>Retrieves the sub-frames inside this file.</summary>
+        public override SupportedFileType[] Frames { get { return m_TilesList.Cast<SupportedFileType>().ToArray(); } }
+
         public override void SetColors(Color[] palette)
         {
             m_Palette = palette.ToArray();
@@ -62,7 +80,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override void SaveAsThis(N64FileType fileToSave, string savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, string savePath)
         {
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException("Can only save 8 BPP images as this type.");
@@ -159,16 +177,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, false, false);
             // ONly way to set a palette is through SetPaletre, and that ensures 256 colours.
             this.m_Palette[0] = Color.FromArgb(0, this.m_Palette[0]);
-            Byte[][] tiles = new Byte[this.hdrNrOfTiles][];
+            this.m_Tiles = new Byte[this.hdrNrOfTiles][];
+            this.m_TileUseList = new Boolean[imagesList.Length];
             for (Int32 i = 0; i < imagesList.Length; i++)
             {
                 Byte dataIndex = imagesList[i];
+                Boolean used = dataIndex != 0xFF;
+                m_TileUseList[i] = used;
                 Byte[] tileData;
-                if (dataIndex == 0xFF)
-                {
-                    tileData = Enumerable.Repeat((Byte)0, tileSize).ToArray();
-                }
-                else
+                if (used)
                 {
                     tileData = new Byte[tileSize];
                     Int32 offset = this.hdrImgStart + dataIndex * tileSize;
@@ -176,12 +193,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                         throw new FileTypeLoadException("Tile data outside file range");
                     Array.Copy(fileData, offset, tileData, 0, tileSize);
                 }
-                tiles[i] = tileData;
+                else
+                {
+                    tileData = Enumerable.Repeat((Byte)0, tileSize).ToArray();
+                }
+                this.m_Tiles[i] = tileData;
                 Bitmap tileImage = ImageUtils.BuildImage(tileData, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 m_TilesList.Add(new PCTile(this, sourceFileName, tileImage, (Byte)i));
             }
             Int32 xDim = -1;
-            Int32 yDim = -1;
             if (sourceFileName != null)
             {
                 String baseName = Path.GetFileNameWithoutExtension(sourceFileName);
@@ -192,32 +212,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (tileInfo.Width * tileInfo.Height != this.hdrNrOfTiles)
                         continue;
                     xDim = tileInfo.Width;
-                    yDim = tileInfo.Height;
                     break;
                 }
             }
-            if (xDim == -1 || yDim == -1)
-            {
+            if (xDim == -1)
                 xDim = 1;
-                yDim = this.hdrNrOfTiles;
-            }
-            // Build image, set in m_LoadedImage
-            Int32 fullImageWidth = xDim * this.hdrTileWidth;
-            Int32 fullImageHeight = yDim * this.hdrTileHeight;
-            byte[] fullImageData = new Byte[fullImageWidth * fullImageHeight];
-            for (Int32 y = 0; y < yDim; y++)
-            {
-                for (Int32 x = 0; x < xDim; x++)
-                {
-                    Int32 index = y * xDim + x;
-                    Byte[] curTile = tiles[index];
-                    ImageUtils.PasteOn8bpp(fullImageData, fullImageWidth, fullImageHeight, fullImageWidth,
-                        curTile, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth,
-                        new Rectangle(x * this.hdrTileWidth, y * this.hdrTileHeight, this.hdrTileWidth, this.hdrTileHeight),
-                        this.m_Palette, true);
-                }
-            }
-            this.m_LoadedImage = ImageUtils.BuildImage(fullImageData, fullImageWidth, fullImageHeight, fullImageWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
+            this.CompositeFrameTilesWidth = xDim;
+            BuildFullImage();
+        }
+
+        protected override void BuildFullImage()
+        {
+            Int32 nrOftiles = this.m_Tiles.Length;
+            this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_Tiles, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, nrOftiles, this.m_Palette, this.m_CompositeFrameTilesWidth);
         }
 
         private void ReadHeader(Byte[] headerBytes)
@@ -256,7 +263,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 BitsPerColor { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         
-        public PCTile(N64FileType origin, String sourceFileName, Bitmap tileImage, Byte index)
+        public PCTile(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index)
             : base(origin, sourceFileName, tileImage, null, index, 0)
         { }
 

@@ -11,7 +11,7 @@ using Nyerguds.ImageManipulation;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileMapPc : N64FileType
+    public class FileMapPc : SupportedFileType
     {
         protected static readonly Regex HEXREGEX = new Regex("^[0-9A-F]+h$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         protected static readonly Regex ROADREGEX1 = new Regex("^D\\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -62,7 +62,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 64; } }
         public override Int32 Height { get { return 64; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override N64FileType PreferredExportType { get { return new FileMapN64(); } }
+        public override SupportedFileType PreferredExportType { get { return new FileMapN64(); } }
         public override Int32 BitsPerColor { get { return 0; } }
 
         public Byte[] PCMapData { get; protected set; }
@@ -92,7 +92,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return null;
         }
         
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
             if (fileToSave is FileMapPc)
                 File.WriteAllBytes(savePath, ((FileMapPc)fileToSave).PCMapData);

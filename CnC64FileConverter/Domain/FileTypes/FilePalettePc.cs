@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FilePalettePc : N64FileType
+    public class FilePalettePc : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "PCPal"; } }
@@ -21,7 +21,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
         public override Int32 ColorsInPalette { get { return 256; } }
-        public override N64FileType PreferredExportType { get { return new FilePaletteN64(); } }
+        public override SupportedFileType PreferredExportType { get { return new FilePaletteN64(); } }
 
         protected Color[] m_palette;
 
@@ -75,7 +75,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !m_palette.SequenceEqual(m_BackupPalette);
         }
 
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
             if (fileToSave.BitsPerColor != 8)
                 throw new NotSupportedException(String.Empty);

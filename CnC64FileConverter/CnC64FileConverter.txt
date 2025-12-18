@@ -33,7 +33,13 @@ At that point, it became the CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
 
-v1.0.7: (01/05/2017 19:43)
+v1.0.8: (05/05/2017 17:53)
+-Fixed bugs in opening logic that made the program give errors on opening .IMG files.
+-Fixed oversight in .IMG saving logics that didn't pass on the palette length.
+-Fixed bug in the N64 8-bit palette data that gave it the .pa4 extension.
+-Added support for reading and writing LCW-compressed images.
+
+v1.0.7: (01/05/2017 20:08)
 -Added an option to copy the image to the clipboard.
 -Added palette support for paletteless file formats.
 -Added the ability to open C&C template (tileset) files.
@@ -72,6 +78,7 @@ v1.0: (04/04/2017 22:33)
 -Added support for PC and N64 color palettes.
 -Added support for saving N64 IMG format, and specifically paletteless greyscale IMG.
 -Added read support for terrain tiles; the're triplets of DA4/ND4/PA4 or DA8/ND8/PA8 files.
+
 
 CnC64ImageViewer versions:
 

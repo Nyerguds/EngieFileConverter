@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RApp.Compression
+namespace CHRONOLIB.Compression
 {
     public static class WWCompression
     {
@@ -126,7 +126,7 @@ namespace RApp.Compression
                     //RLE run length is encoded as a short so max is UINT16_MAX
                     Int32 rlemax = (getend - getp) < UInt16.MaxValue ? getend : getp + UInt16.MaxValue;
                     Int32 rlep = getp + 1;
-                    while (input[rlep] == input[getp] && rlep < rlemax)
+                    while (rlep < rlemax && input[rlep] == input[getp])
                         rlep++;
 
                     UInt16 run_length = (UInt16)(rlep - getp);
@@ -165,8 +165,8 @@ namespace RApp.Compression
 
                     //find out how long the run of matches goes for
                     int i;
-                    for (i = 1; input[getp] < getend; ++i)
-                        if (input[offchk] != input[getp])
+                    for (i = 1; getp + i < getend; i++)
+                        if (input[offchk + i] != input[getp + i])
                             break;
                     if (i >= block_size)
                     {
@@ -188,7 +188,7 @@ namespace RApp.Compression
                     if (cmd_one && output[cmd_onep] < 0xBF)
                     {
                         //increment command value
-                        ++cmd_onep;
+                        output[cmd_onep]++;
                         output[putp++] = input[getp++];
                     }
                     else
@@ -247,16 +247,17 @@ namespace RApp.Compression
         ///     developed by Westwood Studios.
         /// </summary>
         /// <param name="input">The data to decompress.</param>
+        /// <param name="startOffset">Location to start at in the input array.</param>
         /// <param name="output">The buffer to store the decompressed data. This is assumed to be initialized to the correct size.</param>
         /// <returns>Length of the decompressed data in bytes.</returns>
-        public static Int32 LcwUncompress(Byte[] input, Byte[] output)
+        public static Int32 LcwUncompress(Byte[] input, Int32 startOffset, Byte[] output)
         {
             if (input == null || input.Length == 0 || output == null || output.Length == 0)
                 return 0;
 	        Boolean relative = false;
             // Nyer's C# conversion: replacements for write and read for pointers.
 	        Int32 putp = 0;
-	        Int32 getp = 0;
+            Int32 getp = startOffset;
             // Output length should be part of the information given in the file format using LCW.
             // Techncically it can just be cropped at the end, though this value is used to
             // automatically cut off repeat-commands that go too far.

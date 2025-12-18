@@ -350,6 +350,7 @@
             this.tsmiTilesets.Name = "tsmiTilesets";
             this.tsmiTilesets.Size = new System.Drawing.Size(197, 22);
             this.tsmiTilesets.Text = "Tilesets";
+            this.tsmiTilesets.Visible = false;
             // 
             // tsmiTilesetsToFrames
             // 

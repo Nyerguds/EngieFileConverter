@@ -19,14 +19,14 @@ namespace Nyerguds.Util.UI
         /// </summary>
         /// <typeparam name="T">The basic type of which subtypes populate the typesList. Needs to inherit from FileTypeBroadcaster.</typeparam>
         /// <param name="owner">Owner window for the dialog</param>
+        /// <param name="title">Title of the dialog.</param>
         /// <param name="typesList">List of types to show.</param>
-        /// <param name="specificTypesList">More specific list of types that have grouped items from the first list as specific items.</param>
         /// <param name="currentPath">Path to open. Can contain a filename, but only the path is used.</param>
         /// <param name="generaltypedesc">General description of the type, to be used in "All supported ???". Defaults to "files" if left blank.</param>
-        /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank. for none</param>
+        /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank for none.</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
         /// <returns>The chosen filename, or null if the user cancelled.</returns>
-        public static String ShowOpenFileFialog<T>(IWin32Window owner, String title, Type[] typesList, Type[] specificTypesList, String currentPath, String generaltypedesc, String generaltypeExt, out T selectedItem) where T : FileTypeBroadcaster
+        public static String ShowOpenFileFialog<T>(IWin32Window owner, String title, Type[] typesList, String currentPath, String generaltypedesc, String generaltypeExt, out T selectedItem) where T : FileTypeBroadcaster
         {
             selectedItem = default(T);
             OpenFileDialog ofd = new OpenFileDialog();
@@ -42,16 +42,6 @@ namespace Nyerguds.Util.UI
             if (res != System.Windows.Forms.DialogResult.OK)
                 return null;
             selectedItem = correspondingObjects[ofd.FilterIndex - 1];
-            if (specificTypesList != null)
-            {
-                Int32 filterIndex;
-                T specificType = FindMoreSpecificItem<T>(specificTypesList, ofd.FileName, selectedItem == null ? null : selectedItem.GetType(), out filterIndex);
-                if (specificType != null && !specificType.Equals(default(T)))
-                {
-                    FileDialogItem<T>[] specificItems = specificTypesList.Select(x => new FileDialogItem<T>(x)).ToArray();
-                    selectedItem = specificItems[filterIndex].ItemObject;
-                }
-            }
             return ofd.FileName;
         }
 
@@ -64,8 +54,7 @@ namespace Nyerguds.Util.UI
         /// <param name="selectType">Type to select in the dropdown as default.</param>
         /// <param name="typesList">List of class types that inherit from T.</param>
         /// <param name="currentPath">Path and filename to set as default in the save dialog.</param>
-        /// <param name="generaltypedesc">General description of the type, to be used in "All supported ???". Defaults to "files" if left blank.</param>
-        /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank. for none</param>
+        /// <param name="skipOtherExtensions">True to only use the first extnsion for each item in the list.</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
         /// <returns>The chosen filename, or null if the user cancelled.</returns>
         public static String ShowSaveFileFialog<T>(IWin32Window owner, Type selectType, Type[] typesList, Boolean skipOtherExtensions, String currentPath, out T selectedItem) where T : FileTypeBroadcaster
@@ -134,11 +123,10 @@ namespace Nyerguds.Util.UI
             {
                 foreach (T obj in specificTypes)
                 {
-                    if ((currentType == null || currentType.IsAssignableFrom(obj.GetType())) && obj.FileExtensions.Contains(ext))
-                    {
-                        specificType = obj;
-                        break;
-                    }
+                    if ((currentType != null && !currentType.IsInstanceOfType(obj)) || !obj.FileExtensions.Contains(ext, StringComparer.InvariantCultureIgnoreCase))
+                        continue;
+                    specificType = obj;
+                    break;
                 }
                 if (specificType != null && !specificType.Equals(default(T)))
                 {

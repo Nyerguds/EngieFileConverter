@@ -9,8 +9,12 @@ using System.Linq;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public abstract class N64FileType : FileTypeBroadcaster
+    public abstract class SupportedFileType : FileTypeBroadcaster
     {
+        protected Bitmap m_LoadedImage;
+        protected Color[] m_BackupPalette = null;
+        protected Int32 m_CompositeFrameTilesWidth = 1;
+
         /// <summary>Very short code name for this type.</summary>
         public virtual String ShortTypeName { get { return FileExtensions.Length > 0 ? FileExtensions[0].ToUpper() : this.GetType().Name; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -26,21 +30,35 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Amount of colors in the palette that is contained inside the image. 0 if the image itself does not contain a palette, even if it generates one.</summary>
         public virtual Int32 ColorsInPalette { get { return this.m_LoadedImage == null? 0 : m_LoadedImage.Palette.Entries.Length; } }
         /// <summary>Type for quick-converting this type.</summary>
-        public virtual N64FileType PreferredExportType { get { return new FileImagePng(); } }
+        public virtual SupportedFileType PreferredExportType { get { return new FileImagePng(); } }
         /// <summary>Full path of the loaded file.</summary>
         public String LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
         public String LoadedFileName { get; protected set; }
         public virtual Int32 BitsPerColor { get { return m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(m_LoadedImage.PixelFormat); } }
 
-        /// <summary>Sub-frames inside this file.</summary>
-        public virtual N64FileType[] Frames { get { return null; } }
-        
+        /// <summary>Enables frame controls on the UI.</summary>
+        public virtual Boolean ContainsFrames { get { return false; } }
+        /// <summary>Retrieves the sub-frames inside this file.</summary>
+        public virtual SupportedFileType[] Frames { get { return null; } }
+        /// <summary>If the type supports frames, this determines whether an overview-frame is available as index '-1'. If not, index 0 is accessed directly.</summary>
+        public virtual Boolean RenderCompositeFrame { get { return true; } }
+        /// <summary>Sets the width of the composite frame image, and re-renders the image with the given width.</summary>
+        public Int32 CompositeFrameTilesWidth
+        {
+            get { return this.m_CompositeFrameTilesWidth; }
+            set
+            {
+                this.m_CompositeFrameTilesWidth = value;
+                if (this.ContainsFrames)
+                    BuildFullImage();
+            }
+        }
+        protected virtual void BuildFullImage() { }
+
         public abstract void LoadFile(Byte[] fileData);
         public abstract void LoadFile(String filename);
-        public abstract void SaveAsThis(N64FileType fileToSave, String savePath);
-        protected Color[] m_BackupPalette = null;
-
+        public abstract void SaveAsThis(SupportedFileType fileToSave, String savePath);
 
         protected void SetFileNames(String path)
         {
@@ -107,14 +125,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             return m_LoadedImage;
         }
 
-        protected Bitmap m_LoadedImage;
-
         private static Type[] m_supportedOpenTypes =
         {
             typeof(FileImgN64),
             typeof(FileMapN64),
             typeof(FileMapPc),
             typeof(FileImage),
+            typeof(FileImgLCW),
             typeof(FileTilesN64Bpp4),
             typeof(FileTilesN64Bpp8),
             typeof(FileTilesetPC),
@@ -125,7 +142,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         private static Type[] m_autoDetectTypes =
         {
             typeof(FileImgN64Gray),
-            typeof(FileImgN64),
+            typeof(FileImgN64Standard),
             typeof(FileMapN64),
             typeof(FileMapPc),
             typeof(FileMapPcFromIni),
@@ -134,6 +151,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
+            typeof(FileImgLCW),
             typeof(FileTilesN64Bpp4),
             typeof(FileTilesN64Bpp8),
             typeof(FileTilesetPC),
@@ -143,8 +161,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         };
         private static Type[] m_supportedSaveTypes =
         {
-            typeof(FileImgN64Basic1),
-            typeof(FileImgN64Basic2),
+            typeof(FileImgN64Standard),
+            typeof(FileImgN64Jap),
             typeof(FileImgN64Gray),
             typeof(FileMapN64),
             typeof(FileMapPc),
@@ -152,27 +170,39 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
+            typeof(FileImgLCW),
             typeof(FileTilesetPC),
             typeof(FilePalettePc),
             typeof(FilePaletteN64Pa4),
             typeof(FilePaletteN64Pa8),
         };
-                
+
+        static SupportedFileType()
+        {
+            CheckTypes(SupportedOpenTypes);
+            CheckTypes(SupportedSaveTypes);
+            CheckTypes(AutoDetectTypes);
+        }
+
+        private static void CheckTypes(Type[] types)
+        {
+            Type imgType = typeof(SupportedFileType);
+            foreach (Type t in types)
+                if (!t.IsSubclassOf(imgType))
+                    throw new Exception("Entries in autoDetectTypes list must all be FontFile classes!");
+        }
+
         public static Type[] SupportedOpenTypes { get { return m_supportedOpenTypes.ToArray(); } }
         public static Type[] SupportedSaveTypes { get { return m_supportedSaveTypes.ToArray(); } }
         public static Type[] AutoDetectTypes { get { return m_autoDetectTypes.ToArray(); } }
         
-        public static N64FileType LoadImageAutodetect(String path, N64FileType[] possibleTypes, out List<FileTypeLoadException> loadErrors)
+        public static SupportedFileType LoadImageAutodetect(String path, SupportedFileType[] possibleTypes, out List<FileTypeLoadException> loadErrors)
         {
-            Type imgType = typeof(N64FileType);
-            foreach (Type t in N64FileType.AutoDetectTypes)
-                if (!t.IsSubclassOf(imgType))
-                    throw new Exception("Entries in autoDetectTypes list must all be FontFile classes!");
             loadErrors = new List<FileTypeLoadException>();
             // See which extensions match, and try those first.
             if (possibleTypes == null)
-                possibleTypes = FileDialogGenerator.IdentifyByExtension<N64FileType>(N64FileType.AutoDetectTypes, path);
-            foreach (N64FileType typeObj in possibleTypes)
+                possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
+            foreach (SupportedFileType typeObj in possibleTypes)
             {
                 try
                 {
@@ -185,10 +215,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     loadErrors.Add(e);
                 }
             }
-            foreach (Type type in N64FileType.AutoDetectTypes)
+            foreach (Type type in SupportedFileType.AutoDetectTypes)
             {
                 Boolean knownType = false;
-                foreach (N64FileType typeObj in possibleTypes)
+                foreach (SupportedFileType typeObj in possibleTypes)
                 {
                     if (typeObj.GetType() == type)
                     {
@@ -198,10 +228,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 if (knownType)
                     continue;
-                N64FileType objInstance = null;
+                SupportedFileType objInstance = null;
                 try
                 {
-                    objInstance = (N64FileType)Activator.CreateInstance(type);
+                    objInstance = (SupportedFileType)Activator.CreateInstance(type);
                 }
                 catch { /* Ignore; programmer error. */ }
                 if (objInstance == null)

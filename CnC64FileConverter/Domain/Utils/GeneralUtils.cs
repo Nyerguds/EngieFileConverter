@@ -59,6 +59,15 @@ namespace Nyerguds.Util
             else
                 path = relativePath;
             // resolves any internal "..\" to get the true full path.
+
+            Int32 filenameStart = path.LastIndexOf(Path.DirectorySeparatorChar);
+            String dirPart = path.Substring(0, filenameStart+1);
+            String filePart = path.Substring(filenameStart+1);
+            if (filePart.Contains("*") || filePart.Contains("?"))
+            {
+                dirPart = Path.GetFullPath(dirPart);
+                return Path.Combine(dirPart, filePart);
+            }
             return Path.GetFullPath(path);
         }
 

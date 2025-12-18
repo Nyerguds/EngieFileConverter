@@ -14,7 +14,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "map" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription }; } }
-        public override N64FileType PreferredExportType { get { return new FileMapPc(); } }
+        public override SupportedFileType PreferredExportType { get { return new FileMapPc(); } }
 
         public FileMapN64() { }
 
@@ -31,7 +31,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             SetFileNames(filename);
         }
 
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
             if (fileToSave is FileMapPc)
                 File.WriteAllBytes(savePath, ((FileMapPc)fileToSave).N64MapData);

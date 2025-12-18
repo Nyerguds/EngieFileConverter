@@ -24,9 +24,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             get { return new String[] { ShortTypeDescription }; }
         }
 
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
-            BitmapHandler.SaveAsPng(fileToSave.GetBitmap(), savePath, fileToSave.ColorsInPalette);
+            BitmapHandler.SaveAsPng(fileToSave.GetBitmap(), savePath, fileToSave.GetColors().Length);
         }
     }
 }

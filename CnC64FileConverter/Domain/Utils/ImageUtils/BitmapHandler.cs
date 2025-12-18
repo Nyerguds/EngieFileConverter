@@ -171,58 +171,56 @@ namespace Nyerguds.ImageManipulation
                 data = ms.ToArray();
             }
             Int32 cols = image.Palette.Entries.Length;
-            if (paletteLength != 0 && cols > 0 && cols > paletteLength)
+            if (paletteLength == 0 || cols <= 0 || cols <= paletteLength)
+                return data;
+            Int32 paletteDataLength = paletteLength * 3;
+            Int32 plteOffset = FindChunk(data, "PLTE");
+            if (plteOffset == -1)
+                return data;
+            Int32 plteLength = GetChunkDataLength(data, plteOffset) + 12;
+            Byte[] paletteData = new Byte[paletteDataLength];
+            Array.Copy(data, plteOffset + 8, paletteData, 0, paletteDataLength);
+            paletteDataLength +=12;
+
+            Int32 transparencyDataLength = 0;
+            Int32 trnsLength = 0;
+            Byte[] transparencyData = null;
+
+            // Check if it contains a palette transparency chunk.
+            Int32 trnsOffset = FindChunk(data, "tRNS");
+            if (trnsOffset != -1)
             {
-                Int32 paletteDataLength = paletteLength * 3;
-                Int32 plteOffset = FindChunk(data, "PLTE");
-                if (plteOffset != -1)
-                {
-                    Int32 plteLength = GetChunkDataLength(data, plteOffset) + 12;
-                    Byte[] paletteData = new Byte[paletteDataLength];
-                    Array.Copy(data, plteOffset + 8, paletteData, 0, paletteDataLength);
-                    paletteDataLength +=12;
-
-                    Int32 transparencyDataLength = 0;
-                    Int32 trnsLength = 0;
-                    Byte[] transparencyData = null;
-
-                    // Check if it contains a palette transparency chunk.
-                    Int32 trnsOffset = FindChunk(data, "tRNS");
-                    if (trnsOffset != -1)
-                    {
-                        trnsLength = GetChunkDataLength(data, trnsOffset);
-                        transparencyDataLength = Math.Min(trnsLength, paletteLength);
-                        transparencyData = new Byte[transparencyDataLength];
-                        Array.Copy(data, trnsOffset + 8, transparencyData, 0, transparencyDataLength);
-                        trnsLength+=12;
-                        transparencyDataLength += 12;
-                    }
-                    Int32 newSize = data.Length - (plteLength - paletteDataLength) - (trnsLength - transparencyDataLength);
-                    Byte[] newData = new Byte[newSize];
-                    Int32 currentPosTrg = 0;
-                    Int32 currentPosSrc = 0;
-                    Int32 writeLength;
-                    Array.Copy(data, currentPosSrc, newData, currentPosTrg, writeLength = plteOffset);
-                    currentPosSrc += plteOffset;
-                    currentPosTrg += writeLength;
-                    currentPosTrg = WriteChunk(newData, currentPosTrg, "PLTE", paletteData);
-                    currentPosSrc += plteLength;
-                    if (trnsOffset != -1)
-                    {
-                        Int32 inbetweenData = trnsOffset - currentPosSrc;
-                        if (inbetweenData > 0)
-                        {
-                            Array.Copy(data, currentPosSrc, newData, currentPosTrg, writeLength = inbetweenData);
-                            currentPosSrc += writeLength;
-                            currentPosTrg += writeLength;
-                        }
-                        currentPosTrg = WriteChunk(newData, currentPosTrg, "tRNS", transparencyData);
-                        currentPosSrc += trnsLength;
-                    }
-                    Array.Copy(data, currentPosSrc, newData, currentPosTrg, data.Length - currentPosSrc);
-                    data = newData;
-                }
+                trnsLength = GetChunkDataLength(data, trnsOffset);
+                transparencyDataLength = Math.Min(trnsLength, paletteLength);
+                transparencyData = new Byte[transparencyDataLength];
+                Array.Copy(data, trnsOffset + 8, transparencyData, 0, transparencyDataLength);
+                trnsLength+=12;
+                transparencyDataLength += 12;
             }
+            Int32 newSize = data.Length - (plteLength - paletteDataLength) - (trnsLength - transparencyDataLength);
+            Byte[] newData = new Byte[newSize];
+            Int32 currentPosTrg = 0;
+            Int32 currentPosSrc = 0;
+            Int32 writeLength;
+            Array.Copy(data, currentPosSrc, newData, currentPosTrg, writeLength = plteOffset);
+            currentPosSrc += plteOffset;
+            currentPosTrg += writeLength;
+            currentPosTrg = WriteChunk(newData, currentPosTrg, "PLTE", paletteData);
+            currentPosSrc += plteLength;
+            if (trnsOffset != -1)
+            {
+                Int32 inbetweenData = trnsOffset - currentPosSrc;
+                if (inbetweenData > 0)
+                {
+                    Array.Copy(data, currentPosSrc, newData, currentPosTrg, writeLength = inbetweenData);
+                    currentPosSrc += writeLength;
+                    currentPosTrg += writeLength;
+                }
+                currentPosTrg = WriteChunk(newData, currentPosTrg, "tRNS", transparencyData);
+                currentPosSrc += trnsLength;
+            }
+            Array.Copy(data, currentPosSrc, newData, currentPosTrg, data.Length - currentPosSrc);
+            data = newData;
             return data;
         }
 

@@ -28,7 +28,7 @@ namespace Nyerguds.ImageManipulation
         private UInt32[] limitMasks = new UInt32[4];
         /// <summary>Multiplier for each component (R,G,B,A). If not explicitly given this can be derived from the number of bits.</summary>
         private Double[] multipliers = new Double[4];
-        /// <summary>Defaults for for each component (R,G,B,A)</summary>
+        /// <summary>Defaults for each component (R,G,B,A)</summary>
         private Byte[] defaults = new Byte[] { 0, 0, 0, 255 };
         /// <summary>True to read the input bytes as little-endian.</summary>
         private Boolean littleEndian;

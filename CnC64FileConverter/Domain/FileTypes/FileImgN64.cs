@@ -8,20 +8,17 @@ using System.Linq;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-
-    // for the autodetection
-
-    public class FileImgN64Basic1 : FileImgN64
+    public class FileImgN64Standard : FileImgN64
     {
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
     }
 
-    public class FileImgN64Basic2 : FileImgN64
+    public class FileImgN64Jap : FileImgN64
     {
         public override String[] FileExtensions { get { return new String[] { "jim" }; } }
     }
 
-    public class FileImgN64 : N64FileType
+    public class FileImgN64 : SupportedFileType
     {
         //bytes 84 21 ==> 8421 (LE) ==bin==> 1000 0100 0010 0001 ==split==> 10000 10000 10000 1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
         private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 11, 5, 6, 5, 1, 1, 0, true);
@@ -103,15 +100,15 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !m_palette.SequenceEqual(m_BackupPalette);
         }
         
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
-            SaveImg(fileToSave.GetBitmap(), savePath, false);
+            SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, savePath, false);
         }
         
         protected void LoadFromFileData(Byte[] fileData)
         {
             if (fileData.Length < 16)
-                throw new FileTypeLoadException("File is not long enough to be a valid IMG file.");
+                throw new FileTypeLoadException("File is not long enough to be a valid N64 IMG file.");
             try
             {
                 this.ReadHeader(fileData);
@@ -184,7 +181,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        protected void SaveImg(Bitmap image, String savePath, Boolean asNoPalGray8bpp)
+        protected void SaveImg(Bitmap image, Int32 colors, String savePath, Boolean asNoPalGray8bpp)
         {
             if (image.Width > 0xFFFF || image.Height > 0xFFFF)
                 throw new NotSupportedException("Image is too large!");
@@ -245,12 +242,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             else
             {
                 Color[] pal = image.Palette.Entries;
-                paletteColors = pal.Length;
+                paletteColors = colors;
                 paletteData = new Byte[paletteColors * 2];
-                for (Int32 i=0; i < pal.Length; i++)
-                {
+                Int32 maxEntry = Math.Min(pal.Length, paletteColors);
+                for (Int32 i = 0; i < maxEntry; i++)
                     SixteenBppFormatter.WriteColor(paletteData, i*2, pal[i]);
-                }
             }
             Int32 paletteOffset = paletteColors == 0 ? 0 : 16 + imageData.Length;
             Int32 palbpc = colorFormat > 1 ? 0 : (asNoPalGray8bpp ? 4 : 2);

@@ -5,7 +5,7 @@ using System.Drawing;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileImage : N64FileType
+    public class FileImage : SupportedFileType
     {
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Image"; } }
@@ -22,7 +22,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             get { return new String[] { "Portable Network Graphics", "Bitmap", "CompuServe GIF image", "JPEG. Gods, why would you do that?", "JPEG. No seriously, why?" }; }
         }
         public override Int32 ColorsInPalette { get { return m_ColsInPal; } }
-        public override N64FileType PreferredExportType { get { return new FileImgN64(); } }
+        public override SupportedFileType PreferredExportType { get { return new FileImgN64(); } }
 
         public override Color[] GetColors()
         {
@@ -38,7 +38,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public FileImage() { }
 
-        public void LoadImage(Bitmap image, Int32 colors, String displayfilename)
+        public void LoadFile(Bitmap image, Int32 colors, String displayfilename)
         {
             m_LoadedImage = image;
             m_ColsInPal = colors;
@@ -70,7 +70,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
             ImageUtils.SaveImage(fileToSave.GetBitmap(), savePath);
         }

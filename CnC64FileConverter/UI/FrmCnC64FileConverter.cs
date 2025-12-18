@@ -26,12 +26,12 @@ namespace CnC64FileConverter.UI
         private List<PaletteDropDownInfo> m_DefaultPalettes;
         private List<PaletteDropDownInfo> m_ReadPalettes;
         private Int32[] m_CustomColors;
-        private N64FileType m_LoadedFile;
+        private SupportedFileType m_LoadedFile;
         private Color backgroundFillColor = Color.Fuchsia;
         private Int32[] customcolors;
 
 
-        private N64FileType GetLoadedFile()
+        private SupportedFileType GetLoadedFile()
         {
             if (this.m_LoadedFile == null)
                 return null;
@@ -122,11 +122,11 @@ namespace CnC64FileConverter.UI
             if (files.Length != 1)
                 return;
             String path = files[0];
-            N64FileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<N64FileType>(N64FileType.AutoDetectTypes, path);
+            SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
             this.LoadFile(path, null, possibleTypes);
         }
         
-        private void LoadFile(String path, N64FileType selectedType, N64FileType[] possibleTypes)
+        private void LoadFile(String path, SupportedFileType selectedType, SupportedFileType[] possibleTypes)
         {
             this.m_Loading = true;
             try
@@ -151,7 +151,7 @@ namespace CnC64FileConverter.UI
                     else
                     {
                         List<FileTypeLoadException> loadErrors;
-                        this.m_LoadedFile = N64FileType.LoadImageAutodetect(path, possibleTypes, out loadErrors);
+                        this.m_LoadedFile = SupportedFileType.LoadImageAutodetect(path, possibleTypes, out loadErrors);
                         if (this.m_LoadedFile == null)
                         {
                             String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
@@ -192,7 +192,7 @@ namespace CnC64FileConverter.UI
                 lblNrOfFrames.Visible = true;
                 lblNrOfFrames.Text = "/ " + last;
             }
-            N64FileType loadedFile = GetLoadedFile();
+            SupportedFileType loadedFile = GetLoadedFile();
             tsmiSave.Enabled = loadedFile != null;
             tsmiExport.Enabled = loadedFile != null;
             this.tsmiCopy.Enabled = loadedFile != null;
@@ -249,7 +249,7 @@ namespace CnC64FileConverter.UI
 
         private ColorStatus GetColorStatus()
         {
-            N64FileType loadedFile = GetLoadedFile();
+            SupportedFileType loadedFile = GetLoadedFile();
             if (loadedFile == null)
                 return ColorStatus.None;
             Color[] cols = loadedFile.GetColors();
@@ -303,16 +303,16 @@ namespace CnC64FileConverter.UI
         {
             if (m_LoadedFile == null)
                 return;
-            N64FileType selectedItem;
+            SupportedFileType selectedItem;
             Boolean hasFrames = m_LoadedFile.Frames != null && m_LoadedFile.Frames.Length > 0;
-            N64FileType loadedFile = hasFrames && numFrame.Value != -1 ? m_LoadedFile.Frames[(Int32)numFrame.Value] : m_LoadedFile;
+            SupportedFileType loadedFile = hasFrames && numFrame.Value != -1 ? m_LoadedFile.Frames[(Int32)numFrame.Value] : m_LoadedFile;
             Type selectType;
-            if (export || !N64FileType.SupportedSaveTypes.Contains(loadedFile.GetType()))
+            if (export || !SupportedFileType.SupportedSaveTypes.Contains(loadedFile.GetType()))
                 selectType = loadedFile.PreferredExportType.GetType();
             else
                 selectType = loadedFile.GetType();
 
-            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, N64FileType.SupportedSaveTypes, true, loadedFile.LoadedFile, out selectedItem);
+            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, SupportedFileType.SupportedSaveTypes, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
             try
@@ -335,14 +335,17 @@ namespace CnC64FileConverter.UI
 
         private void BtnOpen_Click(object sender, EventArgs e)
         {
-            N64FileType selectedItem;
+            SupportedFileType selectedItem;
             String openPath = null;
             if (this.m_LoadedFile != null)
                 openPath = this.m_LoadedFile.LoadedFile;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, N64FileType.SupportedOpenTypes, N64FileType.SupportedSaveTypes, openPath, "images", null, out selectedItem);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, SupportedFileType.SupportedOpenTypes, openPath, "images", null, out selectedItem);
             if (filename == null)
                 return;
-            this.LoadFile(filename, selectedItem, null);
+            SupportedFileType[] possibleTypes = null;
+            if (selectedItem == null)
+                possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filename);
+            this.LoadFile(filename, selectedItem, possibleTypes);
         }
 
         private void NumZoom_ValueChanged(object sender, EventArgs e)
@@ -362,7 +365,7 @@ namespace CnC64FileConverter.UI
 
         private void RefreshColorControls()
         {
-            N64FileType loadedFile = GetLoadedFile();
+            SupportedFileType loadedFile = GetLoadedFile();
             Boolean fileLoaded = loadedFile != null;
             ColorStatus cs = GetColorStatus();
             this.btnSavePalette.Enabled = fileLoaded && cs != ColorStatus.None;
@@ -438,9 +441,9 @@ namespace CnC64FileConverter.UI
             Bitmap plateauImage = null;
             if (selectHeightMap)
             {
-                N64FileType selectedType;
+                SupportedFileType selectedType;
                 //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
-                String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] { typeof(FileImage) }, null, pngFileName, "images", null, out selectedType);
+                String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] { typeof(FileImage) }, pngFileName, "images", null, out selectedType);
                 if (filename == null)
                     return;
                 try
@@ -554,7 +557,7 @@ namespace CnC64FileConverter.UI
             ColorStatus cs = this.GetColorStatus();
             if (cs == ColorStatus.None)
                 return;
-            N64FileType loadedFile = GetLoadedFile();
+            SupportedFileType loadedFile = GetLoadedFile();
             if (loadedFile.BitsPerColor < 4)
                 return;
             PaletteDropDownInfo currentPal;
@@ -626,7 +629,7 @@ namespace CnC64FileConverter.UI
 
         private void PalColorViewer_ColorLabelMouseDoubleClick(object sender, PaletteClickEventArgs e)
         {
-            N64FileType loadedFile = GetLoadedFile();
+            SupportedFileType loadedFile = GetLoadedFile();
             if (e.Button != System.Windows.Forms.MouseButtons.Left)
                 return;
             PalettePanel palpanel = sender as PalettePanel;

@@ -64,9 +64,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.LoadedFileName = displayFileName;
         }
 
-        public override void SaveAsThis(N64FileType fileToSave, String savePath)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath)
         {
-            SaveImg(fileToSave.GetBitmap(), savePath, true);
+            SaveImg(fileToSave.GetBitmap(), 0, savePath, true);
         }
     }
 }
