@@ -1,11 +1,14 @@
-﻿namespace CnC64FileConverter.UI.SaveOptions
+﻿using System.ComponentModel;
+using System.Windows.Forms;
+
+namespace CnC64FileConverter.UI.SaveOptions
 {
     partial class SaveOptionString
     {
         /// <summary> 
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private IContainer components = null;
 
         /// <summary> 
         /// Clean up any resources being used.
@@ -68,7 +71,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Label lblDescription;
-        private System.Windows.Forms.TextBox txtValue;
+        private Label lblDescription;
+        private TextBox txtValue;
     }
 }

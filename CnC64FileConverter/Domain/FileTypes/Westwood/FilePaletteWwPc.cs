@@ -1,11 +1,9 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.GameData.Westwood;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -49,7 +47,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.LoadFile(fileData);
-            SetFileNames(filename);
+            this.SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()

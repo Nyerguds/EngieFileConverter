@@ -8,7 +8,7 @@ namespace Nyerguds.Util.UI
     {
         protected override void OnDropDown(EventArgs e)
         {
-            SetDropDownWidth(e);
+            this.SetDropDownWidth(e);
             base.OnDropDown(e);
         }
 
@@ -19,7 +19,7 @@ namespace Nyerguds.Util.UI
             if (hasScrollBar)
                 widestStringInPixels -= SystemInformation.VerticalScrollBarWidth;
             Boolean noDisplayMember = String.IsNullOrEmpty(this.DisplayMember);
-            foreach (Object o in Items)
+            foreach (Object o in this.Items)
             {
                 String toCheck;
                 if (noDisplayMember)
@@ -38,7 +38,7 @@ namespace Nyerguds.Util.UI
                     using (Graphics g = this.CreateGraphics())
                         newWidth2 = g.MeasureString(toCheck, this.Font).ToSize().Width;
                     newWidth = Math.Max(newWidth, newWidth2);
-                    if (this.DrawMode == System.Windows.Forms.DrawMode.OwnerDrawFixed)
+                    if (this.DrawMode == DrawMode.OwnerDrawFixed)
                         newWidth += 4;
                     if (newWidth > widestStringInPixels)
                         widestStringInPixels = newWidth;

@@ -1,11 +1,15 @@
-﻿namespace CnC64FileConverter.UI.SaveOptions
+﻿using System.ComponentModel;
+using System.Windows.Forms;
+using Nyerguds.Util.UI;
+
+namespace CnC64FileConverter.UI.SaveOptions
 {
     partial class SaveOptionChoices
     {
         /// <summary> 
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private IContainer components = null;
 
         /// <summary> 
         /// Clean up any resources being used.
@@ -68,7 +72,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Label lblDescription;
-        private Nyerguds.Util.UI.ComboBoxSmartWidth cmbChoices;
+        private Label lblDescription;
+        private ComboBoxSmartWidth cmbChoices;
     }
 }

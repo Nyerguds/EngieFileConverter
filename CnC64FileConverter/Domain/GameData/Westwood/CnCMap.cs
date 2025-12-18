@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 
 namespace Nyerguds.GameData.Westwood
@@ -26,7 +23,7 @@ namespace Nyerguds.GameData.Westwood
 
         public CnCMap(String filename)
         {
-            ReadFromFile(filename);
+            this.ReadFromFile(filename);
         }
 
         public void WriteToFile(String filename)
@@ -34,14 +31,14 @@ namespace Nyerguds.GameData.Westwood
             if (String.IsNullOrEmpty(filename))
                 throw new ArgumentNullException("filename", "No filename given!");
             using (FileStream fs = File.Create(filename))
-                WriteToStream(fs);
+                this.WriteToStream(fs);
         }
 
         public Byte[] GetAsBytes()
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                WriteToStream(ms);
+                this.WriteToStream(ms);
                 ms.Flush();
                 return ms.ToArray();
             }
@@ -49,7 +46,7 @@ namespace Nyerguds.GameData.Westwood
 
         public void WriteToStream(Stream stream)
         {
-            foreach (CnCMapCell cell in Cells)
+            foreach (CnCMapCell cell in this.Cells)
             {
                 stream.WriteByte(cell.HighByte);
                 stream.WriteByte(cell.LowByte);
@@ -66,7 +63,7 @@ namespace Nyerguds.GameData.Westwood
                     throw new ArgumentException("File must be " + FILELENGTH + " bytes long.");
                 Byte[] buffer = new Byte[FILELENGTH];
                 fs.Read(buffer, 0, FILELENGTH);
-                FillFromBuffer(buffer);
+                this.FillFromBuffer(buffer);
             }
         }
 
@@ -74,11 +71,11 @@ namespace Nyerguds.GameData.Westwood
         {
             if (buffer.Length != FILELENGTH)
                 throw new ArgumentException("Buffer must be " + FILELENGTH + " bytes long.");
-            Cells = new CnCMapCell[LENGTH];
+            this.Cells = new CnCMapCell[LENGTH];
             for (Int32 i = 0; i < LENGTH; i++)
             {
                 Int32 pos = i * 2;
-                Cells[i] = new CnCMapCell(buffer[pos], buffer[pos + 1]);
+                this.Cells[i] = new CnCMapCell(buffer[pos], buffer[pos + 1]);
             }
         }
     }
@@ -104,7 +101,7 @@ namespace Nyerguds.GameData.Westwood
 
         public Int32 Value
         {
-            get { return HighByte * 0x100 + LowByte; }
+            get { return this.HighByte * 0x100 + this.LowByte; }
         }
 
         public Boolean Equals(CnCMapCell cell)
@@ -114,7 +111,7 @@ namespace Nyerguds.GameData.Westwood
 
         public override String ToString()
         {
-            return Value.ToString("X4");
+            return this.Value.ToString("X4");
         }
 
         public Int32 CompareTo(CnCMapCell other)
@@ -125,7 +122,7 @@ namespace Nyerguds.GameData.Westwood
         public Int32 CompareTo(Object obj)
         {
             if (obj is CnCMapCell)
-                return CompareTo((CnCMapCell)obj);
+                return this.CompareTo((CnCMapCell)obj);
             else
                 return this.Value.CompareTo(obj);
         }

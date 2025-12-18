@@ -1,12 +1,11 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using System.Text;
 using Nyerguds.GameData.Westwood;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -15,8 +14,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override FileClass FileClass { get { return FileClass.ImageHiCol; } }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
-        public override Int32 Width { get { return hdrWidth; } }
-        public override Int32 Height { get { return hdrHeight; } }
+        public override Int32 Width { get { return this.hdrWidth; } }
+        public override Int32 Height { get { return this.hdrHeight; } }
         protected const Int32 DATAOFFSET = 11;
         protected Byte[] hdrId;
         protected Int32 hdrWidth;
@@ -33,13 +32,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            this.LoadFromFileData(fileData);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData);
+            this.SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()
@@ -51,7 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
-            return SaveImg(fileToSave.GetBitmap());
+            return this.SaveImg(fileToSave.GetBitmap());
         }
 
         protected void LoadFromFileData(Byte[] fileData)

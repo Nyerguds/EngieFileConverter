@@ -39,13 +39,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
 
         public void LoadFromFileData(Byte[] fileData, String sourcePath)
@@ -74,7 +74,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 framesList[i] = frame8bit4;
                 Byte[] frame4bit = ImageUtils.ConvertFrom8Bit(frame8bit4, 24, 24, 4, true, ref stride);
-                Bitmap frameImage = ImageUtils.BuildImage(frame4bit, 24, 24, stride, PixelFormat.Format4bppIndexed, m_Palette, null);
+                Bitmap frameImage = ImageUtils.BuildImage(frame4bit, 24, 24, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
@@ -82,7 +82,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
-            m_LoadedImage = TileImages(framesList, frames, this.m_Palette);
+            this.m_LoadedImage = TileImages(framesList, frames, this.m_Palette);
         }
 
         public static Bitmap TileImages(Byte[][] tiles, Int32 nrOftiles, Color[] palette)
@@ -118,7 +118,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 frames = fileToSave.Frames.Length;
                 imageDataFull8 = new Byte[frames * framePixSize];
-                for (int i = 0; i < fileToSave.Frames.Length; i++)
+                for (Int32 i = 0; i < fileToSave.Frames.Length; i++)
                 {
                     SupportedFileType frame = fileToSave.Frames[i];
                     Bitmap frameImage = frame.GetBitmap();

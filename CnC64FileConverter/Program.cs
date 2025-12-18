@@ -25,7 +25,7 @@ namespace CnC64FileConverter
         /// <param name="sender">The source of the event.</param>
         /// <param name="args">A System.ResolveEventArgs that contains the event data.</param>
         /// <returns>The System.Reflection.Assembly that resolves the type, assembly, or resource; or null if the assembly cannot be resolved.</returns>
-        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        private static Assembly CurrentDomain_AssemblyResolve(Object sender, ResolveEventArgs args)
         {
             String baseName = args.Name;
             String dllName = baseName.Contains(',') ? baseName.Substring(0, baseName.IndexOf(',')) : baseName.Replace(".dll", "");
@@ -33,9 +33,9 @@ namespace CnC64FileConverter
             dllName = dllName.Replace(".", "_").Replace("-", "_");
             if (dllName.EndsWith("_resources"))
                 return null;
-            System.Resources.ResourceManager rm = new System.Resources.ResourceManager(typeof(Program).Namespace + ".Properties.Resources", System.Reflection.Assembly.GetExecutingAssembly());
+            System.Resources.ResourceManager rm = new System.Resources.ResourceManager(typeof(Program).Namespace + ".Properties.Resources", Assembly.GetExecutingAssembly());
             Byte[] dllBytes = rm.GetObject(dllName) as Byte[];
-            return dllBytes == null ? null : System.Reflection.Assembly.Load(dllBytes);
+            return dllBytes == null ? null : Assembly.Load(dllBytes);
         }
     }
 }

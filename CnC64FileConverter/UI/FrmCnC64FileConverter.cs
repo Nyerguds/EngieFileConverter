@@ -177,16 +177,7 @@ namespace CnC64FileConverter.UI
                                 return;
                             }
                             // any test code can come here
-                            /*/
-                            String[] values = new String[]
-                            {
-                                "x,x,x,1,2,3,4,5",
-                                "x,x,x,6,7,8,9,10",
-                                "x,x,x,11,12,13,14,15"
-                            };
-                            using(Bitmap bm = ImageUtils.GrayImageFromCsv(values, 3, 15))
-                            bm.Save("testgrayfromcsv.png", ImageFormat.Png);
-                            //*/
+
                         }
                     }
                 }
@@ -244,11 +235,13 @@ namespace CnC64FileConverter.UI
             String minName;
             String maxName;
             Boolean hasEmptyFrames;
-            FileFrames fr = FileFrames.CheckForFrames(path, currentType, out minName, out maxName, out hasEmptyFrames);
+            Boolean isChainedFramesType;
+            SupportedFileType fr = FileFrames.CheckForFrames(path, currentType, out minName, out maxName, out hasEmptyFrames, out isChainedFramesType);
             if (fr == null)
                 return currentType;
             String emptywarning = hasEmptyFrames ? "\nSome of these frames are empty files. Not every save format supports empty frames." : String.Empty;
-            String message = "The file appears to be part of a range (" + minName + " - " + maxName + ")." + emptywarning + "\n\nDo you wish to load it as frames?";
+            String loadFrames = isChainedFramesType ? "Load the frames from all files" : "load it as frames";
+            String message = "The file appears to be part of a range (" + minName + " - " + maxName + ")." + emptywarning + "\n\nDo you wish to " + loadFrames + "?";
             if (MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
                 currentType.Dispose();
@@ -463,7 +456,7 @@ namespace CnC64FileConverter.UI
                     newSelectType = typeof(FileImagePng);
                 selectType = newSelectType;
             }
-            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, saveTypes, true, loadedFile.LoadedFile, out selectedItem);
+            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, saveTypes, false, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
             try
@@ -960,7 +953,7 @@ namespace CnC64FileConverter.UI
             }
         }
 
-        private void tsmiCombineShadows_Click(object sender, EventArgs e)
+        private void tsmiCombineShadows_Click(Object sender, EventArgs e)
         {
             // todo
         }

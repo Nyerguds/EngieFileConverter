@@ -48,15 +48,15 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public void LoadFile(Bitmap image, String filename)
         {
-            m_LoadedImage = image;
-            SetFileNames(filename);
+            this.m_LoadedImage = image;
+            this.SetFileNames(filename);
         }
 
         public override void LoadFile(Byte[] fileData)
         {
             try
             {
-                m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
+                this.m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
             }
             catch (Exception ex)
             {
@@ -68,9 +68,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             try
             {
-                CheckSpecificFileType(fileData, filename);
-                m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
-                SetFileNames(filename);
+                this.CheckSpecificFileType(fileData, filename);
+                this.m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
+                this.SetFileNames(filename);
             }
             catch (Exception ex)
             {
@@ -91,7 +91,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
-            String filename = "test." + FileExtensions[0];
+            String filename = "test." + this.FileExtensions[0];
             return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);
         }
     }

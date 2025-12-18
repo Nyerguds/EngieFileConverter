@@ -31,8 +31,8 @@ namespace Nyerguds.GameData.Dynamix
 
         private void LzwReset()
         {
-            dictTableStr = new Byte[0x4000][];
-            dictTableLen = new Byte[0x4000];
+            this.dictTableStr = new Byte[0x4000][];
+            this.dictTableLen = new Byte[0x4000];
             //for (Int32 i = 256; i < this.dictTableStr.Length; i++)
             //    dictTableStr[i] = new Byte[100];
             for (Int32 lcv = 0; lcv < 256; lcv++)

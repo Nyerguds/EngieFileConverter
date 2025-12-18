@@ -1,10 +1,9 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -17,7 +16,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 if (this.m_LoadedImage == null)
                     return FileClass.None;
-                switch (hdrColorFormat)
+                switch (this.hdrColorFormat)
                 {
                     case 0:
                         return FileClass.Image4Bit;
@@ -33,8 +32,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         //bytes 84 21 ==> 8421 (BE) ==bin==> 1000 0100 0010 0001 ==split==> R=10000 G=10000 B=10000 A=1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
         private static readonly PixelFormatter Format16BitRgba5551Be = new PixelFormatter(2, 0x0001, 0xF800, 0x07C0, 0x003E, false);
-        public override Int32 Width { get { return hdrWidth; } }
-        public override Int32 Height { get { return hdrHeight; } }
+        public override Int32 Width { get { return this.hdrWidth; } }
+        public override Int32 Height { get { return this.hdrHeight; } }
 
         protected Int32 hdrDataOffset;
         protected Int32 hdrPaletteOffset;
@@ -54,7 +53,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
         public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
 
-        public override Int32 ColorsInPalette { get { return hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
+        public override Int32 ColorsInPalette { get { return this.hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
@@ -92,13 +91,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            this.LoadFromFileData(fileData);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData);
+            this.SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()
@@ -114,7 +113,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
-            return SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, asPaletted);
+            return this.SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, asPaletted);
         }
 
         protected void LoadFromFileData(Byte[] fileData)
@@ -157,7 +156,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 palSize = this.hdrBytesPerColor * this.hdrColorsInPalette;
                     Byte[] paletteData = new Byte[palSize];
                     Array.Copy(fileData, this.hdrPaletteOffset, paletteData, 0, palSize);
-                    this.m_Palette = Get16BitColors(paletteData, this.hdrColorsInPalette, false);
+                    this.m_Palette = this.Get16BitColors(paletteData, this.hdrColorsInPalette, false);
                 }
                 else if (this.hdrColorFormat != 2)
                 {
@@ -275,10 +274,10 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public void LoadGrayImage(Bitmap img, String displayFileName, String fullFilePath)
         {
-            hdrBytesPerColor = 4;
-            hdrReadBytesPerColor = 4;
-            hdrColorFormat = 1;
-            hdrColorsInPalette = 0;
+            this.hdrBytesPerColor = 4;
+            this.hdrReadBytesPerColor = 4;
+            this.hdrColorFormat = 1;
+            this.hdrColorsInPalette = 0;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             this.m_LoadedImage = ImageUtils.ConvertToPalettedGrayscale(img);
             this.LoadedFile = fullFilePath;

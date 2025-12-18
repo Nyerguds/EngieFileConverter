@@ -66,12 +66,12 @@ namespace Nyerguds.GameData.Westwood
         //  Some utility functions to get worst case sizes for buffer allocation
         ////////////////////////////////////////////////////////////////////////////////
 
-        public static int LCWWorstCase(int datasize)
+        public static Int32 LCWWorstCase(Int32 datasize)
         {
             return datasize + (datasize / 63) + 1;
         }
 
-        public static int XORWorstCase(int datasize)
+        public static Int32 XORWorstCase(Int32 datasize)
         {
             return datasize + ((datasize / 63) * 3) + 4;
         }
@@ -275,7 +275,7 @@ namespace Nyerguds.GameData.Westwood
             Int32 cmd_onep = putp;
             output[putp++] = 0x81;
             output[putp++] = input[getp++];
-            bool cmd_one = true;
+            Boolean cmd_one = true;
 
             //Compress data until we reach end of input buffer.
             while (getp < getend)
@@ -324,7 +324,7 @@ namespace Nyerguds.GameData.Westwood
                         break;
 
                     //find out how long the run of matches goes for
-                    int i;
+                    Int32 i;
                     for (i = 1; getp + i < getend; i++)
                         if (input[offchk + i] != input[getp + i])
                             break;
@@ -461,7 +461,7 @@ namespace Nyerguds.GameData.Westwood
                             if (readOffset >= readEnd)
                                 return writeOffset;
 					        //DEBUG_SAY("0b11111110 Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 3, dest - start, cpysize);
-				            for (int i = writeOffset; i < writeOffset + cpysize; i++)
+				            for (Int32 i = writeOffset; i < writeOffset + cpysize; i++)
 				            {
                                 if (i >= writeEnd)
                                     return writeOffset;

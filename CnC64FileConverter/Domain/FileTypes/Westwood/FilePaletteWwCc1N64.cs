@@ -1,10 +1,9 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -20,7 +19,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
         public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return ColorsInPalette / 16; } }
+        public override Int32 Height { get { return this.ColorsInPalette / 16; } }
         public override Int32 ColorsInPalette { get { return this.m_Palette == null? 0 : this.m_Palette.Length; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -42,8 +41,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + ex.Message, ex);
             }
-            Byte[] imageData = Enumerable.Range(0, Width*Height).Select(x => (Byte)x).ToArray();
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, Width, Height, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
+            Byte[] imageData = Enumerable.Range(0, this.Width* this.Height).Select(x => (Byte)x).ToArray();
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
             if (this.m_Palette.Length < 0x100)
                 this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
         }
@@ -51,7 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.LoadFile(fileData);
-            SetFileNames(filename);
+            this.SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()

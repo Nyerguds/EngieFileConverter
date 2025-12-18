@@ -119,18 +119,18 @@ namespace Nyerguds.Util.UI
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
-            Keys k = Control.ModifierKeys;
+            Keys k = ModifierKeys;
             HandledMouseEventArgs args = e as HandledMouseEventArgs;
             if (args != null)
                 args.Handled = true;
             HandledMouseEventArgs arg = new HandledMouseEventArgs(e.Button, e.Clicks, e.X, e.Y, e.Delta);
-            if (MouseScroll != null)
-                MouseScroll(this, arg);
+            if (this.MouseScroll != null)
+                this.MouseScroll(this, arg);
             if (arg.Handled)
                 return;
             if ((k & Keys.Shift) != 0)
             {
-                ScrollHorizontal(-1 * e.Delta);
+                this.ScrollHorizontal(-1 * e.Delta);
                 return;
             }
             base.OnMouseWheel(e);

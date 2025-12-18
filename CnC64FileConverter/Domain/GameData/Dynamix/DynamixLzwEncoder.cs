@@ -42,7 +42,7 @@ namespace Nyerguds.GameData.Dynamix
 
         private Boolean ContainsCode(Byte[] sequence)
         {
-            return GetCode(sequence) != -1;
+            return this.GetCode(sequence) != -1;
         }
 
         public DynamixLzwEncoder()
@@ -64,7 +64,7 @@ namespace Nyerguds.GameData.Dynamix
             Int32 outbuffSize = buffer.Length * 2;
             Byte[] outbuff = new Byte[outbuffSize];
             Int32 addedSize = 0;
-            for (int i = 0; i < buffer.Length; i++)
+            for (Int32 i = 0; i < buffer.Length; i++)
             {
                 Byte b = buffer[i];
                 // increase code length to amount of bits needed by intCode.

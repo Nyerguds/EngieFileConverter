@@ -66,18 +66,18 @@ namespace Nyerguds.Util.UI
         public new Size Size
         {
             get { return base.Size; }
-            set { ResetSize(); }
+            set { this.ResetSize(); }
         }
 
         public new Int32 Width
         {
-            get { return Size.Width; }
-            set { ResetSize(); }
+            get { return this.Size.Width; }
+            set { this.ResetSize(); }
         }
         public new Int32 Height
         {
-            get { return Size.Height; }
-            set { ResetSize(); }
+            get { return this.Size.Height; }
+            set { this.ResetSize(); }
         }
 
         [Description("Autosize"), Category("Layout")]
@@ -92,7 +92,8 @@ namespace Nyerguds.Util.UI
         public new Padding Padding
         {
             get { return base.Padding; }
-            set { base.Padding = value; ResetSize(); }
+            set { base.Padding = value;
+                this.ResetSize(); }
         }
 
         [Description("Determines the size of the color labels."), Category("Palette panel")]
@@ -100,8 +101,9 @@ namespace Nyerguds.Util.UI
         [DefaultValue(typeof(Size), "16, 16")]
         public Size LabelSize
         {
-            get { return m_LabelSize; }
-            set { this.m_LabelSize = value; ResetSize(); }
+            get { return this.m_LabelSize; }
+            set { this.m_LabelSize = value;
+                this.ResetSize(); }
         }
 
         [Description("Padding between the labels."), Category("Palette panel")]
@@ -109,14 +111,15 @@ namespace Nyerguds.Util.UI
         [DefaultValue(typeof(Point), "4, 4")]
         public Point PadBetween
         {
-            get { return m_PadBetween; }
-            set { this.m_PadBetween = value; ResetSize(); }
+            get { return this.m_PadBetween; }
+            set { this.m_PadBetween = value;
+                this.ResetSize(); }
         }
 
         [Description("Color palette. This is normally not set manually through the designer."), Category("Palette panel")]
         public Color[] Palette
         {
-            get { return m_Palette; }
+            get { return this.m_Palette; }
             set { this.m_Palette = value; this.Invalidate(); }
         }
 
@@ -125,8 +128,9 @@ namespace Nyerguds.Util.UI
         [DefaultValue(256)]
         public Int32 MaxColors
         {
-            get { return m_MaxColors; }
-            set { this.m_MaxColors = value; ResetSize(); }
+            get { return this.m_MaxColors; }
+            set { this.m_MaxColors = value;
+                this.ResetSize(); }
         }
 
         [Description("Amount of colors shown on each rows."), Category("Palette panel")]
@@ -135,14 +139,15 @@ namespace Nyerguds.Util.UI
         public Int32 ColorTableWidth
         {
             get { return this.m_ColorTableWidth; }
-            set { this.m_ColorTableWidth = value; ResetSize(); }
+            set { this.m_ColorTableWidth = value;
+                this.ResetSize(); }
         }
 
         [Description("Table used to remap the color palette. Set to null for no remapping."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         public Int32[] Remap
         {
-            get { return m_Remap; }
+            get { return this.m_Remap; }
             set { this.m_Remap = value; this.Invalidate(); }
         }
 
@@ -154,51 +159,51 @@ namespace Nyerguds.Util.UI
         {
             get
             {
-                if (m_ColorSelectMode == ColorSelMode.Multi)
-                    return m_SelectedIndicesList.ToArray();
+                if (this.m_ColorSelectMode == ColorSelMode.Multi)
+                    return this.m_SelectedIndicesList.ToArray();
                 else
                 {
-                    return m_SelectedIndicesArr.ToArray();
+                    return this.m_SelectedIndicesArr.ToArray();
                 }
             }
             set
             {
-                switch (m_ColorSelectMode)
+                switch (this.m_ColorSelectMode)
                 {
                     case ColorSelMode.None:
                         break;
                     case ColorSelMode.Single:
                         if (value.Length > 0)
-                            m_SelectedIndicesArr[0] = value[0];
+                            this.m_SelectedIndicesArr[0] = value[0];
                         else
-                            m_SelectedIndicesArr[0] = 0;
+                            this.m_SelectedIndicesArr[0] = 0;
                         break;
                     case ColorSelMode.TwoMouseButtons:
                         if (value.Length == 0)
                         {
-                            m_SelectedIndicesArr[0] = 0;
-                            m_SelectedIndicesArr[1] = 1;
+                            this.m_SelectedIndicesArr[0] = 0;
+                            this.m_SelectedIndicesArr[1] = 1;
                         }
                         else if (value.Length == 1)
                         {
-                            m_SelectedIndicesArr[0] = value[0];
-                            m_SelectedIndicesArr[1] = value[0] == 0 ? 1 : 0;
+                            this.m_SelectedIndicesArr[0] = value[0];
+                            this.m_SelectedIndicesArr[1] = value[0] == 0 ? 1 : 0;
                         }
                         else
                         {
-                            m_SelectedIndicesArr[0] = value[0];
-                            m_SelectedIndicesArr[1] = value[1];
+                            this.m_SelectedIndicesArr[0] = value[0];
+                            this.m_SelectedIndicesArr[1] = value[1];
                         }
                         break;
                     case ColorSelMode.Multi:
                         foreach (Int32 i in value)
-                            if (!m_SelectedIndicesList.Contains(i) && i >= 0 && i < m_MaxColors)
-                                m_SelectedIndicesList.Add(i);
+                            if (!this.m_SelectedIndicesList.Contains(i) && i >= 0 && i < this.m_MaxColors)
+                                this.m_SelectedIndicesList.Add(i);
                         break;
                 }
-                if (ColorSelectionChanged != null)
-                    ColorSelectionChanged(this, new EventArgs());
-                Refresh();
+                if (this.ColorSelectionChanged != null)
+                    this.ColorSelectionChanged(this, new EventArgs());
+                this.Refresh();
             }
         }
 
@@ -208,7 +213,8 @@ namespace Nyerguds.Util.UI
         public Color EmptyItemBackColor
         {
             get { return this.m_EmptyItemBackColor; }
-            set { this.m_EmptyItemBackColor = value; Invalidate(); }
+            set { this.m_EmptyItemBackColor = value;
+                this.Invalidate(); }
         }
 
         [Description("Character put on entries not filled in on the palette. Not drawn if EmptyItemCharColor is set to Color.Empty."), Category("Palette panel")]
@@ -217,7 +223,8 @@ namespace Nyerguds.Util.UI
         public Char EmptyItemChar
         {
             get { return this.m_EmptyItemChar; }
-            set { this.m_EmptyItemChar = value; Invalidate(); }
+            set { this.m_EmptyItemChar = value;
+                this.Invalidate(); }
         }
 
         [Description("Color of the character put on entries not filled in on the palette. Setting this to Color.Empty causes the character not to be drawn."), Category("Palette panel")]
@@ -226,7 +233,8 @@ namespace Nyerguds.Util.UI
         public Color EmptyItemCharColor
         {
             get { return this.m_EmptyItemCharColor; }
-            set { this.m_EmptyItemCharColor = value; Invalidate(); }
+            set { this.m_EmptyItemCharColor = value;
+                this.Invalidate(); }
         }
         
         [Description("Tooltip shown on an empty image entry. Leave empty to disable tooltips on empty entries."), Category("Palette panel")]
@@ -235,14 +243,16 @@ namespace Nyerguds.Util.UI
         public String EmptyItemToolTip
         {
             get { return this.m_EmptyItemToolTip; }
-            set { this.m_EmptyItemToolTip = value; Invalidate(); }
+            set { this.m_EmptyItemToolTip = value;
+                this.Invalidate(); }
         }
         [Description("Color used to indicate entries that are transparent on the palette. Setting this to Color.Empty will use the value of the actual color itself, and will automatically generate a visible color for the indicator character instead of using TransItemCharColor."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         public Color TransItemBackColor
         {
             get { return this.m_TransItemBackColor; }
-            set { this.m_TransItemBackColor = value; Invalidate(); }
+            set { this.m_TransItemBackColor = value;
+                this.Invalidate(); }
         }
 
         [Description("Character put on labels to indicate entries that are transparent on the palette. Not drawn if TransItemCharColor is set to Color.Empty."), Category("Palette panel")]
@@ -251,7 +261,8 @@ namespace Nyerguds.Util.UI
         public Char TransItemChar
         {
             get { return this.m_TransItemChar; }
-            set { this.m_TransItemChar = value; Invalidate(); }
+            set { this.m_TransItemChar = value;
+                this.Invalidate(); }
         }
 
         [Description("Color of the character put on labels to indicate entries that are transparent on the palette. Not used if TransItemBackColor is set to Color.Empty. Setting this to Color.Empty causes the character not to be drawn, regardless of the TransItemBackColor overriding its value."), Category("Palette panel")]
@@ -260,7 +271,8 @@ namespace Nyerguds.Util.UI
         public Color TransItemCharColor
         {
             get { return this.m_TransItemCharColor; }
-            set { this.m_TransItemCharColor = value; Invalidate(); }
+            set { this.m_TransItemCharColor = value;
+                this.Invalidate(); }
         }
 
         [Description("Show tooltips on the labels, giving the index and color values."), Category("Palette panel")]
@@ -268,7 +280,8 @@ namespace Nyerguds.Util.UI
         public Boolean ShowColorToolTips
         {
             get { return this.m_ShowColorToolTips; }
-            set { this.m_ShowColorToolTips = value; ResetTooltips(); }
+            set { this.m_ShowColorToolTips = value;
+                this.ResetTooltips(); }
         }
 
         [Description("Change the way colors can be selected on the palette."), Category("Palette panel")]
@@ -281,24 +294,24 @@ namespace Nyerguds.Util.UI
             {
                 Int32[] selInd = this.SelectedIndices;
                 this.m_ColorSelectMode = value;
-                switch (ColorSelectMode)
+                switch (this.ColorSelectMode)
                 {
                     case ColorSelMode.None:
-                        m_SelectedIndicesArr = new Int32[0];
-                        m_SelectedIndicesList = null;
+                        this.m_SelectedIndicesArr = new Int32[0];
+                        this.m_SelectedIndicesList = null;
                         break;
                     case ColorSelMode.Single:
                     default:
-                        m_SelectedIndicesArr = new Int32[1];
-                        m_SelectedIndicesList = null;
+                        this.m_SelectedIndicesArr = new Int32[1];
+                        this.m_SelectedIndicesList = null;
                         break;
                     case ColorSelMode.TwoMouseButtons:
-                        m_SelectedIndicesArr = new Int32[2];
-                        m_SelectedIndicesList = null;
+                        this.m_SelectedIndicesArr = new Int32[2];
+                        this.m_SelectedIndicesList = null;
                         break;
                     case ColorSelMode.Multi:
-                        m_SelectedIndicesArr = null;
-                        m_SelectedIndicesList = new List<Int32>();
+                        this.m_SelectedIndicesArr = null;
+                        this.m_SelectedIndicesList = new List<Int32>();
                         break;
                 }
                 // reset this
@@ -326,31 +339,31 @@ namespace Nyerguds.Util.UI
 
         public void SetVisibility(Int32[] colorLabelIndices, Boolean visible)
         {
-            if (m_ColorLabels == null)
+            if (this.m_ColorLabels == null)
                 return;
-            for (Int32 i = 0; i < m_ColorLabels.Length; i++)
+            for (Int32 i = 0; i < this.m_ColorLabels.Length; i++)
                 if (colorLabelIndices.Contains(i))
-                    m_ColorLabels[i].Visible = visible;
+                    this.m_ColorLabels[i].Visible = visible;
                 else
-                    m_ColorLabels[i].Visible = !visible;
-            Refresh();
+                    this.m_ColorLabels[i].Visible = !visible;
+            this.Refresh();
         }
 
         private void ResetSize()
         {
-            Int32 rows = m_MaxColors / this.m_ColorTableWidth + (m_MaxColors % this.m_ColorTableWidth > 0 ? 1 : 0);
-            Int32 sizeX = this.Padding.Left + LabelSize.Width * this.m_ColorTableWidth + PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
-            Int32 sizeY = this.Padding.Top + LabelSize.Height * rows + PadBetween.Y * (rows - 1) + this.Padding.Bottom;
+            Int32 rows = this.m_MaxColors / this.m_ColorTableWidth + (this.m_MaxColors % this.m_ColorTableWidth > 0 ? 1 : 0);
+            Int32 sizeX = this.Padding.Left + this.LabelSize.Width * this.m_ColorTableWidth + this.PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
+            Int32 sizeY = this.Padding.Top + this.LabelSize.Height * rows + this.PadBetween.Y * (rows - 1) + this.Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);
             this.Invalidate();            
         }
 
         public void SetVisibility(Int32 colorLabelIndex, Boolean visible)
         {
-            if (m_ColorLabels == null || colorLabelIndex < 0 || colorLabelIndex >= m_ColorLabels.Length)
+            if (this.m_ColorLabels == null || colorLabelIndex < 0 || colorLabelIndex >= this.m_ColorLabels.Length)
                 return;
-            m_ColorLabels[colorLabelIndex].Visible = visible;
-            Refresh();
+            this.m_ColorLabels[colorLabelIndex].Visible = visible;
+            this.Refresh();
         }
 
         /// <summary>
@@ -358,9 +371,9 @@ namespace Nyerguds.Util.UI
         /// </summary>
         public PalettePanel()
         {
-            InitializeComponent();
-            DrawPalette();
-            this.Paint += PalettePanel_Paint;
+            this.InitializeComponent();
+            this.DrawPalette();
+            this.Paint += this.PalettePanel_Paint;
         }
 
         /// <summary>
@@ -369,17 +382,17 @@ namespace Nyerguds.Util.UI
         public PalettePanel(Int32 width, Int32 maxColors)
         {
             this.m_ColorTableWidth = width;
-            m_MaxColors = maxColors;
-            InitializeComponent();
-            DrawPalette();
-            this.Paint += PalettePanel_Paint;
+            this.m_MaxColors = maxColors;
+            this.InitializeComponent();
+            this.DrawPalette();
+            this.Paint += this.PalettePanel_Paint;
         }
 
 
-        protected void PalettePanel_Paint(object sender, PaintEventArgs e)
+        protected void PalettePanel_Paint(Object sender, PaintEventArgs e)
         {
             this.SuspendLayout();
-            DrawPalette();
+            this.DrawPalette();
             this.ResumeLayout(false);
         }
 
@@ -387,13 +400,13 @@ namespace Nyerguds.Util.UI
         {
             if (this.m_ShowColorToolTips)
             {
-                for (Int32 i = 0; i < m_ColorLabels.Length; i++)
+                for (Int32 i = 0; i < this.m_ColorLabels.Length; i++)
                 {
                     Color col = Color.Empty;
                     Boolean emptyCol = false;
-                    if (m_Palette != null)
+                    if (this.m_Palette != null)
                     {
-                        col = GetColor(i);
+                        col = this.GetColor(i);
                         if (col.IsEmpty)
                             emptyCol = true;
                     }
@@ -409,22 +422,22 @@ namespace Nyerguds.Util.UI
 
         protected void DrawPalette()
         {
-            Boolean HasColor = m_Palette != null;
-            Boolean newPalette = m_ColorLabels == null;
-            Int32 rows = m_MaxColors / this.m_ColorTableWidth + ((m_MaxColors % this.m_ColorTableWidth > 0) ? 1 : 0);
+            Boolean HasColor = this.m_Palette != null;
+            Boolean newPalette = this.m_ColorLabels == null;
+            Int32 rows = this.m_MaxColors / this.m_ColorTableWidth + ((this.m_MaxColors % this.m_ColorTableWidth > 0) ? 1 : 0);
             if (newPalette)
-                m_ColorLabels = new Label[m_MaxColors];
+                this.m_ColorLabels = new Label[this.m_MaxColors];
             else
             {
-                for (Int32 i = this.m_MaxColors; i < m_ColorLabels.Length; i++)
+                for (Int32 i = this.m_MaxColors; i < this.m_ColorLabels.Length; i++)
                 {
                     Label colorLabel = this.m_ColorLabels[i];
                     this.Controls.Remove(colorLabel);
                     colorLabel.Dispose();
                     this.m_ColorLabels[i] = null;
                 }
-                Label[] newLabels = new Label[m_MaxColors];
-                Array.Copy(this.m_ColorLabels, newLabels, Math.Min(this.m_ColorLabels.Length, m_MaxColors));
+                Label[] newLabels = new Label[this.m_MaxColors];
+                Array.Copy(this.m_ColorLabels, newLabels, Math.Min(this.m_ColorLabels.Length, this.m_MaxColors));
                 this.m_ColorLabels = newLabels;
             }
             for (Int32 y = 0; y < rows; y++)
@@ -432,14 +445,14 @@ namespace Nyerguds.Util.UI
                 for (Int32 x = 0; x < this.m_ColorTableWidth; x++)
                 {
                     Int32 index = y * this.m_ColorTableWidth + x;
-                    if (index >= m_MaxColors)
+                    if (index >= this.m_MaxColors)
                         break;
                     Color col = this.m_EmptyItemBackColor;
                     Boolean emptyCol = false;
                     Boolean transparentCol = false;
                     if (HasColor)
                     {
-                        col = GetColor(index);
+                        col = this.GetColor(index);
                         if (col.IsEmpty)
                             emptyCol = true;
                     }
@@ -449,59 +462,59 @@ namespace Nyerguds.Util.UI
                         transparentCol = true;
                     Boolean selectThis;
                     if (this.m_ColorSelectMode == ColorSelMode.Multi)
-                        selectThis = m_SelectedIndicesList.Contains(index);
+                        selectThis = this.m_SelectedIndicesList.Contains(index);
                     else
-                        selectThis = m_SelectedIndicesArr.Contains(index);
+                        selectThis = this.m_SelectedIndicesArr.Contains(index);
                     if (this.m_ColorLabels[index] == null)
                     {
                         this.m_ColorLabels[index] = this.GenerateLabel(x, y, col, emptyCol, transparentCol, selectThis);
-                        this.Controls.Add(m_ColorLabels[index]);
+                        this.Controls.Add(this.m_ColorLabels[index]);
                     }
                     else
                         this.SetLabelProperties(this.m_ColorLabels[index], x, y, col, emptyCol, transparentCol, selectThis);
-                    if (m_ShowColorToolTips)
+                    if (this.m_ShowColorToolTips)
                         this.SetColorToolTip(index, emptyCol, transparentCol);
                 }
             }
-            if (!m_ShowColorToolTips)
+            if (!this.m_ShowColorToolTips)
                 this.toolTipColor.RemoveAll();
-            Int32 sizeX = this.Padding.Left + LabelSize.Width * this.m_ColorTableWidth + PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
-            Int32 sizeY = this.Padding.Top + LabelSize.Height * rows + PadBetween.Y * (rows - 1) + this.Padding.Bottom;
+            Int32 sizeX = this.Padding.Left + this.LabelSize.Width * this.m_ColorTableWidth + this.PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
+            Int32 sizeY = this.Padding.Top + this.LabelSize.Height * rows + this.PadBetween.Y * (rows - 1) + this.Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);
         }
 
 
         protected Color GetColor(Int32 index)
         {
-            if (m_Remap != null && m_ShowRemappedPalette)
+            if (this.m_Remap != null && this.m_ShowRemappedPalette)
             {
                 Int32 filterIndex;
-                if (index < m_Remap.Length && (filterIndex = m_Remap[index]) >= 0 && filterIndex < m_Palette.Length)
-                    return m_Palette[filterIndex];
+                if (index < this.m_Remap.Length && (filterIndex = this.m_Remap[index]) >= 0 && filterIndex < this.m_Palette.Length)
+                    return this.m_Palette[filterIndex];
                 return Color.Empty;
             }
-            if (index < m_Palette.Length)
-                return m_Palette[index];
+            if (index < this.m_Palette.Length)
+                return this.m_Palette[index];
             return Color.Empty;
         }
 
         protected virtual void SetColorToolTip(Int32 index, Boolean isEmpty, Boolean isTransparent)
         {
-            Label lbl = m_ColorLabels[index];
+            Label lbl = this.m_ColorLabels[index];
             String tooltipString;
             if (isEmpty)
             {
-                if (String.IsNullOrEmpty(EmptyItemToolTip))
+                if (String.IsNullOrEmpty(this.EmptyItemToolTip))
                     tooltipString = null;
                 else
-                    tooltipString = EmptyItemToolTip;
+                    tooltipString = this.EmptyItemToolTip;
             }
             else
             {
                 Color c = lbl.BackColor;
                 tooltipString = "#" + index;
-                if (m_Remap != null && m_ShowRemappedPalette && m_Remap[index] >= 0)
-                    tooltipString += " -> #" + m_Remap[index];
+                if (this.m_Remap != null && this.m_ShowRemappedPalette && this.m_Remap[index] >= 0)
+                    tooltipString += " -> #" + this.m_Remap[index];
                 tooltipString += String.Format(" ({0},{1},{2})", c.R, c.G, c.B);
                 if (isTransparent)
                     tooltipString += " (Transparent)";
@@ -512,7 +525,7 @@ namespace Nyerguds.Util.UI
         protected virtual Label GenerateLabel(Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean isTransparent, Boolean addBorder)
         {
             Label lbl = new LabelNoCopyOnDblClick();
-            SetLabelProperties(lbl, x, y, color, isEmpty, isTransparent, addBorder);
+            this.SetLabelProperties(lbl, x, y, color, isEmpty, isTransparent, addBorder);
             lbl.MouseClick += this.ColorLblMouseClick;
             lbl.MouseDoubleClick += this.ColorLblMouseDoubleClick;
             lbl.ImageAlign = ContentAlignment.MiddleCenter;
@@ -546,17 +559,17 @@ namespace Nyerguds.Util.UI
             }
             
             lbl.BorderStyle = addBorder ? BorderStyle.FixedSingle : BorderStyle.None;
-            lbl.Location = new Point(this.Padding.Left + (LabelSize.Width + PadBetween.X) * x,
-                                        this.Padding.Top + (LabelSize.Height + PadBetween.Y) * y);
+            lbl.Location = new Point(this.Padding.Left + (this.LabelSize.Width + this.PadBetween.X) * x,
+                                        this.Padding.Top + (this.LabelSize.Height + this.PadBetween.Y) * y);
             lbl.Name = "color" + index;
-            lbl.Size = LabelSize;
+            lbl.Size = this.LabelSize;
             lbl.TabIndex = index;
-            lbl.Margin = new System.Windows.Forms.Padding(0);
-            lbl.Padding = new System.Windows.Forms.Padding(0);
+            lbl.Margin = new Padding(0);
+            lbl.Padding = new Padding(0);
             // Reduce font size to fit label size if needed. Don't bother if the text is empty anyway.
             if (!String.IsNullOrEmpty(lbl.Text))
             {
-                Single maxHeight = (Single)(LabelSize.Height * 6.0 / 8.0);
+                Single maxHeight = (Single)(this.LabelSize.Height * 6.0 / 8.0);
                 Single currentFontSize;
                 using (Graphics g = this.CreateGraphics())
                 {
@@ -576,97 +589,97 @@ namespace Nyerguds.Util.UI
             if (lbl.BorderStyle == BorderStyle.FixedSingle)
             {
                 ButtonBorderStyle bs = ButtonBorderStyle.Solid;
-                if (m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
+                if (this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
                 {
                     Int32 index = (Int32)lbl.Tag;
-                    if (m_SelectedIndicesArr[0] == index)
+                    if (this.m_SelectedIndicesArr[0] == index)
                         bs = ButtonBorderStyle.Outset;
-                    else if (m_SelectedIndicesArr[1] == index)
+                    else if (this.m_SelectedIndicesArr[1] == index)
                         bs = ButtonBorderStyle.Inset;
                 }
-                ControlPaint.DrawBorder(e.Graphics, lbl.DisplayRectangle, Parent.BackColor, bs);
+                ControlPaint.DrawBorder(e.Graphics, lbl.DisplayRectangle, this.Parent.BackColor, bs);
             }
         }
 
-        protected virtual void ColorLblMouseClick(object sender, MouseEventArgs e)
+        protected virtual void ColorLblMouseClick(Object sender, MouseEventArgs e)
         {
             Label lbl = (Label)sender;
             Int32 index = lbl != null? (Int32)lbl.Tag : -1;
             Int32 mousebutton = -1;
-            if ((e.Button & System.Windows.Forms.MouseButtons.Left) != 0)
+            if ((e.Button & MouseButtons.Left) != 0)
                 mousebutton = 0;
-            if ((e.Button & System.Windows.Forms.MouseButtons.Right) != 0)
+            if ((e.Button & MouseButtons.Right) != 0)
                 mousebutton = 1;
             if (mousebutton != -1 && index != -1)
             {
-                if ((m_ColorSelectMode == ColorSelMode.Single && mousebutton == 0) || m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
+                if ((this.m_ColorSelectMode == ColorSelMode.Single && mousebutton == 0) || this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
                 {
-                    Int32 oldVal = m_SelectedIndicesArr[mousebutton];
-                    if (m_ColorSelectMode == ColorSelMode.Single)
+                    Int32 oldVal = this.m_SelectedIndicesArr[mousebutton];
+                    if (this.m_ColorSelectMode == ColorSelMode.Single)
                     {
                         if (index != oldVal)
                         {
-                            m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
-                            m_SelectedIndicesArr[0] = index;
+                            this.m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
+                            this.m_SelectedIndicesArr[0] = index;
                             lbl.BorderStyle = BorderStyle.FixedSingle;
                         }
                     }
-                    else if (m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
+                    else if (this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
                     {
                         Int32 mousebuttonOther = mousebutton == 0 ? 1 : 0;
-                        Int32 oldValOther = m_SelectedIndicesArr[mousebuttonOther];
+                        Int32 oldValOther = this.m_SelectedIndicesArr[mousebuttonOther];
                         if (index != oldVal)
                         {
                             if (index == oldValOther)
                             {
-                                m_SelectedIndicesArr[mousebutton] = index;
-                                m_SelectedIndicesArr[mousebuttonOther] = oldVal;
-                                m_ColorLabels[oldVal].Invalidate();
+                                this.m_SelectedIndicesArr[mousebutton] = index;
+                                this.m_SelectedIndicesArr[mousebuttonOther] = oldVal;
+                                this.m_ColorLabels[oldVal].Invalidate();
                             }
                             else
                             {
-                                m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
-                                m_SelectedIndicesArr[mousebutton] = index;
+                                this.m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
+                                this.m_SelectedIndicesArr[mousebutton] = index;
                                 lbl.BorderStyle = BorderStyle.FixedSingle;
                             }
                         }
                     }
                 }
-                else if (m_ColorSelectMode == ColorSelMode.Multi && mousebutton == 0)
+                else if (this.m_ColorSelectMode == ColorSelMode.Multi && mousebutton == 0)
                 {
-                    if (!m_SelectedIndicesList.Contains(index))
+                    if (!this.m_SelectedIndicesList.Contains(index))
                     {
-                        m_SelectedIndicesList.Add(index);
-                        m_SelectedIndicesList.Sort();
+                        this.m_SelectedIndicesList.Add(index);
+                        this.m_SelectedIndicesList.Sort();
                         lbl.BorderStyle = BorderStyle.FixedSingle;
                     }
                     else
                     {
-                        m_SelectedIndicesList.RemoveAll(i => i == index);
+                        this.m_SelectedIndicesList.RemoveAll(i => i == index);
                         lbl.BorderStyle = BorderStyle.None;
                     }
                 }
                 // force refresh
                 lbl.Invalidate();
                 if (this.ColorSelectionChanged != null)
-                    this.ColorSelectionChanged(this, new PaletteClickEventArgs(e, index, GetColor(index)));
+                    this.ColorSelectionChanged(this, new PaletteClickEventArgs(e, index, this.GetColor(index)));
             }
             if (this.ColorLabelMouseClick != null)
-                this.ColorLabelMouseClick(this, new PaletteClickEventArgs(e, index, GetColor(index)));
+                this.ColorLabelMouseClick(this, new PaletteClickEventArgs(e, index, this.GetColor(index)));
             
         }
 
-        protected virtual void ColorLblMouseDoubleClick(object sender, MouseEventArgs e)
+        protected virtual void ColorLblMouseDoubleClick(Object sender, MouseEventArgs e)
         {
-            if (ColorLabelMouseDoubleClick != null)
+            if (this.ColorLabelMouseDoubleClick != null)
             {
                 Label lbl = (Label)sender;
                 Int32 index = lbl != null ? (Int32)lbl.Tag : -1;
-                ColorLabelMouseDoubleClick(this, new PaletteClickEventArgs(e, index, GetColor(index)));
+                this.ColorLabelMouseDoubleClick(this, new PaletteClickEventArgs(e, index, this.GetColor(index)));
             }
         }
 
-        protected virtual void BackgroundMouseDoubleClick(object sender, MouseEventArgs e)
+        protected virtual void BackgroundMouseDoubleClick(Object sender, MouseEventArgs e)
         {
             // disabled for now. Could be annoying when selecting a lot of indices,
             // if an accidental doubleclick on the background clears them all.
@@ -679,7 +692,7 @@ namespace Nyerguds.Util.UI
 
         protected static Color GetVisibleBorderColor(Color color)
         {
-            float bri = color.GetBrightness();
+            Single bri = color.GetBrightness();
             if (color.GetSaturation() < .16)
             {
                 // this color is grey
@@ -701,7 +714,7 @@ namespace Nyerguds.Util.UI
         Multi
     }
 
-    public delegate void PaletteClickEventHandler(object sender, PaletteClickEventArgs e);
+    public delegate void PaletteClickEventHandler(Object sender, PaletteClickEventArgs e);
 
     public class PaletteClickEventArgs : MouseEventArgs
     {
@@ -728,7 +741,7 @@ namespace Nyerguds.Util.UI
         {
             get
             {
-                return text;
+                return this.text;
             }
             set
             {

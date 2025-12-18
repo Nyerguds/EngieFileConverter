@@ -24,8 +24,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
         public override String ShortTypeDescription { get { return "Dynamix BMP sprites file"; } }
 
-        protected String[] compressionTypes = new String[] { "None", "RLE", "LZW" };
-        protected String[] savecompressionTypes = new String[] { "None", "RLE" };
+        protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
+        protected String[] savecompressionTypes = new String[] { "None", "RLE", "LZSS" };
         //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
         public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
 
@@ -60,13 +60,13 @@ namespace CnC64FileConverter.Domain.FileTypes
         
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null, false);
+            this.LoadFromFileData(fileData, null, false);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename, false);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename, false);
+            this.SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()
@@ -154,10 +154,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (binChunk.Data.Length == 0)
                     throw new FileTypeLoadException("Empty BIN chunk!");
                 Int32 compressionType = binChunk.Data[0];
-                if (compressionType < 3)
+                if (compressionType < this.compressionTypes.Length)
                     this.ExtraInfo = "Compression: " + (this.IsMa8 ? "MA8" : "BIN") + ":" + this.compressionTypes[compressionType];
                 else
-                    throw new FileTypeLoadException("Unknown compression type, " + compressionType);
+                    throw new FileTypeLoadException("Unknown compression type " + compressionType);
                 Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
                 if (this.IsMa8) // MA8 seems to have indices 0 and FF switched
                     DynamixCompression.SwitchBackground(bindata);
@@ -176,10 +176,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                         throw new FileTypeLoadException("Empty VGA chunk!");
                     this.m_bpp = 8;
                     compressionType = vgaChunk.Data[0];
-                    if (compressionType < 3)
+                    if (compressionType < this.compressionTypes.Length)
                         this.ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
                     else
-                        throw new FileTypeLoadException("Unknown compression type, " + compressionType);
+                        throw new FileTypeLoadException("Unknown compression type " + compressionType);
                     vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
                 }
                 if (vgadata == null)
@@ -284,8 +284,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileToSave.Frames.Length == 0)
                 throw new NotSupportedException("No frames found in source data!");
 
-            if (compressionType < 0 || compressionType > 2)
-                throw new NotSupportedException("Unknown compression type, " + compressionType);
+            if (compressionType < 0 || compressionType > this.compressionTypes.Length)
+                throw new NotSupportedException("Unknown compression type " + compressionType);
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)

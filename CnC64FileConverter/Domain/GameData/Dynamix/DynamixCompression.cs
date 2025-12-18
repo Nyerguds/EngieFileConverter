@@ -104,9 +104,26 @@ namespace Nyerguds.GameData.Dynamix
                     return RleDecode(buffer, (UInt32)start, (UInt32)end, decompressedSize, true);
                 case 2:
                     return LzwDecode(buffer, start, end, decompressedSize);
+                case 3:
+                    return LzssDecode(buffer, start, end, decompressedSize);
                 default:
                     throw new ArgumentException("Unknown compression type: \"" + compression + "\".", "compression");
             }
+        }
+
+        public static Byte[] LzssDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
+        {
+            DynamixLzHuffDecoder lzhDec = new DynamixLzHuffDecoder();
+            Byte[] outputBuffer = lzhDec.Decode(buffer, startOffset, endOffset, decompressedSize);
+            if (decompressedSize < outputBuffer.Length)
+                throw new ArgumentException("Decompression failed!");
+            if (decompressedSize > outputBuffer.Length)
+            {
+                Byte[] output = new Byte[decompressedSize];
+                Array.Copy(outputBuffer, output, outputBuffer.Length);
+                return output;
+            }
+            return outputBuffer;
         }
 
         public static Byte[] LzwDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
@@ -124,6 +141,17 @@ namespace Nyerguds.GameData.Dynamix
             RleCompressionHighBitRepeat rle = new RleCompressionHighBitRepeat();
             rle.RleDecodeData(buffer, startOffset, endOffset, ref outputBuffer, abortOnError);
             return outputBuffer;
+        }
+
+        /// <summary>
+        /// Applies LZW Encoding to the given data.
+        /// </summary>
+        /// <param name="buffer">Input buffer</param>
+        /// <returns>The run-length encoded data</returns>
+        public static Byte[] LzssEncode(Byte[] buffer)
+        {
+            DynamixLzHuffDecoder enc = new DynamixLzHuffDecoder();
+            return null; // enc.Encode(buffer, null, null);
         }
         
         /// <summary>

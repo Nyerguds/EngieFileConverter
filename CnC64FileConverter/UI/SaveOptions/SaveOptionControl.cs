@@ -11,7 +11,7 @@ namespace CnC64FileConverter.UI
 
         protected void Init(SaveOption info, ListedControlController<SaveOption> controller)
         {
-            UpdateInfo(info);
+            this.UpdateInfo(info);
             this.m_Controller = controller;
         }
         public virtual void FocusValue() { this.Focus(); }

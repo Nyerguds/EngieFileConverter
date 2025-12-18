@@ -8,7 +8,7 @@ using CnC64FileConverter.Domain.CCTypes;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FileMapWwRa1PC : SupportedFileType
+    public class FileMapWwRa1Pc : SupportedFileType
     {
         // disabled for now.
         public override FileClass FileClass { get { return FileClass.None; } }

@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Linq;
-using System.Windows.Forms;
+using System.Drawing;
 using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 using Nyerguds.Util.Ui;
-using System.Drawing;
 
 namespace CnC64FileConverter.UI.SaveOptions
 {
@@ -21,21 +19,21 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public SaveOptionChoices(SaveOption info, ListedControlController<SaveOption> controller)
         {
-            InitializeComponent();
-            InitResize();
-            Init(info, controller);
+            this.InitializeComponent();
+            this.InitResize();
+            this.Init(info, controller);
         }
 
         private void InitResize()
         {
             Int32 initialPosTxt = this.cmbChoices.Location.X;
-            initialWidthLbl = this.lblDescription.Width;
+            this.initialWidthLbl = this.lblDescription.Width;
             this.initialWidthCmb = this.cmbChoices.Width;
             Int32 initialWidthFrm = this.DisplayRectangle.Width;
-            m_PadLeft = this.lblDescription.Location.X;
-            m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthCmb;
-            m_PadMiddle = initialPosTxt - this.initialWidthLbl - m_PadLeft;
-            initialWidthToScale = initialWidthFrm - m_PadLeft - m_PadRight - m_PadMiddle;
+            this.m_PadLeft = this.lblDescription.Location.X;
+            this.m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthCmb;
+            this.m_PadMiddle = initialPosTxt - this.initialWidthLbl - this.m_PadLeft;
+            this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
         public override void UpdateInfo(SaveOption info)
@@ -57,21 +55,21 @@ namespace CnC64FileConverter.UI.SaveOptions
             this.cmbChoices.Focus();
         }
 
-        private void cmbChoices_SelectedIndexChanged(object sender, EventArgs e)
+        private void cmbChoices_SelectedIndexChanged(Object sender, EventArgs e)
         {
             // Update controller
             if (this.m_Info == null)
                 return;
             this.m_Info.SaveData = this.cmbChoices.SelectedIndex.ToString();
             if (this.m_Controller != null)
-                this.m_Controller.UpdateControlInfo(m_Info);
+                this.m_Controller.UpdateControlInfo(this.m_Info);
         }
         
-        private void SaveOptionChoices_Resize(object sender, EventArgs e)
+        private void SaveOptionChoices_Resize(Object sender, EventArgs e)
         {
             // What a mess just to make the center size...
 
-            Double scaleFactor = (Double)this.DisplayRectangle.Width / (Double)initialWidthToScale;
+            Double scaleFactor = (Double)this.DisplayRectangle.Width / (Double) this.initialWidthToScale;
             Int32 newWidthLbl = (Int32)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
             Int32 newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
 

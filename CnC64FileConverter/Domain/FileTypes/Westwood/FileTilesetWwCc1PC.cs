@@ -22,6 +22,11 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Int32 BitsPerPixel { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
+
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
+
+
         protected Int16 hdrTileWidth;
         protected Int16 hdrTileHeight;
         protected Int16 hdrNrOfTiles;
@@ -41,7 +46,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public Byte[][] GetRawTiles()
         {
             Byte[][] tiles = new Byte[this.m_Tiles.Length][];
-            for (int i = 0; i < tiles.Length; i++)
+            for (Int32 i = 0; i < tiles.Length; i++)
                 tiles[i] = this.m_Tiles[i].ToArray();
             return tiles;
         }
@@ -52,7 +57,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_TilesList.Cast<SupportedFileType>().ToArray(); } }
+        public override SupportedFileType[] Frames { get { return this.m_TilesList.Cast<SupportedFileType>().ToArray(); } }
         /// <summary>
         /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
         /// C&amp;C tileset files are bit of an edge case, though, since they contains no overall dimensions. Files with known tile names as filename get their X and Y from the tile info.
@@ -63,13 +68,138 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
+        }
+
+        private void LoadFromFileData(Byte[] fileData, String sourceFileName)
+        {
+            Int32 fileLen = fileData.Length;
+            if (fileLen < 0x20)
+                throw new FileTypeLoadException("File is not long enough to be a valid C&C tileset file.");
+            try
+            {
+                this.ReadHeader(fileData);
+            }
+            catch (FileTypeLoadException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new FileTypeLoadException("Error loading header data: " + e.Message, e);
+            }
+            Int32 tileSize = this.hdrTileWidth * this.hdrTileHeight;
+            Byte[] imagesList = new Byte[this.hdrNrOfTiles];
+            if (this.hdrIndexTilesetImagesList + this.hdrNrOfTiles >= fileLen)
+                throw new FileTypeLoadException("Tile info outside file range!");
+            Array.Copy(fileData, this.hdrIndexTilesetImagesList, imagesList, 0, this.hdrNrOfTiles);
+            Int32 actualImages = imagesList.Max(x => x == 0xFF ? -1 : (Int32)x) + 1;
+            if (this.hdrImgStart + actualImages * tileSize > fileLen)
+                throw new FileTypeLoadException("Tile image data outside file range!");
+            Byte[] imagesIndex = new Byte[actualImages];
+            Array.Copy(fileData, this.hdrIndexImages, imagesIndex, 0, actualImages);
+            this.m_TilesList = new List<FileTileCc1Pc>();
+            if (this.m_Palette == null)
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
+            // ONly way to set a palette is through SetPaletre, and that ensures 256 colours.
+            this.m_Palette[0] = Color.FromArgb(0, this.m_Palette[0]);
+            this.m_Tiles = new Byte[this.hdrNrOfTiles][];
+            this.m_TileUseList = new Boolean[imagesList.Length];
+            Byte[] extraInfoList = new Byte[imagesList.Length];
+            for (Int32 i = 0; i < imagesList.Length; i++)
+            {
+                Byte dataIndex = imagesList[i];
+                Boolean used = dataIndex != 0xFF;
+                this.m_TileUseList[i] = used;
+                Byte[] tileData;
+                if (used)
+                {
+                    tileData = new Byte[tileSize];
+                    Int32 offset = this.hdrImgStart + dataIndex * tileSize;
+                    if ((offset + tileSize) > fileLen)
+                        throw new FileTypeLoadException("Tile data outside file range");
+                    Array.Copy(fileData, offset, tileData, 0, tileSize);
+                }
+                else
+                {
+                    tileData = Enumerable.Repeat((Byte)0, tileSize).ToArray();
+                }
+                this.m_Tiles[i] = tileData;
+                Bitmap tileImage = ImageUtils.BuildImage(tileData, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
+                FileTileCc1Pc cell = new FileTileCc1Pc(this, sourceFileName, tileImage, (Byte) i, used);
+                if (used && imagesIndex[dataIndex] != 0)
+                {
+                    Byte imageIndexVal = imagesIndex[dataIndex];
+                    cell.SetExtraInfo("Images index data: " + imageIndexVal.ToString("X2"));
+                    extraInfoList[i] = imageIndexVal;
+                }
+
+                this.m_TilesList.Add(cell);
+            }
+            String[] extraInfo = Enumerable.Range(0, imagesList.Length).Where(i => imagesList[i] != 0xFF && imagesIndex[imagesList[i]] != 0).Select(x => x.ToString()).ToArray();
+            if (extraInfo.Length > 0)
+                this.ExtraInfo = "Extra image info on cell " + String.Join(", ", extraInfo);
+            
+            Int32 xDim = -1;
+            if (sourceFileName != null)
+            {
+                String baseName = Path.GetFileNameWithoutExtension(sourceFileName);
+                foreach (TileInfo tileInfo in MapConversion.TILEINFO.Values)
+                {
+                    if (!String.Equals(baseName, tileInfo.TileName, StringComparison.InvariantCultureIgnoreCase))
+                        continue;
+                    if (tileInfo.Width * tileInfo.Height != this.hdrNrOfTiles)
+                        continue;
+                    xDim = tileInfo.Width;
+                    break;
+                }
+            }
+            if (xDim == -1)
+                xDim = 1;
+            this.m_CompositeFrameTilesWidth = xDim;
+            this.BuildFullImage();
+        }
+
+        private void ReadHeader(Byte[] fileData)
+        {
+            Int32 fileLen = fileData.Length;
+            if (fileLen < 0x20)
+                return;
+            this.hdrTileWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x00, 2, true);
+            this.hdrTileHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x02, 2, true);
+            this.hdrNrOfTiles = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x04, 2, true);
+            this.hdrZero1 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x06, 2, true);
+            this.hdrSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x08, 4, true);
+            this.hdrImgStart = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x0C, 4, true);
+            this.hdrZero2 = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x10, 4, true);
+            this.hdrID1 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x14, 2, true);
+            this.hdrID2 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x16, 2, true);
+            //61020000 == 0x261
+            this.hdrIndexImages = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x18, 4, true);
+            //60020000 = 0x260
+            this.hdrIndexTilesetImagesList = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x1C, 4, true);
+            if (this.hdrSize != fileData.Length)
+                throw new FileTypeLoadException("File size in header does not match.");
+            if (this.hdrTileHeight != 24 || this.hdrTileWidth != 24)
+                throw new FileTypeLoadException("Only 24x24 pixel tiles are supported.");
+            if (this.hdrZero1 != 00 || this.hdrZero2 != 0 || this.hdrID1 != -1 || this.hdrID2 != 0x0D1A)
+                throw new FileTypeLoadException("Invalid values encountered in header.");
+            if (this.hdrImgStart >= fileLen || this.hdrIndexTilesetImagesList >= fileLen || this.hdrIndexImages >= fileLen)
+                throw new FileTypeLoadException("Invalid header values: indices outside file range.");
+            if (this.hdrNrOfTiles == 0)
+                throw new FileTypeLoadException("Tileset files with 0 tiles are not supported!");
+        }
+
+        protected override void BuildFullImage()
+        {
+            Int32 nrOftiles = this.m_Tiles.Length;
+            this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_Tiles, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, nrOftiles, this.m_Palette, this.m_CompositeFrameTilesWidth);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
@@ -99,9 +229,23 @@ namespace CnC64FileConverter.Domain.FileTypes
                         finalIndices[index] = 0xFF;
                     else
                     {
-                        finalIndices[index]= (Byte)actualFrames;
-                        tempFrames[actualFrames] = frameData;
-                        actualFrames++;
+                        Int32 foundIndex = -1;
+                        for (Int32 i = 0; i < actualFrames; i++)
+                        {
+                            if (tempFrames[i].SequenceEqual(frameData))
+                            {
+                                foundIndex = i;
+                                break;
+                            }
+                        }
+                        if (foundIndex != -1)
+                            finalIndices[index] = (Byte)foundIndex;
+                        else
+                        {
+                            finalIndices[index] = (Byte) actualFrames;
+                            tempFrames[actualFrames] = frameData;
+                            actualFrames++;
+                        }
                     }
                 }
             }
@@ -134,122 +278,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             Array.Copy(finalIndices, 0, finalData, indexTilesetImagesList, finalIndices.Length);
             return finalData;
         }
-
-        private void LoadFromFileData(Byte[] fileData, String sourceFileName)
-        {
-            Int32 fileLen = fileData.Length;
-            if (fileLen < 0x20)
-                throw new FileTypeLoadException("File is not long enough to be a valid C&C tileset file.");
-            try
-            {
-                this.ReadHeader(fileData);
-            }
-            catch (FileTypeLoadException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                throw new FileTypeLoadException("Error loading header data: " + e.Message, e);
-            }
-            Int32 tileSize = this.hdrTileWidth * this.hdrTileHeight;
-            Byte[] imagesList = new Byte[this.hdrNrOfTiles];
-            if (this.hdrIndexTilesetImagesList + this.hdrNrOfTiles >= fileLen)
-                throw new FileTypeLoadException("Tile info outside file range!");
-            Array.Copy(fileData, this.hdrIndexTilesetImagesList, imagesList, 0, this.hdrNrOfTiles);
-            Int32 actualImages = imagesList.Max(x => x == 0xFF ? -1 : (Int32)x) + 1;
-            if (this.hdrImgStart + actualImages * tileSize > fileLen)
-                throw new FileTypeLoadException("Tile image data outside file range!");
-            m_TilesList = new List<FileTileCc1Pc>();
-            if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
-            // ONly way to set a palette is through SetPaletre, and that ensures 256 colours.
-            this.m_Palette[0] = Color.FromArgb(0, this.m_Palette[0]);
-            this.m_Tiles = new Byte[this.hdrNrOfTiles][];
-            this.m_TileUseList = new Boolean[imagesList.Length];
-            for (Int32 i = 0; i < imagesList.Length; i++)
-            {
-                Byte dataIndex = imagesList[i];
-                Boolean used = dataIndex != 0xFF;
-                m_TileUseList[i] = used;
-                Byte[] tileData;
-                if (used)
-                {
-                    tileData = new Byte[tileSize];
-                    Int32 offset = this.hdrImgStart + dataIndex * tileSize;
-                    if ((offset + tileSize) > fileLen)
-                        throw new FileTypeLoadException("Tile data outside file range");
-                    Array.Copy(fileData, offset, tileData, 0, tileSize);
-                }
-                else
-                {
-                    tileData = Enumerable.Repeat((Byte)0, tileSize).ToArray();
-                }
-                this.m_Tiles[i] = tileData;
-                Bitmap tileImage = ImageUtils.BuildImage(tileData, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
-                m_TilesList.Add(new FileTileCc1Pc(this, sourceFileName, tileImage, (Byte)i, used));
-            }
-            Int32 xDim = -1;
-            if (sourceFileName != null)
-            {
-                String baseName = Path.GetFileNameWithoutExtension(sourceFileName);
-                foreach (TileInfo tileInfo in MapConversion.TILEINFO.Values)
-                {
-                    if (!String.Equals(baseName, tileInfo.TileName, StringComparison.InvariantCultureIgnoreCase))
-                        continue;
-                    if (tileInfo.Width * tileInfo.Height != this.hdrNrOfTiles)
-                        continue;
-                    xDim = tileInfo.Width;
-                    break;
-                }
-            }
-            if (xDim == -1)
-                xDim = 1;
-            this.m_CompositeFrameTilesWidth = xDim;
-            BuildFullImage();
-        }
-
-        protected override void BuildFullImage()
-        {
-            Int32 nrOftiles = this.m_Tiles.Length;
-            this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_Tiles, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, nrOftiles, this.m_Palette, this.m_CompositeFrameTilesWidth);
-        }
-
-        private void ReadHeader(Byte[] headerBytes)
-        {
-            Int32 fileLen = headerBytes.Length;
-            if (fileLen < 0x20)
-                return;
-            this.hdrTileWidth = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x00, 2, true);
-            this.hdrTileHeight = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x02, 2, true);
-            this.hdrNrOfTiles = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x04, 2, true);
-            this.hdrZero1 = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x06, 2, true);
-            this.hdrSize = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x08, 4, true);
-            this.hdrImgStart = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x0C, 4, true);
-            this.hdrZero2 = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x10, 4, true);
-            this.hdrID1 = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x14, 2, true);
-            this.hdrID2 = (Int16)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x16, 2, true);
-            //61020000 == 0x261
-            this.hdrIndexImages = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x18, 4, true);
-            //60020000 = 0x260
-            this.hdrIndexTilesetImagesList = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x1C, 4, true);
-            if (this.hdrSize != headerBytes.Length)
-                throw new FileTypeLoadException("File size in header does not match.");
-            if (this.hdrTileHeight != 24 || this.hdrTileWidth != 24)
-                throw new FileTypeLoadException("Only 24x24 pixel tiles are supported.");
-            if (this.hdrZero1 != 00 || hdrZero2 != 0 || this.hdrID1 != -1 || this.hdrID2 != 0x0D1A)
-                throw new FileTypeLoadException("Invalid values encountered in header.");
-            if (this.hdrImgStart >= fileLen || this.hdrIndexTilesetImagesList >= fileLen || this.hdrIndexImages >= fileLen)
-                throw new FileTypeLoadException("Invalid header values: indices outside file range.");
-            if (this.hdrNrOfTiles == 0)
-                throw new FileTypeLoadException("Tileset files with 0 tiles are not supported!");
-        }
     }
 
     public class FileTileCc1Pc: FileTileCc1N64
     {
         public override Int32 BitsPerPixel { get { return 8; } }
+        public override String ShortTypeDescription { get { return "C&C terrain tile"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
+
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         public FileTileCc1Pc(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index, Boolean used)
             : base(origin, sourceFileName, tileImage, null, index, 0)
@@ -258,9 +296,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.ExtraInfo = "Unused block";
         }
 
+        public void SetExtraInfo(String str)
+        {
+            this.ExtraInfo = str;
+        }
+
         public override String ToString()
         {
-            return SourceFileName + " tile #" + this.CellData.LowByte;
+            return this.SourceFileName + " tile #" + this.CellData.LowByte;
         }
     }
 }

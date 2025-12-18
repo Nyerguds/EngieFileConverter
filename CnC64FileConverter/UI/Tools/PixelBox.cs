@@ -17,7 +17,7 @@ namespace Nyerguds.Util.UI
         public PixelBox ()
         {
             // Set default.
-            InterpolationMode = InterpolationMode.NearestNeighbor;
+            this.InterpolationMode = InterpolationMode.NearestNeighbor;
         }
         #endregion
 
@@ -38,11 +38,11 @@ namespace Nyerguds.Util.UI
         /// <param name="pe">A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data. </param>
         protected override void OnPaint (PaintEventArgs pe)
         {
-            pe.Graphics.InterpolationMode = InterpolationMode;
+            pe.Graphics.InterpolationMode = this.InterpolationMode;
             // docs on this are wrong; if the interpolation mode is NearestNeighbor, putting it on
             // Half makes it NOT shift the whole thing up and to the left by half a (zoomed) pixel.
             // I'm frankly baffled they didn't just make this an automatic part of the interpolation modes.
-            if (InterpolationMode == InterpolationMode.NearestNeighbor)
+            if (this.InterpolationMode == InterpolationMode.NearestNeighbor)
                 pe.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
             base.OnPaint(pe);
         }

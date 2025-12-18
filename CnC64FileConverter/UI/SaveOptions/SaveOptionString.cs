@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Linq;
 using System.Windows.Forms;
 using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.Util;
@@ -21,21 +20,21 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public SaveOptionString(SaveOption info, ListedControlController<SaveOption> controller)
         {
-            InitializeComponent();
-            InitResize();
-            Init(info, controller);
+            this.InitializeComponent();
+            this.InitResize();
+            this.Init(info, controller);
         }
 
         private void InitResize()
         {
             Int32 initialPosTxt = this.txtValue.Location.X;
-            initialWidthLbl = this.lblDescription.Width;
-            initialWidthTxt = this.txtValue.Width;
+            this.initialWidthLbl = this.lblDescription.Width;
+            this.initialWidthTxt = this.txtValue.Width;
             Int32 initialWidthFrm = this.DisplayRectangle.Width;
-            m_PadLeft = this.lblDescription.Location.X;
-            m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthTxt;
-            m_PadMiddle = initialPosTxt - this.initialWidthLbl - m_PadLeft;
-            initialWidthToScale = initialWidthFrm - m_PadLeft - m_PadRight - m_PadMiddle;
+            this.m_PadLeft = this.lblDescription.Location.X;
+            this.m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthTxt;
+            this.m_PadMiddle = initialPosTxt - this.initialWidthLbl - this.m_PadLeft;
+            this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
         public override void UpdateInfo(SaveOption info)
@@ -51,7 +50,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         }
         
 
-        private void TextBoxCheckLines(object sender, EventArgs e)
+        private void TextBoxCheckLines(Object sender, EventArgs e)
         {
             const String editing = "editing";
             if (sender is TextBox)
@@ -74,7 +73,7 @@ namespace CnC64FileConverter.UI.SaveOptions
                         return;
                     this.m_Info.SaveData = textbox.Text;
                     if (this.m_Controller != null)
-                        this.m_Controller.UpdateControlInfo(m_Info);
+                        this.m_Controller.UpdateControlInfo(this.m_Info);
                 }
                 finally
                 {
@@ -83,13 +82,13 @@ namespace CnC64FileConverter.UI.SaveOptions
             }
         }
 
-        private void TextBoxCheckKeyPress(object sender, KeyPressEventArgs e)
+        private void TextBoxCheckKeyPress(Object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == '\r' || e.KeyChar == '\n')
                 e.Handled = true;
         }
 
-        private void TextBoxSelectAll(object sender, KeyEventArgs e)
+        private void TextBoxSelectAll(Object sender, KeyEventArgs e)
         {
             if (e.Control && (e.KeyCode == Keys.A))
             {
@@ -102,11 +101,11 @@ namespace CnC64FileConverter.UI.SaveOptions
             }
         }
 
-        private void SaveOptionString_Resize(object sender, EventArgs e)
+        private void SaveOptionString_Resize(Object sender, EventArgs e)
         {
             // What a mess just to make the center size...
 
-            Double scaleFactor = (Double)this.DisplayRectangle.Width / initialWidthToScale;
+            Double scaleFactor = (Double)this.DisplayRectangle.Width / this.initialWidthToScale;
             Int32 newWidthLbl = (Int32)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
             Int32 newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
 

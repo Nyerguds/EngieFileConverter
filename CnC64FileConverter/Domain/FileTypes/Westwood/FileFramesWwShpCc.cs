@@ -18,8 +18,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override Int32 Width { get { return m_Width; } }
-        public override Int32 Height { get { return m_Height; } }
+        public override Int32 Width { get { return this.m_Width; } }
+        public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
         //protected String[] formats = new String[] { "Dune II", "Legend of Kyrandia", "C&C1/RA1", "Tiberian Sun" };
@@ -33,7 +33,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected ShpVersion m_Version = ShpVersion.Cnc;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_FramesList; } }
+        public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
@@ -69,13 +69,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
         
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
@@ -114,7 +114,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new HeaderParseException("Not a C&C1/RA1 SHP! file");
             if (hdr.Width == 0 || hdr.Height == 0)
                 throw new HeaderParseException("Illegal values in header!");
-            m_HasPalette = (hdr.Flags & 1) != 0;
+            this.m_HasPalette = (hdr.Flags & 1) != 0;
             Byte[][] frames = new Byte[nrOfFrames][];
             OffsetInfo[] offsets = new OffsetInfo[nrOfFrames];
             Dictionary<UInt32, Int32> offsetIndices = new Dictionary<UInt32, Int32>();
@@ -124,22 +124,22 @@ namespace CnC64FileConverter.Domain.FileTypes
             // TODO maybe load palette?
             if (this.m_Palette == null)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
-            m_FramesList = new SupportedFileType[nrOfFrames];
-            m_Width = hdr.Width;
-            m_Height = hdr.Height;
+            this.m_FramesList = new SupportedFileType[nrOfFrames];
+            this.m_Width = hdr.Width;
+            this.m_Height = hdr.Height;
             // Frames decompression
             Int32 curOffs = hdrSize;
             Int32 frameSize = hdr.Width*hdr.Height;
             OffsetInfo currentFrame = ArrayUtils.ReadStructFromByteArray<OffsetInfo>(fileData, curOffs);
-            Int32 frameOffs = GetOffset(currentFrame.Offset);
+            Int32 frameOffs = this.GetOffset(currentFrame.Offset);
             for (Int32 i = 0; i < nrOfFrames; i++)
             {
                 offsetIndices.Add(currentFrame.Offset, i);
                 offsets[i] = currentFrame;
                 curOffs += offsSize;
                 OffsetInfo nextFrame = ArrayUtils.ReadStructFromByteArray<OffsetInfo>(fileData, curOffs);
-                Int32 frameOffsEnd = GetOffset(nextFrame.Offset);
-                Byte frameOffsFormat = GetFormat(currentFrame.Offset);
+                Int32 frameOffsEnd = this.GetOffset(nextFrame.Offset);
+                Byte frameOffsFormat = this.GetFormat(currentFrame.Offset);
                 //Int32 dataLen = frameOffsEnd - frameOffs;
                 if (frameOffs > fileData.Length || frameOffsEnd > fileData.Length)
                     throw new HeaderParseException("File is too small to contain all frame data!");
@@ -156,7 +156,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     {
                         // Don't actually need this, but I do the integrity checks.
                         refIndex20 = this.GetOffset(currentFrame.Reference);
-                        Byte refFormat = GetFormat(currentFrame.Reference);
+                        Byte refFormat = this.GetFormat(currentFrame.Reference);
                         if ((refFormat != 0x48) || (refIndex20 >= i || this.GetFormat(offsets[refIndex20].Offset) != 0x40))
                             throw new FileTypeLoadException("Bad frame reference information for frame " + i + "\".");
                         refIndex = i - 1;
@@ -177,7 +177,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 frames[i] = frame;
                 // Convert frame data to image and frame object
-                Bitmap curFrImg = ImageUtils.BuildImage(frame, m_Width, m_Height, m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
+                Bitmap curFrImg = ImageUtils.BuildImage(frame, this.m_Width, this.m_Height, this.m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this.ShortTypeName, curFrImg, sourcePath, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);

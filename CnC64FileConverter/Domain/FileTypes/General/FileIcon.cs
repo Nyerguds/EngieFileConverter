@@ -36,34 +36,15 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] DescriptionsForExtensions { get { return new String[] { "Windows Icon" }; } }
 
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {
-            Bitmap bmToSave = fileToSave.GetBitmap();
-            Int32 w = bmToSave.Width;
-            Int32 h = bmToSave.Height;
-            Boolean addSq = w != h;
-            Boolean addInc = Math.Max(w, h) < 256;
-            //Boolean makeSquare, Boolean upscale, Boolean smooth
-            List<SaveOption> opts = new List<SaveOption>();
-            if (addSq)
-                opts.Add(new SaveOption("SQR", SaveOptionType.Boolean, "Pad frames to square formats", null, "1"));
-            if (addInc)
-            {
-                opts.Add(new SaveOption("INC", SaveOptionType.Boolean, "Include formats larger than source image", "1"));
-                opts.Add(new SaveOption("PIX", SaveOptionType.Boolean, "Use pixel zoom for larger images", "0"));
-            }
-            return opts.ToArray();
-        }
-
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()
@@ -86,6 +67,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 indexItemSize = Marshal.SizeOf(typeof (ICONDIRENTRY));
                 if (fileData.Length < hdrSize + nrOfImages*indexItemSize)
                     throw new HeaderParseException("Not long enough for images index.");
+                if (nrOfImages == 0)
+                    throw new HeaderParseException("No images in given icon.");
                 Int32 offset = hdrSize;
                 this.m_FramesList = new SupportedFileType[nrOfImages];
                 for (Int32 i = 0; i < nrOfImages; i++)
@@ -101,6 +84,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Bitmap bmp;
                     Int32 frWidth = info.Width == 0 ? 0x100 : info.Width;
                     Int32 frHeight = info.Height == 0 ? 0x100 : info.Height;
+                    if (frWidth == 0 || frHeight == 0)
+                        throw new HeaderParseException("Icon dimensions cannot be zero.");
                     if ("png".Equals(type))
                         bmp = this.GetBmp<FileImagePng>(frameData);
                     else if ("bmp".Equals(type))
@@ -113,8 +98,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     //throw new HeaderParseException("Unsupported image type " + ("dat".Equals(type) ? String.Empty : "\"" + type + "\" ") + "in frame " + i + ".");
                     if (bmp.Width != frWidth || bmp.Height != frHeight)
                         throw new HeaderParseException("Image " + i + " in icon does not match header information.");
-                    m_MaxHeight = Math.Max(m_MaxHeight, frHeight);
-                    m_MaxWidth = Math.Max(m_MaxWidth, frWidth);
+                    this.m_MaxHeight = Math.Max(this.m_MaxHeight, frHeight);
+                    this.m_MaxWidth = Math.Max(this.m_MaxWidth, frWidth);
                     FileImageFrame framePic = new FileImageFrame();
                     framePic.LoadFileFrame(this, this.ShortTypeName, bmp, sourcePath, i);
                     framePic.SetExtraInfo("Format: " + type.ToUpper());
@@ -134,8 +119,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 using (Bitmap bm = ic.ToBitmap())
                 {
                     this.m_LoadedImage = ImageUtils.CloneImage(bm);
-                    m_MaxHeight = bm.Height;
-                    m_MaxWidth = bm.Width;
+                    this.m_MaxHeight = bm.Height;
+                    this.m_MaxWidth = bm.Width;
                     FileImageFrame framePic = new FileImageFrame();
                     framePic.LoadFileFrame(this, this.ShortTypeName, ImageUtils.CloneImage(bm), sourcePath, -1);
                     framePic.SetFileNames(sourcePath);
@@ -163,6 +148,25 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameImgPng.LoadFile(frameData);
                 return ImageUtils.CloneImage(frameImgPng.GetBitmap());
             }
+        }
+
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            Bitmap bmToSave = fileToSave.GetBitmap();
+            Int32 w = bmToSave.Width;
+            Int32 h = bmToSave.Height;
+            Boolean addSq = w != h;
+            Boolean addInc = Math.Max(w, h) < 256;
+            //Boolean makeSquare, Boolean upscale, Boolean smooth
+            List<SaveOption> opts = new List<SaveOption>();
+            if (addSq)
+                opts.Add(new SaveOption("SQR", SaveOptionType.Boolean, "Pad frames to square formats", null, "1"));
+            if (addInc)
+            {
+                opts.Add(new SaveOption("INC", SaveOptionType.Boolean, "Include formats larger than source image", "1"));
+                opts.Add(new SaveOption("PIX", SaveOptionType.Boolean, "Use pixel zoom for larger images", "0"));
+            }
+            return opts.ToArray();
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

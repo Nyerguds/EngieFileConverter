@@ -29,8 +29,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFile(fileData);
-            SetFileNames(filename);
+            this.LoadFile(fileData);
+            this.SetFileNames(filename);
         }
 
         public override void LoadFile(Byte[] fileData)

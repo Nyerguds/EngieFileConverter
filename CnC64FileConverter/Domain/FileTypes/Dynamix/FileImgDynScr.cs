@@ -20,8 +20,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Dynamix SCR"; } }
         public override String ShortTypeDescription { get { return "Dynamix Screen file v1"; } }
 
-        protected String[] compressionTypes = new String[] { "None", "RLE", "LZW" };
-        protected String[] savecompressionTypes = new String[] { "None", "RLE" };
+        protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
+        protected String[] savecompressionTypes = new String[] { "None", "RLE" /*, "LZW", "LZSS" */};
         public override Int32 BitsPerPixel { get { return this.m_bpp; } }
         public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
 
@@ -50,7 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
                 opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
             }
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
+            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
         }
 
@@ -69,13 +69,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFile(fileData, null, false, false);
+            this.LoadFile(fileData, null, false, false);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            SetFileNames(filename);
-            LoadFile(fileData, filename, false, false);
+            this.SetFileNames(filename);
+            this.LoadFile(fileData, filename, false, false);
         }
         
         public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2, Boolean asFrame)
@@ -131,24 +131,32 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (binChunk == null)
             {
                 binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "MA8");
-                if (binChunk == null)
-                    throw new FileTypeLoadException("Cannot find BIN chunk!");
-                this.IsMa8 = true;
+                if (binChunk != null)
+                {
+                    this.IsMa8 = true;
+                }
+                else
+                {
+                    if (asFrame)
+                        binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
+                    if (binChunk == null)
+                        throw new FileTypeLoadException("Cannot find BIN chunk!");
+                }
             }
             if (binChunk.Data.Length == 0)
                 throw new FileTypeLoadException("Empty BIN chunk!");
             Int32 compressionType = binChunk.Data[0];
-            if (compressionType < 3)
-                this.ExtraInfo = "Compression: " + (this.IsMa8 ? "MA8" : "BIN") + ":" + this.compressionTypes[compressionType];
+            if (compressionType < this.compressionTypes.Length)
+                this.ExtraInfo = "Compression: " + binChunk.Identifier + ":" + this.compressionTypes[compressionType];
             else
-                throw new FileTypeLoadException("Unknown compression type, " + compressionType);
+                throw new FileTypeLoadException("Unknown compression type " + compressionType);
             Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
             if (this.IsMa8) // MA8 seems to have indices 0 and FF switched
                 DynamixCompression.SwitchBackground(bindata);
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "vga.bin", vgadata);
             Byte[] vgadata = null;
-            DynamixChunk vgaChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
+            DynamixChunk vgaChunk = binChunk.Identifier == "VGA" ? null : DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
             if (vgaChunk == null)
             {
                 if (!this.IsMa8)
@@ -162,10 +170,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     throw new FileTypeLoadException("Empty VGA chunk!");
                 this.m_bpp = 8;
                 compressionType = vgaChunk.Data[0];
-                if (compressionType < 3)
+                if (compressionType < this.compressionTypes.Length)
                     this.ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
                 else
-                    throw new FileTypeLoadException("Unknown compression type, " + compressionType);
+                    throw new FileTypeLoadException("Unknown compression type " + compressionType);
                 vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
             }
             //save debug output
@@ -200,7 +208,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     content[0] = dimChunk;
                     chIndex++;
                 }
-                content[chIndex] = new DynamixChunk("BIN", 0, (UInt32)vgadata.Length, vgadata);
+                content[chIndex] = vgaChunk;
                 DynamixChunk fourBitImage = DynamixChunk.BuildChunk("SCR", content);
                 FileImgDynScr fourbitFrame = new FileImgDynScr();
                 FileImgDynScr eightbitFrame = new FileImgDynScr();
@@ -226,8 +234,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
             if (fullData != null)
                 this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, this.m_Palette, null);
-            //save debug output
-            //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
         }
 
         protected Color[] Make4BitPalette(Color[] col)
@@ -272,8 +278,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             Int32 stride;
             Byte[] data = ImageUtils.GetImageData(image, out stride);
-            if (compressionType < 0 || compressionType > 2)
-                throw new NotSupportedException("Unknown compression type, " + compressionType);
+            if (compressionType < 0 || compressionType > this.compressionTypes.Length)
+                throw new NotSupportedException("Unknown compression type " + compressionType);
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)
@@ -287,8 +293,23 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Byte compression = 0;
                 if (compressionType != 0)
                 {
-                    Byte[] dataCompr = compressionType == 1 ? DynamixCompression.RleEncode(data) : DynamixCompression.LzwEncode(data);
-                    if (dataCompr.Length < dataLen)
+                    Byte[] dataCompr;
+                    switch (compressionType)
+                    {
+                        case 1:
+                            dataCompr = DynamixCompression.RleEncode(data);
+                            break;
+                        case 2:
+                            dataCompr = DynamixCompression.LzwEncode(data);
+                            break;
+                        case 3:
+                            dataCompr = DynamixCompression.LzssEncode(data);
+                            break;
+                        default:
+                            dataCompr = null;
+                            break;
+                    }
+                    if (dataCompr == null || dataCompr.Length < dataLen)
                     {
                         data = dataCompr;
                         compression = (Byte)compressionType;

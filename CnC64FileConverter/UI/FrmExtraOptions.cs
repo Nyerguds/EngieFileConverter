@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.Util.Ui;
@@ -17,7 +12,7 @@ namespace CnC64FileConverter.UI
         
         public FrmExtraOptions()
         {
-            InitializeComponent();
+            this.InitializeComponent();
             this.Text = FrmCnC64FileConverter.GetTitle(false);
             this.m_soi = new SaveOptionInfo();
         }

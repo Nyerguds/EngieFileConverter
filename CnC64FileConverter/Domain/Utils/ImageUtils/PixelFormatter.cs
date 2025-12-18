@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -41,7 +39,7 @@ namespace Nyerguds.ImageManipulation
         private Boolean littleEndian;
 
         /// <summary>The colour components. Though most stuff will just loop an int from 0 to 4, this shows the order.</summary>
-        public enum ColorComponent
+        private enum ColorComponent
         {
             Alpha = 0,
             Red = 1,
@@ -60,8 +58,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="littleEndian">True if the read bytes are interpreted as little-endian.</param>
         public PixelFormatter(Byte bytesPerPixel, UInt32 maskAlpha, UInt32 maskRed, UInt32 maskGreen, UInt32 maskBlue, Boolean littleEndian)
             : this(bytesPerPixel, maskAlpha, -1, maskRed, -1, maskGreen, -1, maskBlue, -1, littleEndian)
-        {
-        }
+        { }
 
         /// <summary>
         /// Creates a new PixelFormatter based on bit masks.
@@ -116,8 +113,6 @@ namespace Nyerguds.ImageManipulation
             this.defaultsChan[(Int32) ColorComponent.Blue] = 0;
         }
 
-
-
         /// <summary>
         /// Creats a new PixelFormatter, with automatic calculation of colour multipliers using the CalculateMultiplier function.
         /// </summary>
@@ -139,8 +134,7 @@ namespace Nyerguds.ImageManipulation
             Boolean littleEndian)
             : this(bytesPerPixel, alphaBits, alphaShift, -1, redBits, redShift, -1, greenBits, greenShift, -1,
                 blueBits, blueShift, -1, littleEndian)
-        {
-        }
+        { }
 
         /// <summary>
         /// Creates a new PixelFormatter.
@@ -385,12 +379,12 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The integer value to write.</returns>
         public UInt32 GetValueFromColor(Color color)
         {
-            Byte[] components = new Byte[] {color.R, color.G, color.B, color.A};
+            Byte[] components = new Byte[] { color.A, color.R, color.G, color.B };
             UInt32 val = 0;
             for (Int32 i = 0; i < 4; i++)
             {
                 Double tempValD = components[i]/this.multipliers[i];
-                UInt32 tempVal = (UInt32) Math.Min(maxChan[i], Math.Round(tempValD, MidpointRounding.AwayFromZero));
+                UInt32 tempVal = (UInt32) Math.Min(this.maxChan[i], Math.Round(tempValD, MidpointRounding.AwayFromZero));
                 val = this.AddValueWithMask(val, this.limitMasks[i], tempVal);
             }
             return val;
@@ -405,7 +399,7 @@ namespace Nyerguds.ImageManipulation
         {
             UInt32[] componentsChecked = new UInt32[4];
             for (Int32 i = 0; i < 4; i++)
-                componentsChecked[i] = (i < components.Length) ? components[i] : defaultsChan[i];
+                componentsChecked[i] = (i < components.Length) ? components[i] : this.defaultsChan[i];
             UInt32 val = 0;
             for (Int32 i = 0; i < 4; i++)
                 val = this.AddValueWithMask(val, this.limitMasks[i], componentsChecked[i]);

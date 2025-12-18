@@ -31,13 +31,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData);
+            this.LoadFromFileData(fileData);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData);
+            this.SetFileNames(filename);
         }
 
         protected void LoadFromFileData(Byte[] fileData)
@@ -46,7 +46,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (datalen == 0 || datalen % 2 != 0)
                 throw new FileTypeLoadException("Illegal size: KORT image files contain byte pairs!");
             Int32 len = this.Width * this.Height;
-            Byte[] targetData = new Byte[len];
+            Byte[] imageData = new Byte[len];
             Int32 destOffs = 0;
             //Poor Man's RLE: each byte is just followed by the repetition amount, without grouping for non-repeating bytes.
             for (Int32 i = 0; i < datalen; i += 2)
@@ -59,15 +59,16 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     if (destOffs >= len)
                         throw new FileTypeLoadException("Decoded image does not fit in 320x240!");
-                    targetData[destOffs++] = (Byte)col;
+                    imageData[destOffs++] = (Byte)col;
                 }
             }
-            // reorder lines
-            Byte[] imageData = new Byte[len];
-            for (Int32 y = 0; y < this.Height; y++)
-                Array.Copy(targetData, (this.Height - 1 - y) * this.Width, imageData, y * this.Width, this.Width);
+            if (destOffs < len)
+                throw new FileTypeLoadException("Decoded image is smaller than 320x240!");
             this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, null, false);
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_Palette, null);
+            Bitmap image = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
+            // reorder lines
+            image.RotateFlip(RotateFlipType.Rotate180FlipX);
+            this.m_LoadedImage = image;
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

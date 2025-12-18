@@ -26,11 +26,11 @@ namespace Nyerguds.Util.UI
         [Category("Data")]
         [Description("True to make the scrollwheel action cause validation on EnteredValue.")]
         [DefaultValue(true)]
-        public Boolean ScrollValidatesEnter { get { return _ScrollValidatesEnter; } set { _ScrollValidatesEnter = value; } }
+        public Boolean ScrollValidatesEnter { get { return this._ScrollValidatesEnter; } set { this._ScrollValidatesEnter = value; } }
         [Category("Data")]
         [DefaultValue(true)]
         [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
-        public Boolean UpDownValidatesEnter { get { return _UpDownValidatesEnter; } set { _UpDownValidatesEnter = value; } }
+        public Boolean UpDownValidatesEnter { get { return this._UpDownValidatesEnter; } set { this._UpDownValidatesEnter = value; } }
         
         /// <summary>
         /// Last validated entered value.
@@ -40,11 +40,11 @@ namespace Nyerguds.Util.UI
         [Description("The last validated value of the EnhNumericUpDownControl.")]
         public Decimal EnteredValue
         {
-            get { return this.Constrain(_EnteredValue);  }
+            get { return this.Constrain(this._EnteredValue);  }
             set
             {
                 this.Value = this.Constrain(value);
-                ValidateValue();
+                this.ValidateValue();
             }
         }
 
@@ -56,11 +56,11 @@ namespace Nyerguds.Util.UI
         public EnhNumericUpDown()
         {
             this.MouseWheelIncrement = 1;
-            this.KeyDown += CheckKeyPress;
-            this.TextChanged += EnhNumericUpDown_TextChanged;
+            this.KeyDown += this.CheckKeyPress;
+            this.TextChanged += this.EnhNumericUpDown_TextChanged;
         }
 
-        private void EnhNumericUpDown_TextChanged(object sender, EventArgs e)
+        private void EnhNumericUpDown_TextChanged(Object sender, EventArgs e)
         {
             Boolean allowminus = this.Minimum < 0;
             if (Regex.IsMatch(this.Text, allowminus ? "^-?\\d*$" : "^\\d*$"))
@@ -114,17 +114,17 @@ namespace Nyerguds.Util.UI
             }
             else
                 return;
-            if (ScrollValidatesEnter)
-                ValidateValue();
-            if (ValueUpDown != null)
-                ValueUpDown(this, new UpDownEventArgs(action, this.MouseWheelIncrement, true));
+            if (this.ScrollValidatesEnter)
+                this.ValidateValue();
+            if (this.ValueUpDown != null)
+                this.ValueUpDown(this, new UpDownEventArgs(action, this.MouseWheelIncrement, true));
         }
 
-        private void CheckKeyPress(object sender, KeyEventArgs e)
+        private void CheckKeyPress(Object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                e.SuppressKeyPress = ValidateValue();
+                e.SuppressKeyPress = this.ValidateValue();
             }
         }
 
@@ -132,8 +132,8 @@ namespace Nyerguds.Util.UI
         {
             Decimal oldval = this._EnteredValue;
             this._EnteredValue = this.Value;
-            if (ValueEntered != null)
-                ValueEntered(this, new ValueEnteredEventArgs(oldval));
+            if (this.ValueEntered != null)
+                this.ValueEntered(this, new ValueEnteredEventArgs(oldval));
             return true;
         }
 
@@ -152,10 +152,10 @@ namespace Nyerguds.Util.UI
         public override void DownButton()
         {
             base.DownButton();
-            if (UpDownValidatesEnter)
-                ValidateValue();
-            if (ValueUpDown != null)
-                ValueUpDown(this, new UpDownEventArgs(UpDownAction.Up));
+            if (this.UpDownValidatesEnter)
+                this.ValidateValue();
+            if (this.ValueUpDown != null)
+                this.ValueUpDown(this, new UpDownEventArgs(UpDownAction.Up));
         }
 
         /// <summary>
@@ -164,10 +164,10 @@ namespace Nyerguds.Util.UI
         public override void UpButton()
         {
             base.UpButton();
-            if (UpDownValidatesEnter)
-                ValidateValue();
-            if (ValueUpDown != null)
-                ValueUpDown(this, new UpDownEventArgs(UpDownAction.Down));
+            if (this.UpDownValidatesEnter)
+                this.ValidateValue();
+            if (this.ValueUpDown != null)
+                this.ValueUpDown(this, new UpDownEventArgs(UpDownAction.Down));
         }
     }
 

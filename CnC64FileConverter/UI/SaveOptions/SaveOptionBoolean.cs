@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 using Nyerguds.Util.Ui;
@@ -13,8 +12,8 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public SaveOptionBoolean(SaveOption info, ListedControlController<SaveOption> controller)
         {
-            InitializeComponent();
-            Init(info, controller);
+            this.InitializeComponent();
+            this.Init(info, controller);
         }
 
         public override void UpdateInfo(SaveOption info)
@@ -29,13 +28,13 @@ namespace CnC64FileConverter.UI.SaveOptions
             this.chkOption.Focus();
         }
 
-        private void chkOption_CheckedChanged(object sender, EventArgs e)
+        private void chkOption_CheckedChanged(Object sender, EventArgs e)
         {
             if (this.m_Info == null)
                 return;
             this.m_Info.SaveData = this.chkOption.Checked ? "1" : "0";
             if (this.m_Controller != null)
-                this.m_Controller.UpdateControlInfo(m_Info);
+                this.m_Controller.UpdateControlInfo(this.m_Info);
         }
     }
 }

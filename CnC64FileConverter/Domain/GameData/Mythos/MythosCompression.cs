@@ -44,7 +44,7 @@ namespace Nyerguds.GameData.Mythos
                     {
                         if (abortOnError && decompressedSize != 0)
                             return null;
-                        output = ExpandBuffer(output, Math.Max(origOutLength, repeatNum));
+                        output = this.ExpandBuffer(output, Math.Max(origOutLength, repeatNum));
                         outLength = (UInt32) output.LongLength;
                     }
                     for (; repeatNum > 0; repeatNum--)
@@ -56,7 +56,7 @@ namespace Nyerguds.GameData.Mythos
                     {
                         if (abortOnError && decompressedSize != 0)
                             return null;
-                        output = ExpandBuffer(output, origOutLength);
+                        output = this.ExpandBuffer(output, origOutLength);
                         outLength = (UInt32) output.LongLength;
                     }
                     output[writeOffset++] = val;
@@ -98,7 +98,7 @@ namespace Nyerguds.GameData.Mythos
                 // only one pixel required to write a repeat code if the value is the flag.
                 UInt32 requiredRepeat = (UInt32) (cur == flag ? 1 : 3);
                 UInt32 detectedRepeat;
-                if (curLineEnd - inPtr > 2 && (detectedRepeat = RepeatingAhead(buffer, len, inPtr, requiredRepeat)) == requiredRepeat)
+                if ((curLineEnd - inPtr > 2 || requiredRepeat == 1) && (detectedRepeat = RepeatingAhead(buffer, len, inPtr, requiredRepeat)) == requiredRepeat)
                 {
                     // Found more than 2 bytes. Worth compressing. Apply run-length encoding.
                     UInt32 start = inPtr;
@@ -165,7 +165,7 @@ namespace Nyerguds.GameData.Mythos
                 {
                     if (abortOnError && decompressedSize != 0)
                         return null;
-                    output = ExpandBuffer(output, origOutLength);
+                    output = this.ExpandBuffer(output, origOutLength);
                     outLength = (UInt32) output.LongLength;
                 }
                 for (; fillSize > 0; fillSize--)
@@ -192,7 +192,7 @@ namespace Nyerguds.GameData.Mythos
                 {
                     if (abortOnError && decompressedSize != 0)
                         return null;
-                    output = ExpandBuffer(output, origOutLength);
+                    output = this.ExpandBuffer(output, origOutLength);
                     outLength = (UInt32) output.LongLength;
                 }
                 Array.Copy(buffer, offset, output, writeOffset, copySize);
@@ -222,7 +222,7 @@ namespace Nyerguds.GameData.Mythos
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
         /// <param name="transparentIndex">Transparency value to collapse.</param>
-        /// <param name="lineWidth">Line width. If not zero, the compression will be aligned to fit into separate rows.</param>
+        /// <param name="lineWidth">Line width.</param>
         /// <param name="headerSize">Header size, to correctly put the full block length at the start.</param>
         /// <returns>The encoded data.</returns>
         public Byte[] CollapsedTransparencyEncode(Byte[] buffer, Byte transparentIndex, Int32 lineWidth, Int32 headerSize)
@@ -232,7 +232,7 @@ namespace Nyerguds.GameData.Mythos
             UInt32 len = (UInt32) buffer.Length;
             UInt32 inPtr = 0;
             UInt32 outPtr = 0;
-            UInt32 rowWidth = (lineWidth == 0) ? len : (UInt32) lineWidth;
+            UInt32 rowWidth = (UInt32) lineWidth;
             UInt32 curLineEnd = rowWidth;
             Boolean writingTransparency = true;
             while (inPtr < len)

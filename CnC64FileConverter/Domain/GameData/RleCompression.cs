@@ -204,7 +204,7 @@ namespace Nyerguds.GameData.Compression
                 //End ptr after run
                 UInt32 runEnd = Math.Min(outPtr + run, maxOutLen);
                 if (autoExpand && runEnd > bufferOut.Length)
-                    bufferOut = ExpandBuffer(bufferOut, Math.Max(bufLenOrig, runEnd));
+                    bufferOut = this.ExpandBuffer(bufferOut, Math.Max(bufLenOrig, runEnd));
                 // Repeat run
                 if (repeat)
                 {

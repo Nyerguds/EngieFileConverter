@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 // K-means clustering. ('Lloyd's algorithm')
 namespace Nyerguds.Util
@@ -53,7 +52,7 @@ namespace Nyerguds.Util
             //    update means
             // end loop
             //clustering == array that determines which index in the original data belongs in which cluster.
-            Int32[] clustering = InitClustering(data.Length, numClusters, 0); // semi-random initialization
+            Int32[] clustering = this.InitClustering(data.Length, numClusters, 0); // semi-random initialization
             // Array in which to store the means of each cluster.
             // For our purpose, this will store the palette for each cluster.
             means = new Uavg[numClusters];
@@ -63,8 +62,8 @@ namespace Nyerguds.Util
             while (changed && success && ct < maxCount)
             {
                 ct++; // k-means typically converges very quickly
-                success = UpdateMeans(data, clustering, means); // compute new cluster means if possible. no effect if fail
-                changed = UpdateClustering(data, clustering, means); // (re)assign tuples to clusters. no effect if fail
+                success = this.UpdateMeans(data, clustering, means); // compute new cluster means if possible. no effect if fail
+                changed = this.UpdateClustering(data, clustering, means); // (re)assign tuples to clusters. no effect if fail
             }
             // consider adding means[][] as an out parameter - the final means could be computed
             // the final means are useful in some scenarios (e.g., discretization and RBF centroids)
@@ -116,7 +115,7 @@ namespace Nyerguds.Util
 
             // update, zero-out means so it can be used as scratch matrix
             for (Int32 k = 0; k < numClusters; ++k)
-                ClearMeans(means, k);
+                this.ClearMeans(means, k);
 
             for (Int32 k = 0; k < numClusters; k++)
             {
@@ -129,7 +128,7 @@ namespace Nyerguds.Util
                 for (Int32 i = 0; i < data.Length; ++i)
                     if (clustering[i] == k)
                         subData[count++] = data[i];
-                means[k] = CalculateClusterAverage(subData);
+                means[k] = this.CalculateClusterAverage(subData);
             }
             return true;
         }
@@ -152,7 +151,7 @@ namespace Nyerguds.Util
             for (Int32 i = 0; i < data.Length; ++i) // walk thru each tuple
             {
                 for (Int32 k = 0; k < numClusters; k++)
-                    distances[k] = CalculateDistance(data[i], means[k]); // compute distances from curr tuple to all k means
+                    distances[k] = this.CalculateDistance(data[i], means[k]); // compute distances from curr tuple to all k means
 
                 Int32 newClusterID = MinIndex(distances); // find closest mean ID
                 if (newClusterID == newClustering[i])

@@ -32,7 +32,7 @@ namespace CnC64FileConverter
         }
 
         [DllImport("Kernel32.dll")]
-        public static extern Boolean AttachConsole(int processId);
+        public static extern Boolean AttachConsole(Int32 processId);
 
 
         public static Int32 ConvertImage(String[] args)

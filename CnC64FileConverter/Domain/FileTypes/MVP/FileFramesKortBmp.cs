@@ -26,21 +26,24 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_FramesList; } }
+        public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
+
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
         
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
@@ -57,7 +60,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (this.m_Palette == null)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             Int32 offset = 4;
-            m_FramesList = new SupportedFileType[nrOfFrames];
+            Boolean[] mask = this.TransparencyMask;
+            this.m_Palette = PaletteUtils.ApplyTransparencyGuide(this.m_Palette, mask);
+            this.m_FramesList = new SupportedFileType[nrOfFrames];
             for (Int32 i = 0; i < nrOfFrames; i++)
             {
                 if (offset + 12 >= datalen)
@@ -76,15 +81,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                 offset += 12;
                 Byte[] frameData = new Byte[dataSize];
                 Array.Copy(fileData, offset, frameData, 0, dataSize);
-                Byte[] flippedData = new Byte[dataSize];
-                for (Int32 y = 0; y < frHeight; y++)
-                    Array.Copy(frameData, (frHeight - 1 - y) * frWidth, flippedData, y * frWidth, frWidth);
-                Bitmap frameImage = ImageUtils.BuildImage(flippedData, frWidth, frHeight, ImageUtils.GetMinimumStride(frWidth, 8), PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
+                Bitmap frameImage = ImageUtils.BuildImage(frameData, frWidth, frHeight, ImageUtils.GetMinimumStride(frWidth, 8), PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
+                // reorder lines
+                frameImage.RotateFlip(RotateFlipType.Rotate180FlipX);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(0);
-                frame.SetTransparencyMask(this.TransparencyMask);
+                frame.SetTransparencyMask(mask);
                 this.m_FramesList[i] = frame;
                 offset += dataSize;
             }

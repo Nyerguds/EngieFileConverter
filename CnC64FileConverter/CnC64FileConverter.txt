@@ -61,6 +61,13 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.10: (23/06/2018 01:00)
+-Fixed transparency support in several supported types.
+-Added identical-tile optimising in C&C tileset saving.
+-Fixed bug in PixelFormatter that corrupted colour writing by mixing up the channels order.
+-Fixed bug in the Mythos RLE compression when saving flag bytes near the end of a line.
+-Implemented loading and saving of Mythos animation and palette files.
+
 v1.2.9: (06/06/2018 14:40)
 -Added Westwood palette stretch tables as new supported type.
 -When zooming in, the image panel will stay centered on one point.

@@ -6,19 +6,19 @@ namespace Nyerguds.Util.UI
     /// <summary>
     /// Shows a prompt in a dialog box using the static method Show().
     /// </summary>
-    public partial class InputBox: System.Windows.Forms.Form
+    public partial class InputBox: Form
     {
         private InputBox()
         {
-            InitializeComponent();
+            this.InitializeComponent();
         }
 
-        private void buttonCancel_Click(object sender, System.EventArgs e)
+        private void buttonCancel_Click(Object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void buttonOK_Click(object sender, System.EventArgs e)
+        private void buttonOK_Click(Object sender, EventArgs e)
         {
             this.Close();
         }

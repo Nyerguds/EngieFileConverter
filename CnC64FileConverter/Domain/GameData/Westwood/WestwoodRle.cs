@@ -102,7 +102,7 @@ namespace Nyerguds.GameData.Westwood
                     amount = 0;
                     return false;
                 }
-                amount = (UInt32)(m_SwapWords ? buffer[inPtr++] + (buffer[inPtr++] << 8) : (buffer[inPtr++] << 8) + buffer[inPtr++]);
+                amount = (UInt32)(this.m_SwapWords ? buffer[inPtr++] + (buffer[inPtr++] << 8) : (buffer[inPtr++] << 8) + buffer[inPtr++]);
             }
             return true;
         }
@@ -134,8 +134,8 @@ namespace Nyerguds.GameData.Westwood
                     Byte lenHi = (Byte)((amount >> 8) & 0xFF);
                     Byte lenLo = (Byte)(amount & 0xFF);
                     bufferOut[outPtr++] = 0;
-                    bufferOut[outPtr++] = m_SwapWords ? lenLo : lenHi;
-                    bufferOut[outPtr++] = m_SwapWords ? lenHi : lenLo;
+                    bufferOut[outPtr++] = this.m_SwapWords ? lenLo : lenHi;
+                    bufferOut[outPtr++] = this.m_SwapWords ? lenHi : lenLo;
                 }
             }
             else

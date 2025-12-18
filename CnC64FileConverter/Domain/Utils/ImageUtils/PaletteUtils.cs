@@ -30,26 +30,32 @@ namespace Nyerguds.ImageManipulation
             return tranGuide;
         }
 
+        public static Boolean[] MakeTransparencyGuide(Int32 bpp, Color[] palette)
+        {
+            Int32 palLen = bpp > 8 ? 0 : 1 << bpp;
+            Boolean[] tranGuide = new Boolean[palLen];
+            if (palette != null)
+            {
+                Int32 len = Math.Min(palLen, palette.Length);
+                for (Int32 i = 0; i < len; i++)
+                    tranGuide[i] = palette[i].A < 128;
+            }
+            return tranGuide;
+        }
+
         private static Boolean[] PrepareTransparencyGuide(Boolean[] transparencyGuide, Int32 targetPalLen)
         {
-            if (transparencyGuide != null && transparencyGuide.Length < targetPalLen)
-            {
-                Boolean[] givenTranGuide = transparencyGuide;
-                transparencyGuide = new Boolean[targetPalLen];
-                Array.Copy(givenTranGuide, 0, transparencyGuide, 0, Math.Min(givenTranGuide.Length, targetPalLen));
-            }
-            return transparencyGuide;
+            Boolean[] newTransparencyGuide = new Boolean[targetPalLen];
+            if (transparencyGuide != null)
+                Array.Copy(transparencyGuide, 0, newTransparencyGuide, 0, Math.Min(transparencyGuide.Length, targetPalLen));
+            return newTransparencyGuide;
         }
 
         public static Color[] ApplyTransparencyGuide(Color[] palette, Boolean[] transparencyGuide)
         {
             transparencyGuide = PrepareTransparencyGuide(transparencyGuide, palette.Length);
-            if (transparencyGuide != null)
-            {
-                Int32 end = Math.Min(transparencyGuide.Length, palette.Length);
-                for (Int32 i = 0; i < end; i++)
-                    palette[i] = Color.FromArgb(transparencyGuide[i] ? 0x00 : 0xFF, palette[i]);
-            }
+            for (Int32 i = 0; i < palette.Length; i++)
+                palette[i] = Color.FromArgb(transparencyGuide[i] ? 0x00 : 0xFF, palette[i]);
             return palette;
         }
 
@@ -106,12 +112,14 @@ namespace Nyerguds.ImageManipulation
             transparencyGuide = PrepareTransparencyGuide(transparencyGuide, palLen);
             for (Int32 i = 0; i < palLen; i++)
             {
+                Color col;
                 if (sourcePalette != null && i < sourcePalette.Length)
-                    pal[i] = transparencyGuide == null ? sourcePalette[i] : Color.FromArgb(transparencyGuide[i] ? 0x00 : 0xFF, sourcePalette[i]);
+                    col = sourcePalette[i];
                 else if (defaultColor.HasValue)
-                    pal[i] = defaultColor.Value;
+                    col = defaultColor.Value;
                 else
-                    pal[i] = Color.Empty;
+                    col = Color.Empty;
+                pal[i] = Color.FromArgb(transparencyGuide[i] ? 0x00 : 0xFF, col);
             }
             return pal;
         }

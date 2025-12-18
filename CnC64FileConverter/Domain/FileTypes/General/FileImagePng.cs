@@ -14,7 +14,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "png" }; } }
 
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription }; } }
+        public override String[] DescriptionsForExtensions { get { return new String[] {this.ShortTypeDescription }; } }
 
         protected override String MimeType { get { return "png"; } }
 

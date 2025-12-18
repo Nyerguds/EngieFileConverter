@@ -16,7 +16,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "jpg", "jpeg" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription, ShortTypeDescription }; } }
+        public override String[] DescriptionsForExtensions { get { return new String[] {this.ShortTypeDescription, this.ShortTypeDescription }; } }
         protected override String MimeType { get { return "jpg"; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
@@ -49,7 +49,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         break;
                     }
                 }
-                System.Drawing.Imaging.Encoder qualityEncoder = System.Drawing.Imaging.Encoder.Quality;
+                Encoder qualityEncoder = Encoder.Quality;
                 EncoderParameters encparams = new EncoderParameters(1);
                 encparams.Param[0] = new EncoderParameter(qualityEncoder, quality);
                 image.Save(ms, jpegEncoder, encparams);

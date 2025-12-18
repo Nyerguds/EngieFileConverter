@@ -1,8 +1,8 @@
-﻿using Nyerguds.GameData.Westwood;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Drawing;
 using System.IO;
+using Nyerguds.GameData.Westwood;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -16,28 +16,10 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Westwood C&C N64 map file"; } }
         public override String[] FileExtensions { get { return new String[] { "map" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription }; } }
+        public override String[] DescriptionsForExtensions { get { return new String[] {this.ShortTypeDescription }; } }
 
         public FileMapWwCc1N64() { }
 
-        public override void LoadFile(Byte[] fileData)
-        {
-            if (fileData.Length != 8192)
-                throw new FileTypeLoadException("Incorrect file size.");
-            m_LoadedImage = ReadN64MapAsImage(fileData, (Theater)0xFF, null);
-        }
-
-        public override void LoadFile(Byte[] fileData, String filename)
-        {
-            m_LoadedImage = ReadN64MapAsImage(fileData, filename, null);
-            SetFileNames(filename);
-        }
-
-        public void LoadFile(Byte[] fileData, String filename, Byte[] iniData)
-        {
-            m_LoadedImage = ReadN64MapAsImage(fileData, filename, iniData);
-            SetFileNames(filename);
-        }
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
@@ -46,13 +28,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return mapPc.N64MapData;
         }
 
-        protected Bitmap ReadN64MapAsImage(Byte[] fileData, String filename, Byte[] iniData)
-        {
-            Theater theater = GetTheaterFromIni(filename, (Theater)0xFF, iniData);
-            return ReadN64MapAsImage(fileData, theater, filename);
-        }
-
-        protected Bitmap ReadN64MapAsImage(Byte[] fileData, Theater theater, String sourceFile)
+        protected override Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile)
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
@@ -64,9 +40,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (hiByte == 0xFF && loByte == 0x00)
                         throw new FileTypeLoadException("Bad format for clear N64 terrain!");
             }
-            N64MapData = fileData;
-            PCMapData = IdentifyTheaterAndConvert(fileData, ref theater, true, sourceFile);
-            return ReadMapAsImage(PCMapData, theater);
+            this.N64MapData = fileData;
+            this.PCMapData = this.IdentifyTheaterAndConvert(fileData, ref theater, true, sourceFile);
+            return this.ReadMapAsImage(this.PCMapData, theater);
         }
     }
 

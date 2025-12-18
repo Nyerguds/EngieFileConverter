@@ -1,13 +1,13 @@
-﻿using Nyerguds.Ini;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text.RegularExpressions;
-using Nyerguds.Util;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
+using Nyerguds.Ini;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -91,13 +91,16 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            this.m_LoadedImage = this.ReadMapAsImage(fileData, filename, (Theater)0xFF, null);
-            this.SetFileNames(filename);
+            this.LoadFile(fileData, filename, null);
         }
 
-        public void LoadFile(Byte[] fileData, String filename, Byte[] iniContents)
+        public virtual void LoadFile(Byte[] fileData, String filename, Byte[] iniContents)
         {
-            this.m_LoadedImage = this.ReadMapAsImage(fileData, filename, (Theater)0xFF, iniContents);
+            IniInfo iniInfo = this.GetIniInfo(filename, (Theater)0xFF, iniContents);
+            Theater theater = iniInfo.Theater;
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, filename);
+            if (!String.IsNullOrEmpty(iniInfo.Name))
+                this.ExtraInfo = "Mission name: " + iniInfo.Name;
             this.SetFileNames(filename);
         }
 
@@ -114,19 +117,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             return mapPc.PCMapData;
         }
 
-        protected Bitmap ReadMapAsImage(Byte[] fileData, String filename, Theater theater, Byte[] iniContents)
+        protected virtual Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile)
         {
-            theater = this.GetTheaterFromIni(filename, theater, iniContents);
             this.PCMapData = fileData;
             if (this.PCMapData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
-            this.N64MapData = this.IdentifyTheaterAndConvert(this.PCMapData, ref theater, false, filename);
+            this.N64MapData = this.IdentifyTheaterAndConvert(this.PCMapData, ref theater, false, sourceFile);
             return this.ReadMapAsImage(this.PCMapData, theater);
         }
 
-        protected Theater GetTheaterFromIni(String filename, Theater defaultTheater, Byte[] iniData)
+        protected IniInfo GetIniInfo(String filename, Theater defaultTheater, Byte[] iniData)
         {
-            Theater theater = defaultTheater;
+            IniInfo info = new IniInfo();
+            info.Theater = defaultTheater;
             try
             {
                 String inipath = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".ini";
@@ -144,11 +147,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (inifile != null)
                 {
                     String th = inifile.GetStringValue("Map", "Theater", null);
-                    theater = GeneralUtils.TryParseEnum(th, Theater.Desert, true);
+                    info.Theater = GeneralUtils.TryParseEnum(th, defaultTheater, true);
+                    info.Name = inifile.GetStringValue("Basic", "Name", null);
                 }
             }
             catch { /* ignore */ }
-            return theater;
+            return info;
         }
 
         protected Bitmap ReadMapAsImage(Byte[] fileData, Theater theater)
@@ -271,5 +275,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             base.LoadFile(mapFileData, mapFilename, fileData);
         }
 
+    }
+
+    public class IniInfo
+    {
+        public Theater Theater { get; set; }
+        public String Name { get; set; }
     }
 }

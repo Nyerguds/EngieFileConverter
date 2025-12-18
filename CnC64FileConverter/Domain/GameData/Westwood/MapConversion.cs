@@ -3,8 +3,6 @@ using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Nyerguds.GameData.Westwood
@@ -12,8 +10,8 @@ namespace Nyerguds.GameData.Westwood
     public static class MapConversion
     {
         public static readonly Dictionary<Int32, TileInfo> TILEINFO = ReadTileInfo();
-        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", global::CnC64FileConverter.Properties.Resources.th_desert);
-        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", global::CnC64FileConverter.Properties.Resources.th_temperate);
+        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", CnC64FileConverter.Properties.Resources.th_desert);
+        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", CnC64FileConverter.Properties.Resources.th_temperate);
         public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
         public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
 
@@ -24,7 +22,7 @@ namespace Nyerguds.GameData.Westwood
             if (File.Exists(file))
                 tilesetsData2 = File.ReadAllText(file);
             else
-                tilesetsData2 = global::CnC64FileConverter.Properties.Resources.tilesets2;
+                tilesetsData2 = CnC64FileConverter.Properties.Resources.tilesets2;
 
             IniFile tilesetsFile2 = new IniFile(null, tilesetsData2, true, IniFile.ENCODING_DOS_US, true);
             Dictionary<Int32, TileInfo> tileInfo2 = new Dictionary<Int32, TileInfo>();
@@ -231,6 +229,11 @@ namespace Nyerguds.GameData.Westwood
             return newmapping;
         }
 
+        /// <summary>
+        /// Simplifies a map to an array of terrain types. This uses the enhanced terrain types which show to which side cliffs are facing.
+        /// </summary>
+        /// <param name="mapData"></param>
+        /// <returns></returns>
         public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData)
         {
             TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[64 * 64];

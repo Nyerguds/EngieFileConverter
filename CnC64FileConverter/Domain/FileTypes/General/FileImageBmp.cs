@@ -15,7 +15,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
         {
-            get { return new String[] { ShortTypeDescription }; }
+            get { return new String[] {this.ShortTypeDescription }; }
         }
 
     }

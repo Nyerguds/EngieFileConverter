@@ -768,7 +768,7 @@ namespace Nyerguds.ImageManipulation
         /// <returns>A new Byte array with the combined data, and the same stride as the source image.</returns>
         public static Byte[] PasteOn8bpp(Byte[] sourceFileData, Int32 sourceWidth, Int32 sourceHeight, Int32 sourceStride,
             Byte[] pasteFileData, Int32 pasteWidth, Int32 pasteHeight, Int32 pasteStride,
-            Rectangle targetPos, Color[] transparencyGuide, Boolean modifyOrig)
+            Rectangle targetPos, Boolean[] transparencyGuide, Boolean modifyOrig)
         {
             if (targetPos.Width != pasteWidth || targetPos.Height != pasteHeight)
                 pasteFileData = CopyFrom8bpp(pasteFileData, pasteWidth, pasteHeight, pasteStride, new Rectangle(0, 0, targetPos.Width, targetPos.Height));
@@ -787,7 +787,7 @@ namespace Nyerguds.ImageManipulation
             {
                 Int32 len = Math.Min(isTransparent.Length, transparencyGuide.Length);
                 for (Int32 i = 0; i < len; i++)
-                    isTransparent[i] = transparencyGuide[i].A < 128;
+                    isTransparent[i] = transparencyGuide[i];
             }
             Int32 maxY = Math.Min(sourceHeight - targetPos.Y, targetPos.Height);
             Int32 maxX = Math.Min(sourceWidth - targetPos.X, targetPos.Width);
@@ -795,13 +795,14 @@ namespace Nyerguds.ImageManipulation
             {
                 for (Int32 x = 0; x < maxX; x++)
                 {
-                    // This will hit the same byte multiple times
-                    Int32 indexDest = (targetPos.Y + y) * sourceStride + targetPos.X + x;
-                    // This will always get a new index
-                    Int32 indexSource = y * targetPos.Width + x;
+                    Int32 indexSource = y * pasteStride + x;
                     Byte data = pasteFileData[indexSource];
                     if (!isTransparent[data])
+                    {
+                        Int32 indexDest = (targetPos.Y + y) * sourceStride + targetPos.X + x;
+                        // This will always get a new index
                         finalFileData[indexDest] = data;
+                    }
                 }
             }
             return finalFileData;
@@ -968,6 +969,7 @@ namespace Nyerguds.ImageManipulation
             Int32 fullImageWidth = tilesX * tileWidth;
             Int32 fullImageHeight = yDim * tileHeight;
             Byte[] fullImageData = new Byte[fullImageWidth * fullImageHeight];
+            Boolean[] transGuide = PaletteUtils.MakeTransparencyGuide(8, palette);
             for (Int32 y = 0; y < yDim; y++)
             {
                 for (Int32 x = 0; x < tilesX; x++)
@@ -975,11 +977,10 @@ namespace Nyerguds.ImageManipulation
                     Int32 index = y * tilesX + x;
                     if (index == nrOftiles)
                         break;
-
                     Byte[] curTile = tiles[index];
                     PasteOn8bpp(fullImageData, fullImageWidth, fullImageHeight, fullImageWidth,
                         curTile, tileWidth, tileHeight, tileStride,
-                        new Rectangle(x * tileWidth, y * tileHeight, tileWidth, tileHeight), palette, true);
+                        new Rectangle(x * tileWidth, y * tileHeight, tileWidth, tileHeight), transGuide, true);
                 }
             }
             return fullImageData;
@@ -1055,13 +1056,13 @@ namespace Nyerguds.ImageManipulation
         {
             // nothing to optimize.
             if (height == 0)
-                return adjustBuffer ? new Byte[0] : buffer;
+                return new Byte[0];
             // Nothing to process
             if (width == 0)
             {
                 height = 0;
                 yOffset = 0;
-                return adjustBuffer ? new Byte[0] : buffer;
+                return new Byte[0];
             }
             Int32 trimYMax = maxOffset != 0 ? Math.Min(maxOffset - yOffset, height) : height;
             Int32 trimmedYTop;
@@ -1090,7 +1091,7 @@ namespace Nyerguds.ImageManipulation
                 // Full width was trimmed; image is empty.
                 height = 0;
                 yOffset = 0;
-                return adjustBuffer ? new Byte[0] : buffer;
+                return new Byte[0];
             }
             if (adjustBuffer)
             {
@@ -1891,12 +1892,12 @@ namespace Nyerguds.ImageManipulation
         /// <param name="detectDark">Detect dark spots. False to detect bright drops</param>
         /// <param name="brightnessThreshold">Brightness threshold needed to see a pixel as "bright"</param>
         /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
+        /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
         /// <returns>A list of points indicating the centers of all found spots.</returns>
         public static List<Point> FindPoints(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold, Boolean getEdgesOnly)
         {
             List<List<Point>> blobs = FindBlobs(image, detectDark, brightnessThreshold, mergeThreshold, getEdgesOnly);
-            // Calculate centers;
-            return blobs.Select(b => GetBlobCenter(b)).ToList();
+            return blobs.Select(GetBlobCenter).ToList();
         }
 
         /// <summary>
@@ -1944,7 +1945,7 @@ namespace Nyerguds.ImageManipulation
                 {
                     for (Int32 x = 0; x < width; x++)
                     {
-                        Byte val = (Byte)(brightness[y, x] * groups);
+                        Byte val = (Byte) (brightness[y, x] * groups);
                         Int32 num;
                         historigram.TryGetValue(val, out num);
                         historigram[val] = num + 1;
@@ -1964,15 +1965,33 @@ namespace Nyerguds.ImageManipulation
             for (Int32 y = 0; y < height; y++)
                 for (Int32 x = 0; x < width; x++)
                     dataBw[y, x] = brightness[y, x] > brightnessThreshold;
-            
+
             // Detect blobs.
-            List<List<Point>> blobs = new List<List<Point>>();
-            List<Boolean[,]> inBlobs = new List<Boolean[,]>();
             // Coult technically simplify the required Func<> to remove the imgData and directly reference dataBw, but meh.
             Func<Boolean[,], Int32, Int32, Boolean> clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] == detectVal;
+            return FindBlobs(dataBw, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
+        }
+
+        /// <summary>
+        /// Builds a list of all points adjacent to the current point, and adds it to the list of point collections.
+        /// If the point was already found in one of the collections, the function does nothing.
+        /// Loop this over every pixel of an image to detect all blobs.
+        /// </summary>
+        /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
+        /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
+        /// <param name="width">Image width.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
+        /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
+        /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
+        public static List<List<Point>> FindBlobs<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Int32 mergeThreshold, Boolean getEdgesOnly)
+        {
+            List<List<Point>> blobs = new List<List<Point>>();
+            List<Boolean[,]> inBlobs = new List<Boolean[,]>();
             for (Int32 y = 0; y < height; y++)
                 for (Int32 x = 0; x < width; x++)
-                    BuildBlobsCollection(x, y, dataBw, width, height, clearsThreshold, blobs, inBlobs, getEdgesOnly);
+                    BuildBlobsCollection(x, y, data, width, height, clearsThreshold, blobs, inBlobs, allEightEdges, getEdgesOnly);
 
             // Merge any collections that fall in each other's square bounds to reduce the amount of stray pixels.
             // Bounds are inflated by the amount of pixels specified in mergeThreshold.
@@ -2029,8 +2048,10 @@ namespace Nyerguds.ImageManipulation
 
         public static Point GetBlobCenter(List<Point> blob)
         {
+            if (blob.Count == 0)
+                return Point.Empty;
             Rectangle bounds = GetBlobBounds(blob);
-            return new Point(bounds.X + bounds.Width / 2, bounds.Y + bounds.Height / 2);
+            return new Point(bounds.X + (bounds.Width - 1) / 2, bounds.Y + (bounds.Height - 1) / 2);
         }
 
         /// <summary>
@@ -2047,8 +2068,9 @@ namespace Nyerguds.ImageManipulation
         /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
         /// <param name="blobs">List of point collections.</param>
         /// <param name="inBlobs">The list of point collections represented as boolean arrays, for very quick checks to see if a set of coordinates is in a collection.</param>
+        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
-        public static void BuildBlobsCollection<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, List<List<Point>> blobs, List<Boolean[,]> inBlobs, Boolean getEdgesOnly)
+        public static void BuildBlobsCollection<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, List<List<Point>> blobs, List<Boolean[,]> inBlobs, Boolean allEightEdges, Boolean getEdgesOnly)
         {
             // If the point does not equal the value to detect, abort.
             if (!clearsThreshold(data, pointY, pointX))
@@ -2060,7 +2082,7 @@ namespace Nyerguds.ImageManipulation
             List<Point> blob;
             // existence check optimisation in the form of a boolean grid that is kept synced with the points in the collection.
             Boolean[,] inBlob;
-            BuildBlob(pointX, pointY, data, width, height, clearsThreshold, out blob, out inBlob, getEdgesOnly);
+            BuildBlob(pointX, pointY, data, width, height, clearsThreshold, out blob, out inBlob, allEightEdges, getEdgesOnly);
             // should never happen; it starts off with the given pixel.
             if (blob.Count == 0)
                 return;
@@ -2080,8 +2102,9 @@ namespace Nyerguds.ImageManipulation
         /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
         /// <param name="blob">Point collection that is returned.</param>
         /// <param name="inBlob">The point collection represented as boolean array, for very quick checks to see if a set of coordinates is in the collection.</param>
+        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="edgeOnly">True to make the lists in 'blob' only contain the edge points of the blob. The 'inBlob' array will still have all points marked.</param>
-        public static void BuildBlob<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, out List<Point> blob, out Boolean[,] inBlob, Boolean edgeOnly)
+        public static void BuildBlob<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, out List<Point> blob, out Boolean[,] inBlob, Boolean allEightEdges, Boolean edgeOnly)
         {
             // set up return variables
             blob = new List<Point>();
@@ -2123,7 +2146,7 @@ namespace Nyerguds.ImageManipulation
                 foreach (Point ed in edgeCollection)
                 {
                     // gets all 8 neighbouring pixels.
-                    List<Point> neighbours = GetNeighbours(ed.X, ed.Y, lastX, lastY, false);
+                    List<Point> neighbours = GetNeighbours(ed.X, ed.Y, lastX, lastY, allEightEdges);
                     foreach (Point p in neighbours)
                     {
                         Int32 x = p.X;
@@ -2143,30 +2166,32 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        private static List<Point> GetNeighbours(Int32 x, Int32 y, Int32 lastX, Int32 lastY, Boolean mainFourOnly)
+        private static List<Point> GetNeighbours(Int32 x, Int32 y, Int32 lastX, Int32 lastY, Boolean allEight)
         {
             List<Point> neighbours = new List<Point>();
-            if (!mainFourOnly && x > 0 && y > 0)
+            if (allEight && x > 0 && y > 0)
                 neighbours.Add(new Point(x - 1, y - 1));
             if (y > 0)
                 neighbours.Add(new Point(x, y - 1));
-            if (!mainFourOnly && x < lastX && y > 0)
+            if (allEight && x < lastX && y > 0)
                 neighbours.Add(new Point(x + 1, y - 1));
             if (x > 0)
                 neighbours.Add(new Point(x - 1, y));
             if (x < lastX)
                 neighbours.Add(new Point(x + 1, y));
-            if (!mainFourOnly && x > 0 && y < lastY)
+            if (allEight && x > 0 && y < lastY)
                 neighbours.Add(new Point(x - 1, y + 1));
             if (y < lastY)
                 neighbours.Add(new Point(x, y + 1));
-            if (!mainFourOnly && x < lastX && y < lastY)
+            if (allEight && x < lastX && y < lastY)
                 neighbours.Add(new Point(x + 1, y + 1));
             return neighbours;
         }
 
-        private static Rectangle GetBlobBounds(List<Point> blob)
+        public static Rectangle GetBlobBounds(List<Point> blob)
         {
+            if (blob.Count == 0)
+                return new Rectangle(0, 0, 0, 0);
             Int32 minX = Int32.MaxValue;
             Int32 maxX = 0;
             Int32 minY = Int32.MaxValue;
@@ -2178,7 +2203,7 @@ namespace Nyerguds.ImageManipulation
                 minY = Math.Min(minY, p.Y);
                 maxY = Math.Max(maxY, p.Y);
             }
-            return Rectangle.FromLTRB(minX, minY, maxX, maxY);
+            return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
         
         public static List<Point> GetBlobEdgePoints(List<Point> blob, Int32 imageWidth, Int32 imageHeight)

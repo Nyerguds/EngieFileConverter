@@ -16,7 +16,7 @@ namespace Nyerguds.Util.Ui
 
         protected ControlsList()
         {
-            InitializeComponent();
+            this.InitializeComponent();
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Nyerguds.Util.Ui
         /// </summary>
         public void FocusFirst()
         {
-            if (m_Contents.Count == 0)
+            if (this.m_Contents.Count == 0)
                 return;
             this.FocusItem(this.m_Contents[0]);
         }
@@ -67,11 +67,11 @@ namespace Nyerguds.Util.Ui
             if (refresh)
                 this.SuspendLayout();
             Int32 YPos;
-            if (m_Contents.Count == 0)
+            if (this.m_Contents.Count == 0)
                 YPos = this.lblTypeName.Location.Y * 2 + this.lblTypeName.Size.Height;
             else
             {
-                T lastControl = m_Contents[m_Contents.Count - 1];
+                T lastControl = this.m_Contents[this.m_Contents.Count - 1];
                 YPos = lastControl.Location.Y + lastControl.Size.Height;
             }
             control.Location = new Point(0, YPos);
@@ -88,7 +88,7 @@ namespace Nyerguds.Util.Ui
         {
             this.SuspendLayout();
             this.lblTypeName.Text = String.Empty;
-            foreach (T c in m_Contents)
+            foreach (T c in this.m_Contents)
             {
                 this.Controls.Remove(c);
                 c.Dispose();
@@ -97,10 +97,10 @@ namespace Nyerguds.Util.Ui
             this.PerformLayout();
         }
 
-        protected void EffectBarList_Resize(object sender, EventArgs e)
+        protected void EffectBarList_Resize(Object sender, EventArgs e)
         {
             this.SuspendLayout();
-            foreach (T c in m_Contents)
+            foreach (T c in this.m_Contents)
                 c.Size = new Size(this.DisplayRectangle.Width, c.Size.Height);
             this.PerformLayout();
         }

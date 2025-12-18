@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.ImageManipulation;
-using Windows.Graphics2d;
 
 namespace Nyerguds.Util
 {
@@ -38,14 +34,14 @@ namespace Nyerguds.Util
             }
             if (clipboardimage == null && formats.Contains("Format17"))
             {
-                Byte[] dibdata = ClipboardImage.TryGetStreamDataFromClipboard(retrievedData, "Format17");
+                Byte[] dibdata = TryGetStreamDataFromClipboard(retrievedData, "Format17");
                 clipboardimage = DibHandler.ImageFromDib5(dibdata);
                 // ImageFromClipboardDib5 builds the image in local memory.
                 if (clipboardimage != null) built = true;
             }
             if (clipboardimage == null && formats.Contains(DataFormats.Dib))
             {
-                Byte[] dibdata = ClipboardImage.TryGetStreamDataFromClipboard(retrievedData, DataFormats.Dib);
+                Byte[] dibdata = TryGetStreamDataFromClipboard(retrievedData, DataFormats.Dib);
                 clipboardimage = DibHandler.ImageFromDib(dibdata);
                 // ImageFromClipboardDib builds the image in local memory.
                 if (clipboardimage != null) built = true;

@@ -39,7 +39,7 @@ namespace Nyerguds.Util.UI
             ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
             //ofd.FilterIndex
             DialogResult res = ofd.ShowDialog(owner);
-            if (res != System.Windows.Forms.DialogResult.OK)
+            if (res != DialogResult.OK)
                 return null;
             selectedItem = correspondingObjects[ofd.FilterIndex - 1];
             return ofd.FileName;
@@ -57,7 +57,7 @@ namespace Nyerguds.Util.UI
         /// <param name="skipOtherExtensions">True to only use the first extnsion for each item in the list.</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
         /// <returns>The chosen filename, or null if the user cancelled.</returns>
-        public static String ShowSaveFileFialog<T>(IWin32Window owner, Type selectType, Type[] typesList, Boolean skipOtherExtensions, String currentPath, out T selectedItem) where T : FileTypeBroadcaster
+        public static String ShowSaveFileFialog<T>(IWin32Window owner, Type selectType, Type[] typesList, Boolean skipOtherExtensions, Boolean joinExtensions, String currentPath, out T selectedItem) where T : FileTypeBroadcaster
         {
             selectedItem = default(T);
             SaveFileDialog sfd = new SaveFileDialog();
@@ -89,10 +89,10 @@ namespace Nyerguds.Util.UI
             if (!typeFound)
                 filterIndex = 1;
             T[] correspondingObjects;
-            sfd.Filter = GetFileFilterForSave(items, skipOtherExtensions, out correspondingObjects);
+            sfd.Filter = GetFileFilterForSave(items, skipOtherExtensions, joinExtensions, out correspondingObjects);
             sfd.FilterIndex = filterIndex;
             //sfd.Filter = "Westwood font file (*.fnt)|*.fnt";
-            sfd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
+            sfd.InitialDirectory = Path.GetFullPath(String.IsNullOrEmpty(currentPath) ? "." : Path.GetDirectoryName(currentPath));
             if (!String.IsNullOrEmpty(currentPath))
             {
                 String fn = Path.GetFileName(currentPath);
@@ -100,13 +100,11 @@ namespace Nyerguds.Util.UI
                 T selectedType = correspondingObjects[filterIndex-1];
                 if (selectedType != null && !selectedType.Equals(default(T))
                     && selectedType.FileExtensions.Length > 0 && !ext.Equals(selectedType.FileExtensions[0]))
-                {
                     fn = Path.GetFileNameWithoutExtension(currentPath) + "." + selectedType.FileExtensions[0];
-                }
                 sfd.FileName = fn;
             }
             DialogResult res = sfd.ShowDialog(owner);
-            if (res != System.Windows.Forms.DialogResult.OK)
+            if (res != DialogResult.OK)
                 return null;
             selectedItem = correspondingObjects[sfd.FilterIndex - 1];
             return sfd.FileName;
@@ -149,7 +147,7 @@ namespace Nyerguds.Util.UI
             return specificType;
         }
 
-        private static String GetFileFilterForSave<T>(FileDialogItem<T>[] fileDialogItems, Boolean skipOtherExtensions, out T[] correspondingObjects) where T : FileTypeBroadcaster
+        private static String GetFileFilterForSave<T>(FileDialogItem<T>[] fileDialogItems, Boolean skipOtherExtensions, Boolean joinExtensions, out T[] correspondingObjects) where T : FileTypeBroadcaster
         {
             List<String> types = new List<String>();
             List<T> objects = new List<T>();
@@ -158,6 +156,15 @@ namespace Nyerguds.Util.UI
                 String[] extensions = itemType.Extensions;
                 String[] filters = itemType.Filters;
                 String[] descriptions = itemType.DescriptionsForExtensions;
+                if (!skipOtherExtensions && joinExtensions)
+                {
+                    List<String> curTypes = new List<String>();
+                    foreach (String filter in itemType.Filters.Distinct())
+                        curTypes.Add(filter);
+                    types.Add(String.Format("{0} ({1})|{1}", itemType.Description, String.Join(";", curTypes.ToArray())));
+                    objects.Add(itemType.ItemObject);
+                    continue;
+                }
                 for (Int32 i = 0; i < extensions.Length; i++)
                 {
                     String descr = skipOtherExtensions ? itemType.Description : descriptions[i];
@@ -185,8 +192,8 @@ namespace Nyerguds.Util.UI
             }
             foreach (FileDialogItem<T> itemType in fileDialogItems)
             {
-                HashSet<String> curTypes = new HashSet<String>();
-                foreach (String filter in itemType.Filters)
+                List<String> curTypes = new List<String>();
+                foreach (String filter in itemType.Filters.Distinct())
                 {
                     curTypes.Add(filter);
                     if (!singleItem)
@@ -242,7 +249,7 @@ namespace Nyerguds.Util.UI
     {
         public String[] Extensions { get; private set; }
         public String[] DescriptionsForExtensions { get; private set; }
-        public String[] Filters { get { return Extensions.Select(x => "*." + x).ToArray(); } }
+        public String[] Filters { get { return this.Extensions.Select(x => "*." + x).ToArray(); } }
         public String Description { get; private set; }
         public String FullDescription
         {
@@ -250,17 +257,17 @@ namespace Nyerguds.Util.UI
         }
 
         /// <summary>Returns a newly created instance of this type.</summary>
-        public T ItemObject { get { return (T)Activator.CreateInstance(ItemType); } }
+        public T ItemObject { get { return (T)Activator.CreateInstance(this.ItemType); } }
         public Type ItemType { get; private set; }
 
         public FileDialogItem(Type itemtype)
         {
             if (!itemtype.IsSubclassOf(typeof(T)))
                 throw new ArgumentException("Entries in autoDetectTypes list must all be " + typeof(T).Name + " classes!", "itemtype");
-            ItemType = itemtype;
-            T item = ItemObject;
+            this.ItemType = itemtype;
+            T item = this.ItemObject;
             if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
-                throw new ArgumentException("Entry " + ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "itemtype");
+                throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "itemtype");
             this.Description = item.ShortTypeDescription;
             this.Extensions = item.FileExtensions;
             this.DescriptionsForExtensions = item.DescriptionsForExtensions;
@@ -268,7 +275,7 @@ namespace Nyerguds.Util.UI
 
         public override String ToString()
         {
-            return ItemObject.ShortTypeDescription;
+            return this.ItemObject.ShortTypeDescription;
         }
     }
 }

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
-using System.Text;
-using Nyerguds.GameData.Westwood;
 using Nyerguds.GameData.Compression;
+using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -15,8 +13,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
-        public override Int32 Width { get { return m_Width; } }
-        public override Int32 Height { get { return m_Height; } }
+        public override Int32 Width { get { return this.m_Width; } }
+        public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width = 320;
         protected Int32 m_Height = 200;
         protected Boolean hasPalette;
@@ -27,18 +25,18 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood CPS"; } }
         public override String[] FileExtensions { get { return new String[] {"cps"}; } }
         public override String ShortTypeDescription { get { return "Westwood CPS File"; } }
-        public override Int32 ColorsInPalette { get { return hasPalette ? 256 : 0; } }
+        public override Int32 ColorsInPalette { get { return this.hasPalette ? 256 : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
         
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
@@ -50,7 +48,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (compression < 0 || compression > 4)
                 throw new FileTypeLoadException("Unknown compression type " + compression);
 
-            ExtraInfo = "Compression: " + this.compressionTypes[compression];
+            this.ExtraInfo = "Compression: " + this.compressionTypes[compression];
             if (!((compression != 0 || compression != 4) && fileSize == fileData.Length) && !((compression == 0 || compression == 4) && fileSize + 2 == fileData.Length))
                 throw new FileTypeLoadException("File size in header does not match!");
             Int32 bufferSize = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 4, 4, true);
@@ -74,7 +72,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     throw new FileTypeLoadException("Could not load CPS palette: " + ex2.Message, ex2);
                 }
-                m_Palette = ColorUtils.GetEightBitColorPalette(palette);
+                this.m_Palette = ColorUtils.GetEightBitColorPalette(palette);
                 this.hasPalette = true;
             }
             if (this.m_Palette == null)
@@ -108,7 +106,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     default:
                         throw new FileTypeLoadException("Unsupported compression format, " + compression);
                 }
-                this.ExtraInfo = "Compression: " + compressionTypes[this.CompressionType] + "\nIncludes palette: " + (this.hasPalette ? "yes" : "no");
+                this.ExtraInfo = "Compression: " + this.compressionTypes[this.CompressionType] + "\nIncludes palette: " + (this.hasPalette ? "yes" : "no");
             }
             catch (Exception e)
             {
@@ -116,7 +114,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             try
             {
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, m_Palette, null);
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             }
             catch (IndexOutOfRangeException)
             {
@@ -132,7 +130,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return new SaveOption[]
             {
                 new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", compressionTypes), compression.ToString())
+                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.compressionTypes), compression.ToString())
             };
         }
 

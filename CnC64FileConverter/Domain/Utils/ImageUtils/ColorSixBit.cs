@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Drawing;
 
 namespace Nyerguds.ImageManipulation
@@ -16,31 +14,31 @@ namespace Nyerguds.ImageManipulation
 
         public Byte R
         {
-            get { return m_Red; }
+            get { return this.m_Red; }
             set
             {
                 if (value > MaxValue)
-                    throw new ArgumentException(argError, "value");
+                    throw new ArgumentException(this.argError, "value");
                 this.m_Red = value;
             }
         }
         public Byte G
         {
-            get { return m_Green; }
+            get { return this.m_Green; }
             set
             {
                 if (value > MaxValue)
-                    throw new ArgumentException(argError, "value");
+                    throw new ArgumentException(this.argError, "value");
                 this.m_Green = value;
             }
         }
         public Byte B
         {
-            get { return m_Blue; }
+            get { return this.m_Blue; }
             set
             {
                 if (value > MaxValue)
-                    throw new ArgumentException(argError, "value");
+                    throw new ArgumentException(this.argError, "value");
                 this.m_Blue = value;
             }
         }

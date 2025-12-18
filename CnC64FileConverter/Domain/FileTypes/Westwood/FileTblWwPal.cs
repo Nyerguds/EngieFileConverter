@@ -1,12 +1,9 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Text;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -38,13 +35,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
@@ -84,7 +81,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             //*/
             // Simple format: show table only
-            this.m_LoadedImage = ImageUtils.BuildImage(fileData, 0x100, 0x100, 0x100, PixelFormat.Format8bppIndexed, m_Palette, null);
+            this.m_LoadedImage = ImageUtils.BuildImage(fileData, 0x100, 0x100, 0x100, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             /*/
             // Advanced format: show table outlined with original palette.
             this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, null, false);

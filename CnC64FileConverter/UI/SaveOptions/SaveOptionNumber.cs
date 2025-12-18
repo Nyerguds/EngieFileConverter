@@ -16,8 +16,8 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public SaveOptionNumber(SaveOption info, ListedControlController<SaveOption> controller)
         {
-            InitializeComponent();
-            Init(info, controller);
+            this.InitializeComponent();
+            this.Init(info, controller);
         }
 
         public override void UpdateInfo(SaveOption info)
@@ -43,18 +43,18 @@ namespace CnC64FileConverter.UI.SaveOptions
                 this.m_maximum = maxVal;
         }
 
-        private void txtValue_TextChanged(object sender, EventArgs e)
+        private void txtValue_TextChanged(Object sender, EventArgs e)
         {
-            if (m_editingText)
+            if (this.m_editingText)
                 return;
             try
             {
-                m_editingText = true;
+                this.m_editingText = true;
                 // Filter to pure integers
-                String input = txtValue.Text.ToUpperInvariant();
+                String input = this.txtValue.Text.ToUpperInvariant();
                 Int32 selStart = this.txtValue.SelectionStart;
                 String output = new String(input.Where(x => x == '-' || x >= '0' && x <= '9').ToArray());
-                if (!String.Equals(txtValue.Text, output))
+                if (!String.Equals(this.txtValue.Text, output))
                 {
                     if (Math.Min(selStart, output.Length) > 0 && selStart <= output.Length && output[selStart - 1] != input[selStart - 1])
                         selStart--;
@@ -68,22 +68,22 @@ namespace CnC64FileConverter.UI.SaveOptions
                         val = Math.Min(this.m_maximum.Value, val);
                     output = val.ToString();
                 }
-                if (!String.Equals(txtValue.Text, output))
+                if (!String.Equals(this.txtValue.Text, output))
                 {
                     // Fix selection
-                    txtValue.Text = output;
-                    this.txtValue.SelectionStart = Math.Min(selStart, txtValue.Text.Length);
+                    this.txtValue.Text = output;
+                    this.txtValue.SelectionStart = Math.Min(selStart, this.txtValue.Text.Length);
                 }
                 // Update controller
                 if (this.m_Info == null)
                     return;
                 this.m_Info.SaveData = (output.Length == 0 || "-".Equals(output)) ? "0" : this.txtValue.Text;
                 if (this.m_Controller != null)
-                    this.m_Controller.UpdateControlInfo(m_Info);
+                    this.m_Controller.UpdateControlInfo(this.m_Info);
             }
             finally
             {
-                m_editingText = false;
+                this.m_editingText = false;
             }
         }
 

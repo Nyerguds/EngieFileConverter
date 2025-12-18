@@ -1,12 +1,10 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
-using System.Text;
 using Nyerguds.GameData.Westwood;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -19,8 +17,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override Int32 Width { get { return m_Width; }  }
-        public override Int32 Height { get { return m_Height; } }
+        public override Int32 Width { get { return this.m_Width; }  }
+        public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
         protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "C&C"}; //, "Monopoly" };
@@ -37,7 +35,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Boolean m_Continues;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_FramesList; } }
+        public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
@@ -65,7 +63,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 ignoreLast = toSave.m_DamagedLoopFrame;
             }
             SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
-            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type", String.Join(",", formats), ((Int32)type).ToString());
+            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type", String.Join(",", this.formats), ((Int32)type).ToString());
             opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette (not supported for Dune II v1)", hasColors ? "1" : "0");
             opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
             opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
@@ -77,13 +75,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
         }
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
@@ -152,9 +150,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                     // accurate checks to distinguish c&c from poly.
                     throw new FileTypeLoadException("Invalid image dimensions!");
             }
-            m_Version = loadVersion;
-            String generalInfo = "Version: " + formats[(Int32)m_Version];
-            if (m_Version != WsaVersion.Dune2 && m_Version != WsaVersion.Dune2v1)
+            this.m_Version = loadVersion;
+            String generalInfo = "Version: " + this.formats[(Int32) this.m_Version];
+            if (this.m_Version != WsaVersion.Dune2 && this.m_Version != WsaVersion.Dune2v1)
                 generalInfo += "\nX-offset = " + xPos + "\nY-offset = " + yPos;
             this.ExtraInfo = generalInfo;
             Int32 dataIndexOffset = deltaOffs + 4;
@@ -168,7 +166,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameOffsets[i] = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
                 dataIndexOffset += 4;
             }
-            m_HasLoopFrame = frameOffsets[nrOfFrames + 1] != 0;
+            this.m_HasLoopFrame = frameOffsets[nrOfFrames + 1] != 0;
             UInt32 endOffset = frameOffsets[nrOfFrames + (this.m_HasLoopFrame ? 1 : 0)];
             if (this.m_HasPalette)
                 endOffset += 0x300;
@@ -193,9 +191,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
             if (width == 0 || height == 0)
                 throw new FileTypeLoadException("Invalid image dimensions!");
-            m_Width = width;
-            m_Height = height;
-            m_FramesList = new SupportedFileType[nrOfFrames + 1];
+            this.m_Width = width;
+            this.m_Height = height;
+            this.m_FramesList = new SupportedFileType[nrOfFrames + 1];
             Byte[] frameData = new Byte[width * height];
             Byte[] frame0Data = new Byte[width * height];
             Byte[] xorData = new Byte[deltaBufferSize + 37];
@@ -209,7 +207,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
                 if (i == 0 && frameOffset == 0)
                 {
-                    m_Continues = true;
+                    this.m_Continues = true;
                     Array.Clear(frameData, 0, frameData.Length);
                     specificInfo = "\nContinues from a previous file";
                     this.ExtraInfo += specificInfo;                    
@@ -253,19 +251,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
-            m_DamagedLoopFrame = false;
-            if (m_HasLoopFrame)
+            this.m_DamagedLoopFrame = false;
+            if (this.m_HasLoopFrame)
             {
-                m_DamagedLoopFrame = !frameData.SequenceEqual(frame0Data);
+                this.m_DamagedLoopFrame = !frameData.SequenceEqual(frame0Data);
                 this.ExtraInfo += "\nHas loop frame";
-                if (m_DamagedLoopFrame)
+                if (this.m_DamagedLoopFrame)
                     this.ExtraInfo += " (but doesn't match)";
             }
-            if (!m_DamagedLoopFrame)
+            if (!this.m_DamagedLoopFrame)
             {
                 SupportedFileType[] newFramesList = new SupportedFileType[nrOfFrames];
-                Array.Copy(m_FramesList, newFramesList, nrOfFrames);
-                m_FramesList = newFramesList;
+                Array.Copy(this.m_FramesList, newFramesList, nrOfFrames);
+                this.m_FramesList = newFramesList;
             }
             else
             {
@@ -273,7 +271,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frame.SetExtraInfo(frame.ExtraInfo + "\nLoop frame (damaged?)");
             }
             if (this.m_FramesList.Length == 1)
-                this.m_LoadedImage = m_FramesList[0].GetBitmap();
+                this.m_LoadedImage = this.m_FramesList[0].GetBitmap();
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

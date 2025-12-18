@@ -15,13 +15,13 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Frame"; } }
 
         public override FileClass InputFileClass { get { return FileClass.None; } }
-        public Dictionary<String, Object> ExtraProps { get { return m_ExtraProps; }}
+        public Dictionary<String, Object> ExtraProps { get { return this.m_ExtraProps; }}
 
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return (m_BaseType == null?  String.Empty : m_BaseType + " ") + "Frame"; } }
-        public override Int32 BitsPerPixel { get { return m_BitsPerColor != -1   ? m_BitsPerColor : base.BitsPerPixel; } }
-        public override Int32 ColorsInPalette { get { return m_ColorsInPalette != - 1 ? m_ColorsInPalette : base.ColorsInPalette; } }
-        public override Boolean[] TransparencyMask { get { return m_transparencyMask; } }
+        public override String ShortTypeDescription { get { return (this.m_BaseType == null?  String.Empty : this.m_BaseType + " ") + "Frame"; } }
+        public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
+        public override Int32 ColorsInPalette { get { return this.m_ColorsInPalette != - 1 ? this.m_ColorsInPalette : base.ColorsInPalette; } }
+        public override Boolean[] TransparencyMask { get { return this.m_transparencyMask; } }
 
         public void SetBitsPerColor(Int32 bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
         public void SetColorsInPalette(Int32 colorsInPalette) { this.m_ColorsInPalette = colorsInPalette; }
@@ -34,13 +34,13 @@ namespace CnC64FileConverter.Domain.FileTypes
         public void SetFrameFileName(String frameName)
         {
             this.frameName = frameName;
-            UpdateNames();
+            this.UpdateNames();
         }
 
         public override void SetFileNames(String path)
         {
-            sourcePath = path;
-            UpdateNames();
+            this.sourcePath = path;
+            this.UpdateNames();
         }
 
         public void SetExtraInfo(String extraInfo)
@@ -52,8 +52,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (this.frameName != null && this.sourcePath != null)
             {
-                LoadedFileName = Path.GetFileNameWithoutExtension(sourcePath) + "-" + frameName + Path.GetExtension(sourcePath);
-                LoadedFile = Path.Combine(Path.GetDirectoryName(sourcePath), LoadedFileName);
+                this.LoadedFileName = Path.GetFileNameWithoutExtension(this.sourcePath) + "-" + this.frameName + Path.GetExtension(this.sourcePath);
+                this.LoadedFile = Path.Combine(Path.GetDirectoryName(this.sourcePath), this.LoadedFileName);
             }
             else if (this.frameName != null)
             {
@@ -65,8 +65,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             else
             {
-                LoadedFileName = null;
-                LoadedFile = null;
+                this.LoadedFileName = null;
+                this.LoadedFile = null;
             }
         }
 
@@ -78,7 +78,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.sourcePath = filename;
             // Set to -1 if it's actually loading from a frame file, so the automatic number adding is skipped.
             this.frameName = frameNumber >= 0 ? frameNumber.ToString("D5") : null;
-            UpdateNames();
+            this.UpdateNames();
         }
 
     }

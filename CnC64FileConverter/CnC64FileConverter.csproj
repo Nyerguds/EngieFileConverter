@@ -62,14 +62,17 @@
   <ItemGroup>
     <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
-    <Compile Include="Domain\FileTypes\EA\FileImgKotB.cs" />
+    <Compile Include="Domain\FileTypes\EA\FileImgKotBPak.cs" />
     <Compile Include="Domain\FileTypes\General\FileIcon.cs" />
+    <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVda.cs" />
+    <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosPal.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTblWwPal.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpCc.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwWsa.cs" />
     <Compile Include="Domain\GameData\Agos\AgosCompression.cs" />
+    <Compile Include="Domain\GameData\Dynamix\DynamixLzHuffDecoder.cs" />
     <Compile Include="Domain\GameData\LzwCompression.cs" />
     <Compile Include="Domain\GameData\Mythos\MythosCompression.cs" />
     <Compile Include="Domain\GameData\RleCompression.cs" />
@@ -87,7 +90,7 @@
     <Compile Include="Domain\FileTypes\Dynamix\FileFramesDynBmp.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwCps.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwLcw.cs" />
-    <Content Include="Domain\FileTypes\Westwood\FileMapWwRa1PC.cs" />
+    <Content Include="Domain\FileTypes\Westwood\FileMapWwRa1Pc.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScr.cs" />
     <Compile Include="Domain\GameData\Westwood\HeightTerrainType.cs" />
     <Compile Include="Domain\GameData\Westwood\TerrainType.cs" />

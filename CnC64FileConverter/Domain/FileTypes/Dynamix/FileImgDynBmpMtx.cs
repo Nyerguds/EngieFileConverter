@@ -21,13 +21,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFromFileData(fileData, null, true);
+            this.LoadFromFileData(fileData, null, true);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            LoadFromFileData(fileData, filename, true);
-            SetFileNames(filename);
+            this.LoadFromFileData(fileData, filename, true);
+            this.SetFileNames(filename);
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
