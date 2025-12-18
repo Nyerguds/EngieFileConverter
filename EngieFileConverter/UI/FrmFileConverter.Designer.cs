@@ -57,7 +57,8 @@
             this.tsmiManagePalettes4Bit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiManagePalettes8Bit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiChangePalette = new System.Windows.Forms.ToolStripMenuItem();
-            this.TsmiMatchToPalette = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiMatchToPalette = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiSetToDifferenPalette = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiChangeTo24BitRgb = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiChangeTo32BitArgb = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiFrames = new System.Windows.Forms.ToolStripMenuItem();
@@ -84,7 +85,7 @@
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorPalette = new Nyerguds.Util.UI.PalettePanel();
             this.pzpImage = new Nyerguds.Util.UI.PixelZoomPanel();
-            this.TsmiSetToDifferenPalette = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiRemovePalette = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             this.SuspendLayout();
@@ -340,21 +341,30 @@
             // tsmiChangePalette
             // 
             this.tsmiChangePalette.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.TsmiMatchToPalette,
-            this.TsmiSetToDifferenPalette,
+            this.tsmiRemovePalette,
+            this.tsmiMatchToPalette,
+            this.tsmiSetToDifferenPalette,
             this.tsmiChangeTo24BitRgb,
             this.tsmiChangeTo32BitArgb});
             this.tsmiChangePalette.Name = "tsmiChangePalette";
             this.tsmiChangePalette.Size = new System.Drawing.Size(227, 22);
             this.tsmiChangePalette.Text = "Change &palette / color depth";
             // 
-            // TsmiMatchToPalette
+            // tsmiMatchToPalette
             // 
-            this.TsmiMatchToPalette.Name = "TsmiMatchToPalette";
-            this.TsmiMatchToPalette.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
-            this.TsmiMatchToPalette.Size = new System.Drawing.Size(227, 22);
-            this.TsmiMatchToPalette.Text = "Match to &palette...";
-            this.TsmiMatchToPalette.Click += new System.EventHandler(this.TsmiMatchToPalette_Click);
+            this.tsmiMatchToPalette.Name = "tsmiMatchToPalette";
+            this.tsmiMatchToPalette.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
+            this.tsmiMatchToPalette.Size = new System.Drawing.Size(227, 22);
+            this.tsmiMatchToPalette.Text = "Match to &palette...";
+            this.tsmiMatchToPalette.Click += new System.EventHandler(this.TsmiMatchToPalette_Click);
+            // 
+            // tsmiSetToDifferenPalette
+            // 
+            this.tsmiSetToDifferenPalette.Name = "tsmiSetToDifferenPalette";
+            this.tsmiSetToDifferenPalette.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
+            this.tsmiSetToDifferenPalette.Size = new System.Drawing.Size(227, 22);
+            this.tsmiSetToDifferenPalette.Text = "Set different palette...";
+            this.tsmiSetToDifferenPalette.Click += new System.EventHandler(this.TsmiSetToDifferenPalette_Click);
             // 
             // tsmiChangeTo24BitRgb
             // 
@@ -399,7 +409,7 @@
             // tsmiPasteOnFrames
             // 
             this.tsmiPasteOnFrames.Name = "tsmiPasteOnFrames";
-            this.tsmiPasteOnFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
+            this.tsmiPasteOnFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
             this.tsmiPasteOnFrames.Size = new System.Drawing.Size(246, 22);
             this.tsmiPasteOnFrames.Text = "&Paste image on frames...";
             this.tsmiPasteOnFrames.Click += new System.EventHandler(this.TsmiPasteOnFramesClick);
@@ -616,13 +626,12 @@
             this.pzpImage.ZoomFactor = 1;
             this.pzpImage.ZoomFactorMinimum = -10;
             // 
-            // TsmiSetToDifferenPalette
+            // tsmiRemovePalette
             // 
-            this.TsmiSetToDifferenPalette.Name = "TsmiSetToDifferenPalette";
-            this.TsmiSetToDifferenPalette.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
-            this.TsmiSetToDifferenPalette.Size = new System.Drawing.Size(227, 22);
-            this.TsmiSetToDifferenPalette.Text = "Set different palette...";
-            this.TsmiSetToDifferenPalette.Click += new System.EventHandler(this.TsmiSetToDifferenPalette_Click);
+            this.tsmiRemovePalette.Name = "tsmiRemovePalette";
+            this.tsmiRemovePalette.Size = new System.Drawing.Size(227, 22);
+            this.tsmiRemovePalette.Text = "Remove palette";
+            this.tsmiRemovePalette.Click += new System.EventHandler(this.TsmiRemovePalette_Click);
             // 
             // FrmFileConverter
             // 
@@ -723,10 +732,11 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiExtractPal;
         private System.Windows.Forms.ToolStripMenuItem TsmiSaveRaw;
         private System.Windows.Forms.ToolStripMenuItem tsmiChangePalette;
-        private System.Windows.Forms.ToolStripMenuItem TsmiMatchToPalette;
+        private System.Windows.Forms.ToolStripMenuItem tsmiMatchToPalette;
         private System.Windows.Forms.ToolStripMenuItem tsmiChangeTo32BitArgb;
         private System.Windows.Forms.ToolStripMenuItem tsmiChangeTo24BitRgb;
-        private System.Windows.Forms.ToolStripMenuItem TsmiSetToDifferenPalette;
+        private System.Windows.Forms.ToolStripMenuItem tsmiSetToDifferenPalette;
+        private System.Windows.Forms.ToolStripMenuItem tsmiRemovePalette;
     }
 }
 

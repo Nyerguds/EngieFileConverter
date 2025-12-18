@@ -50,7 +50,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>
         /// Avoid using this for adding frames: use AddFrame instead.
         /// </summary>
-        public List<SupportedFileType> FramesList = new List<SupportedFileType>();
+        public List<SupportedFileType> FramesList { get; private set; }
 
         public String BaseType { get; private set; }
         public Type EmbeddedType { get; private set; }
@@ -60,11 +60,13 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Creates a new FileFrames object</summary>
         public FileFrames()
         {
+            FramesList = new List<SupportedFileType>();
         }
 
         /// <summary>Creates a new FileFrames object</summary>
         /// <param name="fromFileRange">Sets whether this file was created from a range of files.</param>
         public FileFrames(Boolean fromFileRange)
+            :this()
         {
             this.FromFileRange = fromFileRange;
         }
@@ -72,6 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Creates a new FileFrames object</summary>
         /// <param name="framesSource">Source of the frames. Giving this does not copy any frames, it just inherits the "from file range" status.</param>
         public FileFrames(SupportedFileType framesSource)
+            : this()
         {
             FileFrames framesFile = framesSource as FileFrames;
             this.FromFileRange = framesFile != null && framesFile.FromFileRange;

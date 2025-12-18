@@ -47,7 +47,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean HasCompositeFrame { get { return false; } }
         public override Boolean[] TransparencyMask { get { return this.m_TransMask; } }
 
-
         public override List<String> GetFilesToLoadMissingData(String originalPath)
         {
             if (!this.m_Continues)
@@ -237,7 +236,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 checkType.Dispose();
             }
         }
-
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -429,6 +427,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     try
                     {
                         uncLen = WWCompression.LcwDecompress(fileData, ref refOff, xorData, (Int32)frameEndOffset);
+                        //File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(sourcePath), String.Format("input-xor-{0:000}.dat", i)), xorData);
                         bufferOverrun = uncLen > deltaBufferSize;
                     }
                     catch (Exception ex)
@@ -459,6 +458,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 else if (xPos > 0 || yPos > 0)
                 {
                     finalFrameData = frameData;
+                    //File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(sourcePath), String.Format("input-crop-{0:000}.dat", i)), frameData);
                     finalFrameData = ImageUtils.ChangeStride(finalFrameData, xorWidth, xorHeight, this.m_Width, true, 0);
                     finalFrameData = ImageUtils.ChangeHeight(finalFrameData, this.m_Width, xorHeight, this.m_Height, true, 0);
                 }
@@ -590,6 +590,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     firstFrameData = frameDataRaw;
                 framesDataUnc[i] = frameDataRaw;
             }
+            
             // crop logic.
             Int32 xOffset = 0;
             Int32 yOffset = 0;
@@ -625,7 +626,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 newWidth = maxXTrimEnd - xOffset;
                     Int32 newheight = maxYTrimEnd - yOffset;
                     for (Int32 i = 0; i < writeFrames; ++i)
+                    {
                         framesDataUnc[i] = ImageUtils.CopyFrom8bpp(framesDataUnc[i], width, height, width, new Rectangle(xOffset, yOffset, newWidth, newheight));
+                        //File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(fileToSave.LoadedFile), String.Format("output-crop-{0:000}.dat", i)), framesDataUnc[i]);
+                    }
                     width = newWidth;
                     height = newheight;
                 }
@@ -637,6 +641,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Byte[] currentFrame = framesDataUnc[i];
                 Byte[] frameData = WWCompression.GenerateXorDelta(currentFrame, previousFrame);
+                //File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(fileToSave.LoadedFile), String.Format("output-xor-{0:000}.dat", i)), frameData);
                 deltaBufferSize = Math.Max(frameData.Length, deltaBufferSize);
                 frameData = WWCompression.LcwCompress(frameData);
                 framesData[i] = frameData;
@@ -725,8 +730,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
-            if (nrOfFrames == 0)
+            Int32 nrOfFrames;
+            if (frames == null || (nrOfFrames = frames.Length) == 0)
                 throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
             width = -1;
             height = -1;

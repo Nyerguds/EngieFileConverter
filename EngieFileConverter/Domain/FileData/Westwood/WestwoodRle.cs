@@ -80,7 +80,7 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="isRepeat">Returns true for repeat code, false for copy code.</param>
         /// <param name="amount">Returns the amount to copy or repeat.</param>
         /// <returns>True if the read succeeded, false if it failed.</returns>
-        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
+        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, ref UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
         {
             if (inPtr >= bufferEnd)
             {

@@ -6,20 +6,20 @@ namespace Nyerguds.FileData.Compression
 
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Repeat code.
-    /// The used run length is always (code & 0x7F).
+    /// The used run length is always (code &amp; 0x7F).
     /// </summary>
     public class RleCompressionHighBitRepeat : RleImplementation<RleCompressionHighBitRepeat> { }
 
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Copy code.
-    /// The used run length is always (code & 0x7F).
+    /// The used run length is always (code &amp; 0x7F).
     /// </summary>
     /// <remarks>This uses the original GetCode/WriteCode functions but simply flips their "Repeat" boolean.</remarks>
     public class RleCompressionHighBitCopy : RleImplementation<RleCompressionHighBitCopy>
     {
-        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
+        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, ref UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
         {
-            Boolean success = base.GetCode(buffer, ref inPtr, bufferEnd, out isRepeat, out amount);
+            Boolean success = base.GetCode(buffer, ref inPtr, ref bufferEnd, out isRepeat, out amount);
             isRepeat = !isRepeat;
             return success;
         }
@@ -47,7 +47,6 @@ namespace Nyerguds.FileData.Compression
     {
         #region overridables to tweak in subclasses
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
-
         protected virtual UInt32 MaxRepeatValue { get { return 0x7F; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
         protected virtual UInt32 MaxCopyValue { get { return 0x7F; } }
@@ -67,11 +66,11 @@ namespace Nyerguds.FileData.Compression
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
         /// <param name="inPtr">Input pointer.</param>
-        /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be read from.</param>
+        /// <param name="bufferEnd">Exclusive end of buffer; first position that can no longer be read from. Writable because some compression types might want to force the process to end depending on the code.</param>
         /// <param name="isRepeat">Returns true for repeat code, false for copy code.</param>
         /// <param name="amount">Returns the amount to copy or repeat.</param>
         /// <returns>True if the read succeeded, false if it failed.</returns>
-        protected virtual Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
+        protected virtual Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, ref UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
         {
             if (inPtr >= bufferEnd)
             {
@@ -108,6 +107,20 @@ namespace Nyerguds.FileData.Compression
         #endregion
 
         #region static functions
+        /// <summary>
+        /// Decodes RLE-encoded data.
+        /// </summary>
+        /// <param name="buffer">Buffer to decode.</param>
+        /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
+        /// <returns>A byte array of the given output size, filled with the decompressed data.</returns>
+        public static Byte[] RleDecode(Byte[] buffer, Boolean abortOnError)
+        {
+            T rle = new T();
+            Byte[] bufferOut = null;
+            rle.RleDecodeData(buffer, null, null, ref bufferOut, abortOnError);
+            return bufferOut;
+        }
+
         /// <summary>
         /// Decodes RLE-encoded data.
         /// </summary>
@@ -178,6 +191,8 @@ namespace Nyerguds.FileData.Compression
         /// <returns>A byte array of the given output size, filled with the decompressed data, or null if abortOnError is enabled and an empty command was found.</returns>
         public Byte[] RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
             Byte[] outputBuffer = new Byte[decompressedSize];
             Int32 result = this.RleDecodeData(buffer, startOffset, endOffset, ref outputBuffer, abortOnError);
             if (result == -1)
@@ -196,6 +211,8 @@ namespace Nyerguds.FileData.Compression
         /// <returns>The amount of written bytes in bufferOut.</returns>
         public Int32 RleDecodeData(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, ref Byte[] bufferOut, Boolean abortOnError)
         {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
             UInt32 inPtr = startOffset ?? 0;
             UInt32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, (UInt32)buffer.Length) : (UInt32)buffer.Length;
 
@@ -212,7 +229,7 @@ namespace Nyerguds.FileData.Compression
                 // get next code
                 UInt32 run;
                 Boolean repeat;
-                if (!this.GetCode(buffer, ref inPtr, inPtrEnd, out repeat, out run) || (run == 0 && abortOnError))
+                if (!this.GetCode(buffer, ref inPtr, ref inPtrEnd, out repeat, out run) || (run == 0 && abortOnError))
                 {
                     error = true;
                     break;
@@ -267,8 +284,8 @@ namespace Nyerguds.FileData.Compression
         /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
         /// <remarks>
-        /// This function achieves better compression than other methods out there, because it only switches from a Copy
-        /// command to a Repeat command if more than two repeating bytes are found (or if the maximum copy amount is reached).
+        /// This function achieves better compression than most other methods, because it only switches from a Copy command
+        /// to a Repeat command if more than two repeating bytes are found (or if the maximum copy amount is reached).
         /// This avoids adding extra Copy command bytes after replacing two repeating bytes by a two-byte Repeat command.
         /// Written by Maarten Meuris, aka Nyerguds.
         /// </remarks>
@@ -276,11 +293,31 @@ namespace Nyerguds.FileData.Compression
         /// <returns>The run-length encoded data.</returns>
         public Byte[] RleEncodeData(Byte[] buffer)
         {
-            UInt32 len = (UInt32)buffer.Length;
-            UInt32 detectedRepeat = 0;
-            UInt32 inPtr = 0;
-            UInt32 outPtr = 0;
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+            return this.RleEncodeData(buffer, 0, (UInt32)buffer.Length);
+        }
 
+        /// <summary>
+        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// </summary>
+        /// <remarks>
+        /// This function achieves better compression than other methods out there, because it only switches from a Copy
+        /// command to a Repeat command if more than two repeating bytes are found (or if the maximum copy amount is reached).
+        /// This avoids adding extra Copy command bytes after replacing two repeating bytes by a two-byte Repeat command.
+        /// Written by Maarten Meuris, aka Nyerguds.
+        /// </remarks>
+        /// <param name="buffer">Input buffer.</param>
+        /// <param name="dataStart">Start of the data inside the buffer.</param>
+        /// <param name="dataEnd">End of the data inside the buffer.</param>
+        /// <returns>The run-length encoded data.</returns>
+        public Byte[] RleEncodeData(Byte[] buffer, UInt32 dataStart, UInt32 dataEnd)
+        {
+            if (buffer == null)
+                throw new ArgumentNullException("buffer");
+            UInt32 dataLen = (UInt32)buffer.Length;
+            UInt32 inPtr = Math.Min(dataLen, dataStart);
+            UInt32 outPtr = 0;
             // Retrieve these in advance to avoid extra calls to getters.
             // These are made customizable because some implementations support larger codes. Technically
             // neither run-length 0 nor 1 are useful for repeat codes (0 should not exist, 1 is identical to copy),
@@ -288,11 +325,11 @@ namespace Nyerguds.FileData.Compression
             // Some implementations also use these values as indicators for reading a larger value to repeat or copy.
             UInt32 maxRepeat = this.MaxRepeatValue;
             UInt32 maxCopy = this.MaxCopyValue;
-
+            UInt32 len = Math.Min(dataLen, dataEnd);
             // This code does not do sanity checks, since some file formats can't disable their compression.
-            UInt32 bufLen = CompressionWorstCase(len);
+            UInt32 bufLen = this.CompressionWorstCase(len);
             Byte[] bufferOut = new Byte[bufLen];
-
+            UInt32 detectedRepeat = 0;
             while (inPtr < len)
             {
                 // Handle 2 cases: repeat was already detected, or a new repeat detect needs to be done.

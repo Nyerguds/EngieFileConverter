@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Nyerguds.FileData.EmotionalPictures;
+// ReSharper disable UnusedMember.Local
 
 namespace EngieFileConverter.UI
 {
@@ -70,12 +71,17 @@ namespace EngieFileConverter.UI
             //this.MakeIcons();
             //this.ExtractBitmaps();
             //this.ShiftMap();
-            this.ListHighVerDotWriterFonts();
+            //this.ListHighVerDotWriterFonts();
+            //this.CountPixels();
+            //this.ExpandGif();
+            //this.DecryptDat();
+            //this.ExecuteThreaded(this.ReduceRPlace, false, false, false, "Reducing palettes...");
+            this.ExecuteThreaded(this.GetDataFromImage, false, false, false, "Getting image...");
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
         {
-            this.ReloadWithDispose(loadImage, true, true);
+            this.ReloadWithDispose(loadImage, true, true, true);
         }
 
         private void LoadTestFile(Bitmap loadImage, String filename, String extraInfo)
@@ -717,7 +723,7 @@ namespace EngieFileConverter.UI
                 bm2.SetPixel(center.X, center.Y - 1, Color.Red);
                 bm2.SetPixel(center.X, center.Y + 1, Color.Red);
             }
-            this.LoadTestFile(bm2, m_LoadedFile.LoadedFile, "Detected blobs: " + blobs.Count);
+            this.LoadTestFile(bm2, this.m_LoadedFile.LoadedFile, "Detected blobs: " + blobs.Count);
         }
 
         private void IndexedToArgb()
@@ -771,7 +777,7 @@ namespace EngieFileConverter.UI
 
         private void WriteIcoFileFromFrames()
         {
-            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || m_LoadedFile.LoadedFile == null)
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || this.m_LoadedFile.LoadedFile == null)
                 return;
             Int32 frameNr = this.m_LoadedFile.Frames.Length;
             List<Image> images = new List<Image>();
@@ -782,7 +788,7 @@ namespace EngieFileConverter.UI
                     images.Add(bm);
             }
             Byte[] fileBytes = FileIcon.ConvertImagesToIcoBytes(images.ToArray());
-            File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(m_LoadedFile.LoadedFile), "test.ico"), fileBytes);
+            File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(this.m_LoadedFile.LoadedFile), "test.ico"), fileBytes);
         }
 
         private void ChromaKey()
@@ -1134,7 +1140,7 @@ namespace EngieFileConverter.UI
 
         private void ConvertToIcons()
         {
-            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || m_LoadedFile.LoadedFile == null)
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || this.m_LoadedFile.LoadedFile == null)
                 return;
             List<String> originalNames = this.m_LoadedFile.Frames.Select(f => f.LoadedFile).Where(File.Exists).ToList();
             if (originalNames.Count == 0)
@@ -1150,7 +1156,7 @@ namespace EngieFileConverter.UI
             // without header, inconspicuously named as if they are files of the game itself. The image is always the same too:
             // Eddie, the zombie mascot of the band "Iron Maiden", carrying a British flag as depicted on the album "The Trooper".
 
-            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || (!(this.m_LoadedFile is FileImgStris) && !(this.m_LoadedFile is FileFrames && ((FileFrames)m_LoadedFile).EmbeddedType == typeof(FileImgStris))))
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || (!(this.m_LoadedFile is FileImgStris) && !(this.m_LoadedFile is FileFrames && ((FileFrames) this.m_LoadedFile).EmbeddedType == typeof(FileImgStris))))
                 return;
             String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
             String palFile = Path.Combine(path, "14.sex");
@@ -1319,7 +1325,7 @@ namespace EngieFileConverter.UI
             Color[] curPalette;
             Byte[] imageData;
             // This 'using' block is kept small; extract the data and then dispose everything.
-            using (Bitmap image = ImageUtils.CloneImage(m_LoadedFile.GetBitmap()))
+            using (Bitmap image = ImageUtils.CloneImage(this.m_LoadedFile.GetBitmap()))
             //using (Bitmap image = new Bitmap(filename))
             {
                 if (image.PixelFormat != PixelFormat.Format8bppIndexed)
@@ -1443,7 +1449,7 @@ namespace EngieFileConverter.UI
                 return;
             Int32 stride;
             Byte[] imgData = ImageUtils.GetImageData(loadedBm, out stride);
-            Int32 skipsize = m_LoadedFile.BitsPerPixel / 8;
+            Int32 skipsize = this.m_LoadedFile.BitsPerPixel / 8;
             Int32 height = loadedBm.Height;
             Int32 width = loadedBm.Width;
             //ARGB = [BB GG RR AA]
@@ -1562,7 +1568,7 @@ namespace EngieFileConverter.UI
         private void ShiftMap()
         {
             FileMapWwCc1Pc map;
-            if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile) || (map = m_LoadedFile as FileMapWwCc1Pc) == null)
+            if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile) || (map = this.m_LoadedFile as FileMapWwCc1Pc) == null)
                 return;
             String filename = map.LoadedFile;
             if (!filename.EndsWith(".bin", StringComparison.InvariantCultureIgnoreCase) && !filename.EndsWith(".int", StringComparison.InvariantCultureIgnoreCase))
@@ -1618,6 +1624,227 @@ namespace EngieFileConverter.UI
                 }
             }
             MessageBox.Show(sb.ToString().Replace("\r\n", "\n"), "Info", MessageBoxButtons.OK);
+        }
+
+        private void CountPixels()
+        {
+            if (this.m_LoadedFile == null)
+                return;
+            SupportedFileType[] frames = this.m_LoadedFile.IsFramesContainer ? this.m_LoadedFile.Frames : new SupportedFileType[] { this.m_LoadedFile };
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                return;
+            Double[] results = new Double[nrOfFrames];
+            const Int32 amountInSlice = 144;
+            for (int i = 0; i < nrOfFrames; i++)
+            {
+                SupportedFileType frame = frames[i];
+                Bitmap bm;
+                if (frame == null || (bm = frame.GetBitmap()) == null)
+                    return;
+                Int32 height = bm.Height;
+                Int32 width = bm.Width;
+                Int32 stride;
+                Byte[] dataArgb = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format32bppArgb);
+                Int32 lineOffset = 0;
+                Int32 blueCount = 0;
+                Int32 redCount = 0;
+                Int32 greenCount = 0;
+                for (Int32 y = 0; y < height; ++y)
+                {
+                    Int32 offset = lineOffset;
+                    for (Int32 x = 0; x < width; ++x)
+                    {
+                        Int32 blu = dataArgb[offset++]; // Blue
+                        Int32 grn = dataArgb[offset++]; // Green
+                        Int32 red = dataArgb[offset++]; // Red
+                        Int32 alp = dataArgb[offset++]; // Alpha
+                        if (blu > 192 && red < 64 && grn < 64)
+                            blueCount++;
+                        if (blu < 64 && red > 192 && grn < 64)
+                            redCount++;
+                        if (blu < 64 && red < 64 && grn > 192)
+                            greenCount++;
+                    }
+                    lineOffset += stride;
+                }
+                Int32 total = blueCount + redCount + greenCount;
+                Double multiplier = (total*1.0)/(blueCount*1.0);
+                Double result = amountInSlice*multiplier;
+                MessageBox.Show(this,
+                    "Scan results for image " + (i + 1) + ":\n" +
+                    "\nRed: " + redCount +
+                    "\nGreen: " + greenCount +
+                    "\nBlue: " + blueCount +
+                    "\nTotal: " + total +
+                    "\nAmount in blue: " + amountInSlice +
+                    "\nMultiplier (total / blue): " + multiplier +
+                    "\nTotal amount: " + amountInSlice + " * " + multiplier + " = " + result, GetTitle());
+                results[i] = result;
+            }
+            Int32 min = (Int32) results.Min();
+            Int32 max = (Int32) results.Max() + 1;
+            Int32 average = min + (max - min)/2;
+            Int32 averageErr1 = average - amountInSlice;
+            Int32 averageErr2 = average + amountInSlice;
+            Random rnd = new Random((Int32)(DateTime.Now.Ticks & 0xFFFFFFFF));
+            Int32 randomBetween = rnd.Next(averageErr1, averageErr2);
+            MessageBox.Show(this,
+                "Final results:\n" +
+                "\nMinimum for given blue areas: " + min +
+                "\nMaximum for given blue areas: " + max +
+                "\nAverage between these two: " + average +
+                "\nMinimum for random: average minus amount in slice: " + average + " - " + amountInSlice + " = " + averageErr1 +
+                "\nMaximum for random: average plus amount in slice: " + average + " + " + amountInSlice + " = " + averageErr2 +
+                "\nRandom value between these: " + randomBetween, GetTitle());
+        }
+        
+        private void ExpandGif()
+        {
+            const int footerHeight = 30; 
+            const String text = "Hello, World!";
+            const String fontFamily = "Arial";
+            const int fontSize =  15;
+            Color fontColor = Color.Black;
+
+            Bitmap img;
+            if (this.m_LoadedFile == null || (img = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel != 8)
+                return;
+            Int32 width = img.Width;
+            Int32 height = img.Height;
+            Int32 newHeight = height + footerHeight;
+            Color[] pal = img.Palette.Entries;
+            Byte[] fullImage = new Byte[width * newHeight];
+            Byte[] origImageData = ImageUtils.GetImageData(img, true);
+            Array.Copy(origImageData, fullImage, origImageData.Length);
+            Byte[] commImageData;
+            using (Bitmap bitmapComment = new Bitmap(width, footerHeight))
+            {
+                using (Graphics graphicImage = Graphics.FromImage(bitmapComment))
+                using(Font font = new Font(fontFamily, fontSize))            
+                using (Brush brush = new SolidBrush(fontColor))
+                {
+                    graphicImage.Clear(Color.White);
+                    graphicImage.DrawString(text, font, new SolidBrush(Color.Black), 0, footerHeight / 6);
+                }
+                Int32 stride;
+                Byte[] commImageData32 = ImageUtils.GetImageData(bitmapComment, out stride);
+                commImageData = ImageUtils.Convert32BitToPaletted(commImageData32, width, footerHeight, 8, true, pal, ref stride);
+            }
+            Array.Copy(commImageData, 0, fullImage, origImageData.Length, commImageData.Length);
+
+            Bitmap newBm = ImageUtils.BuildImage(fullImage, width, newHeight, width, PixelFormat.Format8bppIndexed, pal, null);
+            this.LoadTestFile(newBm);
+        }
+
+        private void DecryptDat()
+        {
+            if (this.m_LoadedFile == null)
+                return;
+            String path = this.m_LoadedFile.LoadedFile;
+            if (String.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+            path = Path.GetDirectoryName(path);
+            String[] files = {"OPTIONS.DAT", "OWNER.DAT", "WEAPONS.DAT"};
+            foreach (String file in files)
+            {
+                String readPath = Path.Combine(path, file);
+                Byte[] fBytes = File.ReadAllBytes(readPath);
+                for (Int32 i = 0; i < fBytes.Length; ++i)
+                {
+                    fBytes[i] = (Byte)(fBytes[i] - 120);
+                }
+                File.WriteAllBytes(readPath + ".txt", fBytes);
+            }
+        }
+
+        private SupportedFileType ReduceRPlace()
+        {
+            const String palName = "0-pal.png";
+            if (this.m_LoadedFile == null)
+                return null;
+            String path = this.m_LoadedFile.LoadedFile;
+            if (String.IsNullOrEmpty(path) || !File.Exists(path))
+                return null;
+            path = Path.GetDirectoryName(path);
+            String addPath = Path.Combine(path, "reduced");
+            Color[] pal;
+            String palPath = Path.Combine(path, palName);
+            if (!File.Exists(palPath))
+                return null;
+            if (!Directory.Exists(addPath))
+                Directory.CreateDirectory(addPath);
+            using(FileImagePng palfile = new FileImagePng())
+            {
+                palfile.LoadFile(palPath);
+                if (palfile.BitsPerPixel != 8)
+                    return null;
+                pal = palfile.GetColors();
+                if (pal.Length == 0)
+                    return null;
+            }
+            String[] files = Directory.GetFiles(path, "*.png");
+            Regex dateFile = new Regex("\\d{10}\\.png");
+            for (Int32 i = 0; i < files.Length; ++i)
+            {
+                String filename = files[i];
+                String name = Path.GetFileName(filename);
+                if (palName.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+                if (!dateFile.IsMatch(name))
+                    continue;
+
+                Byte[] newImg;
+                String newName = Path.Combine(addPath, name);
+                if (File.Exists(newName))
+                    continue;
+                using (FileImagePng png = new FileImagePng())
+                {
+                    try { png.LoadFile(filename); }
+                    catch (FileTypeLoadException) { continue; }
+                    Bitmap image = png.GetBitmap();
+                    Bitmap[] result = ImageUtils.ImageToFrames(image, image.Width, image.Height, null, null, 8, pal, 0, 0);
+                    if (result == null || result.Length == 0)
+                        continue;
+                    newImg = ImageUtils.GetPngImageData(result[0], pal.Length, true);
+                    for (Int32 j = 0; j < result.Length; ++j)
+                    {
+                        try { result[j].Dispose(); }
+                        catch { /* Ignore */ }
+                    }
+                }
+                File.WriteAllBytes(newName, newImg);
+            }
+            return null;
+        }
+
+        private SupportedFileType GetDataFromImage()
+        {
+            Bitmap loadedBm;
+            if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel <= 8)
+                return null;
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile ?? ".");
+            String filename = "image.jpg";
+            String newPath = Path.Combine(path, filename);
+            Color[] matchPalette = new Color[] {Color.Black, Color.White, Color.Gray};
+            Bitmap[] result = ImageUtils.ImageToFrames(loadedBm, loadedBm.Width, loadedBm.Height, null, null, 8, matchPalette, 0, 0);
+            if (result.Length == 0)
+                return null;
+            Bitmap bwImg = result[0];
+            Byte[] imgData = ImageUtils.GetImageData(bwImg, true);
+            for (Int32 i = 0; i < result.Length; ++i)
+                result[i].Dispose();
+            Int32 length;
+            for (length = 0; length < imgData.Length; ++length)
+                if (imgData[length] > 1)
+                    break;
+            Byte[] imgDataTrimmed = new Byte[length];
+            Array.Copy(imgData, imgDataTrimmed, length);
+            Byte[] byteData = ImageUtils.ConvertFrom8Bit(imgDataTrimmed, length, 1, 1, true);
+            File.WriteAllBytes(newPath, byteData);
+            FileImageJpg image = new FileImageJpg();
+            image.LoadFile(byteData, filename);
+            return image;
         }
 
     }

@@ -35,11 +35,11 @@ namespace EngieFileConverter.UI
 
         public FrmFramesCutter(Bitmap image, Int32[] customColors, PaletteDropDownInfo[] palettes)
         {
-            m_Loading = true;
+            this.m_Loading = true;
             if (image == null)
                 throw new ArgumentNullException("image");
             this.m_OriginalBpp = Image.GetPixelFormatSize(image.PixelFormat);
-            if (m_OriginalBpp > 8)
+            if (this.m_OriginalBpp > 8)
                 this.m_Image = new Bitmap(image);
             else
             {
@@ -47,20 +47,20 @@ namespace EngieFileConverter.UI
                 Int32 width = image.Width;
                 Int32 height =image.Height;
                 this.m_OriginalPalette = image.Palette.Entries;
-                Boolean is8Bit = m_OriginalBpp == 8;
+                Boolean is8Bit = this.m_OriginalBpp == 8;
                 Byte[] imageData = ImageUtils.GetImageData(image, out stride, is8Bit);
                 if (!is8Bit)
-                    imageData = ImageUtils.ConvertTo8Bit(imageData, width, height, 0, m_OriginalBpp, true, ref stride);
-                this.m_Image = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, m_OriginalPalette, Color.Empty);
+                    imageData = ImageUtils.ConvertTo8Bit(imageData, width, height, 0, this.m_OriginalBpp, true, ref stride);
+                this.m_Image = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, this.m_OriginalPalette, Color.Empty);
             }
             this.m_allPalettes = palettes ?? new PaletteDropDownInfo[0];
 
             this.InitializeComponent();
 
-            if (m_OriginalBpp < 8)
+            if (this.m_OriginalBpp < 8)
             {
-                lblTrimColor.TrueBackColor = m_OriginalPalette[0];
-                lblTrimColor.Tag = 0;
+                this.lblTrimColor.TrueBackColor = this.m_OriginalPalette[0];
+                this.lblTrimColor.Tag = 0;
             }
             this.cmbPalType.DataSource = new String[] {"1-bit", "4-bit", "8-bit"};
             this.cmbPalType.SelectedIndex = 2;
@@ -71,7 +71,7 @@ namespace EngieFileConverter.UI
             this.numWidth.Value = image.Width;
             this.numHeight.Maximum = image.Height;
             this.numHeight.Value = image.Height;
-            m_Loading = false;
+            this.m_Loading = false;
             this.UpdateUiInfo(true);
         }
 
@@ -122,13 +122,13 @@ namespace EngieFileConverter.UI
                 Color[] matchPalette = null;
                 if (this.chkTrimColor.Checked)
                 {
-                    if (m_OriginalBpp > 8)
-                        trimColor = lblTrimColor.TrueBackColor;
+                    if (this.m_OriginalBpp > 8)
+                        trimColor = this.lblTrimColor.TrueBackColor;
                     else
-                        trimIndex = lblTrimColor.Tag as Int32?;
+                        trimIndex = this.lblTrimColor.Tag as Int32?;
                 }
-                PaletteDropDownInfo pdd = cmbPalettes.SelectedItem as PaletteDropDownInfo;
-                if (chkMatchPalette.Checked && pdd != null)
+                PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
+                if (this.chkMatchPalette.Checked && pdd != null)
                 {
                     matchBpp = pdd.BitsPerPixel;
                     matchPalette = pdd.Colors;
@@ -161,9 +161,10 @@ namespace EngieFileConverter.UI
         private void ChkTrimColor_CheckedChanged(Object sender, EventArgs e)
         {
             Boolean trimCol = this.chkTrimColor.Checked;
-            lblTrimColor.Enabled = trimCol;
-            lblTrimColorVal.Enabled = trimCol;
-            UpdateUiInfo(false);
+            this.lblTrimColor.Enabled = trimCol;
+            this.lblTrimColorVal.Enabled = trimCol;
+            this.UpdateColorInfo();
+            this.UpdateUiInfo(false);
         }
 
         private void lblTrimColor_KeyPress(Object sender, KeyPressEventArgs e)
@@ -180,7 +181,7 @@ namespace EngieFileConverter.UI
 
         private void PickTrimColor()
         {
-            if (m_OriginalBpp > 8)
+            if (this.m_OriginalBpp > 8)
             {
                 ColorDialog cdl = new ColorDialog();
                 cdl.Color = this.lblTrimColor.TrueBackColor;
@@ -190,32 +191,61 @@ namespace EngieFileConverter.UI
                 this.CustomColors = cdl.CustomColors;
                 if (res != DialogResult.OK && res != DialogResult.Yes)
                     return;
-                Color col = cdl.Color;
+                this.lblTrimColor.Tag = null;
                 this.lblTrimColor.TrueBackColor = cdl.Color;
-                this.lblTrimColorVal.Text = ColorUtils.HexStringFromColor(col, false);
             }
             else
             {
-                FrmPalette palSelect = new FrmPalette(-1, m_OriginalPalette.ToArray(), false, ColorSelMode.Single);
-                palSelect.SelectedIndices = new Int32[] { lblTrimColor.Tag as Int32? ?? 0 };
+                FrmPalette palSelect = new FrmPalette(-1, this.m_OriginalPalette.ToArray(), false, ColorSelMode.Single);
+                palSelect.SelectedIndices = new Int32[] {this.lblTrimColor.Tag as Int32? ?? 0 };
                 if (palSelect.ShowDialog() != DialogResult.OK)
                     return;
                 Int32 selectedColor = palSelect.SelectedIndices.Length == 0 ? 0 : palSelect.SelectedIndices[0];
-                if (selectedColor >= m_OriginalPalette.Length)
+                if (selectedColor >= this.m_OriginalPalette.Length)
                     return;
-                lblTrimColor.Tag = selectedColor;
-                lblTrimColor.TrueBackColor = m_OriginalPalette[selectedColor];
-                this.lblTrimColorVal.Text = "Index " + selectedColor;
+                this.lblTrimColor.Tag = selectedColor;
+                this.lblTrimColor.TrueBackColor = this.m_OriginalPalette[selectedColor];
             }
+            this.UpdateColorInfo();
             this.UpdateUiInfo(false);
+        }
+
+        private void UpdateColorInfo()
+        {
+            if (!this.lblTrimColorVal.Enabled)
+            {
+                this.lblTrimColorVal.Text = String.Empty;
+                return;
+            }
+            if (this.m_OriginalBpp <= 8)
+            {
+                Int32 index = 0;
+                if (this.lblTrimColor.Tag == null)
+                {
+                    this.lblTrimColor.Tag = index;
+                }
+                else if (this.lblTrimColor.Tag is Int32)
+                {
+                    index = (Int32) this.lblTrimColor.Tag;
+                }
+                if (this.m_OriginalPalette == null)
+                    return;
+                index = Math.Min(index, this.m_OriginalPalette.Length);
+                this.lblTrimColorVal.Text = "Index " + index;
+            }
+            else
+            {
+                Color col = this.lblTrimColor.TrueBackColor;
+                this.lblTrimColorVal.Text = ColorUtils.HexStringFromColor(col, false);
+            }
         }
 
         private void ChkMatchPaletteCheckedChanged(Object sender, EventArgs e)
         {
-            Boolean matchPal = chkMatchPalette.Checked;
-            cmbPalType.Enabled = matchPal;
-            cmbPalettes.Enabled = matchPal;
-            UpdateUiInfo(false);
+            Boolean matchPal = this.chkMatchPalette.Checked;
+            this.cmbPalType.Enabled = matchPal;
+            this.cmbPalettes.Enabled = matchPal;
+            this.UpdateUiInfo(false);
         }
 
         private void CmbPalTypeSelectedIndexChanged(Object sender, EventArgs e)
@@ -231,9 +261,9 @@ namespace EngieFileConverter.UI
 
         private void cmbPalettes_SelectedIndexChanged(Object sender, EventArgs e)
         {
-            if (!chkMatchPalette.Checked || m_Loading)
+            if (!this.chkMatchPalette.Checked || this.m_Loading)
                 return;
-            UpdateUiInfo(false);
+            this.UpdateUiInfo(false);
         }
 
         private void BtnCancelClick(Object sender, EventArgs e)
@@ -246,11 +276,11 @@ namespace EngieFileConverter.UI
             this.FrameWidth = (Int32)this.numWidth.Value;
             this.FrameHeight = (Int32)this.numHeight.Value;
             this.Frames = (Int32)this.numFrames.Value;
-            this.TrimColor = this.chkTrimColor.Checked ? (Color?)lblTrimColor.TrueBackColor : null;
-            this.TrimIndex = this.chkTrimColor.Checked && lblTrimColor.Tag is Int32 ? (Int32?)lblTrimColor.Tag : null;
-            PaletteDropDownInfo pdd = cmbPalettes.SelectedItem as PaletteDropDownInfo;
-            this.MatchBpp = chkMatchPalette.Checked && pdd != null ? pdd.BitsPerPixel : 0;
-            this.MatchPalette = chkMatchPalette.Checked && pdd != null ? pdd.Colors : null;
+            this.TrimColor = this.chkTrimColor.Checked ? (Color?) this.lblTrimColor.TrueBackColor : null;
+            this.TrimIndex = this.chkTrimColor.Checked && this.lblTrimColor.Tag is Int32 ? (Int32?) this.lblTrimColor.Tag : null;
+            PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
+            this.MatchBpp = this.chkMatchPalette.Checked && pdd != null ? pdd.BitsPerPixel : 0;
+            this.MatchPalette = this.chkMatchPalette.Checked && pdd != null ? pdd.Colors : null;
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
@@ -263,16 +293,18 @@ namespace EngieFileConverter.UI
         {
             if (disposing)
             {
-                if (m_previewImage != null)
+                if (this.m_previewImage != null)
                 {
-                    try { m_previewImage.Dispose(); }
+                    try {
+                        this.m_previewImage.Dispose(); }
                     catch { /* ignore */ }
                 }
                 if (this.components != null)
                     this.components.Dispose();
-                if (m_Image != null)
+                if (this.m_Image != null)
                 {
-                    try { m_Image.Dispose(); }
+                    try {
+                        this.m_Image.Dispose(); }
                     catch { /* ignore */ }
                 }
             }

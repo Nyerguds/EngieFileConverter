@@ -264,6 +264,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     // get average colour, ignoring zero and compensating for remap range.
                     if (hasShadow && i >= shadowLimit)
                         col = Color.Empty;
+                    //else if (!saveColors) // XCC emulating test
+                    //    col = Color.FromArgb(0, 0, 7);
                     else
                         col = this.GetAverageColor(imageData, palette, asTib, asTib);
                     // compress stuff here
@@ -297,7 +299,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     dataOffset = frameDataOffset;
                 }
-                frameDataOffset += (UInt32)imageDataToStore.Length;
+                UInt32 dataLen = (UInt32) imageDataToStore.Length;
+                if (dataLen == 0)
+                    dataOffset = 0;
+                frameDataOffset += dataLen;
                 if (align)
                 {
                     UInt32 alignment = frameDataOffset % 8;

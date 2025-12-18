@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -52,12 +52,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Domain\FileData\EmotionalPictures\PppCompression.cs" />
+    <Compile Include="Domain\FileData\Epic\JazzRleCompression.cs" />
     <Compile Include="Domain\FileData\IGC\IgcBitMaskCompression.cs" />
     <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
     <Compile Include="Domain\FileData\Penguin\PenguinCompression.cs" />
     <Compile Include="Domain\FileData\Westwood\House.cs" />
     <Compile Include="Domain\FileData\Westwood\OverlayTd.cs" />
     <Compile Include="Domain\FileData\Westwood\StructInfo.cs" />
+    <Compile Include="Domain\FileTypes\Epic\FileFramesJazzFont.cs" />
+    <Compile Include="Domain\FileTypes\Epic\FileFramesJazzFontC.cs" />
     <Compile Include="Domain\FileTypes\General\FileFramesInt33Cursor.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosRmm.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileImgMythosLbv.cs" />

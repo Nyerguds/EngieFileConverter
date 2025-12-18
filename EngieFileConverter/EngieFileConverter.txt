@@ -99,6 +99,11 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.9: (28/04/2022 12:50 CET)
+-Fixed error of background colour choice not showing up in "frames to single image" dialog
+ if the frames were indexed format.
+-Added support for Jazz Jackrabbit fonts.
+
 v1.5.8: (09/10/2021 16:10 CET)
 -AdventureSoft icons file: Fixed UI display of dimensions.
 -Added internal support for selecting the six CGA palettes from the palette dropdown.

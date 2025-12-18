@@ -21,8 +21,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 case OptionInputType.Color:
                     return new SaveOptionColor(property, controller);
                 case OptionInputType.Palette:
-                    throw new NotImplementedException("Not yet implemented.");
-                //    return new SaveOptionPalette(property, controller);
+                    return new SaveOptionPalette(property, controller);
                 case OptionInputType.FileOpen:
                     throw new NotImplementedException("Not yet implemented.");
                 case OptionInputType.FileSave:

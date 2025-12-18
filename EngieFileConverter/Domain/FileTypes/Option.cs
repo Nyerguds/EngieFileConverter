@@ -97,6 +97,11 @@ namespace Nyerguds.Util
             }
             return null;
         }
+
+        public override String ToString()
+        {
+            return this.Code + "=" + this.Data;
+        }
     }
 
     public enum OptionInputType
