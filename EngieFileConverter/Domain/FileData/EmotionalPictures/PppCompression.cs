@@ -28,7 +28,7 @@ namespace Nyerguds.FileData.EmotionalPictures
                 else
                 {
                     if (i + 3 >= len)
-                        throw new ArgumentException("Data ends on incomplete repeat command!", "data");
+                        throw new ArgumentException("Data ends on incomplete repeat command.", "data");
                     value = data[++i];
                     Int32 repeat = data[++i] + (data[++i] << 8);
                     Int32 endPoint = repeat + ptr;

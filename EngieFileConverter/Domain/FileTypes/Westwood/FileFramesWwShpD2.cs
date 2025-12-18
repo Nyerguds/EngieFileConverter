@@ -160,7 +160,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new FileTypeLoadException("Illegal address in frame indices.");
                 // I assume this is illegal...?
                 if (frmWidth == 0 || frmHeight == 0)
-                    throw new FileTypeLoadException("Illegal values in frame header!");
+                    throw new FileTypeLoadException("Illegal values in frame header.");
 
                 Int32 remapSize;
                 Byte[] remapTable;
@@ -201,7 +201,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (decompressedSize != frmZeroCompressedSize)
                         throw new FileTypeLoadException("LCW decompression failed.");
                     if (lcwReadOffset > predictedEndOff)
-                        throw new FileTypeLoadException("LCW decompression exceeded data bounds!");
+                        throw new FileTypeLoadException("LCW decompression exceeded data bounds.");
                     Array.Copy(lcwDecompressData, zeroDecompressData, frmZeroCompressedSize);
 
                 }
@@ -217,7 +217,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (val < remapLen)
                             fullFrame[j] = remap[val];
                         else
-                            throw new FileTypeLoadException("Remapping failed: value is larger than remap table!");
+                            throw new FileTypeLoadException("Remapping failed: value is larger than remap table.");
                     }
                 }
                 // Convert frame data to image and frame object

@@ -71,15 +71,15 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 datalen = fileData.Length;
             if (datalen < 2)
-                throw new FileTypeLoadException("Bad header size.");
+                throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             Int32 nrOfFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             if (nrOfFrames == 0)
-                throw new FileTypeLoadException("No frames in file.");
+                throw new FileTypeLoadException(ERR_NO_FRAMES);
             Int32 headerEnd = 2 + (nrOfFrames * 8);
             if (datalen < headerEnd)
-                throw new FileTypeLoadException("File is too short to contain an index of " + nrOfFrames + " files");
+                throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
             // No longer using filename method; it's annoying for testing.
-            Boolean isCga = !forceEga; // && (sourcePath == null || Path.GetFileNameWithoutExtension(sourcePath).EndsWith("C", StringComparison.InvariantCultureIgnoreCase));
+            Boolean isCga = !forceEga;
             ColorPalette cgaPal = null;
             Color[] pal;
             if (isCga)
@@ -104,18 +104,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 dataStart = (Int32)ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 4);
                 if (dataStart < headerEnd)
                     throw new FileTypeLoadException("Frame " + i + " data starts before the header end.");
+                if (dataStart + compSize > datalen)
+                    throw new FileTypeLoadException( "Frame " + i + " data exceeds file.");
                 offset += 8;
                 Byte[] frameData;
+                Byte[] frameDataCopied = new Byte[compSize];
+                Array.Copy(fileData, dataStart, frameDataCopied, 0, compSize);
                 try
                 {
-                    Byte[] frameDataCopied = new Byte[compSize];
-                    Array.Copy(fileData, dataStart, frameDataCopied, 0, compSize);
                     frameData = PenguinCompression.DecompressDogsFlagRle(frameDataCopied, 0, compSize, decompSize, FlagByte);
-                    //frameData = PenguinCompression.DecompressDogsFlagRle(fileData, dataStart, compSize, decompSize, FlagByte);
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false) + " (frame " + i + ")", ex);
+                    throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, GeneralUtils.RecoverArgExceptionMessage(ex, false)) + " (frame " + i + ")", ex);
                 }
                 Int32 stride = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 0);
                 Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 2);
@@ -304,9 +305,9 @@ namespace EngieFileConverter.Domain.FileTypes
                         Int32 length = Int32.Parse(m.Groups[2].Value);
                         String text = m.Groups[3].Value;
                         if (length < text.Length)
-                            throw new ArgumentException("Text entry can't be longer than its entry length!", "saveOptions");
+                            throw new ArgumentException("Text entry can't be longer than its entry length.", "saveOptions");
                         if (emptyKeys.Contains(index))
-                            throw new ArgumentException("Duplicate detected in text entries!", "saveOptions");
+                            throw new ArgumentException("Duplicate detected in text entries.", "saveOptions");
                         emptyKeys.Add(index);
                         textEntries[index] = text;
                         textLengths[index] = length;
@@ -316,9 +317,9 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException("No frames found in source data!", "fileToSave");
+                throw new ArgumentException("No frames found in source data.", "fileToSave");
             if (nrOfFrames > 0xFFFF)
-                throw new ArgumentException("Too many frames in source data!", "fileToSave");
+                throw new ArgumentException("Too many frames in source data.", "fileToSave");
             Int32 targetBpp = isCga ? 2 : 4;
             Byte[][] frameData = new Byte[nrOfFrames][];
             Int32 dataOffset = 2 + (nrOfFrames*8);

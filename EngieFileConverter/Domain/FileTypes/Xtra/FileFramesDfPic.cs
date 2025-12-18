@@ -54,7 +54,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 frameDataSize = frameSize + palSize;
             Int32 fileDataLength = fileData.Length;
             if (fileDataLength % frameDataSize != 0)
-                throw new FileTypeLoadException("Not a DaisyField PIC file!");
+                throw new FileTypeLoadException("Not a DaisyField PIC file.");
             Int32 nrOfFrames = fileDataLength / frameDataSize;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
             Int32 readIndex = 0;
@@ -71,7 +71,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Byte curVal = framePalData[i];
                     // All values are between 0x40 and 0x80;
                     if (curVal < 0x40 || curVal >= 0x80)
-                        throw new FileTypeLoadException("Not a DaisyField PIC file!");
+                        throw new FileTypeLoadException("Not a DaisyField PIC file.");
                     framePalData[i] = (Byte)(curVal ^ 0x55);
                 }
                 Color[] frPalette = ColorUtils.ReadSixBitPalette(framePalData, 0);

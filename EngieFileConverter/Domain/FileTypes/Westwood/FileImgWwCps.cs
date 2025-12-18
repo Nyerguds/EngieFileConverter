@@ -55,11 +55,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (fileData.Length > 4 && ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0) == 0x4E435053)
                     startOffset = 4;
                 else
-                    throw new FileTypeLoadException("Not a Toonstruck CPS!");
+                    throw new FileTypeLoadException("Not a Toonstruck CPS.");
             }
             Byte[] imageData = GetImageData(fileData, startOffset, filename, false, asToonstruck, out compression, out palette, out cpsVersion);
             if (asToonstruck && cpsVersion != CpsVersion.Toonstruck)
-                throw new FileTypeLoadException("Bad format for Toonstruck CPS!");
+                throw new FileTypeLoadException("Bad format for Toonstruck CPS.");
             this.CompressionType = compression;
             this.CpsVersion = cpsVersion;
             String externalPalette = null;
@@ -94,7 +94,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 palLen = palette.Length;
                 if (palLen < 256 && imageData.Any(b => b >= palLen))
-                    throw new FileTypeLoadException("Palette is too small for image data!");
+                    throw new FileTypeLoadException("Palette is too small for image data.");
                 this.m_Palette = palette;
             }
             else
@@ -109,7 +109,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (IndexOutOfRangeException e)
             {
-                throw new FileTypeLoadException("Cannot construct image from read data!", e);
+                throw new FileTypeLoadException("Cannot construct image from read data.", e);
             }
             this.SetExtraInfo(Path.GetFileName(externalPalette));
         }
@@ -151,7 +151,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean isAmiga = amigaPal || bufferSize == 40000;
             Int32 amigaPalCount = 0;
             if (!isPc && !isAmiga && !isToon)
-                throw new FileTypeLoadException("Unknown CPS type!");
+                throw new FileTypeLoadException("Unknown CPS type.");
             if (paletteLength > 0)
             {
                 if (paletteLength <= 0x100 && isAmiga && paletteLength % 0x40 == 0)
@@ -164,14 +164,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (amigaPalCount > 0)
                     {
                         if (paletteLength % 2 != 0)
-                            throw new FileTypeLoadException("Bad length for Amiga CPS palette!");
+                            throw new FileTypeLoadException("Bad length for Amiga CPS palette.");
                         Int32 palLen = paletteLength / 2;
                         palette = Format16BitRgbX444Be.GetColorPalette(fileData, palStart, palLen);
                     }
                     else
                     {
                         if (paletteLength % 3 != 0)
-                            throw new FileTypeLoadException("Bad length for 6-bit CPS palette!");
+                            throw new FileTypeLoadException("Bad length for 6-bit CPS palette.");
                         Int32 colors = paletteLength / 3;
                         palette = ColorUtils.ReadSixBitPalette(fileData, palStart, colors);
                     }
@@ -184,12 +184,12 @@ namespace EngieFileConverter.Domain.FileTypes
             else
                 palette = null;
             if (amigaPalCount > 0 && amigaPal)
-                throw new FileTypeLoadException("Cannot handle both EOB1 and EOB2 type palettes!");
+                throw new FileTypeLoadException("Cannot handle both EOB1 and EOB2 type palettes.");
             Boolean isAmigaFourFrames = isAmiga && amigaPalCount > 1;
             if (isAmigaFourFrames && !asAmigaFourFrame)
                 throw new FileTypeLoadException("This is a four-frame Amiga CPS! Load it as that specific type.");
             if (!isAmigaFourFrames && asAmigaFourFrame)
-                throw new FileTypeLoadException("This is not a four-frame Amiga CPS!");
+                throw new FileTypeLoadException("This is not a four-frame Amiga CPS.");
 
             if (isToon)
                 cpsVersion = CpsVersion.Toonstruck;
@@ -333,7 +333,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (isAmiga)
             {
                 if (imageData.Any(p => p >= 32))
-                    throw new ArgumentException("Input for amiga images cannot use palette indices higher than 32!", "imageData");
+                    throw new ArgumentException("Input for amiga images cannot use palette indices higher than 32.", "imageData");
                 // bitplane this stuff!
                 Int32 bufSize = 40000;
                 if (amigaPal)

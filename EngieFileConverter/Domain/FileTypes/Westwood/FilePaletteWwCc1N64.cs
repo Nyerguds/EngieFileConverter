@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 len = fileData.Length;
             if (len == 0)
-                throw new FileTypeLoadException("File is empty!");
+                throw new FileTypeLoadException("File is empty.");
             // Test on full 16-color lines (16 x 3 bytes)
             if (len % 48 != 0)
                 throw new FileTypeLoadException("Incorrect file size: not a multiple of 48.");

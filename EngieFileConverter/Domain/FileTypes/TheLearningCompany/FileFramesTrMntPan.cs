@@ -1,19 +1,18 @@
-﻿using Nyerguds.FileData.Compression;
-using Nyerguds.ImageManipulation;
+﻿using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
     /// <summary>
     /// Panning Image Set format from "Treasure Mountain" (1990).
-    /// See https://moddingwiki.shikadi.net/wiki/Treasure_Mountain_Level_Format
+    /// See the <see href="https://moddingwiki.shikadi.net/wiki/Treasure_Mountain_Panning_Image_Format">Treasure Mountain Panning Image Format</see>
+    /// page on the Shikadi modding wiki.
     /// </summary>
     public class FileFramesTrMntPan : SupportedFileType
     {
@@ -60,15 +59,24 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileData.Length < 8)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
-            int imgDataPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0) + 8;
+            int tileDataLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             int tilesX = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
             int tilesY = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
             int imgLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
+            if (tileDataLen == 0)
+                throw new FileTypeLoadException(ERR_NO_FRAMES);
+            if (imgLen == 0)
+                throw new FileTypeLoadException(ERR_NO_IMAGE);
+            if (tilesX == 0 || tilesY == 0)
+                throw new FileTypeLoadException(ERR_DIM_ZERO);
             int frameTilesLen = tilesX * tilesY;
             // flag-based decompression
+            int imgDataPos = 8 + tileDataLen;
+            int imgEnd = imgDataPos + imgLen;
             int readOffs = imgDataPos;
             int writeOffs = 0;
-            int imgEnd = imgDataPos + imgLen;
+            if (imgEnd > fileData.Length)
+                throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
             // original data length, aligned to blocks of 32
             int expandValue = Math.Max((imgLen + 0x1F) / 0x20 * 0x1F, 0x100);
             byte[] buffer = new byte[expandValue];
@@ -87,15 +95,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     buffer[writeOffs++] = readValue;
                 }
-                else if (readOffs < imgEnd)
+                else
                 {
+                    if (readOffs >= imgEnd)
+                        throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, ERR_SIZE_TOO_SMALL_IMAGE));
                     byte repeatAmount = fileData[readOffs++];
                     if (repeatAmount == FLAG_VALUE)
                     {
                         buffer[writeOffs++] = repeatAmount;
                     }
-                    else if (readOffs < imgEnd)
+                    else
                     {
+                        if (readOffs >= imgEnd)
+                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, ERR_SIZE_TOO_SMALL_IMAGE));
                         if (repeatAmount == 0)
                             hiddenData.Add(readOffs);
                         byte repeatValue = fileData[readOffs++];
@@ -123,6 +135,7 @@ namespace EngieFileConverter.Domain.FileTypes
             sb.Append("X tiles: ").Append(tilesX)
                 .Append("\nY tiles: ").Append(tilesY)
                 .Append("\nTileset image data:\n * ").Append(writeOffs).Append(" bytes\n * ").Append(imageDataLen / 32).Append(" tiles");
+            /*/
             if (hiddenData.Count > 0)
             {
                 sb.Append("\nHidden data @ ");
@@ -132,6 +145,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 sb.Append(string.Join(", ", values));
                 sb.Append("\n = \"").Append(string.Join(string.Empty, chars)).Append("\"");
             }
+            //*/
             this.ExtraInfo = sb.ToString();
             readOffs = 8;
             // Read frames until reaching the image data
@@ -144,6 +158,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 // Read tiles until the frame is filled.
                 while (writeOffs < frameTilesLen)
                 {
+                    if (readOffs + 2 > imgDataPos)
+                        throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "could not fill full frame with available data."));
                     int info = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
                     readOffs += 2;
                     if (info != 0x0FFF)
@@ -166,6 +182,8 @@ namespace EngieFileConverter.Domain.FileTypes
                         // copy entire row from previous decompression.
                         if (writeOffs % tilesX != 0)
                             throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "tile map line copy commands are only supported at the start of a line."));
+                        if (readOffs + 2 > imgDataPos)
+                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "could read entire tile map line copy command."));
                         int linecopy = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
                         readOffs += 2;
                         int rowStart = (linecopy & 0xFF) * tilesX;
@@ -771,19 +789,39 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
                 }
-
-                if (bm.PixelFormat == PixelFormat.Format8bppIndexed)
-                {
-                    byte[] imgData = ImageUtils.GetImageData(bm, true);
-                    int dlen = imgData.Length;
-                    for (int off = 0; off < dlen; ++off)
-                    {
-                        if (imgData[off] > 0x0F)
-                            throw new ArgumentException("The images contain colors on indices higher than 15.", "fileToSave");
-                    }
-                }
+                TestFourBit(bm, i, "fileToSave");
             }
             return frames;
+        }
+
+        public static void TestFourBit(Bitmap bm, int i, string inputName)
+        {
+            TestFourBit(bm, i, inputName, false, out _);
+        }
+
+        public static byte[] TestFourBit(Bitmap bm, int i, string inputName, bool returnContent, out int stride)
+        {
+            stride = 0;
+            if (bm.PixelFormat == PixelFormat.Format8bppIndexed)
+            {
+                byte[] imgData = ImageUtils.GetImageData(bm, out stride, true);
+                int dlen = imgData.Length;
+                for (int off = 0; off < dlen; ++off)
+                {
+                    if (imgData[off] > 0x0F)
+                        throw new ArgumentException("Error in frame " + i + ": This is a 4-bit format." +
+                            " When using 8-bit input, the pixels can't contain colors indices higher than 15.", inputName);
+                }
+                return returnContent ? ImageUtils.ConvertFrom8Bit(imgData, bm.Width, bm.Height, 4, false, ref stride) : null;
+            }
+            else if (bm.PixelFormat == PixelFormat.Format4bppIndexed)
+            {
+                return returnContent ? ImageUtils.GetImageData(bm, out stride, true) : null;
+            }
+            else
+            {
+                throw new ArgumentException("Error in frame " + i + ": " + ERR_INPUT_4BPP_8BPP, inputName);
+            }
         }
 
         private class TileInfo

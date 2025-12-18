@@ -20,9 +20,10 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_BAD_SIZE = "Incorrect file size.";
         protected const String ERR_BAD_HEADER_SIZE = "File size in header does not match.";
         protected const String ERR_BAD_HEADER_PAL_SIZE = "Invalid palette length in header.";
+        protected const String ERR_NO_IMAGE = "No image data found in file.";
         protected const String ERR_NO_FRAMES = "No frames found in file.";
         protected const String ERR_SIZE_TOO_SMALL = "File is too small.";
-        protected const String ERR_SIZE_TOO_SMALL_IMAGE = "File is is too small to contain the image data.";
+        protected const String ERR_SIZE_TOO_SMALL_IMAGE = "File is too small to contain the image data.";
         protected const String ERR_DECOMPR_ = "Error decompressing file";
         protected const String ERR_DECOMPR = ERR_DECOMPR_ + ".";
         protected const String ERR_DECOMPR_ERR = ERR_DECOMPR_ + ": {0}";
@@ -32,9 +33,16 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_MAKING_IMG = ERR_MAKING_IMG_ + ".";
         protected const String ERR_MAKING_IMG_ERR = ERR_MAKING_IMG_ + ": {0}";
         // Output
-        protected const String ERR_EMPTY_FILE = "File to save is empty!";
+        protected const String ERR_EMPTY_FILE = "File to save is empty.";
         protected const String ERR_NEEDS_FRAMES = "This format needs at least one frame.";
+        protected const String ERR_IMAGE_TOO_WIDE = "Image width is too large to be saved into this format.";
+        protected const String ERR_IMAGE_TOO_HIGH = "Image height is too large to be saved into this format.";
         protected const String ERR_IMAGE_TOO_LARGE = "Image is too large to be saved into this format.";
+        protected const String ERR_IMAGE_TOO_LARGE_MAX_DIM = " The maximum is {0} pixels.";
+        protected const String ERR_IMAGE_TOO_LARGE_MAX_SIZE = " The maximum is {0}×{1} pixels.";
+        protected const String ERR_IMAGE_TOO_WIDE_DIM = ERR_IMAGE_TOO_WIDE + ERR_IMAGE_TOO_LARGE_MAX_DIM;
+        protected const String ERR_IMAGE_TOO_HIGH_DIM = ERR_IMAGE_TOO_HIGH + ERR_IMAGE_TOO_LARGE_MAX_DIM;
+        protected const String ERR_IMAGE_TOO_HIGH_SIZE = ERR_IMAGE_TOO_LARGE + ERR_IMAGE_TOO_LARGE_MAX_SIZE;
         protected const String ERR_EMPTY_FRAMES = "This format can't handle empty frames.";
         protected const String ERR_FRAMES_DIFF = "This format needs all its frames to be the same size.";
         protected const String ERR_FRAMES_BPPDIFF = "All frames must have the same color depth.";
@@ -136,8 +144,8 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Some animation types are split into separate files, which often means the later files in the sequence
-        /// rely on the previous ones to correctly construct their initial state.
+        /// Some animation types are split into separate files, and this sometimes means the later files in the
+        /// sequence rely on the a sequence of previous ones to correctly construct their initial state.
         /// File types with that issue should override this function, to analyse which files need to be chained
         /// to get that state. This is a function used by the UI to ask for confirmation for the loading.
         /// This function is always called on loaded frame container types, and must return null or an empty chain
@@ -148,8 +156,8 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual List<String> GetFilesToLoadMissingData(String originalPath) { return null; }
 
         /// <summary>
-        /// Some animation types are split into separate files, which often means the later files in the sequence
-        /// rely on the previous ones to correctly construct their initial state.
+        /// Some animation types are split into separate files, and this sometimes means the later files in the
+        /// sequence rely on the a sequence of previous ones to correctly construct their initial state.
         /// This function will reload the file, using the files in the load chain to construct that initial state.
         /// </summary>
         /// <param name="fileData">Data of the original file </param>
@@ -333,7 +341,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Int32 palLength;
             if (palEntries == null || (palLength = palEntries.Length) == 0)
-                throw new ArgumentException("File to save has no color palette!", "fileToSave");
+                throw new ArgumentException("File to save has no color palette.", "fileToSave");
             // Relies on the current type's BPP setting.
             Int32 palSize = 1 << targetBpp;
             if (palEntries.Length == palSize || (!expandToFullSize && palLength < palSize))

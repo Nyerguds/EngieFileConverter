@@ -56,17 +56,17 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length < hdrSize)
                 throw new FileTypeLoadException("Not long enough for header.");
             if (fileData[0] != 0 || fileData[1] != 0)
-                throw new FileTypeLoadException("Not a TS SHP file!");
+                throw new FileTypeLoadException("Not a TS SHP file.");
             UInt16 hdrWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
             UInt16 hdrHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
             UInt16 hdrFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
             if (hdrFrames == 0)
                 throw new FileTypeLoadException("Not a TS SHP file");
             if (hdrWidth == 0 || hdrHeight == 0)
-                throw new FileTypeLoadException("Illegal values in header!");
+                throw new FileTypeLoadException("Illegal values in header.");
             const Int32 frameHdrSize = 0x18;
             if (fileData.Length < hdrSize + frameHdrSize * hdrFrames)
-                throw new FileTypeLoadException("File data is not long enough for frame headers!");
+                throw new FileTypeLoadException("File data is not long enough for frame headers.");
             this.m_FramesList = new SupportedFileType[hdrFrames];
             this.m_Width = hdrWidth;
             this.m_Height = hdrHeight;
@@ -90,7 +90,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Boolean hasTrans = (frmFlags & 1) != 0;
                 if (frmDataOffset != 0 && (frmX + frmWidth > hdrWidth || frmY + frmHeight > hdrHeight || frmReserved != 0
                                            || (usesRle && frmDataOffset + frmHeight * 2 > fileData.Length) || (!usesRle && frmDataOffset + frmWidth * frmHeight > fileData.Length)))
-                    throw new FileTypeLoadException("Illegal values in frame header!");
+                    throw new FileTypeLoadException("Illegal values in frame header.");
                 Byte[] fullFrame = new Byte[fullFrameSize];
                 Int32 frameBytes;
                 if (frmDataOffset == 0)
@@ -447,32 +447,32 @@ namespace EngieFileConverter.Domain.FileTypes
         public static void PreCheckSplitShadows(SupportedFileType file, Byte sourceShadowIndex, Byte destShadowIndex, Boolean forCombine)
         {
             if (file == null)
-                throw new ArgumentException("No source given!", "file");
+                throw new ArgumentException("No source given.", "file");
             if (!file.IsFramesContainer || file.Frames.Length == 0)
-                throw new ArgumentException("File contains no frames!", "file");
+                throw new ArgumentException("File contains no frames.", "file");
             Int32 frLen = file.Frames.Length;
             if ((file.FrameInputFileClass & FileClass.ImageIndexed) != 0)
                 return;
             if (forCombine && frLen % 2 != 0)
-                throw new ArgumentException("File does not contains an even number of frames!", "file");
+                throw new ArgumentException("File does not contains an even number of frames.", "file");
             for (Int32 i = 0; i < frLen; ++i)
             {
                 SupportedFileType frame = file.Frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException("Empty frames found!", "file");
+                    throw new ArgumentException("Empty frames found.", "file");
                 if ((frame.FileClass & FileClass.Image8Bit) == 0)
-                    throw new ArgumentException("All frames need to be 8-bit paletted!", "file");
+                    throw new ArgumentException("All frames need to be 8-bit paletted.", "file");
                 Bitmap bm = frame.GetBitmap();
                 if (bm == null)
-                    throw new ArgumentException("This operation is not supported for types with empty frames!", "file");
+                    throw new ArgumentException("This operation is not supported for types with empty frames.", "file");
                 Int32 bpp = Image.GetPixelFormatSize(bm.PixelFormat);
                 if (bpp > 8)
-                    throw new ArgumentException("Non-paletted frames found!", "file");
+                    throw new ArgumentException("Non-paletted frames found.", "file");
                 Int32 colors = bm.Palette.Entries.Length;
                 if (colors < sourceShadowIndex)
-                    throw new ArgumentException("Not all frames have enough colors to contain the source shadow index!", "file");
+                    throw new ArgumentException("Not all frames have enough colors to contain the source shadow index.", "file");
                 if (forCombine && colors < destShadowIndex)
-                    throw new ArgumentException("Not all frames have enough colors to contain the destination shadow index!", "file");
+                    throw new ArgumentException("Not all frames have enough colors to contain the destination shadow index.", "file");
             }
         }
 
@@ -573,9 +573,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 transIndex = Enumerable.Repeat(0, transMask.Length).First(i => transMask[i]);
             }
             if (sourceShadowIndex == transIndex)
-                throw new ArgumentOutOfRangeException("sourceShadowIndex", "Source index cannot equal transparency index!");
+                throw new ArgumentOutOfRangeException("sourceShadowIndex", "Source index cannot equal transparency index.");
             if (destShadowIndex == transIndex)
-                throw new ArgumentOutOfRangeException("destShadowIndex", "Destination index cannot equal transparency index!");
+                throw new ArgumentOutOfRangeException("destShadowIndex", "Destination index cannot equal transparency index.");
             PreCheckSplitShadows(file, sourceShadowIndex, destShadowIndex, true);
             String name = String.Empty;
             if (file.LoadedFile != null)

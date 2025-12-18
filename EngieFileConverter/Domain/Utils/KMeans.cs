@@ -29,9 +29,9 @@ namespace Nyerguds.Util
         public Int32[] Cluster(Tdata[] rawData, UInt32 numClusters, out Uavg[] means)
         {
             if (rawData == null)
-                throw new ArgumentNullException("rawData", "Data cannot be null!");
+                throw new ArgumentNullException("rawData", "Data cannot be null.");
             if (numClusters == 0)
-                throw new ArgumentOutOfRangeException("numClusters", "Cannot cluster into 0 clusters!");
+                throw new ArgumentOutOfRangeException("numClusters", "Cannot cluster into 0 clusters.");
             if (numClusters >= rawData.Length)
                 throw new ArgumentOutOfRangeException("numClusters", "Amount of requested clusters is greater than or equal to the data length. No meaningful clustering can be performed.");
 

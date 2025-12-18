@@ -171,13 +171,13 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Bitmap bitmap = fileToSave.GetBitmap();
                 if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
-                    throw new ArgumentException("The file dimensions are not a multiple of 24×24!", "fileToSave");
+                    throw new ArgumentException("The file dimensions are not a multiple of 24×24.", "fileToSave");
                 Int32 nrOfFramesX = bitmap.Width / 24;
                 Int32 nrOfFramesY = bitmap.Height / 24;
                 nrOfFrames = nrOfFramesX * nrOfFramesY;
                 framesData = new Byte[nrOfFrames][];
                 if (nrOfFrames > 255)
-                    throw new ArgumentException("Too many tiles in file!", "fileToSave");
+                    throw new ArgumentException("Too many tiles in file.", "fileToSave");
                 Int32 stride;
                 Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
                 for (Int32 y = 0; y < nrOfFramesY; ++y)
@@ -194,7 +194,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType[] frames = fileToSave.Frames;
                 nrOfFrames = frames.Length;
                 if (nrOfFrames > 255)
-                    throw new ArgumentException("Too many tiles in file!", "fileToSave");
+                    throw new ArgumentException("Too many tiles in file.", "fileToSave");
                 framesData = new Byte[nrOfFrames][];
                 for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
@@ -202,7 +202,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (frames[i] == null || (bitmap = frames[i].GetBitmap()) == null)
                         continue;
                     if (bitmap.Width != 24 || bitmap.Height != 24)
-                        throw new ArgumentException("All frames must be 24×24!", "fileToSave");
+                        throw new ArgumentException("All frames must be 24×24.", "fileToSave");
                     framesData[i] = ImageUtils.GetImageData(bitmap, true);
                 }
             }

@@ -19,19 +19,19 @@ namespace Nyerguds.FileData.Westwood
                 Int32 outOffset = outLineOffset;
                 Int32 nextLineOffset = outLineOffset + frameWidth;
                 if (offset + 2 >= datalen)
-                    throw new ArgumentException("Not enough lines in RLE-Zero data!", "fileData");
+                    throw new ArgumentException("Not enough lines in RLE-Zero data.", "fileData");
                 // Compose little-endian UInt16 from 2 bytes
                 Int32 lineLen = fileData[offset] | (fileData[offset + 1] << 8);
                 Int32 end = offset + lineLen;
                 if (lineLen < 2 || end > datalen)
-                    throw new ArgumentException("Bad value in RLE-Zero line header!", "fileData");
+                    throw new ArgumentException("Bad value in RLE-Zero line header.", "fileData");
                 // Skip header
                 offset += 2;
                 Boolean readZero = false;
                 for (; offset < end; ++offset)
                 {
                     if (outOffset >= nextLineOffset)
-                        throw new ArgumentException("Bad line alignment in RLE-Zero data!", "fileData");
+                        throw new ArgumentException("Bad line alignment in RLE-Zero data.", "fileData");
                     if (readZero)
                     {
                         // Zero has been read. Process 0-repeat.
@@ -54,7 +54,7 @@ namespace Nyerguds.FileData.Westwood
                 }
                 // If a data line ended on a 0, there's something wrong.
                 if (readZero)
-                    throw new ArgumentException("Incomplete zero-repeat command!", "fileData");
+                    throw new ArgumentException("Incomplete zero-repeat command.", "fileData");
                 outLineOffset = nextLineOffset;
             }
             return finalImage;
@@ -93,7 +93,7 @@ namespace Nyerguds.FileData.Westwood
                     Int64 lineEndOffs = ms.Position;
                     Int64 len = lineEndOffs - lineStartOffs;
                     if (len > UInt16.MaxValue)
-                        throw new ArgumentException("Compressed line width is too large to store!", "imageData");
+                        throw new ArgumentException("Compressed line width is too large to store.", "imageData");
                     ms.Position = lineStartOffs;
                     ms.WriteByte((Byte)(len & 0xFF));
                     ms.WriteByte((Byte) ((len >> 8) & 0xFF));

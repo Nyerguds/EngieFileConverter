@@ -109,7 +109,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 String index = indices[i];
                 try { indicesInt.Add(Byte.Parse(index)); }
-                catch (Exception e) { throw new NotSupportedException("Given indices contain illegal values!", e); }
+                catch (Exception e) { throw new NotSupportedException("Given indices contain illegal values.", e); }
             }
             return indicesInt;
         }
@@ -118,13 +118,13 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             const Int32 reqSize = 0x10000;
             if (fileData.Length != reqSize)
-                throw new FileTypeLoadException("File is not " + reqSize + " bytes long!");
+                throw new FileTypeLoadException("File is not " + reqSize + " bytes long.");
             for (Int32 y = 0; y < 256; ++y)
             {
                 for (Int32 x = y; x < 256; ++x)
                 {
                     if (fileData[x*256 + y] != fileData[y*256 + x])
-                        throw new FileTypeLoadException("File format redundancy check failed!");
+                        throw new FileTypeLoadException("File format redundancy check failed.");
                 }
             }
             //*/

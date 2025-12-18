@@ -122,7 +122,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (Exception e)
             {
-                throw new FileTypeLoadException("Error decompressing image data: " + e.Message, e);
+                throw new FileTypeLoadException("Error decompressing image data.", e);
             }
             Boolean isVersion107;
             Int32[] remapFrames;

@@ -380,7 +380,7 @@ namespace Nyerguds.ImageManipulation
             Int32 step = this.bytesPerPixel;
             Int32 end = offset + step * colors;
             if (data.Length < end)
-                throw new IndexOutOfRangeException("Palette is too long to be read from the given array!");
+                throw new IndexOutOfRangeException("Palette is too long to be read from the given array.");
             Int32 palIndex = 0;
             for (Int32 offs = offset; offs < end; offs += step)
                 palette[palIndex++] = this.GetColor(data, offs);
@@ -529,7 +529,7 @@ namespace Nyerguds.ImageManipulation
         public static void ReorderBits(Byte[] imageData, Int32 width, Int32 height, Int32 stride, PixelFormatter inputFormat, PixelFormatter outputFormat)
         {
             if (inputFormat.BytesPerPixel != outputFormat.BytesPerPixel)
-                throw new ArgumentException("Output format's bytes per pixel do not match input format!", "outputFormat");
+                throw new ArgumentException("Output format's bytes per pixel do not match input format.", "outputFormat");
             if (inputFormat.BitMasks.SequenceEqual(outputFormat.BitMasks))
                 return; // Nothing to change; they're the same already.
             Int32 step = outputFormat.BytesPerPixel;

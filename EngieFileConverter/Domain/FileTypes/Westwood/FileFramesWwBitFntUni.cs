@@ -70,7 +70,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 symbolImageSize = stride * fontDataHeight;
             Int32 hiddenDataLen = symbolDataSize - 1 - symbolImageSize;
             if (hiddenDataLen < 0)
-                throw new FileTypeLoadException("Symbol size is too small to contain specified width * height!");
+                throw new FileTypeLoadException("Symbol size is too small to contain specified width * height.");
             bool hasPadding = hiddenDataLen >= 1;
             Int32 readOffset = 0x1C;
             List<Int32>[] symbolUsage = new List<Int32>[count];
@@ -80,7 +80,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 symbolIndex = (UInt16)(ArrayUtils.ReadIntFromByteArray(fileData, readOffset, 2, true)) - 1;
                 if (symbolIndex >= count)
-                    throw new FileTypeLoadException("Symbol index exceeds number of symbols!");
+                    throw new FileTypeLoadException("Symbol index exceeds number of symbols.");
                 if (symbolIndex >= 0)
                 {
                     if (symbolUsage[symbolIndex] == null)
@@ -98,7 +98,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 symbReadOffset = readOffset;
                 readOffset += symbolDataSize;
                 if (readOffset > fileData.Length)
-                    throw new FileTypeLoadException("File is not long enough to contain all symbols!");
+                    throw new FileTypeLoadException("File is not long enough to contain all symbols.");
                 List<Int32> curSymbolUsage = symbolUsage[i];
                 if (curSymbolUsage == null)
                     break;
@@ -346,7 +346,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     continue;
                 curNum++;
                 if (curNum > 0xFFFF)
-                    throw new NotSupportedException("This type can only contain 65535 (0xFFFF) different characters!");
+                    throw new NotSupportedException("This type can only contain 65535 (0xFFFF) different characters.");
                 ArrayUtils.WriteIntToByteArray(index, i << 1, 2, true, (UInt64)curNum);
                 // Find any duplicates of this symbol in the following data, set their index to the same as this one,
                 // and mark them as "ignore" by setting them to null. Start at i; everything before it is already checked.
@@ -414,7 +414,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             int max = UInt16.MaxValue + 1;
             if (frames.Length > UInt16.MaxValue + 1)
-                throw new ArgumentException("This type can only handle up to "+ max + " frames!", "fileToSave");
+                throw new ArgumentException("This type can only handle up to "+ max + " frames.", "fileToSave");
             height = -1;
             Int32 nrOfFrames = frames.Length;
             for (Int32 i = 0; i < nrOfFrames; ++i)
@@ -428,7 +428,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 1), "fileToSave");
                 height = Math.Max(height, frame.Height);
                 if (frame.Width> 255)
-                    throw new ArgumentException("Frame width exceeds 255!", "fileToSave");
+                    throw new ArgumentException("Frame width exceeds 255.", "fileToSave");
             }
             return frames;
         }

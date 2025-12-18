@@ -199,6 +199,7 @@ namespace EngieFileConverter.Domain.FileTypes
             { 11, 'V' }, // [River] Ships normally can''t travel over this.
             { 14, 'H' }, // [Rough] Rough terrain. Can''t be built on
         };
+
         private static readonly Dictionary<byte, string> LandTypeDescriptions = new Dictionary<byte, string>
         {
             { 00, "Empty / Clear" },

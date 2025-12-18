@@ -134,7 +134,7 @@ namespace EngieFileConverter.UI
             if (retrievedData == null)
             {
                 if (!failSilently)
-                    MessageBox.Show(this, "No data on clipboard!", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(this, "No data on clipboard.", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
             try
@@ -145,7 +145,7 @@ namespace EngieFileConverter.UI
                     if (clipboardimage == null)
                     {
                         if (!failSilently)
-                            MessageBox.Show(this, "No image data on clipboard!", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show(this, "No image data on clipboard.", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
                         return false;
                     }
                     using (MemoryStream ms = new MemoryStream())

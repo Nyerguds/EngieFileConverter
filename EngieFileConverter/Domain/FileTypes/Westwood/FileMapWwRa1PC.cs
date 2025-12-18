@@ -51,11 +51,11 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             List<String> sectionNames = mapini.GetSectionNames();
             if (mapini.GetStringValue("Basic", "NewINIFormat", null) != "3")
-                throw new FileTypeLoadException("Not a Red Alert Map file!");
+                throw new FileTypeLoadException("Not a Red Alert Map file.");
             if (!sectionNames.Contains("MapPack"))
-                throw new FileTypeLoadException("No [MapPack] section found in file!");
+                throw new FileTypeLoadException("No [MapPack] section found in file.");
             if (!sectionNames.Contains("Map"))
-                throw new FileTypeLoadException("No [Map] section found in file!");
+                throw new FileTypeLoadException("No [Map] section found in file.");
             IniInfo iniInfo = GetIniInfo(mapini, Theater.Temperate);
             Rectangle usableArea = iniInfo == null ? Rectangle.Empty : new Rectangle(iniInfo.X, iniInfo.Y, iniInfo.Width, iniInfo.Height);
             List<String> errors = new List<String>();

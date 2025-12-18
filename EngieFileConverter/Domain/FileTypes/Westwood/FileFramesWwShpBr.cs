@@ -53,24 +53,24 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length < 0x04)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
             if (fileData[2] != 0 || fileData[3] != 0)
-                throw new FileTypeLoadException("Too many frames!");
+                throw new FileTypeLoadException("Too many frames.");
             UInt32 nrOfFrames = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0);
             if (nrOfFrames == 0)
-                throw new FileTypeLoadException("Not a BR SHP file!");
+                throw new FileTypeLoadException("Not a BR SHP file.");
             Int32 readOffset = 4;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 if (readOffset + 0x0C >= fileLen)
-                    throw new FileTypeLoadException("Not a BR SHP file!");
+                    throw new FileTypeLoadException("Not a BR SHP file.");
                 Int32 frWidth =  ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
                 Int32 frHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset + 4);
                 Int32 frSize =   ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset + 8);
                 if (frWidth <= 0 || frHeight <= 0 || frWidth * frHeight * 2 != frSize)
-                    throw new FileTypeLoadException("Not a BR SHP file!");
+                    throw new FileTypeLoadException("Not a BR SHP file.");
                 readOffset += 0x0C;
                 if (readOffset + frSize > fileLen)
-                    throw new FileTypeLoadException("Not a BR SHP file!");
+                    throw new FileTypeLoadException("Not a BR SHP file.");
                 Byte[] frameData = new Byte[frSize];
                 Array.Copy(fileData, readOffset, frameData, 0, frSize);
                 for (Int32 b = 1; b < frSize; b += 2)

@@ -61,6 +61,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVgs),
             typeof(FileFramesMythosVda),
             typeof(FileFramesTrMntPan),
+            typeof(FileFramesTrMntPak),
             typeof(FileImgKotB),
             typeof(FileImgMythosLbv),
             typeof(FileFramesDfPic),
@@ -138,6 +139,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImgKort),
             typeof(FileFramesKortBmp),
             typeof(FileFramesTrMntPan),
+            typeof(FileFramesTrMntPak),
             typeof(FileImgKotB),
             typeof(FileFramesMythosPal),
             typeof(FileFramesMythosVgs),
@@ -209,6 +211,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVda),
             typeof(FileFramesMythosPal),
             typeof(FileFramesTrMntPan),
+            typeof(FileFramesTrMntPak),
             typeof(FileImgKotB),
             typeof(FilePaletteWwAmiga),
             //typeof(FilePaletteWwPsx),
@@ -237,7 +240,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Type t = types[i];
                 if (!t.IsSubclassOf(sft))
-                    throw new Exception("Entries in types list must all be SupportedFileType classes!");
+                    throw new Exception("Entries in types list must all be SupportedFileType classes.");
             }
         }
 #endif

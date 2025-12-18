@@ -118,9 +118,9 @@ namespace Nyerguds.Util.UI
             {
                 String message;
                 if (isEmpty)
-                    message = "Palette needs a name!";
+                    message = "Palette needs a name.";
                 else
-                    message = "Invalid characters in given file name!";
+                    message = "Invalid characters in given file name.";
                 MessageBox.Show(this, message , this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 if (isEmpty)
                     newPaletteName = saveName;
@@ -141,7 +141,7 @@ namespace Nyerguds.Util.UI
             Int32 existingpos = this.subPalettes.Keys.ToList().IndexOf(newPaletteName);
             if (existingpos != -1)
             {
-                MessageBox.Show(this, "Palette already exists!", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Palette already exists.", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 this.cmbPalettes.SelectedIndex = existingpos;
                 return;
             }
@@ -325,9 +325,9 @@ namespace Nyerguds.Util.UI
             {
                 String message;
                 if (this.nrOfSubPalettes == 1)
-                    message = "This will remove this palette!";
+                    message = "This will remove this palette.";
                 else
-                    message= "Removing a palette's last entry will remove the palette!";
+                    message= "Removing a palette's last entry will remove the palette.";
                 DialogResult dr = MessageBox.Show(this, message + " Are you sure?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
                 if (dr == DialogResult.No)
                     return;

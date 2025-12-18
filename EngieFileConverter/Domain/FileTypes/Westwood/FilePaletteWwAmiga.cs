@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 len = fileData.Length;
             if (len == 0)
-                throw new FileTypeLoadException("File is empty!");
+                throw new FileTypeLoadException("File is empty.");
             // Test on full 16-color lines (16 x 3 bytes)
             if (len % 32 != 0)
                 throw new FileTypeLoadException("Incorrect file size: not a multiple of 48.");
@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, false);
             if (cols.Length % 16 != 0)
-                throw new ArgumentException("Amiga palettes must be a multiple of 16 colors!", "fileToSave");
+                throw new ArgumentException("Amiga palettes must be a multiple of 16 colors.", "fileToSave");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
             for (Int32 i = 0; i < cols.Length; ++i)

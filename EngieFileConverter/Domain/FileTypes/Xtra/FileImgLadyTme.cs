@@ -66,7 +66,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException)
                 {
-                    throw new FileTypeLoadException("Palette data is not 6-bit!");
+                    throw new FileTypeLoadException("Palette data is not 6-bit.");
                 }
             }
             else

@@ -150,7 +150,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (IndexOutOfRangeException)
             {
-                throw new FileTypeLoadException("Cannot construct image from read data!");
+                throw new FileTypeLoadException("Cannot construct image from read data.");
             }
         }
 

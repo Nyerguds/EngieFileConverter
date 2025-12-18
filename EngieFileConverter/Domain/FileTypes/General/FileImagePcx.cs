@@ -146,15 +146,15 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
             }
             if (zeroRepeatsFound)
-                extraInfo.Append("\nNon-standard repeat commands of length 0 found!");
+                extraInfo.Append("\nNon-standard repeat commands of length 0 found.");
             if (!usesRLE)
                 extraInfo.Append("\nNo RLE compression");
             //else if (exceedsLines)
-            //    extraInfo.Append("\nRLE exceeds lines!");
+            //    extraInfo.Append("\nRLE exceeds lines.");
             if (!reservedByteFree)
                 extraInfo.Append("\nReserved header byte has value ").Append(fileData[64].ToString("X2")).Append(" instead of 00");
             if (!reservedSpaceFree)
-                extraInfo.Append("\nJunk found in reserved header space!");
+                extraInfo.Append("\nJunk found in reserved header space.");
             if (windowXmin != 0 || windowYmin != 0)
                 extraInfo.Append("\nImage is shifted down to (").Append(windowXmin).Append(",").Append(windowYmin).Append(")");
 
@@ -189,7 +189,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             else if (paletteInfo != 2 && m_ColorsInPalette > 16)
-                throw new FileTypeLoadException("No palette found for indexed image with more than 16 colors!");
+                throw new FileTypeLoadException("No palette found for indexed image with more than 16 colors.");
             Boolean usesHeaderPal = palOffset == 16;
             if (usesHeaderPal && m_ColorsInPalette > 16)
                 m_ColorsInPalette = 16;

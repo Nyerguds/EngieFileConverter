@@ -50,15 +50,15 @@ namespace Nyerguds.ImageManipulation
         public static Int32 FindPngChunk(Byte[] data, String chunkName)
         {
             if (data == null)
-                throw new ArgumentNullException("data", "No data given!");
+                throw new ArgumentNullException("data", "No data given.");
             if (chunkName == null)
-                throw new ArgumentNullException("chunkName", "No chunk name given!");
+                throw new ArgumentNullException("chunkName", "No chunk name given.");
             if (!IsPng(data))
                 throw new FormatException("Data does not contain a png header.");
             // Using UTF-8 as extra check to make sure the name does not contain > 127 values.
             Byte[] chunkNamebytes = Encoding.UTF8.GetBytes(chunkName);
             if (chunkName.Length != 4 || chunkNamebytes.Length != 4)
-                throw new ArgumentException("Chunk name must be 4 ASCII characters!", "chunkName");
+                throw new ArgumentException("Chunk name must be 4 ASCII characters.", "chunkName");
             Int32 offset = PNG_IDENTIFIER.Length;
             Int32 end = data.Length;
             // continue until either the end is reached, or there is not enough space behind it for reading a new chunk
@@ -99,12 +99,12 @@ namespace Nyerguds.ImageManipulation
         public static Int32 WritePngChunk(Byte[] target, Int32 offset, String chunkName, Byte[] chunkData)
         {
             if (offset + chunkData.Length + 12 > target.Length)
-                throw new ArgumentException("Data does not fit in target array!", "chunkData");
+                throw new ArgumentException("Data does not fit in target array.", "chunkData");
             if (chunkName.Length != 4)
-                throw new ArgumentException("Chunk must be 4 characters!", "chunkName");
+                throw new ArgumentException("Chunk must be 4 characters.", "chunkName");
             Byte[] chunkNamebytes = Encoding.ASCII.GetBytes(chunkName);
             if (chunkNamebytes.Length != 4)
-                throw new ArgumentException("Chunk must be 4 bytes!", "chunkName");
+                throw new ArgumentException("Chunk must be 4 bytes.", "chunkName");
             ArrayUtils.WriteInt32ToByteArrayBe(target, offset, chunkData.Length);
             offset += 4;
             Int32 nameOffset = offset;

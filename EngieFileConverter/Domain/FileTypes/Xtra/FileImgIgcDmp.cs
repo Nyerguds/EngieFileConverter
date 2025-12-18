@@ -179,19 +179,19 @@ namespace EngieFileConverter.Domain.FileTypes
             // 30A - Byte[Width*Height] - Data
             Int32 fileDataLength = fileData.Length;
             if (fileDataLength < 6)
-                throw new FileTypeLoadException("Not an ICG DMP file!");
+                throw new FileTypeLoadException("Not an ICG DMP file.");
             Int32 magic = fileData[0];
             if (magic != 1)
-                throw new FileTypeLoadException("Not an ICG DMP file!");
+                throw new FileTypeLoadException("Not an ICG DMP file.");
             Int32 hasPalette = fileData[1];
             if (hasPalette > 1)
-                throw new FileTypeLoadException("Not an ICG DMP file!");
+                throw new FileTypeLoadException("Not an ICG DMP file.");
             Boolean paletteLoaded = hasPalette == 1;
             width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
             height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
             UInt32 padding = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 6);
             if (padding != 0)
-                throw new FileTypeLoadException("Not an ICG DMP file!");
+                throw new FileTypeLoadException("Not an ICG DMP file.");
             Int32 dataStart = 0x0A + hasPalette * 0x300;
             Int32 dataSize = width * height;
             if (paletteLoaded)
@@ -200,7 +200,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Array.Copy(fileData, 0x0A, palette, 0, 0x300);
             }
             if (fileDataLength != dataSize + dataStart)
-                throw new FileTypeLoadException("Not an ICG DMP file!");
+                throw new FileTypeLoadException("Not an ICG DMP file.");
             Byte[] imgBytes = new Byte[dataSize];
             Array.Copy(fileData, dataStart, imgBytes, 0, dataSize);
             return imgBytes;

@@ -856,7 +856,7 @@ namespace Nyerguds.ImageManipulation
 
         public static Byte GetIndexedPixel(Bitmap b, Int32 x, Int32 y)
         {
-            if ((b.PixelFormat & PixelFormat.Indexed) == 0) throw new ArgumentException("Image does not have an indexed format!");
+            if ((b.PixelFormat & PixelFormat.Indexed) == 0) throw new ArgumentException("Image does not have an indexed format.");
             if (x < 0 || x >= b.Width) throw new ArgumentOutOfRangeException("x", String.Format("x should be in 0-{0}", b.Width));
             if (y < 0 || y >= b.Height) throw new ArgumentOutOfRangeException("y", String.Format("y should be in 0-{0}", b.Height));
             BitmapData data = null;
@@ -884,7 +884,7 @@ namespace Nyerguds.ImageManipulation
         {
             Int32 len = width * height;
             if (len < array.Length)
-                throw new ArgumentException("Array is not long enough for the given width and height!", "array");
+                throw new ArgumentException("Array is not long enough for the given width and height.", "array");
             Byte[] pixels = new Byte[len * 4];
             Int32 bytePtr = 0;
             for (int i = 0; i < len; ++i)
@@ -921,9 +921,9 @@ namespace Nyerguds.ImageManipulation
                 throw new ArgumentNullException("images");
             Int32 imgCount = images.Length;
             if (imgCount == 0)
-                throw new ArgumentException("No images given!", "images");
+                throw new ArgumentException("No images given.", "images");
             if (imgCount > 0xFFFF)
-                throw new ArgumentException("Too many images!", "images");
+                throw new ArgumentException("Too many images.", "images");
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter iconWriter = new BinaryWriter(ms))
             {
@@ -940,7 +940,7 @@ namespace Nyerguds.ImageManipulation
                     // Get image data
                     Image curFrame = images[i];
                     if (curFrame.Width > 256 || curFrame.Height > 256)
-                        throw new ArgumentException("Image too large!", "images");
+                        throw new ArgumentException("Image too large.", "images");
                     // for these three, 0 is interpreted as 256,
                     // so the cast reducing 256 to 0 is no problem.
                     Byte width = (Byte) curFrame.Width;
@@ -1237,9 +1237,9 @@ namespace Nyerguds.ImageManipulation
                 throw new ArgumentNullException("images");
             Int32 imgCount = images.Length;
             if (imgCount == 0)
-                throw new ArgumentException("No images given!", "images");
+                throw new ArgumentException("No images given.", "images");
             if (imgCount > 0xFFFF)
-                throw new ArgumentException("Too many images!", "images");
+                throw new ArgumentException("Too many images.", "images");
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter iconWriter = new BinaryWriter(ms))
             {
@@ -1257,7 +1257,7 @@ namespace Nyerguds.ImageManipulation
                     // Get image data
                     Image curFrame = images[i];
                     if (curFrame.Width > 256 || curFrame.Height > 256)
-                        throw new ArgumentException("Image too large!", "images");
+                        throw new ArgumentException("Image too large.", "images");
                     // for these three, 0 is interpreted as 256,
                     // so the cast reducing 256 to 0 is no problem.
                     Byte width = (Byte)curFrame.Width;
@@ -1319,9 +1319,9 @@ namespace Nyerguds.ImageManipulation
                 throw new ArgumentNullException("images");
             Int32 imgCount = images.Length;
             if (imgCount == 0)
-                throw new ArgumentException("No images given!", "images");
+                throw new ArgumentException("No images given.", "images");
             if (imgCount > 0xFFFF)
-                throw new ArgumentException("Too many images!", "images");
+                throw new ArgumentException("Too many images.", "images");
             using (FileStream fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
             using (BinaryWriter iconWriter = new BinaryWriter(fs))
             {
@@ -1339,7 +1339,7 @@ namespace Nyerguds.ImageManipulation
                     // Get image data
                     Image curFrame = images[i];
                     if (curFrame.Width > 256 || curFrame.Height > 256)
-                        throw new ArgumentException("Image too large!", "images");
+                        throw new ArgumentException("Image too large.", "images");
                     // for these three, 0 is interpreted as 256,
                     // so the cast reducing 256 to 0 is no problem.
                     Byte width = (Byte)curFrame.Width;

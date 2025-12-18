@@ -66,7 +66,7 @@ namespace EngieFileConverter.Domain.HeightMap
             if (!generatebasicCliffs)
             {
                 if (plateauLevelsImage.Width != 64 || plateauLevelsImage.Height != 64)
-                    throw new ArgumentException("Plateau levels image needs to be 64x64!", "plateauLevelsImage");
+                    throw new ArgumentException("Plateau levels image needs to be 64x64.", "plateauLevelsImage");
                 Int32 plateauStride;
                 Byte[] plateauData = ImageUtils.GetImageData(ImageUtils.PaintOn32bpp(plateauLevelsImage, Color.Black), out plateauStride);
                 eightBitPlateauData = ImageUtils.Convert32BitToPaletted(plateauData, plateauLevelsImage.Width, plateauLevelsImage.Height, 8, false, LEVEL_COLORS, ref plateauStride);
@@ -368,7 +368,7 @@ namespace EngieFileConverter.Domain.HeightMap
         {
             // This does not stretch the image. It paints the 64x64 image on a (0.5,0.5) pixel offset into a 65x65 image.
             if (heightMap64x64.Width != 64 || heightMap64x64.Height != 64)
-                throw new ArgumentException("Can only convert 64x64 images!", "heightMap64x64");
+                throw new ArgumentException("Can only convert 64x64 images.", "heightMap64x64");
             heightMap64x64 = ImageUtils.ConvertToPalettedGrayscale(heightMap64x64);
             Bitmap bp = new Bitmap(65, 65, PixelFormat.Format32bppArgb);
             using (Graphics gr = Graphics.FromImage(bp))

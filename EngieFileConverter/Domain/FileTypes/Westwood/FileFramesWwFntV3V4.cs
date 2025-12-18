@@ -152,11 +152,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (ArgumentOutOfRangeException ex)
                     {
-                        throw new FileTypeLoadException(String.Format("Data for font entry #{0} exceeds file bounds!", i), ex);
+                        throw new FileTypeLoadException(String.Format("Data for font entry #{0} exceeds file bounds.", i), ex);
                     }
                     catch (IndexOutOfRangeException ex)
                     {
-                        throw new FileTypeLoadException(String.Format("Data for font entry #{0} exceeds file bounds!", i), ex);
+                        throw new FileTypeLoadException(String.Format("Data for font entry #{0} exceeds file bounds.", i), ex);
                     }
                 }
                 FileImageFrame framePic = new FileImageFrame();
@@ -315,7 +315,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (frames == null || frames.Length == 0)
                 throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
             if (frames.Length > 256)
-                throw new ArgumentException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames!", "fileToSave");
+                throw new ArgumentException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames.", "fileToSave");
             width = -1;
             height = -1;
             Int32 nrOfFrames = frames.Length;
@@ -327,7 +327,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 width = Math.Max(width, frame.Width);
                 height = Math.Max(height, frame.Height);
                 if (width > 255 || height > 255)
-                    throw new ArgumentException("Frame dimensions exceed 255!", "fileToSave");
+                    throw new ArgumentException("Frame dimensions exceed 255.", "fileToSave");
             }
             return frames;
         }
@@ -365,7 +365,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 else if (replacei == i)
                 {
                     if (dataOffset > maxValue)
-                        throw new OverflowException("Data too large: this format cannot address data that exceeds " + maxValue + " bytes!");
+                        throw new OverflowException("Data too large: this format cannot address data that exceeds " + maxValue + " bytes.");
                     // Data is not null and not a duplicate: write offset and advance offset ptr.
                     ArrayUtils.WriteUInt16ToByteArrayLe(fontDataOffsetsList, (i + writeDiff) * 2, (UInt16)dataOffset);
                     dataOffset += imageData[i].Length;

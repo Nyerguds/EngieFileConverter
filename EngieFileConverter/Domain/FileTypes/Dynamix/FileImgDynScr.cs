@@ -253,7 +253,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)
-                throw new ArgumentException("LZW compression is currently not supported!", "saveOptions");
+                throw new ArgumentException("LZW compression is currently not supported.", "saveOptions");
             Boolean asMa8 = saveType == 1;
             if (asMa8) // MA8 seems to have indices 0 and FF switched
                 DynamixCompression.SwitchBackground(data);

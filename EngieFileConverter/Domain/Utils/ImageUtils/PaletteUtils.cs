@@ -51,7 +51,7 @@ namespace Nyerguds.ImageManipulation
         {
             Int32 colors = 1 << bitsPerPixel;
             if (colors > 16 || colors <= 0)
-                throw new ArgumentException("EGA palette can not contain more than 16 colors!", "bitsPerPixel");
+                throw new ArgumentException("EGA palette can not contain more than 16 colors.", "bitsPerPixel");
             Color[] pal = new Color[colors];
             Array.Copy(EgaPalette, 0, pal, 0, colors);
             return pal;
@@ -70,7 +70,7 @@ namespace Nyerguds.ImageManipulation
         public static Color[] GetCgaPalette(Byte definedColor, Boolean colorBurst, Boolean palette, Boolean intensity, Int32 bitsPerPixel)
         {
             if (definedColor > 15)
-                throw new ArgumentException("CGA palette values only go up to 15!", "definedColor");
+                throw new ArgumentException("CGA palette values only go up to 15.", "definedColor");
             Color[] pal = new Color[1 << bitsPerPixel];
             if (bitsPerPixel == 1)
             {
@@ -79,7 +79,7 @@ namespace Nyerguds.ImageManipulation
                 return pal;
             }
             if (bitsPerPixel != 2)
-                throw new ArgumentException("CGA palette can only be 1bpp or 2bpp!","bitsPerPixel");
+                throw new ArgumentException("CGA palette can only be 1bpp or 2bpp.", "bitsPerPixel");
             pal[0] = EgaPalette[definedColor];
             Int32 paletteNr = colorBurst ? (palette ? 1 : 0) : 2;
             Byte[] colors = CgaPalettes[paletteNr];

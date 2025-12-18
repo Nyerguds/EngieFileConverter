@@ -31,7 +31,7 @@ namespace EngieFileConverter.Domain.FileTypes
             const Int32 lzss = 0x53535A4C; // "LZSS" string
             const Int32 rnc = 0x53535A4C; // Identical? Check this!
             if (fileData.Length < 4)
-                throw new FileTypeLoadException("Not a Toonstruck CPS!");
+                throw new FileTypeLoadException("Not a Toonstruck CPS.");
             UInt32 idBytes = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0);
             if (idBytes == cpsn)
                 this.LoadFile(fileData, filename, true);
@@ -47,13 +47,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] imageData = palSize == 0 ? rawData : new Byte[256000];
 
                 if (palSize < 0)
-                    throw new FileTypeLoadException("Bad length for ToonStruck CPS file!");
+                    throw new FileTypeLoadException("Bad length for ToonStruck CPS file.");
                 if (palSize > 0)
                 {
                     Byte[] palette = new Byte[palSize];
                     Array.Copy(rawData, 0, palette, 0, palSize);
                     if (palSize % 3 != 0)
-                        throw new FileTypeLoadException("Bad length for 6-bit CPS palette!");
+                        throw new FileTypeLoadException("Bad length for 6-bit CPS palette.");
                     Int32 colors = palSize / 3;
                     this.m_Palette = ColorUtils.ReadSixBitPalette(fileData, 0, colors);
                     this.HasPalette = true;
@@ -65,16 +65,16 @@ namespace EngieFileConverter.Domain.FileTypes
             else if ((idBytes & 0xFFFFFF) == rnc) { }// todo.
             //*/
             else
-                throw new FileTypeLoadException("Not a Toonstruck CPS!");
+                throw new FileTypeLoadException("Not a Toonstruck CPS.");
         }
 
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException("File to save is empty!", "fileToSave");
+                throw new ArgumentException("File to save is empty.", "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
             if (fileToSave.IsFramesContainer || image.Width != 640 || image.Height != 400 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException("Only 8-bit 640×400 images can be saved as CPS!", "fileToSave");
+                throw new ArgumentException("Only 8-bit 640×400 images can be saved as CPS.", "fileToSave");
 
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;

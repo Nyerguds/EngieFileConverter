@@ -63,12 +63,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new FileTypeLoadException("File is too short to contain frame header " + i);
                 Int32 frameNumber = ArrayUtils.ReadInt16FromByteArrayLe(fileData, offset);
                 if (frameNumber != i)
-                    throw new FileTypeLoadException("Bad frame order in file!");
+                    throw new FileTypeLoadException("Bad frame order in file.");
                 Int32 frWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 2);
                 Int32 frHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 4);
                 Int32 stride = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 6);
                 if (frWidth > stride)
-                    throw new FileTypeLoadException("Inconsistent data in file!");
+                    throw new FileTypeLoadException("Inconsistent data in file.");
                 Int32 dataSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, offset + 8);
                 if (offset + dataSize >= datalen)
                     throw new FileTypeLoadException("File is too short to contain data of frame " + i);
@@ -94,16 +94,16 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException("No frames found in source data!", "fileToSave");
+                throw new ArgumentException("No frames found in source data.", "fileToSave");
             if (nrOfFrames > 0xFFFF)
-                throw new ArgumentException("Too many frames in source data!", "fileToSave");
+                throw new ArgumentException("Too many frames in source data.", "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null)
-                    throw new ArgumentException("KORT BMP can't handle empty frames!", "fileToSave");
+                    throw new ArgumentException("KORT BMP can't handle empty frames.", "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException("Not all frames in input type are 8-bit images!", "fileToSave");
+                    throw new ArgumentException("Not all frames in input type are 8-bit images.", "fileToSave");
             }
             Byte[][] frameData = new Byte[nrOfFrames][];
             Int32[] widths = new Int32[nrOfFrames];

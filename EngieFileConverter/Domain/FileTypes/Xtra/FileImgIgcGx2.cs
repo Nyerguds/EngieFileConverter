@@ -38,7 +38,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 dataLen = fileData.Length;
             if (dataLen < 0x1B)
-                throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + "!");
+                throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + ".");
             UInt32 magic1 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x00);
             //UInt16 headsize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x04);
             Byte bpp = fileData[0x06];
@@ -53,21 +53,21 @@ namespace EngieFileConverter.Domain.FileTypes
             //Byte unknown3 = fileData[0x18];
             //UInt16 unknown4 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x19);
             if (width == 0 || height == 0)
-                throw new FileTypeLoadException("Dimensions cannot be 0!");
+                throw new FileTypeLoadException("Dimensions cannot be 0.");
             if (magic1 != 0x01325847 || magic2 != 0x58465053)
-                throw new FileTypeLoadException("Not an " + this.LongTypeName + "!");
+                throw new FileTypeLoadException("Not an " + this.LongTypeName + ".");
             Int32 palCols = bpp > 8 ? 0 : (1 << bpp);
             Int32 palSize = palCols * 3;
             this.m_BitPerPixel = bpp;
             if (dataLen < 0x1B + palSize)
-                throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + "!");
+                throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + ".");
             Byte[] pal = new Byte[palSize];
             Array.Copy(fileData, 0x1B, pal, 0, palSize);
             this.m_Palette = ColorUtils.ReadEightBitPalette(pal, 0, palCols);
             Int32 dataOffs = 0x1B + palSize;
             Byte[] frameDataUncompr = RleCompressionHighBitRepeat.RleDecode(fileData, (UInt32)dataOffs, null, true);
             if (frameDataUncompr == null)
-                throw new FileTypeLoadException("RLE decompression failed!");
+                throw new FileTypeLoadException("RLE decompression failed.");
             Byte[] frameData;
             try
             {

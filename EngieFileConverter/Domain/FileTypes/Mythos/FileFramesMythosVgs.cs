@@ -358,7 +358,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 // Don't think this can happen at this point.
                 if (palette == null)
-                    throw new ArgumentException("There is no palette available in the given frames!", "fileToSave");
+                    throw new ArgumentException("There is no palette available in the given frames.", "fileToSave");
                 // Add extra frame with palette header to serve as internal palette.
                 Byte[] frameBytes = new Byte[780];
                 Array.Copy(Encoding.ASCII.GetBytes(PAL_IDENTIFIER), 0, frameBytes, 0, PAL_IDENTIFIER.Length);

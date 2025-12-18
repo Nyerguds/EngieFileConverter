@@ -65,16 +65,16 @@ namespace EngieFileConverter.Domain.FileTypes
             //UInt16 hdrDeltaSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0A);
             UInt16 hdrFlags = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0C);
             if (hdrFrames == 0) // Can be TS SHP; it identifies with an empty first byte IIRC.
-                throw new FileTypeLoadException("Not a C&C1/RA1 SHP file!");
+                throw new FileTypeLoadException("Not a C&C1/RA1 SHP file.");
             if (hdrWidth == 0 || hdrHeight == 0)
-                throw new FileTypeLoadException("Illegal values in header!");
+                throw new FileTypeLoadException("Illegal values in header.");
             this.m_HasPalette = (hdrFlags & 1) != 0;
             //Int32 palSize = m_HasPalette ? 0x300 : 0;
             Dictionary<Int32, Int32> offsetIndices = new Dictionary<Int32, Int32>();
             Int32 offsSize = 8;
             Int32 fileSizeOffs = hdrSize + offsSize * (hdrFrames + 1);
             if (fileData.Length < hdrSize + offsSize * (hdrFrames + 2))
-                throw new FileTypeLoadException("File is not long enough to read the entire frames header!");
+                throw new FileTypeLoadException("File is not long enough to read the entire frames header.");
 
             Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, fileSizeOffs, 3, true);
             Boolean hasLoopFrame;
@@ -92,7 +92,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] frames = new Byte[hdrFrames][];
             OffsetInfo[] offsets = new OffsetInfo[hdrFrames];
             if (fileData.Length != fileSize)
-                throw new FileTypeLoadException("File size does not match size value in header!");
+                throw new FileTypeLoadException("File size does not match size value in header.");
             // Read palette if flag enabled. No games I know support using it, but, might as well be complete.
             if (this.m_HasPalette)
             {
@@ -144,7 +144,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 CcShpFrameFormat frameOffsFormat = currentFrame.DataFormat;
                 //Int32 dataLen = frameOffsEnd - frameOffs;
                 if (frameOffs > fileData.Length || frameOffsEnd > fileData.Length)
-                    throw new FileTypeLoadException("Error on frame " + i + ": File is too small to contain all frame data!");
+                    throw new FileTypeLoadException("Error on frame " + i + ": File is too small to contain all frame data.");
                 Byte[] frame = new Byte[frameSize];
                 Int32 refIndex = -1;
                 Int32 refIndex20 = -1;
@@ -173,7 +173,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         break;
                     case CcShpFrameFormat.XorBase:
                         if (currentFrame.ReferenceFormat != CcShpFrameFormat.Lcw)
-                            throw new FileTypeLoadException("Error on frame " + i + ": XOR base frames can only reference LCW frames!");
+                            throw new FileTypeLoadException("Error on frame " + i + ": XOR base frames can only reference LCW frames.");
                         // 0x40 = XOR with a previous frame. Could technically reference anything, but normally only references the last LCW "keyframe".
                         // This load method ignores the format saved in ReferenceFormat since the decompressed frame is stored already.
                         if (lastKeyFrame.DataOffset == currentFrame.ReferenceOffset)
@@ -183,12 +183,12 @@ namespace EngieFileConverter.Domain.FileTypes
                             // not found as referenced frame, but in the file anyway?? Whatever; if it's LCW, just read it.
                             Int32 readOffs = currentFrame.ReferenceOffset;
                             if (readOffs >= fileData.Length)
-                                throw new FileTypeLoadException("Error on frame " + i + ": File is too small to contain all frame data!");
+                                throw new FileTypeLoadException("Error on frame " + i + ": File is too small to contain all frame data.");
                             WWCompression.LcwDecompress(fileData, ref readOffs, frame, 0);
                             refIndex = -1;
                         }
                         if (refIndex >= i)
-                            throw new FileTypeLoadException("Error on frame " + i + ": XOR cannot reference later frames!");
+                            throw new FileTypeLoadException("Error on frame " + i + ": XOR cannot reference later frames.");
                         if (refIndex >= 0)
                             frames[refIndex].CopyTo(frame, 0);
                         WWCompression.ApplyXorDelta(frame, fileData, ref frameOffs, 0);

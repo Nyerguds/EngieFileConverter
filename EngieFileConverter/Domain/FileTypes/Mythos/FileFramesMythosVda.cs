@@ -256,7 +256,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return null;
             Int32 stride;
             // stride collapse is probably not needed... 320 is divisible by 4.
-            return ImageUtils.GetImageData(lastFrameImage, out stride, true);
+            return ImageUtils.GetImageData(lastFrameImage, true);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -272,7 +272,7 @@ namespace EngieFileConverter.Domain.FileTypes
             String vdxName;
             this.GetLoadFileInfo(fileData, filename, out vdaBytes, out vdxBytes, out vdaName, out vdxName);
             if (vdaBytes == null)
-                throw new FileTypeLoadException("Cannot load a VDA video from a VDX alone!");
+                throw new FileTypeLoadException("Cannot load a VDA video from a VDX alone.");
 
             if (vdaName != null)
             {
@@ -358,7 +358,7 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 if (this.CheckForVdx(fileData))
-                    throw new FileTypeLoadException("Can't load a video from .VDX file without filename!");
+                    throw new FileTypeLoadException("Can't load a video from .VDX file without filename.");
                 vdaBytes = fileData;
             }
         }
@@ -453,13 +453,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     Int32 frameNumber = curVal & 0x7FFF;
                     if (allChunks.Count <= frameNumber)
-                        throw new FileLoadException("Video frames file references more frames than available in graphics file!");
+                        throw new FileLoadException("Video frames file references more frames than available in graphics file.");
                     Int32 xOffset;
                     Int32 yOffset;
                     if ((curVal & 0x8000) != 0)
                     {
                         if (offset + 6 >= framesInfo.Length)
-                            throw new FileLoadException("Illegal data order in video frames file!");
+                            throw new FileLoadException("Illegal data order in video frames file.");
                         xOffset = ArrayUtils.ReadUInt16FromByteArrayLe(framesInfo, offset + 2);
                         yOffset = ArrayUtils.ReadUInt16FromByteArrayLe(framesInfo, offset + 4);
                         offset += 4;
@@ -467,7 +467,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     else
                     {
                         if (framesXY.Count < frameNumber)
-                            throw new FileLoadException("Video frames file references more frames than available in the graphics file!");
+                            throw new FileLoadException("Video frames file references more frames than available in the graphics file.");
                         xOffset = framesXY[frameNumber].X;
                         yOffset = framesXY[frameNumber].Y;
                     }
@@ -502,7 +502,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (currentFrameData != null)
                     {
                         if (imageWidth < xOffset + width || imageHeight < yOffset + height)
-                            throw new FileLoadException("Illegal data in video frames file: paint coordinates out of bounds!");
+                            throw new FileLoadException("Illegal data in video frames file: paint coordinates out of bounds.");
                         ImageUtils.PasteOn8bpp(imageData, imageWidth, imageHeight, imageStride, currentFrameData, width, height, stride, new Rectangle(xOffset, yOffset, width, height), pasteTransMask, true);
                     }
                     chunks++;
@@ -638,7 +638,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (imageData[curFrameOffs] == TransparentIndex)
                         {
                             if (previousImageNonTransIndex[curPrevOffs])
-                                throw new ArgumentException("adding pixels of color #255 on new locations after frame 0 is not supported!", "fileToSave");
+                                throw new ArgumentException("adding pixels of color #255 on new locations after frame 0 is not supported.", "fileToSave");
                         }
                         if (imageData[curFrameOffs] == previousImageData[curPrevOffs])
                             imageDataOpt[curFrameOffs] = TransparentIndex;
@@ -737,7 +737,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         finalChunks.Add(finalFrameChunk);
                         allImageRects.Add(new List<Rectangle>() {finalFrameChunk.ImageRect});
                         if (finalChunks.Count > 0x7FFD)
-                            throw new ArgumentException("Chunk count exceeds " + 0x7FFD + "!", "fileToSave");
+                            throw new ArgumentException("Chunk count exceeds " + 0x7FFD + ".", "fileToSave");
                     }
                     // clear this so it can get cleaned up on the copied chunks. It's no longer needed anyway; the reference to the final frame is set.
                     frameChunk.ImageData = null;

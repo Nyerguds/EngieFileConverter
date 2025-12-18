@@ -35,7 +35,7 @@ namespace EngieFileConverter.UI
             //this.ViewInt33MouseCursors();
             //this.MatrixImage();
             //this.LoadByteArrayImage();
-            //this.CombineHue();
+            this.CombineHue();
             //this.CreateSierpinskiImage();
             //this.ColorPsx();
             //this.ExpandRAMap();
@@ -81,7 +81,7 @@ namespace EngieFileConverter.UI
             //this.ExecuteThreaded(() => this.CorrectHue(this.m_LoadedFile, Color.FromArgb(0x00, 0xFF, 0x00).GetHue(), 15.0, 0.2), false, false, false, "Matching to hue...");
             //this.ExecuteThreaded(() => this.CorrectAlpha(this.m_LoadedFile), false, false, false, "Applying alpha...");
             //this.ExecuteThreaded(() => this.ConvertDiff(this.m_LoadedFile), false, false, false, "Removing differences...");
-            this.ExecuteThreaded(() => this.Fix6BitPalette(this.m_LoadedFile), false, false, false, "Fixing palette...");
+            //this.ExecuteThreaded(() => this.Fix6BitPalette(this.m_LoadedFile), false, false, false, "Fixing palette...");
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -310,21 +310,14 @@ namespace EngieFileConverter.UI
 
         private void CombineHue()
         {
-            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null)
-                return;
-            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String filenameImage = "nukesilo_nocol.png";
-            String filenameColors = "nukesilo_rlt_resize.jpg";
-            String pathImage = Path.Combine(path, filenameImage);
-            String pathColors = Path.Combine(path, filenameColors);
-            if (!File.Exists(pathImage) || !File.Exists(pathColors))
+            if (this.m_LoadedFile == null || !this.m_LoadedFile.IsFramesContainer || this.m_LoadedFile.Frames.Length < 2)
                 return;
 
             // image data
-            Bitmap im = ImageUtils.LoadBitmap(pathImage);
+            Bitmap im = this.m_LoadedFile.Frames[0].GetBitmap();
             // color data
-            Bitmap col = ImageUtils.LoadBitmap(pathColors);
-            if (im.Width != col.Width || im.Height != col.Height)
+            Bitmap col = this.m_LoadedFile.Frames[1].GetBitmap();
+            if (im == null || col == null || im.Width != col.Width || im.Height != col.Height)
                 return;
             Int32 iStride;
             Byte[] imageData = ImageUtils.GetImageData(im, out iStride, PixelFormat.Format32bppArgb);
@@ -938,7 +931,7 @@ namespace EngieFileConverter.UI
 
             Int32 lastWhiteLine = ImageUtilsSO.GetLastClearLine(data, stride, width, height, Color.White);
             if (lastWhiteLine == height - 1)
-                MessageBox.Show(this, "Nothing touching the bottom edge!");
+                MessageBox.Show(this, "Nothing touching the bottom edge.");
             else
                 MessageBox.Show(this, "Last full white line is " + lastWhiteLine);
         }

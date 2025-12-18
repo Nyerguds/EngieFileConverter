@@ -49,7 +49,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 fileDataLength = fileData.Length;
             if (fileDataLength < 8 || ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0) != 0)
-                throw new FileTypeLoadException("Not an IGC SLB file!");
+                throw new FileTypeLoadException("Not an IGC SLB file.");
 
             Int32 readOffs=4;
             List<Int32> offsetsList = new List<Int32>();
@@ -61,7 +61,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 indexOffs = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffs);
                 minOffs = Math.Min(minOffs, indexOffs);
                 if (indexOffs > fileDataLength || indexOffs == 0 || indexOffs < minOffs)
-                    throw new FileTypeLoadException("Not an IGC SLB file!");
+                    throw new FileTypeLoadException("Not an IGC SLB file.");
                 Boolean isImage = indexOffs + 0x1B <= fileDataLength
                         && 0x01325847 == ArrayUtils.ReadUInt32FromByteArrayLe(fileData, indexOffs)
                         && 0x58465053 == ArrayUtils.ReadUInt32FromByteArrayLe(fileData, indexOffs + 0x12);
@@ -71,7 +71,7 @@ namespace EngieFileConverter.Domain.FileTypes
             } while (readOffs < minOffs && indexOffs < fileDataLength);
 
             if (offsetsList.Count == 0)
-                throw new FileTypeLoadException("Not an ICG SLB file!");
+                throw new FileTypeLoadException("Not an ICG SLB file.");
             Int32 nrOfFrames = offsetsList.Count - 1;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
             String basePath = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
@@ -80,7 +80,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 readStart = offsetsList[i];
                 if (readStart < readOffs)
-                    throw new FileTypeLoadException("Not an ICG SLB file!");
+                    throw new FileTypeLoadException("Not an ICG SLB file.");
                 Int32 readEnd = offsetsList[i + 1];
                 Int32 frameSize = readEnd - readStart;
                 String curName = basePath + "-" + i.ToString("D5");

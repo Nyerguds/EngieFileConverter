@@ -320,7 +320,7 @@ namespace Nyerguds.Util
             Type tType = typeof (T);
             Int32 size = Marshal.SizeOf(tType);
             if (size + offset > rawData.Length)
-                throw new IndexOutOfRangeException("Array is too small to get the requested struct!");
+                throw new IndexOutOfRangeException("Array is too small to get the requested struct.");
             IntPtr ptr = IntPtr.Zero;
             try
             {

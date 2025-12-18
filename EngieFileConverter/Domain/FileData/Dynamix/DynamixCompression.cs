@@ -69,7 +69,7 @@ namespace Nyerguds.FileData.Dynamix
         public static Byte[] DecodeChunk(Byte[] chunkData)
         {
             if (chunkData.Length < 5)
-                throw new ArgumentException("Chunk is too short to read compression header!");
+                throw new ArgumentException("Chunk is too short to read compression header.");
             Byte compression = chunkData[0];
             Int32 decompressedLength = chunkData[4] << 24 | chunkData[3] << 16 | chunkData[2] << 8 | chunkData[1];
             return Decode(chunkData, 5, null, compression, decompressedLength);
@@ -89,7 +89,7 @@ namespace Nyerguds.FileData.Dynamix
             Int32 start = startOffset ?? 0;
             Int32 end = endOffset ?? buffer.Length;
             if (end < start)
-                throw new ArgumentException("End offset cannot be smaller than start offset!", "endOffset");
+                throw new ArgumentException("End offset cannot be smaller than start offset.", "endOffset");
             if (start < 0 || start > buffer.Length)
                 throw new ArgumentOutOfRangeException("startOffset");
             if (end < 0 || end > buffer.Length)
@@ -205,7 +205,7 @@ namespace Nyerguds.FileData.Dynamix
             while (true)
             {
                 if (inPtr >= inPtrEnd)
-                    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "No \"end of data\" marker found when decompressing SCN data!"), "buffer");
+                    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "No \"end of data\" marker found when decompressing SCN data."), "buffer");
                 Int32 curLine1 = outPtr / width;
                 lastCommandPtr = inPtr;
                 Byte code = buffer[inPtr++];
@@ -328,7 +328,7 @@ namespace Nyerguds.FileData.Dynamix
             if (allEmpty)
                 minVal = 0xFF;
             else if (maxVal - minVal > 0xF)
-                throw new ArgumentException("The non-0 data in the given image is not limited to a range of 16 consecutive values!", "buffer");
+                throw new ArgumentException("The non-0 data in the given image is not limited to a range of 16 consecutive values.", "buffer");
 
             // Can't be arsed to calculate worst case. This should be fine.
             Byte[] outbuffer = new Byte[buffer8Bit.Length * 3];

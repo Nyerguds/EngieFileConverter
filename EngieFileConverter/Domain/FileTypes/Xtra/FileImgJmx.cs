@@ -48,7 +48,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException)
             {
-                throw new FileTypeLoadException("Palette data is not 6-bit!");
+                throw new FileTypeLoadException("Palette data is not 6-bit.");
             }
             Byte[] imageData = new Byte[imgLength];
             Array.Copy(fileData, 0x304, imageData, 0, imgLength);

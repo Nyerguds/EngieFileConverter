@@ -36,7 +36,7 @@ namespace Nyerguds.FileData.Westwood
         public void WriteToFile(String filename)
         {
             if (String.IsNullOrEmpty(filename))
-                throw new ArgumentNullException("filename", "No filename given!");
+                throw new ArgumentNullException("filename", "No filename given.");
             using (FileStream fs = File.Create(filename))
                 this.WriteToStream(fs);
         }
@@ -80,7 +80,7 @@ namespace Nyerguds.FileData.Westwood
         private void ReadTdMapFromFile(String filename)
         {
             if (String.IsNullOrEmpty(filename))
-                throw new ArgumentNullException("filename", "No filename given!");
+                throw new ArgumentNullException("filename", "No filename given.");
             Byte[] buffer;
             using (FileStream fs = File.OpenRead(filename))
             {

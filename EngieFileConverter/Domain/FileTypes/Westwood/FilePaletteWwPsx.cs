@@ -54,7 +54,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 len = fileData.Length;
             if (len == 0)
-                throw new FileTypeLoadException("File is empty!");
+                throw new FileTypeLoadException("File is empty.");
             if (len % 32 != 0)
                 throw new FileTypeLoadException("Incorrect file size: not a multiple of 32.");
             Int32 palSize = len / 2;
@@ -111,7 +111,7 @@ namespace EngieFileConverter.Domain.FileTypes
             /*/
             Color[] cols = this.CheckInputForColors(fileToSave, true);
             if (cols.Length % 256 != 0)
-                throw new ArgumentException("PSX palettes must be 256 colors!", "fileToSave");
+                throw new ArgumentException("PSX palettes must be 256 colors.", "fileToSave");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
             for (Int32 i = 0; i < cols.Length; ++i)

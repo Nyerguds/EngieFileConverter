@@ -32,7 +32,7 @@ namespace Nyerguds.FileData.Dynamix
         public DynamixChunk(String identifier)
         {
             if (identifier.Length != 3 || Encoding.UTF8.GetBytes(identifier).Length != 3)
-                throw new ArgumentException("Identifier must be a 3 ASCII characters!", "identifier");
+                throw new ArgumentException("Identifier must be a 3 ASCII characters.", "identifier");
             this.Identifier = identifier;
         }
 
@@ -145,13 +145,13 @@ namespace Nyerguds.FileData.Dynamix
         public static Int32 FindChunk(Byte[] data, String chunkName)
         {
             if (data == null)
-                throw new ArgumentNullException("data", "No data given!");
+                throw new ArgumentNullException("data", "No data given.");
             if (chunkName == null)
-                throw new ArgumentNullException("chunkName", "No chunk name given!");
+                throw new ArgumentNullException("chunkName", "No chunk name given.");
             // Using UTF-8 as extra check to make sure the name does not contain > 127 values.
             Byte[] chunkNamebytes = Encoding.UTF8.GetBytes(chunkName + ":");
             if (chunkName.Length != 3 || chunkNamebytes.Length != 4)
-                throw new ArgumentException("Chunk name must be 3 ASCII characters!", "chunkName");
+                throw new ArgumentException("Chunk name must be 3 ASCII characters.", "chunkName");
             Int32 offset = 0;
             Int32 end = data.Length;
             Byte[] testBytes = new Byte[4];

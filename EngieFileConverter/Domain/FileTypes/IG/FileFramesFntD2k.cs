@@ -181,25 +181,25 @@ namespace EngieFileConverter.Domain.FileTypes
             // Preliminary checks
             SupportedFileType[] frames = fileToSave.Frames;
             if (!fileToSave.IsFramesContainer || frames == null)
-                throw new ArgumentException("No frames found in source data!", "fileToSave");
+                throw new ArgumentException("No frames found in source data.", "fileToSave");
             Int32 frameLen = frames.Length;
             if (frameLen == 0)
-                throw new ArgumentException("No frames found in source data!", "fileToSave");
+                throw new ArgumentException("No frames found in source data.", "fileToSave");
             if (frameLen < 32)
-                throw new ArgumentException("Dune 2000 font needs to contain at least 32 characters!", "fileToSave");
+                throw new ArgumentException("Dune 2000 font needs to contain at least 32 characters.", "fileToSave");
             if (frameLen > 256)
-                throw new ArgumentException("Dune 2000 font can only handle up to 256 frames!", "fileToSave");
+                throw new ArgumentException("Dune 2000 font can only handle up to 256 frames.", "fileToSave");
             height = -1;
             for (Int32 i = 0; i < frameLen; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
-                    throw new ArgumentException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!", "fileToSave");
+                    throw new ArgumentException("Not all frames in input type are " + this.BitsPerPixel + "-bit images.", "fileToSave");
                 height = Math.Max(height, frame.Height);
                 if (i == 32 && frame.Width > 255)
-                    throw new ArgumentException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!", "fileToSave");
+                    throw new ArgumentException("Not all frames in input type are " + this.BitsPerPixel + "-bit images.", "fileToSave");
                 if (height > 255)
-                    throw new ArgumentException("Frame dimensions exceed 255!", "fileToSave");
+                    throw new ArgumentException("Frame dimensions exceed 255.", "fileToSave");
             }
             return frames;
         }

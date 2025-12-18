@@ -51,14 +51,16 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (!this.m_Continues)
                 return null;
-            Int32 maxWidth = this.Width;
-            Int32 maxHeight = this.Height;
-            List<String> cpsName = this.FindOtherExtFile(originalPath, new FileImgWwCps(), maxWidth, maxHeight);
+            Int32 minWidth = this.Width;
+            Int32 minHeight = this.Height;
+            // Check for still CPS image of the same name.
+            String cpsName = this.FindOtherExtFile(originalPath, new FileImgWwCps(), minWidth, minHeight);
             if (cpsName != null)
-                return cpsName;
-            List<String> pngName = this.FindOtherExtFile(originalPath, new FileImagePng(), maxWidth, maxHeight);
+                return new List<string>() { cpsName };
+            // Check for still PNG image of the same name.
+            String pngName = this.FindOtherExtFile(originalPath, new FileImagePng(), minWidth, minHeight);
             if (pngName != null)
-                return pngName;
+                return new List<string>() { pngName };
             String baseNameDummy;
             // check numeric ranges first; you never know
             String[] frameNames = FileFrames.GetFrameFilesRange(originalPath, out baseNameDummy);
@@ -102,11 +104,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     // Call with testContinue param to abort after confirming initial frame state.
                     try { testFrame.LoadFromFileData(testBytes, lastName, this.m_Version, null, 0,0, true); }
                     catch (HeaderParseException) { return null; }
-                    maxWidth = Math.Max(maxWidth, testFrame.Width);
-                    maxHeight = Math.Max(maxHeight, testFrame.Height);
+                    minWidth = Math.Max(minWidth, testFrame.Width);
+                    minHeight = Math.Max(minHeight, testFrame.Height);
                     if (!testFrame.m_Continues)
                     {
-                        if (testFrame.Width < maxWidth || testFrame.Height < maxHeight)
+                        if (testFrame.Width < minWidth || testFrame.Height < minHeight)
                             return null;
                         chain.Add(lastName);
                         chain.Reverse();
@@ -115,20 +117,21 @@ namespace EngieFileConverter.Domain.FileTypes
                     chain.Add(lastName);
                 }
             }
-            // If this code is reached, the chain finished on a WSA that also continued.
+            // If this code is reached, the earliest found file in the chain was a WSA that also needed an earlier state.
+            // So try loading it from a cps or png.
             if (lastName == null)
                 return null;
-            List<String> addedName = this.FindOtherExtFile(lastName, new FileImgWwCps(), maxWidth, maxHeight);
+            String addedName = this.FindOtherExtFile(lastName, new FileImgWwCps(), minWidth, minHeight);
             if (addedName == null)
-                addedName = this.FindOtherExtFile(lastName, new FileImagePng(), maxWidth, maxHeight);
+                addedName = this.FindOtherExtFile(lastName, new FileImagePng(), minWidth, minHeight);
             if (addedName == null)
                 return null;
-            chain.Add(addedName.First());
+            chain.Add(addedName);
             chain.Reverse();
             return chain;
         }
 
-        private List<String> FindOtherExtFile(String originalPath, SupportedFileType checkType, Int32 maxWidth, Int32 maxHeight)
+        private String FindOtherExtFile(String originalPath, SupportedFileType checkType, Int32 minWidth, Int32 minHeight)
         {
             // If a single png file of the same name is found it overrides normal chaining.
             String fileName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + "." + checkType.FileExtensions.First());
@@ -140,8 +143,8 @@ namespace EngieFileConverter.Domain.FileTypes
             try
             {
                 checkType.LoadFile(File.ReadAllBytes(fileName), fileName);
-                if (checkType.Width >= maxWidth && checkType.Height >= maxHeight && !checkType.IsFramesContainer)
-                    return new List<String>() {fileName};
+                if (checkType.Width >= minWidth && checkType.Height >= minHeight && !checkType.IsFramesContainer)
+                    return fileName;
             }
             catch (FileLoadException)
             {
@@ -318,10 +321,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     headerSize = 0x0C + buffSize;
                     break;
                 default:
-                    throw new FileTypeLoadException("Unknown WSA format!");
+                    throw new FileTypeLoadException("Unknown WSA format.");
             }
             if (xorWidth == 0 || xorHeight == 0)
-                throw new HeaderParseException("Invalid image dimensions!");
+                throw new HeaderParseException("Invalid image dimensions.");
             Boolean cropped = continueData != null && (continueWidth > xorWidth || continueHeight > xorHeight);
             Rectangle finalPos = new Rectangle(xPos, yPos, xorWidth, xorHeight);
             this.m_Version = loadVersion;
@@ -340,13 +343,13 @@ namespace EngieFileConverter.Domain.FileTypes
             for (Int32 i = 0; i < nrOfFrames + 2; ++i)
             {
                 if (fileData.Length <= dataIndexOffset + 4)
-                    throw new HeaderParseException("Data too short to contain frames info!");
+                    throw new HeaderParseException("Data too short to contain frames info.");
                 UInt32 curOffs = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, dataIndexOffset);
                 frameOffsets[i] = curOffs;
                 if (this.m_HasPalette)
                     curOffs +=300;
                 if (curOffs > fileData.Length)
-                    throw new HeaderParseException("Data too short to contain frames info!");
+                    throw new HeaderParseException("Data too short to contain frames info.");
                 dataIndexOffset += 4;
             }
             this.m_HasLoopFrame = frameOffsets[nrOfFrames + 1] != 0;
@@ -354,11 +357,11 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.m_HasPalette)
                 endOffset += 0x300;
             if (endOffset != fileData.Length)
-                throw new HeaderParseException("Data size does not correspond with file size!");
+                throw new HeaderParseException("Data size does not correspond with file size.");
             if (this.m_HasPalette)
             {
                 if (fileData.Length < paletteOffset + 0x300)
-                    throw new HeaderParseException("File is not long enough for color palette!");
+                    throw new HeaderParseException("File is not long enough for color palette.");
                 Byte[] pal = new Byte[0x300];
                 Array.Copy(fileData, paletteOffset, pal, 0, 0x300);
                 try
@@ -569,7 +572,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             // Technically can't happen... I think.
             if (readFrames == 0)
-                throw new ArgumentException("No frames in source data!","fileToSave");
+                throw new ArgumentException("No frames in source data.", "fileToSave");
             if (loop)
                 writeFrames++;
             Byte[][] framesDataUnc = new Byte[writeFrames][];

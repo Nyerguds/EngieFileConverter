@@ -91,12 +91,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 dataEnd = start + width * height;
                 Int32 endLen = this.m_EndSequence.Length;
                 if (fileData.Length - dataEnd != endLen)
-                    throw new FileTypeLoadException("End sequence does not match!");
+                    throw new FileTypeLoadException("End sequence does not match.");
                 Byte[] endbytes = new Byte[endLen];
                 Array.Copy(fileData, dataEnd, endbytes, 0, endLen);
                 for (Int32 i = 0; i < endLen; ++i)
                     if (endbytes[i] != this.m_EndSequence[i])
-                        throw new FileTypeLoadException("End sequence does not match!");
+                        throw new FileTypeLoadException("End sequence does not match.");
             }
             else if (magic02 == 0xA0)
             {

@@ -58,7 +58,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (Exception ex)
             {
-                throw new FileTypeLoadException("Failed to load file as image!", ex);
+                throw new FileTypeLoadException("Failed to load file as image.", ex);
             }
         }
 
@@ -74,7 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (Exception ex)
             {
-                throw new FileTypeLoadException("Failed to load file as image!", ex);
+                throw new FileTypeLoadException("Failed to load file as image.", ex);
             }
         }
 

@@ -53,7 +53,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             String ext = Path.GetExtension(filename).TrimStart('.');
             if (!String.Equals(ext, this.ExtData, StringComparison.InvariantCultureIgnoreCase))
-                throw new FileTypeLoadException("Not a " + this.LongTypeName + " file!");
+                throw new FileTypeLoadException("Not a " + this.LongTypeName + " file.");
             String fileNameBase = Path.GetFileNameWithoutExtension(filename).ToLowerInvariant();
             String filePathBase = Path.Combine(Path.GetDirectoryName(filename), fileNameBase) + ".";
             String dataFileName = filePathBase + this.ExtData;
@@ -85,7 +85,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Int32 singlePalSize = 1 << this.Bpp;
             if (palette.GetColors().Length < (maxPalIndex + 1) * singlePalSize)
-                throw new FileTypeLoadException("Palette indices file (" + this.ExtPalIndex + ") references higher index than the amount of colors in the palette!");
+                throw new FileTypeLoadException("Palette indices file (" + this.ExtPalIndex + ") references higher index than the amount of colors in the palette.");
             Byte[] tileIdsFile = File.ReadAllBytes(tileIDsFileNamesFileName);
             if (tileIdsFile.Length != entries * 2)
                 throw new FileTypeLoadException("Tileset load failed: amount of entries in " + this.ExtTileIds + "file does not match those in " + this.ExtData + " file.");

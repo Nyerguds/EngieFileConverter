@@ -100,7 +100,7 @@ namespace Nyerguds.ImageManipulation
                 case 1: return PixelFormat.Format1bppIndexed;
                 case 4: return PixelFormat.Format4bppIndexed;
                 case 8: return PixelFormat.Format8bppIndexed;
-                default: throw new ArgumentException("Unsupported indexed pixel format '" + bpp + "'!", "bpp");
+                default: throw new ArgumentException("Unsupported indexed pixel format '" + bpp + "'.", "bpp");
             }
         }
 
@@ -153,7 +153,7 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] Convert32bToGray(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, ref Int32 stride)
         {
             if (stride < width * 4)
-                throw new ArgumentException("Stride is smaller than one pixel line!", "stride");
+                throw new ArgumentException("Stride is smaller than one pixel line.", "stride");
             Int32 divvalue = 256 / (1 << bpp);
             Byte[] newImageData = new Byte[width * height];
             Int32 inputOffsetLine = 0;
@@ -273,7 +273,7 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] Convert32BitToPaletted(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, Color[] palette, ref Int32 stride)
         {
             if (stride < width * 4)
-                throw new ArgumentException("Stride is smaller than one pixel line!", "stride");
+                throw new ArgumentException("Stride is smaller than one pixel line.", "stride");
             Byte[] newImageData = new Byte[width * height];
             List<Int32> transparentIndices = new List<Int32>();
             Int32 maxLen = Math.Min(0x100, palette.Length);
@@ -390,7 +390,7 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, Boolean collapseStride)
         {
             if (sourceImage == null)
-                throw new ArgumentNullException("sourceImage", "Source image is null!");
+                throw new ArgumentNullException("sourceImage", "Source image is null.");
             return GetImageDataInternal(sourceImage, out stride, sourceImage.PixelFormat, collapseStride);
         }
 
@@ -428,11 +428,11 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat, Boolean collapseStride)
         {
             if (sourceImage == null)
-                throw new ArgumentNullException("sourceImage", "Source image is null!");
+                throw new ArgumentNullException("sourceImage", "Source image is null.");
             PixelFormat sourcePf = sourceImage.PixelFormat;
             if (sourcePf != desiredPixelFormat && (sourcePf & PixelFormat.Indexed) != 0 && (desiredPixelFormat & PixelFormat.Indexed) != 0
                 && Image.GetPixelFormatSize(sourcePf) > Image.GetPixelFormatSize(desiredPixelFormat))
-                throw new ArgumentException("Cannot convert from a higher to a lower indexed pixel format! Use ConvertTo8Bit / ConvertFrom8Bit instead!", "desiredPixelFormat");
+                throw new ArgumentException("Cannot convert from a higher to a lower indexed pixel format. Use ConvertTo8Bit / ConvertFrom8Bit instead.", "desiredPixelFormat");
              return GetImageDataInternal(sourceImage, out stride, desiredPixelFormat, collapseStride);
         }
 
@@ -445,16 +445,16 @@ namespace Nyerguds.ImageManipulation
             Byte[] data;
             Int32 actualDataWidth;
             Int32 pixelFormatSize = Image.GetPixelFormatSize(desiredPixelFormat);
-            if (collapseStride && (actualDataWidth = ((Image.GetPixelFormatSize(desiredPixelFormat) * width) + 7) / 8) != stride)
+            int lastByteRemainder = (pixelFormatSize * width) % 8;
+            if (collapseStride && ((actualDataWidth = ((pixelFormatSize * width) + 7) / 8) != stride || lastByteRemainder != 0))
             {
                 Int64 sourcePos = sourceData.Scan0.ToInt64();
                 Int32 destPos = 0;
                 data = new Byte[actualDataWidth * height];
                 Byte clearMask = 0xFF;
-                if (pixelFormatSize < 8 && (width % 8) != 0)
+                if (lastByteRemainder != 0)
                 {
-                    int lastByteRemainder = width % 8;
-                    clearMask = (Byte)(~((pixelFormatSize == 1 ? (0xFF >> lastByteRemainder) : (0xFF << lastByteRemainder)) & 0xFF));
+                    clearMask = (Byte)((pixelFormatSize == 1 ? (0xFF >> lastByteRemainder) : (0xFF << lastByteRemainder)) & 0xFF);
                 }
                 for (Int32 y = 0; y < height; ++y)
                 {
@@ -995,7 +995,7 @@ namespace Nyerguds.ImageManipulation
             Int32 size = stride * height;
             // File check, and getting actual data.
             if (start + size > imageData.Length)
-                throw new IndexOutOfRangeException("Data exceeds array bounds!");
+                throw new IndexOutOfRangeException("Data exceeds array bounds.");
             // Actual conversion process.
             for (Int32 y = 0; y < height; ++y)
             {
@@ -1047,9 +1047,9 @@ namespace Nyerguds.ImageManipulation
         public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 newBitLength, Boolean bigEndian, ref Int32 stride)
         {
             if (newBitLength > 8)
-                throw new ArgumentException("Cannot convert to bit format greater than 8!", "newBitLength");
+                throw new ArgumentException("Cannot convert to bit format greater than 8.", "newBitLength");
             if (stride < width)
-                throw new ArgumentException("Stride is too small for the given width!", "stride");
+                throw new ArgumentException("Stride is too small for the given width.", "stride");
             if (data8bit.Length < stride * height)
                 throw new ArgumentException("Data given data is too small to contain an 8-bit image of the given dimensions", "data8bit");
             Int32 parts = 8 / newBitLength;

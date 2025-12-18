@@ -251,7 +251,7 @@ namespace Nyerguds.FileData.Westwood
             {
                 Int32 amount = (Int32)ms.Length / 4;
                 if (ms.Length != amount * 4)
-                    throw new ArgumentException("file size must be divisible by 4!", "fileData");
+                    throw new ArgumentException("file size must be divisible by 4.", "fileData");
                 Byte[] buffer = new Byte[4];
                 for (Int32 i = 0; i < amount; ++i)
                 {
@@ -262,7 +262,7 @@ namespace Nyerguds.FileData.Westwood
                         if (n64MapValues.ContainsKey(N64cell.ValueTD))
                         {
                             n64MapValues.Clear();
-                            throw new ApplicationException("File contains duplicate entries!");
+                            throw new ApplicationException("File contains duplicate entries.");
                         }
                         if (reverseValues.ContainsKey(PCcell.ValueTD))
                             errorMessages.Add(String.Format("Value {0} - {1} - PC value {1} already mapped on N64 value {2}", N64cell.ToString(), PCcell.ToString(), reverseValues[PCcell.ValueTD].ToString()));

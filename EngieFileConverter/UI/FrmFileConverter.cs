@@ -21,11 +21,8 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmFileConverter : Form
     {
-        public delegate void InvokeDelegateReload(SupportedFileType newFile, Boolean resetPalettes, Boolean resetIndex, Boolean resetZoom);
-        public delegate DialogResult InvokeDelegateMessageBox(String message, MessageBoxButtons buttons, MessageBoxIcon icon);
-        public delegate void InvokeDelegateTwoArgs(Object arg1, Object arg2);
-        public delegate void InvokeDelegateSingleArg(Object value);
-        public delegate void InvokeDelegateEnableControls(Boolean enabled, String processingLabel);
+        // General purpose function invoker to return data.
+        public delegate Object FunctionInvoker();
 
         private const String PROG_NAME = "Engie File Converter";
         private const String PROG_AUTHOR = "Created by Nyerguds";
@@ -233,10 +230,10 @@ namespace EngieFileConverter.UI
                         {
                             if (error != null)
                                 loadErrors.Insert(0, error);
-                            String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
+                            String[] errors = loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray();
                             String filename = path == null ? String.Empty : (" of \"" + Path.GetFileName(path) + "\"");
-                            String message = "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors;
-                            this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            String title = "File type of " + filename + " could not be identified. Errors returned by all attempts:";
+                            this.Invoke(new Action(() => this.ShowScrollingMessageBox("Could not load file.", title, errors, false)));
                             return null;
                         }
                     }
@@ -259,7 +256,7 @@ namespace EngieFileConverter.UI
                 String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
                 String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
                 String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(path), Path.GetFileName(firstPath), chainQuestion);
-                DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), loadQuestionFormat, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                DialogResult dr = (DialogResult)this.Invoke((FunctionInvoker)(() => this.ShowMessageBox(loadQuestionFormat, MessageBoxButtons.YesNo, MessageBoxIcon.Question)));
                 if (dr != DialogResult.Yes)
                 {
                     // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.
@@ -292,10 +289,10 @@ namespace EngieFileConverter.UI
                 String message = "File loading failed: " + error.Message;
                 if (error.InnerException != null)
                     message += '\n' + error.InnerException.StackTrace;
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
             }
             if (loadedFile == null && isEmptyFile)
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), "File loading failed: The file is empty!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new Action(() => this.ShowMessageBox("File loading failed: The file is empty.", MessageBoxButtons.OK, MessageBoxIcon.Warning)));
             return loadedFile;
         }
 
@@ -319,7 +316,7 @@ namespace EngieFileConverter.UI
             if (hasEmptyFrames)
                 message.Append("\nSome of these frames are empty files. Not every save format supports empty frames.");
             message.Append("\n\nDo you wish to load the frames from all files?");
-            DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message.ToString(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            DialogResult dr = (DialogResult)this.Invoke((FunctionInvoker)(() => this.ShowMessageBox(message.ToString(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning)));
             if (dr == DialogResult.Yes)
             {
                 if (currentType != null)
@@ -793,17 +790,20 @@ namespace EngieFileConverter.UI
                 String msg = GeneralUtils.RecoverArgExceptionMessage(ex, false);
                 String message = "Error saving " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
                                  + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(msg) ? "." : ":\n" + msg);
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+#if DEBUG
+                message += "\n" + ex.StackTrace;
+#endif
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
             }
             catch (NotImplementedException)
             {
                 String message = "Sorry, saving is not available for type " + selectedItem.ShortTypeName + ".";
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
             }
             catch (NotSupportedException)
             {
                 String message = "Sorry, saving is not available for type " + selectedItem.ShortTypeName + ".";
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
             }
             return null;
         }
@@ -1581,7 +1581,7 @@ namespace EngieFileConverter.UI
                 }
                 if (plateauImage.Width != 64 || plateauImage.Height != 64)
                 {
-                    MessageBox.Show(this, "Height levels image needs to be 64×64!", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, "Height levels image needs to be 64×64.", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
             }
@@ -2267,7 +2267,7 @@ namespace EngieFileConverter.UI
             Func<SupportedFileType> func;
             if (arrParams == null || arrParams.Length < 4 || (func = arrParams[0] as Func<SupportedFileType>) == null || !(arrParams[1] is Boolean) || !(arrParams[2] is Boolean) || !(arrParams[3] is Boolean))
             {
-                try { this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), true, null); }
+                try { this.Invoke(new Action(() => this.EnableControls(true, null))); }
                 catch (InvalidOperationException) { /* ignore */ }
                 return;
             }
@@ -2275,7 +2275,7 @@ namespace EngieFileConverter.UI
             Boolean resetIndex = (Boolean)arrParams[2];
             Boolean resetZoom = (Boolean)arrParams[3];
             String operationType = arrParams[4] as String;
-            this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), false, operationType);
+            this.Invoke(new Action(() => this.EnableControls(false, operationType)));
             operationType = String.IsNullOrEmpty(operationType) ? "Operation" : operationType.Trim();
             SupportedFileType newfile = null;
             try
@@ -2290,21 +2290,21 @@ namespace EngieFileConverter.UI
             catch (ArgumentException argex)
             {
                 String message = operationType + " failed:\n" + GeneralUtils.RecoverArgExceptionMessage(argex, true);
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), true, null);
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                this.Invoke(new Action(() => this.EnableControls(true, null)));
             }
             catch (Exception ex)
             {
                 String message = operationType + " failed:\n" + ex.Message + "\n" + ex.StackTrace;
-                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), true, null);
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
+                this.Invoke(new Action(() => this.EnableControls(true, null)));
             }
             try
             {
                 if (newfile != null)
-                    this.Invoke(new InvokeDelegateReload(this.ReloadWithDispose), newfile, resetPalettes, resetIndex, resetZoom);
+                    this.Invoke(new Action(() => this.ReloadWithDispose(newfile, resetPalettes, resetIndex, resetZoom)));
                 else
-                    this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), true, null);
+                    this.Invoke(new Action(() => this.EnableControls(true, null)));
             }
             catch (InvalidOperationException) { /* ignore */ }
         }
@@ -2417,6 +2417,16 @@ namespace EngieFileConverter.UI
             DialogResult result = MessageBox.Show(this, message, GetTitle(), buttons, icon);
             this.AllowDrop = true;
             return result;
+        }
+
+        private DialogResult ShowScrollingMessageBox(string title, string titleMessage, string[] message, bool showCancel)
+        {
+            return ScrollingMessageBox.ShowAsDialog(this, title, titleMessage, message, showCancel);
+        }
+
+        private DialogResult ShowScrollingMessageBox(string title, string titleMessage, string message, bool showCancel)
+        {
+            return ScrollingMessageBox.ShowAsDialog(this, title, titleMessage, message, showCancel);
         }
 
         private void TsmiTestBedClick(Object sender, EventArgs e)

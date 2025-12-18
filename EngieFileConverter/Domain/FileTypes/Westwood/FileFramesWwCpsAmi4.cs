@@ -89,7 +89,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (IndexOutOfRangeException e)
             {
-                throw new FileTypeLoadException("Cannot construct image from read data!", e);
+                throw new FileTypeLoadException("Cannot construct image from read data.", e);
             }
             this.SetExtraInfo(null);
             this.SetFileNames(filename);
@@ -160,16 +160,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap frImage = frame.GetBitmap();
                 Color[] frColors = frImage.Palette.Entries;
                 if (frImage.PixelFormat != PixelFormat.Format8bppIndexed || frColors.Length == 0)
-                    throw new ArgumentException("Frame " + i + " is not 8-bit indexed!", "fileToSave");
+                    throw new ArgumentException("Frame " + i + " is not 8-bit indexed.", "fileToSave");
                 Int32 width = frImage.Width;
                 Int32 height = frImage.Height;
                 Int32 curMax = i < 2 ? 96 : 104;
                 if (width > 160 && height > curMax)
-                    throw new ArgumentException("Frame " + i + " does not fit in 160×" + curMax + "!", "fileToSave");
+                    throw new ArgumentException("Frame " + i + " does not fit in 160×" + curMax + ".", "fileToSave");
                 Int32 stride;
                 Byte[] frData = ImageUtils.GetImageData(frImage, out stride, true);
                 if (frData.Any(p => p >= 32))
-                    throw new ArgumentException("Pixels in frame " + i + " exceed index 32 on the palette!", "fileToSave");
+                    throw new ArgumentException("Pixels in frame " + i + " exceed index 32 on the palette.", "fileToSave");
                 Array.Copy(frColors, 0, fullPalette, i * 32, Math.Min(frColors.Length, 32));
 
                 Int32 index = i * 160;

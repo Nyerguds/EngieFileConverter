@@ -338,11 +338,11 @@ namespace Nyerguds.Util.UI
         public FileDialogItem(Type itemtype)
         {
             if (!itemtype.IsSubclassOf(typeof(T)))
-                throw new ArgumentException("Entries in list must all be " + typeof(T).Name + " classes!", "itemtype");
+                throw new ArgumentException("Entries in list must all be " + typeof(T).Name + " classes.", "itemtype");
             this.ItemType = itemtype;
             T item = this.ItemObject;
             if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
-                throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "itemtype");
+                throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions.", "itemtype");
             this.Description = item.LongTypeName;
             this.Extensions = item.FileExtensions;
             this.DescriptionsForExtensions = item.DescriptionsForExtensions;
@@ -356,7 +356,7 @@ namespace Nyerguds.Util.UI
             this.itemObject = item;
             this.itemObjectSet = true;
             if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
-                throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "item");
+                throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions.", "item");
             this.Description = item.LongTypeName;
             this.Extensions = item.FileExtensions;
             this.DescriptionsForExtensions = item.DescriptionsForExtensions;

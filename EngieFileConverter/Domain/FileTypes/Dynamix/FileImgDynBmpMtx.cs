@@ -93,19 +93,19 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 blockWidth;
             Int32 blockHeight;
             if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
-                throw new ArgumentException("Could not parse block width!", "saveOptions");
+                throw new ArgumentException("Could not parse block width.", "saveOptions");
             if (blockWidth <= 0)
-                throw new ArgumentException("Bad block height: needs to be more than 0!", "saveOptions");
+                throw new ArgumentException("Bad block height: needs to be more than 0.", "saveOptions");
             if (blockWidth % 8 != 0)
-                throw new ArgumentException("Bad block width: needs to be a multiple of 8!", "saveOptions");
+                throw new ArgumentException("Bad block width: needs to be a multiple of 8.", "saveOptions");
             if (width % blockWidth != 0)
-                throw new ArgumentException("Bad block width: not an exact part of the full image width!", "saveOptions");
+                throw new ArgumentException("Bad block width: not an exact part of the full image width.", "saveOptions");
             if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLH"), out blockHeight))
-                throw new ArgumentException("Could not parse block height!", "saveOptions");
+                throw new ArgumentException("Could not parse block height.", "saveOptions");
             if (blockHeight <= 0)
-                throw new ArgumentException("Bad block height: needs to be more than 0!", "saveOptions");
+                throw new ArgumentException("Bad block height: needs to be more than 0.", "saveOptions");
             if (height % blockHeight != 0)
-                throw new ArgumentException("Bad block height: not an exact part of the full image height!", "saveOptions");
+                throw new ArgumentException("Bad block height: not an exact part of the full image height.", "saveOptions");
             Int32 blockStride = ImageUtils.GetMinimumStride(blockWidth, bpp);
             // Cut into frames (from SaveOptions)
             Int32 matrixWidth = width / blockWidth;

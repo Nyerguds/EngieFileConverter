@@ -45,7 +45,7 @@ namespace Nyerguds.FileData.Compression
             LzssHuffDecoder lzhDec = new LzssHuffDecoder();
             Byte[] outputBuffer = lzhDec.Decode(buffer, startOffset, endOffset, decompressedSize);
             if (decompressedSize < outputBuffer.Length)
-                throw new ArgumentException("Decompression failed!");
+                throw new ArgumentException("Decompression failed.");
             if (decompressedSize > outputBuffer.Length)
             {
                 Byte[] output = new Byte[decompressedSize];

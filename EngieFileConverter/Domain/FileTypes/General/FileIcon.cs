@@ -119,7 +119,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             type = "dib";
                     }
                     if (bmp == null)
-                        throw new HeaderParseException("Can't detect internal type!");
+                        throw new HeaderParseException("Can't detect internal type.");
                     //throw new HeaderParseException("Unsupported image type " + ("dat".Equals(type) ? String.Empty : "\"" + type + "\" ") + "in frame " + i + ".");
                     if (bmp.Width != frWidth || bmp.Height != frHeight)
                         throw new HeaderParseException("Image " + i + " in icon does not match header information.");
@@ -348,9 +348,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentNullException("pngImages");
             Int32 imgCount = pngImages.Length;
             if (imgCount == 0)
-                throw new ArgumentException("No images given!", "pngImages");
+                throw new ArgumentException("No images given.", "pngImages");
             if (imgCount > 0xFFFF)
-                throw new ArgumentException("Too many images!", "pngImages");
+                throw new ArgumentException("Too many images.", "pngImages");
             using (BinaryWriter iconWriter = new BinaryWriter(new NonDisposingStream(output)))
             {
                 Byte[][] frameBytes = new Byte[imgCount][];
@@ -369,7 +369,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 width = frameData[19] | frameData[18] << 8 | frameData[17] << 16 | frameData[16] << 24;
                     Int32 height = frameData[23] | frameData[22] << 8 | frameData[21] << 16 | frameData[20] << 24;
                     if (width > 256 || height > 256)
-                        throw new ArgumentException("Image " + i + "is too large!", "pngImages");
+                        throw new ArgumentException("Image " + i + "is too large.", "pngImages");
                     // Get the color depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.
@@ -390,7 +390,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         Int32 plteOffset = PngHandler.FindPngChunk(frameData, "PLTE");
                         if (plteOffset == -1) // Should never happen...
-                            throw new ArgumentException("Cannot convert image " + i + "!");
+                            throw new ArgumentException("Cannot convert image " + i + ".");
                         // Value 0 is interpreted as 256, so the cast reducing 256 to 0 is no problem.
                         colors = (Byte)(PngHandler.GetPngChunkDataLength(frameData, plteOffset) / 3);
                     }

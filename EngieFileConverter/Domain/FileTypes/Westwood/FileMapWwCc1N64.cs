@@ -35,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
             if (mapPc == null)
-                throw new ArgumentException("Not a map file!", "fileToSave");
+                throw new ArgumentException("Not a map file.", "fileToSave");
             return ArrayUtils.CloneArray(mapPc.N64MapData);
         }
     }

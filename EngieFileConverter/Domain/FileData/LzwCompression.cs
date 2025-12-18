@@ -67,7 +67,7 @@ namespace Nyerguds.FileData.Compression
                     this.BITS = (Int32)bitSize;
                     break;
                 default:
-                    throw new ArgumentException("Unsupported bit size!", "bitSize");
+                    throw new ArgumentException("Unsupported bit size.", "bitSize");
             }
             this.HASHING_SHIFT = this.BITS - 8; // hash bit to use with the hasing algorithm to find correct index
             this.MAX_VALUE = (1 << this.BITS) - 1; // max value allowed based on max bits
