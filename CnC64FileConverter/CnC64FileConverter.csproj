@@ -40,6 +40,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -67,9 +68,14 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Domain\CCTypes\HeightTerrainType.cs" />
+    <Compile Include="Domain\CCTypes\TerrainType.cs" />
+    <Compile Include="Domain\CCTypes\Theater.cs" />
     <Compile Include="Domain\FileTypes\FileImgN64Gray.cs" />
     <Compile Include="Domain\FileTypes\FileTilesN64.cs" />
     <Compile Include="Domain\FileTypes\FilePaletteN64.cs" />
+    <Compile Include="Domain\HeightMap\HeightMapGenerator.cs" />
+    <Compile Include="Domain\HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
     <Compile Include="Domain\Utils\ColorUtils.cs" />
     <Compile Include="Domain\CCTypes\SixBitColor.cs" />
@@ -90,7 +96,7 @@
     <Compile Include="Domain\Utils\BitmapHandler.cs" />
     <Compile Include="Domain\CCTypes\CnCMap.cs" />
     <Compile Include="Domain\CCTypes\MapConversion.cs" />
-    <Compile Include="Domain\TileInfo.cs" />
+    <Compile Include="Domain\CCTypes\TileInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="UI\EnhNumericUpDown.cs">
       <SubType>Component</SubType>

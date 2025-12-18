@@ -49,6 +49,12 @@
             this.tsmiSave = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiExport = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
+            this.convertToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.heightMapToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiToHeightMap = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiToPlateaus = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiToHeightMapAdv = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiTo65x65HeightMap = new System.Windows.Forms.ToolStripMenuItem();
             this.palettePanel1 = new Nyerguds.Util.UI.PalettePanel();
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
@@ -212,7 +218,8 @@
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fileToolStripMenuItem});
+            this.fileToolStripMenuItem,
+            this.convertToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(684, 24);
@@ -261,6 +268,57 @@
             this.tsmiExit.Size = new System.Drawing.Size(199, 22);
             this.tsmiExit.Text = "Exit";
             this.tsmiExit.Click += new System.EventHandler(this.BtnExit_Click);
+            // 
+            // convertToolStripMenuItem
+            // 
+            this.convertToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.heightMapToolStripMenuItem});
+            this.convertToolStripMenuItem.Name = "convertToolStripMenuItem";
+            this.convertToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.convertToolStripMenuItem.Text = "Convert";
+            // 
+            // heightMapToolStripMenuItem
+            // 
+            this.heightMapToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiToHeightMap,
+            this.tsmiToPlateaus,
+            this.tsmiToHeightMapAdv,
+            this.tsmiTo65x65HeightMap});
+            this.heightMapToolStripMenuItem.Name = "heightMapToolStripMenuItem";
+            this.heightMapToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
+            this.heightMapToolStripMenuItem.Text = "Height map generation";
+            // 
+            // tsmiToHeightMap
+            // 
+            this.tsmiToHeightMap.Name = "tsmiToHeightMap";
+            this.tsmiToHeightMap.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
+            this.tsmiToHeightMap.Size = new System.Drawing.Size(330, 22);
+            this.tsmiToHeightMap.Text = "To &basic height map image (from map)";
+            this.tsmiToHeightMap.Click += new System.EventHandler(this.TsmiToHeightMap_Click);
+            // 
+            // tsmiToPlateaus
+            // 
+            this.tsmiToPlateaus.Name = "tsmiToPlateaus";
+            this.tsmiToPlateaus.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
+            this.tsmiToPlateaus.Size = new System.Drawing.Size(330, 22);
+            this.tsmiToPlateaus.Text = "To basic &levels image (from map)";
+            this.tsmiToPlateaus.Click += new System.EventHandler(this.tsmiToPlateaus_Click);
+            // 
+            // tsmiToHeightMapAdv
+            // 
+            this.tsmiToHeightMapAdv.Name = "tsmiToHeightMapAdv";
+            this.tsmiToHeightMapAdv.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.H)));
+            this.tsmiToHeightMapAdv.Size = new System.Drawing.Size(330, 22);
+            this.tsmiToHeightMapAdv.Text = "To &height map using levels (from map)";
+            this.tsmiToHeightMapAdv.Click += new System.EventHandler(this.TsmiToHeightMapAdv_Click);
+            // 
+            // tsmiTo65x65HeightMap
+            // 
+            this.tsmiTo65x65HeightMap.Name = "tsmiTo65x65HeightMap";
+            this.tsmiTo65x65HeightMap.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
+            this.tsmiTo65x65HeightMap.Size = new System.Drawing.Size(330, 22);
+            this.tsmiTo65x65HeightMap.Text = "To 65x65 height map &image (from image)";
+            this.tsmiTo65x65HeightMap.Click += new System.EventHandler(this.TsmiTo65x65HeightMap_Click);
             // 
             // palettePanel1
             // 
@@ -325,7 +383,6 @@
             // picImage
             // 
             this.picImage.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.picImage.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
             this.picImage.Location = new System.Drawing.Point(0, 0);
             this.picImage.Margin = new System.Windows.Forms.Padding(0);
             this.picImage.Name = "picImage";
@@ -406,6 +463,12 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiExit;
         private System.Windows.Forms.ToolStripMenuItem tsmiExport;
         private Nyerguds.Util.UI.PalettePanel palettePanel1;
+        private System.Windows.Forms.ToolStripMenuItem convertToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem heightMapToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem tsmiToHeightMap;
+        private System.Windows.Forms.ToolStripMenuItem tsmiToPlateaus;
+        private System.Windows.Forms.ToolStripMenuItem tsmiToHeightMapAdv;
+        private System.Windows.Forms.ToolStripMenuItem tsmiTo65x65HeightMap;
     }
 }
 

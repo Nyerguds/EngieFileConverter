@@ -7,6 +7,7 @@ namespace CnC64FileConverter.Domain.ImageFile
 {
     public class FileImageBmp : FileImage
     {
+        public override String ShortTypeName { get { return "ImageBMP"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription
         {

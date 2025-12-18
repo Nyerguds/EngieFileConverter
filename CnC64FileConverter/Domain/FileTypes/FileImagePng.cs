@@ -1,6 +1,7 @@
 ﻿using Nyerguds.ImageManipulation;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 
@@ -8,6 +9,7 @@ namespace CnC64FileConverter.Domain.ImageFile
 {
     public class FileImagePng : FileImage
     {
+        public override String ShortTypeName { get { return "ImagePNG"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription
         {

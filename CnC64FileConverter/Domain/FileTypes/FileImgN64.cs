@@ -36,7 +36,7 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         /// <summary>Bytes per color on the palette. 0 for no palette. Is 4 on grayscale images for some reason.</summary>
         protected Byte hdrBytesPerColor;
-        /// <summary>Original 'Bytes per color' value in the header. Can be 0 for greyscale, but in that case hdrBytesPerColor will be replaced by the value for the generated palette.</summary>
+        /// <summary>Original 'Bytes per color' value in the header. Can be 0 for grayscale, but in that case hdrBytesPerColor will be replaced by the value for the generated palette.</summary>
         protected Byte hdrReadBytesPerColor;
         /// <summary>0 = 4bpp, 1=8bpp, 2 = 16bpp</summary>
         protected Byte hdrColorFormat;
@@ -119,7 +119,7 @@ namespace CnC64FileConverter.Domain.ImageFile
                 throw new FileTypeLoadException("File does not have a valid color depth in the header.");
 
             // WARNING! The hi-colour format is 16 BPP, but the image data is converted to 32 bpp for creating the actual image!
-            Int32 imageDataSize = GetStride(this.Width, GetBitsPerColor()) * this.Height;
+            Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, GetBitsPerColor()) * this.Height;
             Byte[] imageData = new Byte[imageDataSize];
             Int32 expectedSize = this.hdrDataOffset + imageDataSize;
             if ((this.hdrColorFormat == 0 || this.hdrColorFormat == 1) && this.hdrPaletteOffset != 0)
@@ -132,24 +132,28 @@ namespace CnC64FileConverter.Domain.ImageFile
                 // Convert image data to usable format.
                 if (this.hdrColorFormat == 2)
                     imageData = Convert16bTo32b(imageData, this.Width * this.Height);
-                Byte[] paletteData;
                 if (this.hdrPaletteOffset != 0)
                 {
                     Int32 palSize = this.hdrBytesPerColor * this.ColorsInPalette;
-                    paletteData = new Byte[palSize];
+                    Byte[] paletteData = new Byte[palSize];
                     Array.Copy(fileData, this.hdrPaletteOffset, paletteData, 0, palSize);
+                    this.palette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, false);
+                    this.fullpalette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, true);
                 }
                 else if (this.hdrColorFormat != 2)
                 {
-                    // No palette in file, but paletted color format. Generate greyscale palette.
-                    paletteData = Generate32BppGreyPalette(this.GetBitsPerColor());
+                    // No palette in file, but paletted color format. Generate grayscale palette.
+                    Int32 bpp = this.GetBitsPerColor();
+                    this.palette = ColorUtils.GenerateGrayPalette(bpp);
+                    this.fullpalette = ColorUtils.GenerateGrayPalette(bpp);
                     // Ignore original value here.
                     this.hdrBytesPerColor = 4;
                 }
                 else
-                    paletteData = null;
-                this.palette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, false);
-                this.fullpalette = GetColors(paletteData, this.hdrBytesPerColor, this.ColorsInPalette, true);
+                {
+                    this.palette = null;
+                    this.fullpalette = null;
+                }
             }
             catch (Exception e)
             {
@@ -158,8 +162,8 @@ namespace CnC64FileConverter.Domain.ImageFile
             try
             {
                 PixelFormat pf = this.GetPixelFormat();
-                Int32 stride = GetStride(this.Width, Image.GetPixelFormatSize(pf));
-                this.loadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, pf, fullpalette, Color.Black);
+                Int32 stride = ImageUtils.GetMinimumStride(this.Width, Image.GetPixelFormatSize(pf));
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, pf, fullpalette, Color.Black);
             }
             catch (IndexOutOfRangeException)
             {
@@ -171,39 +175,20 @@ namespace CnC64FileConverter.Domain.ImageFile
         {
             if (image.Width > 0xFFFF || image.Height > 0xFFFF)
                 throw new NotSupportedException("Image is too large!");
-            Int32 greyPfs = Math.Min(8, Image.GetPixelFormatSize(image.PixelFormat));
-            Color[] greyPalette;
+            Int32 origPfs = Image.GetPixelFormatSize(image.PixelFormat);
 
-            if (asNoPalGray8bpp)
+            if (asNoPalGray8bpp && image.PixelFormat != PixelFormat.Format32bppArgb)
             {
-                Int32 greyPaletteSize = 1 << greyPfs;
-                Byte[] greyPalData = Generate32BppGreyPalette(greyPfs);
-                greyPalette = GetColors(greyPalData, 4, greyPaletteSize, false);
-                Boolean isGray = false;
-                if (image.PixelFormat == PixelFormat.Format4bppIndexed || image.PixelFormat == PixelFormat.Format8bppIndexed)
+                if (image.PixelFormat == PixelFormat.Format1bppIndexed || !ColorUtils.HasGrayPalette(image))
+                    image = ImageUtils.PaintOn32bpp(image);
+                else
                 {
-                    Color[] pal = image.Palette.Entries;
-                    isGray = pal.Length == greyPaletteSize;
-                    if (isGray)
-                    {
-                        for (Int32 i = 0; i < 256; i++)
-                        {
-                            Color palcol = pal[i];
-                            Color greycol = greyPalette[i];
-
-                            if (pal[i].A != 255 || palcol.R != greycol.R || palcol.G != greycol.G || palcol.B != greycol.B)
-                            {
-                                isGray = false;
-                                break;
-                            }
-                        }
-                    }
+                    if (!ColorUtils.HasGrayPalette(image))
+                        image = ImageUtils.PaintOn32bpp(image);
                 }
-                if (!isGray && image.PixelFormat != PixelFormat.Format32bppArgb)
-                    image = PaintOn32bpp(image);
             }
 
-            /// 0 = 4bpp, 1=8bpp, 2 = 16bpp
+            // 0 = 4bpp, 1=8bpp, 2 = 16bpp
             Byte colorFormat;
             Int32 width = image.Width;
             Int32 height = image.Height;
@@ -220,7 +205,7 @@ namespace CnC64FileConverter.Domain.ImageFile
                     colorFormat = 2;
                     break;
                 default:
-                    image = PaintOn32bpp(image);
+                    image = ImageUtils.PaintOn32bpp(image);
                     colorFormat = 2;
                     break;
             }
@@ -230,8 +215,9 @@ namespace CnC64FileConverter.Domain.ImageFile
             {
                 if (asNoPalGray8bpp)
                 {
-                    imageData = Convert32bToGray(imageData, width, height, greyPfs, ref stride);
-                    colorFormat = (Byte)(greyPfs == 4 ? 0 : 1);
+                    Int32 grayPfs = Math.Min(8, origPfs);
+                    imageData = ImageUtils.Convert32bToGray(imageData, width, height, grayPfs, ref stride);
+                    colorFormat = (Byte)(grayPfs == 4 ? 0 : 1);
                 }
                 else
                     imageData = Convert32bTo16b(imageData, width, height, ref stride);
@@ -250,7 +236,7 @@ namespace CnC64FileConverter.Domain.ImageFile
                 paletteData = new Byte[paletteColors * 2];
                 for (Int32 i=0; i < pal.Length; i++)
                 {
-                    GetBytesFromColor(pal[i], paletteData, i*2, 2, true);
+                    WriteColorToData(pal[i], paletteData, i*2, 2, true);
                 }
             }
             Int32 paletteOffset = paletteColors == 0 ? 0 : 16 + imageData.Length;
@@ -292,33 +278,6 @@ namespace CnC64FileConverter.Domain.ImageFile
             File.WriteAllBytes(savePath, fullData);
         }
 
-        private Bitmap PaintOn32bpp(Bitmap image)
-        {
-            Bitmap bp = new Bitmap(image.Width, image.Height, PixelFormat.Format32bppArgb);
-            using (Graphics gr = Graphics.FromImage(bp))
-                gr.DrawImage(image, new Rectangle(0, 0, bp.Width, bp.Height));
-            return bp;
-        }
-
-        protected Byte[] Generate32BppGreyPalette(Int32 bpp)
-        {
-            // No palette in file, but paletted color format. Generate greyscale palette.
-            Int32 palSize = 1 << bpp;
-            // Ignore original value here.
-            Byte[] paletteData = new Byte[palSize * 4];
-            Int32 steps = 255 / (palSize - 1);
-            for (Int32 i = 0; i < palSize; i++)
-            {
-                Int32 offs = i * 4;
-                Byte grayval = (Byte)Math.Min(255, Math.Round((Double)i * steps, MidpointRounding.AwayFromZero));
-                paletteData[offs + 0] = grayval;
-                paletteData[offs + 1] = grayval;
-                paletteData[offs + 2] = grayval;
-                paletteData[offs + 3] = 255;
-            }
-            return paletteData;
-        }
-
         protected static Byte[] Convert16bTo32b(Byte[] imageData, Int32 entries)
         {
             Byte[] newImageData = new Byte[entries*4];
@@ -346,38 +305,10 @@ namespace CnC64FileConverter.Domain.ImageFile
                     Int32 inputOffs = y * stride + x*4;
                     Int32 outputOffs = y * newStride + x*2;
                     Color c = GetColor(imageData, inputOffs, 4, true);
-                    GetBytesFromColor(c, newImageData, outputOffs, 2, true);
+                    WriteColorToData(c, newImageData, outputOffs, 2, true);
                 }
             }
             stride = newStride;
-            return newImageData;
-        }
-
-        protected static Byte[] Convert32bToGray(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, ref Int32 stride)
-        {
-            if (width * 4 > stride)
-                throw new ArgumentException("Stride is smaller than one scan line!", "stride");
-            Int32 outputStride = GetStride(width, bpp);
-            Int32 divvalue = 256 / (1 << bpp);
-
-            Byte[] newImageData = new Byte[width * height];
-            for (Int32 y = 0; y < height; y++)
-            {
-                for (Int32 x = 0; x < width; x++)
-                {
-                    Int32 inputOffs = y * stride + x * 4;
-                    Int32 outputOffs = y * width + x;
-                    Color c = GetColor(imageData, inputOffs, 4, true);
-                    if (c.A < 128)
-                        newImageData[outputOffs] = 0;
-                    else
-                        newImageData[outputOffs] = (Byte)((c.R + c.G + c.B) / (3 * divvalue));
-                    //newImageData[outputOffs] = (Byte)(c.R * 0.30 + c.G * 0.59 + c.B * 0.11);
-                }
-            }
-            stride = width;
-            if (bpp < 8)
-                newImageData = ImageUtils.ConvertFrom8Bit(newImageData, width, height, bpp, true, ref stride);
             return newImageData;
         }
                 
@@ -432,7 +363,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// Gets a colour from data
         /// </summary>
         /// <param name="data">The data array</param>
-        /// <param name="index">The index of the color. This is NOT the index in the data array; that would be index * length</param>
+        /// <param name="offset">The offset of the color in the data array.</param>
         /// <param name="colorLength">Length of one color in the data array</param>
         /// <param name="allowTransparency">False to force transaprency to 255</param>
         /// <returns>The color data at that position</returns>
@@ -440,33 +371,18 @@ namespace CnC64FileConverter.Domain.ImageFile
         {
             if (offset >= data.Length)
                 return Color.Empty;
-            Int32 alpha;
-            Int32 blue;
-            Int32 green;
-            Int32 red;
-            switch (colorLength)
-            {
-                case 2:
-                    //8421 ==bin==> 1000 0100 0010 0001 ==split==> 10000 10000 10000 1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
-                    Int32 val = (data[offset] << 8) + data[offset + 1];
-                    alpha = allowTransparency? (val & 0x01) * 255 : 255;
-                    blue = ((val >> 1) & 0x1F) * 8;
-                    green = ((val >> 6) & 0x1F) * 8;
-                    red = ((val >> 11) & 0x1F) * 8;
-                    break;
-                case 4:
-                    //0x00334455 == 55 44 33 00 == R=55, G=44, B=33, A=00
-                    blue = data[offset + 0];
-                    green = data[offset + 1];
-                    red = data[offset + 2];
-                    alpha = allowTransparency? data[offset + 3] : 255;
-                    break;
-                default:
-                    return Color.Empty;
-            }
+            if (colorLength == 4)
+                return ImageUtils.GetColorFrom32BitData(data, offset, allowTransparency);
+            if (colorLength != 2)
+                return Color.Empty;
+            //8421 ==bin==> 1000 0100 0010 0001 ==split==> 10000 10000 10000 1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
+            Int32 val = (data[offset] << 8) + data[offset + 1];
+            Int32 alpha = allowTransparency? (val & 0x01) * 255 : 255;
+            Int32 blue = ((val >> 1) & 0x1F) * 8;
+            Int32 green = ((val >> 6) & 0x1F) * 8;
+            Int32 red = ((val >> 11) & 0x1F) * 8;
             return Color.FromArgb(alpha, red, green, blue);
         }
-
 
         /// <summary>
         /// Gets a colour from data
@@ -477,52 +393,28 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// <param name="colorLength">Length of one color in the data array</param>
         /// <param name="allowTransparency">False to force transaprency to 255</param>
         /// <returns>The color data at that position</returns>
-        protected static void GetBytesFromColor(Color color, Byte[] data, Int32 offset, Int32 colorLength, Boolean allowTransparency)
+        protected static void WriteColorToData(Color color, Byte[] data, Int32 offset, Int32 colorLength, Boolean allowTransparency)
         {
             if (offset + colorLength > data.Length)
                 return;
-            Int32 alpha = color.A;
-            Int32 blue = color.B;
-            Int32 green = color.G;
-            Int32 red = color.R;
-            switch (colorLength)
+            if (colorLength == 4)
             {
-                case 2:
-                    //8421 ==bin==> 1000 0100 0010 0001 ==split==> 10000 10000 10000 1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
-                    
-                    // A 00000 00000 00000 1 = val & 0x01
-                    // B 00000 00000 11111 0 = (val & 0x1F) << 1
-                    // G 00000 11111 10000 0 = (val & 0x1F) << 6
-                    // R 11111 00000 00000 0 = (val & 0x1F) << 11
-
-                    alpha = allowTransparency && alpha < 127 ? 0 : 1;
-                    blue = ((blue / 8) & 0x1F) << 1;
-                    green = ((green / 8) & 0x1F) << 6;
-                    red = ((red / 8) & 0x1F) << 11;
-                    Int32 val = red | green | blue | alpha;
-                    data[offset] = (Byte)((val >> 8) & 0xFF);
-                    data[offset + 1] = (Byte)(val & 0xFF);
-                    break;
-                case 4:
-                    //0x00334455 == 55 44 33 00 == R=55, G=44, B=33, A=00
-                    data[offset + 0] = (Byte)(allowTransparency? alpha : 255);
-                    data[offset + 1] = (Byte)blue;
-                    data[offset + 2] = (Byte)green;
-                    data[offset + 3] = (Byte)red;
-                    break;
+                ImageUtils.Write32BitColorToData(color, data, offset, allowTransparency);
+                return;
             }
-        }
+            //8421 ==bin==> 1000 0100 0010 0001 ==split==> 10000 10000 10000 1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
+            // A 00000 00000 00000 1 = val & 0x01
+            // B 00000 00000 11111 0 = (val & 0x1F) << 1
+            // G 00000 11111 10000 0 = (val & 0x1F) << 6
+            // R 11111 00000 00000 0 = (val & 0x1F) << 11
 
-        protected Int32 AdjustToBits(Int32 bits, Int32 value)
-        {
-            Int32 maxval = (Int32)Math.Pow(2, bits);
-            return value;
-        }
-
-        protected static Int32 GetStride(Int32 width, Int32 bits)
-        {
-            Int32 stride = bits * width;
-            return (stride / 8) + ((stride % 8) > 0 ? 1 : 0);
+            Int32 alpha = allowTransparency && color.A < 127 ? 0 : 1;
+            Int32 blue = ((color.B / 8) & 0x1F) << 1;
+            Int32 green = ((color.G / 8) & 0x1F) << 6;
+            Int32 red = ((color.R / 8) & 0x1F) << 11;
+            Int32 val = red | green | blue | alpha;
+            data[offset] = (Byte)((val >> 8) & 0xFF);
+            data[offset + 1] = (Byte)(val & 0xFF);
         }
 
         protected void ReadHeader(Byte[] headerBytes)

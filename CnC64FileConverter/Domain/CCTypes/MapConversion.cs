@@ -1,14 +1,123 @@
-﻿using System;
+﻿using CnC64FileConverter.Domain.Utils;
+using Nyerguds.Ini;
+using Nyerguds.Util;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Nyerguds.CCTypes
 {
     public static class MapConversion
     {
-        public static Dictionary<Int32, CnCMapCell> LoadMapping(Byte[] fileData, out String[] errors)
+        public static readonly Dictionary<Int32, TileInfo> TILEINFO = ReadTileInfo();
+        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", global::CnC64FileConverter.Properties.Resources.th_desert);
+        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", global::CnC64FileConverter.Properties.Resources.th_temperate);
+        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
+        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
+        
+        private static Dictionary<Int32, TileInfo> ReadTileInfo()
+        {
+            String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
+            String tilesetsData2;
+            if (File.Exists(file))
+                tilesetsData2 = File.ReadAllText(file);
+            else
+                tilesetsData2 = global::CnC64FileConverter.Properties.Resources.tilesets2;
+
+            IniFile tilesetsFile2 = new IniFile(null, tilesetsData2, true, IniFile.ENCODING_DOS_US, true);
+            Dictionary<Int32, TileInfo> tileInfo2 = new Dictionary<Int32, TileInfo>();
+            //tilesets2.ini - new loading code
+            for (Int32 currentId = 0; currentId < 0xFF; currentId++)
+            {
+                String sectionName = tilesetsFile2.GetStringValue("TileSets", currentId.ToString(), null);
+                if (sectionName == null)
+                    continue;
+                TileInfo info = new TileInfo();
+                info.TileName = sectionName;
+                info.Width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
+                info.Height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
+                info.PrimaryHeightType = GeneralUtils.TryParseEnum(tilesetsFile2.GetStringValue(sectionName, "PrimaryType", null), HeightTerrainType.Clear, true);
+                Char[] types = new Char[info.Width * info.Height];
+                for (Int32 y = 0; y < info.Height; y++)
+                {
+                    String typechars = tilesetsFile2.GetStringValue(sectionName, "Terrain" + y, String.Empty);
+                    Int32 len = typechars.Length;
+                    for (Int32 x = 0; x < info.Width; x++)
+                        types[y * info.Width + x] = x >= len ? '?' : typechars[x];
+                }
+                HeightTerrainType[] typedCells = new HeightTerrainType[types.Length];
+                for (Int32 i = 0; i < types.Length; i++)
+                {
+                    switch (types[i])
+                    {
+                        case '?':
+                            typedCells[i] = info.PrimaryHeightType;
+                            break;
+                        case '_':
+                            typedCells[i] = HeightTerrainType.Unused;
+                            break;
+                        case 'C':
+                            typedCells[i] = HeightTerrainType.Clear;
+                            break;
+                        case 'W':
+                            typedCells[i] = HeightTerrainType.Water;
+                            break;
+                        case 'I':
+                            typedCells[i] = HeightTerrainType.Rock;
+                            break;
+                        case 'B':
+                            typedCells[i] = HeightTerrainType.Beach;
+                            break;
+                        case 'R':
+                            typedCells[i] = HeightTerrainType.Road;
+                            break;
+                        case 'P':
+                            typedCells[i] = HeightTerrainType.CliffPlateau;
+                            break;
+                        case 'F':
+                            typedCells[i] = HeightTerrainType.CliffFace;
+                            break;
+                        default:
+                            if (Regex.IsMatch(types[i].ToString(), "^[a-zA-Z]$"))
+                                typedCells[i] = info.PrimaryHeightType;
+                            else
+                                typedCells[i] = HeightTerrainType.Unused;
+                            break;
+                    }
+                }
+                info.TypedCells = typedCells;
+                tileInfo2.Add(currentId, info);
+            }
+            return tileInfo2;
+        }
+
+        private static Dictionary<Int32, CnCMapCell> LoadMapping(String filename, Byte[] internalFallback)
+        {
+            String[] errors;
+            String file = Path.Combine(GeneralUtils.GetApplicationPath(), filename);
+            Byte[] mappingBytes;
+            if (File.Exists(file))
+                mappingBytes = File.ReadAllBytes(file);
+            else
+                mappingBytes = internalFallback;
+            return LoadMapping(mappingBytes, out errors);
+        }
+
+        private static Dictionary<Int32, CnCMapCell> LoadReverseMapping(Dictionary<Int32, CnCMapCell> mapping)
+        {
+            Dictionary<Int32, CnCMapCell> newmapping = new Dictionary<Int32, CnCMapCell>();
+            List<CnCMapCell> errorcells;
+            Dictionary<Int32, CnCMapCell[]> mapping2 = GetReverseMapping(mapping, out errorcells);
+            foreach (Int32 val in mapping2.Keys)
+                newmapping.Add(val, mapping2[val][0]);
+            return newmapping;
+        }
+
+
+        private static Dictionary<Int32, CnCMapCell> LoadMapping(Byte[] fileData, out String[] errors)
         {
             List<String> errorMessages = new List<String>();
             Dictionary<Int32, CnCMapCell> n64MapValues = new Dictionary<Int32, CnCMapCell>();
@@ -71,7 +180,7 @@ namespace Nyerguds.CCTypes
             Byte lowByte = defaultLow.GetValueOrDefault((Byte)(toN64 ? 0xFF : 0x00));
             CnCMap newmap = new CnCMap(map.GetAsBytes());
             if (toN64)
-                CleanupXCCMess(newmap);
+                CleanUpMapClearTerrain(newmap);
             errorcells = new List<CnCMapCell>();
             for (Int32 i = 0; i < newmap.Cells.Length; i++)
             {
@@ -93,7 +202,7 @@ namespace Nyerguds.CCTypes
             return newmap;
         }
 
-        public static Dictionary<Int32, CnCMapCell[]> GetReverseMapping(Dictionary<Int32, CnCMapCell> mapping, out List<CnCMapCell> errorcells)
+        private static Dictionary<Int32, CnCMapCell[]> GetReverseMapping(Dictionary<Int32, CnCMapCell> mapping, out List<CnCMapCell> errorcells)
         {
             Dictionary<Int32, CnCMapCell[]> newmapping = new Dictionary<Int32, CnCMapCell[]>();
             errorcells = new List<CnCMapCell>();
@@ -116,11 +225,35 @@ namespace Nyerguds.CCTypes
             return newmapping;
         }
 
+        public static HeightTerrainType[] SimplifyMap(CnCMap mapData)
+        {
+            HeightTerrainType[] simplifiedMap = new HeightTerrainType[64 * 64];
+            for (Int32 i = 0; i < mapData.Cells.Length; i++)
+            {
+                CnCMapCell cell = mapData.Cells[i];
+                HeightTerrainType terrain = HeightTerrainType.Clear;
+                if (cell.HighByte != 0xFF)
+                {
+                    TileInfo info;
+                    if (TILEINFO.TryGetValue(cell.HighByte, out info))
+                    {
+                        if (info.TypedCells.Length > cell.LowByte)
+                            terrain = info.TypedCells[cell.LowByte];
+                        else
+                            terrain = info.PrimaryHeightType;
+                    }
+                    else throw new NotSupportedException("Unknown terrain data encountered.");
+                }
+                simplifiedMap[i] = terrain;
+            }
+            return simplifiedMap;
+        }
         /// <summary>
-        /// Cleans up the literally-saved 'blank terrain' cells by replacing them by the default FF00 terrain.
+        /// Cleans up wrongly saved blank terrain cells (either as 00XX or as FFFF)
+        /// by replacing them by the real default FF00 terrain.
         /// </summary>
         /// <param name="map">The map to fix</param>
-        public static void CleanupXCCMess(CnCMap map)
+        public static void CleanUpMapClearTerrain(CnCMap map)
         {
             foreach (CnCMapCell cell in map.Cells)
             {
@@ -133,5 +266,121 @@ namespace Nyerguds.CCTypes
                     cell.LowByte = 0x00;
             }
         }
+
+        /*/
+        protected static Dictionary<Int32, TileInfo> ReadTileInfoOld()
+        {
+            //tilesets.ini - old loading code
+            String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets.ini");
+            String tilesetsData;
+            if (File.Exists(file))
+                tilesetsData = File.ReadAllText(file);
+            else
+                tilesetsData = global::CnC64FileConverter.Properties.Resources.tilesets;
+            IniFile tilesetsFile = new IniFile(null, tilesetsData, true, IniFile.ENCODING_DOS_US, true);
+            Dictionary<Int32, TileInfo> tileInfo = new Dictionary<Int32, TileInfo>();
+            for (Int32 currentId = 0; currentId < 0xFF; currentId++)
+            {
+                String sectionName = tilesetsFile.GetStringValue("TileSets", currentId.ToString(), null);
+                if (sectionName == null)
+                    continue;
+                TileInfo info = new TileInfo();
+                info.TileName = sectionName;
+                info.SecondaryTypeCells = GetCellsList(tilesetsFile.GetStringValue(sectionName, "SecondaryTypeCells", null), ',');
+                info.SecondaryType = GeneralUtils.TryParseEnum(tilesetsFile.GetStringValue(sectionName, "SecondaryType", null), TerrainType.Clear, true);
+                info.Width = tilesetsFile.GetIntValue(sectionName, "X", 1);
+                info.Height = tilesetsFile.GetIntValue(sectionName, "Y", 1);
+                info.PrimaryType = GeneralUtils.TryParseEnum(tilesetsFile.GetStringValue(sectionName, "PrimaryType", null), TerrainType.Clear, true);
+                info.NameID = tilesetsFile.GetIntValue(sectionName, "NameID", 0);
+                if (IsRoad(info))
+                {
+                    if (info.PrimaryType == TerrainType.Clear)
+                        info.PrimaryType = TerrainType.Road;
+                    if (info.SecondaryType == TerrainType.Clear)
+                        info.SecondaryType = TerrainType.Road;
+                }
+                tileInfo.Add(currentId, info);
+            }
+            return tileInfo;
+        }
+        
+        protected static void WriteTileInfo()
+        {
+            //tilesets2.ini - original saving code. To convert frmo tileinfo to tileinfo2
+            String saveFile = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
+            IniFile tileSaveFile = new IniFile(saveFile, true, IniFile.ENCODING_DOS_US, true);
+            //Unused = 0
+            //Clear = 1
+            //Water = 2
+            //Rock = 3 ([I]mpassable)
+            //Beach = 4
+            //Road = 5
+            String terrainTypes = "_CWIBR";
+            for (Int32 currentId = 0; currentId < 0xFF; currentId++)
+            {
+                TileInfo info;
+                if (!TILEINFO.TryGetValue(currentId, out info))
+                    continue;
+                tileSaveFile.SetStringValue("TileSets", currentId.ToString(), info.TileName);
+                tileSaveFile.SetIntValue(info.TileName, "X", info.Width);
+                tileSaveFile.SetIntValue(info.TileName, "Y", info.Height);
+
+                if (info.TileName == "S13")
+                {
+                    info.TileName += String.Empty;
+                }
+
+                String[] tileTerrainTypes = new String[info.Height];
+                for (Int32 y = 0; y < info.Height; y++)
+                {
+                    Char[] thisRow = new Char[info.Width];
+                    for (Int32 x = 0; x < info.Width; x++)
+                    {
+                        Int32 cell = y * info.Width + x;
+                        if (info.SecondaryTypeCells.Contains(cell))
+                            thisRow[x] = terrainTypes[(Int32)info.SecondaryType];
+                        else
+                            thisRow[x] = terrainTypes[(Int32)info.PrimaryType];
+                    }
+                    tileSaveFile.SetStringValue(info.TileName, "Terrain" + y, new String(thisRow));
+                }
+            }
+            tileSaveFile.WriteIni();
+        }
+
+        protected static List<Int32> GetCellsList(String inidata, Char separator)
+        {
+            List<Int32> secCellsInt = new List<Int32>();
+            if (!String.IsNullOrEmpty(inidata) && !"none".Equals(inidata.Trim(), StringComparison.InvariantCultureIgnoreCase))
+            {
+                String[] cells = inidata.Split(separator);
+                foreach (String cell in cells)
+                {
+                    String trimmedCell = cell.Trim();
+                    Boolean isHex = HEXREGEX.IsMatch(trimmedCell);
+                    if (isHex)
+                    {
+                        trimmedCell = trimmedCell.Substring(0, trimmedCell.Length - 1);
+                        secCellsInt.Add(Int32.Parse(trimmedCell, NumberStyles.HexNumber));
+                        continue;
+                    }
+                    if (GeneralUtils.IsNumeric(trimmedCell))
+                        secCellsInt.Add(Int32.Parse(trimmedCell));
+                }
+            }
+            return secCellsInt;
+        }
+
+        private static Boolean IsRoad(TileInfo info)
+        {
+            if (ROADREGEX1.IsMatch(info.TileName))
+                return true;
+            if (ROADREGEX2.IsMatch(info.TileName))
+                return true;
+            if (ROADREGEX3.IsMatch(info.TileName))
+                return true;
+            return false;
+        }
+        //*/
     }
 }

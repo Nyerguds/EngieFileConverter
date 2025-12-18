@@ -20,13 +20,13 @@ namespace CnC64FileConverter.Domain.ImageFile
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public virtual String[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.ShortTypeDescription, this.FileExtensions.Length).ToArray(); } }
         /// <summary>Is this file format treated as an image with a color palette?</summary>
-        public virtual Boolean FileHasPalette { get { return loadedImage.PixelFormat == PixelFormat.Format8bppIndexed || loadedImage.PixelFormat == PixelFormat.Format4bppIndexed; } }
+        public virtual Boolean FileHasPalette { get { return m_LoadedImage == null? false : m_LoadedImage.PixelFormat == PixelFormat.Format8bppIndexed || m_LoadedImage.PixelFormat == PixelFormat.Format4bppIndexed; } }
         /// <summary>Width of the file (if applicable). Normally the same as GetBitmap().Width</summary>
-        public virtual Int32 Width { get { return loadedImage.Width; } }
+        public virtual Int32 Width { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Width; } }
         /// <summary>Height of the file (if applicable). Normally the same as GetBitmap().Height</summary>
-        public virtual Int32 Height { get { return loadedImage.Height; } }
+        public virtual Int32 Height { get { return m_LoadedImage == null ? 0 : m_LoadedImage.Height; } }
         /// <summary>Amount of colors in the palette.</summary>
-        public virtual Int32 ColorsInPalette { get { return this.FileHasPalette ? loadedImage.Palette.Entries.Length : 0; } }
+        public virtual Int32 ColorsInPalette { get { return this.FileHasPalette ? m_LoadedImage.Palette.Entries.Length : 0; } }
         public virtual N64FileType PreferredExportType { get { return new FileImagePng(); } }
         
         public abstract void LoadImage(Byte[] fileData);
@@ -35,14 +35,14 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         public virtual Int32 GetBitsPerColor()
         {
-            return Image.GetPixelFormatSize(loadedImage.PixelFormat);
+            return m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(m_LoadedImage.PixelFormat);
         }
 
         public virtual Color[] GetColors()
         {
             if (!this.FileHasPalette)
                 return new Color[0];
-            Color[] col1 = loadedImage.Palette.Entries;
+            Color[] col1 = m_LoadedImage.Palette.Entries;
             Color[] col2 = new Color[ColorsInPalette];
             Array.Copy(col1, col2, Math.Min(col1.Length, ColorsInPalette));
             return col2;
@@ -50,10 +50,10 @@ namespace CnC64FileConverter.Domain.ImageFile
 
         public virtual Bitmap GetBitmap()
         {
-            return loadedImage;
+            return m_LoadedImage;
         }
 
-        protected Bitmap loadedImage;
+        protected Bitmap m_LoadedImage;
 
         private static Type[] m_supportedOpenTypes =
         {
@@ -70,8 +70,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         private static Type[] m_autoDetectTypes =
         {
             typeof(FileImgN64Gray),
-            typeof(FileImgN64Basic1),
-            typeof(FileImgN64Basic2),
+            typeof(FileImgN64),
             typeof(FileMapN64),
             typeof(FileMapPc),
             typeof(FileImagePng),

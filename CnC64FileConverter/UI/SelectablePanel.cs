@@ -11,13 +11,14 @@ namespace Nyerguds.Util.UI
             this.SetStyle(ControlStyles.Selectable, true);
             this.TabStop = true;
         }
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             this.Focus();
             base.OnMouseDown(e);
         }
 
-        protected override bool IsInputKey(Keys keyData)
+        protected override Boolean IsInputKey(Keys keyData)
         {
             if (keyData == Keys.Up || keyData == Keys.Down || keyData == Keys.Left || keyData == Keys.Right)
                 return true;
@@ -30,19 +31,27 @@ namespace Nyerguds.Util.UI
             {
                 switch (e.KeyValue)
                 {
-                    case (int)System.Windows.Forms.Keys.Down:
+                    case (Int32)System.Windows.Forms.Keys.Down:
                         if (this.VerticalScroll.Visible)
                             this.VerticalScroll.Value = Math.Min(this.VerticalScroll.Maximum, this.VerticalScroll.Value + 50);
                         break;
-                    case (int)System.Windows.Forms.Keys.Up:
+                    case (Int32)System.Windows.Forms.Keys.PageDown:
+                        if (this.VerticalScroll.Visible)
+                            this.VerticalScroll.Value = Math.Min(this.VerticalScroll.Maximum, this.VerticalScroll.Value + this.ClientRectangle.Height);
+                        break;
+                    case (Int32)System.Windows.Forms.Keys.Up:
                         if (this.VerticalScroll.Visible)
                             this.VerticalScroll.Value = Math.Max(this.VerticalScroll.Minimum, this.VerticalScroll.Value - 50);
                         break;
-                    case (int)System.Windows.Forms.Keys.Right:
+                    case (Int32)System.Windows.Forms.Keys.PageUp:
+                        if (this.VerticalScroll.Visible)
+                            this.VerticalScroll.Value = Math.Max(this.VerticalScroll.Minimum, this.VerticalScroll.Value - this.ClientRectangle.Height);
+                        break;
+                    case (Int32)System.Windows.Forms.Keys.Right:
                         if (this.HorizontalScroll.Visible)
                             this.HorizontalScroll.Value = Math.Min(this.HorizontalScroll.Maximum, this.HorizontalScroll.Value + 50);
                         break;
-                    case (int)System.Windows.Forms.Keys.Left:
+                    case (Int32)System.Windows.Forms.Keys.Left:
                         if (this.HorizontalScroll.Visible)
                             this.HorizontalScroll.Value = Math.Max(this.HorizontalScroll.Minimum, this.HorizontalScroll.Value - 50);
                         break;
@@ -56,25 +65,29 @@ namespace Nyerguds.Util.UI
         protected override void OnScroll(ScrollEventArgs se)
         {
             base.OnScroll(se);
+            this.PerformLayout();
             this.Invalidate();
         }
 
         protected override void OnResize(EventArgs eventargs)
         {
             base.OnResize(eventargs);
+            this.PerformLayout();
             this.Invalidate();
         }
 
         protected override void OnEnter(EventArgs e)
         {
-            this.Invalidate();
             base.OnEnter(e);
+            this.Invalidate();
+            this.PerformLayout();
         }
 
         protected override void OnLeave(EventArgs e)
         {
-            this.Invalidate();
             base.OnLeave(e);
+            this.Invalidate();
+            this.PerformLayout();
         }
 
         protected override void OnPaint(PaintEventArgs pe)
@@ -86,6 +99,18 @@ namespace Nyerguds.Util.UI
                 Rectangle rc = this.ClientRectangle;
                 rc.Inflate(-2, -2);
                 ControlPaint.DrawFocusRectangle(pe.Graphics, rc);
+            }
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            base.WndProc(ref m);
+            // 0x115 and 0x20a both tell the control to scroll. If either one comes 
+            // through, you can handle the scrolling before any repaints take place
+            if (m.Msg == 0x115 || m.Msg == 0x20a)
+            {
+                this.Invalidate();
+                this.PerformLayout();
             }
         }
     }

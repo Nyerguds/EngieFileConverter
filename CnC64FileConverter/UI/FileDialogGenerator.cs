@@ -26,13 +26,15 @@ namespace Nyerguds.Util.UI
         /// <param name="generaltypeExt">Specific extension to always be supported. Can be left blank. for none</param>
         /// <param name="selectedItem">Returns a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected. Can be used for loading in the file's data.</param>
         /// <returns>The chosen filename, or null if the user cancelled.</returns>
-        public static String ShowOpenFileFialog<T>(IWin32Window owner, Type[] typesList, Type[] specificTypesList, String currentPath, String generaltypedesc, String generaltypeExt, out T selectedItem) where T : FileTypeBroadcaster
+        public static String ShowOpenFileFialog<T>(IWin32Window owner, String title, Type[] typesList, Type[] specificTypesList, String currentPath, String generaltypedesc, String generaltypeExt, out T selectedItem) where T : FileTypeBroadcaster
         {
             selectedItem = default(T);
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Multiselect = false;
             FileDialogItem<T>[] items = typesList.Select(x => new FileDialogItem<T>(x)).ToArray();
             T[] correspondingObjects;
+            if (title != null)
+                ofd.Title = title;
             ofd.Filter = GetFileFilterForOpen<T>(items, generaltypedesc, generaltypeExt, out correspondingObjects);
             ofd.InitialDirectory = String.IsNullOrEmpty(currentPath) ? Path.GetFullPath(".") : Path.GetDirectoryName(currentPath);
             //ofd.FilterIndex
@@ -180,28 +182,36 @@ namespace Nyerguds.Util.UI
 
         private static String GetFileFilterForOpen<T>(FileDialogItem<T>[] fileDialogItems, String generaltypedesc, String generaltypeExt, out T[] correspondingObjects) where T : FileTypeBroadcaster
         {
+            Boolean singleItem = fileDialogItems.Length == 1;
             List<String> types = new List<String>();
             List<T> objects = new List<T>();
-            HashSet<String> allTypes = new HashSet<String>();
-            types.Add(String.Empty); // to be replaced later
-            objects.Add(default(T));
+            HashSet<String> allTypes = singleItem ? null : new HashSet<String>();
+            if (!singleItem)
+            {
+                types.Add(String.Empty); // to be replaced later
+                objects.Add(default(T));
+            }
             foreach (FileDialogItem<T> itemType in fileDialogItems)
             {
                 HashSet<String> curTypes = new HashSet<String>();
                 foreach (String filter in itemType.Filters)
                 {
                     curTypes.Add(filter);
-                    allTypes.Add(filter);
+                    if (!singleItem)
+                        allTypes.Add(filter);
                 }
                 types.Add(String.Format("{0} ({1})|{1}", itemType.Description, String.Join(";", curTypes.ToArray())));
                 objects.Add(itemType.ItemObject);
             }
             if (String.IsNullOrEmpty(generaltypedesc))
                 generaltypedesc = "files";
-            if (!String.IsNullOrEmpty(generaltypeExt))
-                allTypes.Add("*." + generaltypeExt);
-            String allTypesStr = String.Join(";", allTypes.ToArray());
-            types[0] = "All supported " + generaltypedesc + " (" + allTypesStr + ")|" + allTypesStr;
+            if (!singleItem)
+            {
+                if (!String.IsNullOrEmpty(generaltypeExt))
+                    allTypes.Add("*." + generaltypeExt);
+                String allTypesStr = String.Join(";", allTypes.ToArray());
+                types[0] = "All supported " + generaltypedesc + " (" + allTypesStr + ")|" + allTypesStr;
+            }
             types.Add("All files (*.*)|*.*");
             objects.Add(default(T));
             correspondingObjects = objects.ToArray();

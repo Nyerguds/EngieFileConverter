@@ -31,12 +31,18 @@ namespace CnC64FileConverter.Domain.ImageFile
         protected Int32 m_ColsInPal;
 
         public FileImage() { }
+
+        public void LoadImage(Bitmap image, Int32 colors)
+        {
+            m_LoadedImage = image;
+            m_ColsInPal = colors;
+        }
         
         public override void LoadImage(Byte[] fileData)
         {
             try
             {
-                loadedImage = BitmapHandler.LoadBitmap(fileData, out m_ColsInPal);
+                m_LoadedImage = BitmapHandler.LoadBitmap(fileData, out m_ColsInPal);
             }
             catch (Exception ex)
             {
@@ -48,7 +54,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         {
             try
             {
-                loadedImage = BitmapHandler.LoadBitmap(filename, out m_ColsInPal);
+                m_LoadedImage = BitmapHandler.LoadBitmap(filename, out m_ColsInPal);
             }
             catch (Exception ex)
             {

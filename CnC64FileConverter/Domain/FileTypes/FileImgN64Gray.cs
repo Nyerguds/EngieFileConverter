@@ -10,6 +10,7 @@ namespace CnC64FileConverter.Domain.ImageFile
     
     public class FileImgN64Gray: FileImgN64
     {
+        public override String ShortTypeName { get { return "N64ImgGray"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
         public override String ShortTypeDescription { get { return "C&C64 paletteless image"; } }
 

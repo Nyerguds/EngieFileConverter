@@ -32,19 +32,9 @@ namespace Nyerguds.CCTypes
         public void WriteToFile(String filename)
         {
             if (String.IsNullOrEmpty(filename))
-                throw new ArgumentNullException("No filename given!", "filename");
+                throw new ArgumentNullException("filename", "No filename given!");
             using (FileStream fs = File.Create(filename))
-            {
-                try
-                {
-                    WriteToStream(fs);
-                }
-                finally
-                {
-                    if (fs != null)
-                        fs.Close();
-                }
-            }
+                WriteToStream(fs);
         }
 
         public Byte[] GetAsBytes()
@@ -69,23 +59,14 @@ namespace Nyerguds.CCTypes
         private void ReadFromFile(String filename)
         {
             if (String.IsNullOrEmpty(filename))
-                throw new ArgumentNullException("No filename given!", "filename");
+                throw new ArgumentNullException("filename","No filename given!");
             using (FileStream fs = File.OpenRead(filename))
             {
-                try
-                {
-
-                    if (fs.Length != FILELENGTH)
-                        throw new ArgumentException("File must be " + FILELENGTH + " bytes long.");
-                    Byte[] buffer = new Byte[FILELENGTH];
-                    fs.Read(buffer, 0, FILELENGTH);
-                    FillFromBuffer(buffer);
-                }
-                finally
-                {
-                    if (fs != null)
-                        fs.Close();
-                }
+                if (fs.Length != FILELENGTH)
+                    throw new ArgumentException("File must be " + FILELENGTH + " bytes long.");
+                Byte[] buffer = new Byte[FILELENGTH];
+                fs.Read(buffer, 0, FILELENGTH);
+                FillFromBuffer(buffer);
             }
         }
 

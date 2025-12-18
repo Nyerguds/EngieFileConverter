@@ -9,9 +9,8 @@ using System.Text;
 
 namespace CnC64FileConverter.Domain.ImageFile
 {
-    public class FileMapN64 : FileMapPc 
-    {
-        
+    public class FileMapN64 : FileMapPc
+    {        
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "N64Map"; } }
         public override String ShortTypeDescription { get { return "N64 C&C map file"; } }
@@ -26,12 +25,12 @@ namespace CnC64FileConverter.Domain.ImageFile
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
-            loadedImage = ReadN64MapAsImage(fileData, (Theater)0xFF, null);
+            m_LoadedImage = ReadN64MapAsImage(fileData, (Theater)0xFF, null);
         }
 
         public override void LoadImage(String filename)
         {
-            loadedImage = ReadN64MapAsImage(filename);
+            m_LoadedImage = ReadN64MapAsImage(filename);
         }
 
         public override void SaveAsThis(N64FileType fileToSave, String savePath)

@@ -1,5 +1,5 @@
 CnC64FileConverter
--------------- Created by by Nyerguds (19/11/2016)
+-------------- Created by by Nyerguds (04/04/2017)
 
 This tool allows viewing and saving from and to several file formats found in the Nintendo 64 ROM
 of the Command & Conquer game.
@@ -8,6 +8,7 @@ The files can be extracted from / inserted into the ROM with the Universal Game 
 (GEDecompressor), made by SubDrag.
 http://www.goldeneyevault.com/viewfile.php?id=213
 
+Special thanks to Kamuix and Chad1233 for their help in testing this.
 
 Features:
 --------
@@ -18,7 +19,8 @@ Features:
 -Can save opened files as any supported format, though some conversions are obviously impossible;
  high-colour images can't be saved as palette, and only maps can be saved as maps.
 -Preserves the color palette when saving 4-bit and 8-bit paletted images.
--Supports drag & drop for opening files
+-Supports drag & drop for opening files.
+-Has utilities to help generate height maps for missions.
 -Can be used as command line converter with the following syntax:
     CnC64FileConverter.exe infile.img outfile.png
 
@@ -29,6 +31,10 @@ This tool stated as the CnC64ImageViewer, but later got expanded to a full conve
 At that point, it becameto CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
+
+v1.0.3: (07/04/2017 15:30)
+-Fixed small palette import bug in tilesets
+-Added tools to generate height maps from missions.
 
 v1.0.2: (04/04/2017 23:53)
 -Fixed png export of map files.

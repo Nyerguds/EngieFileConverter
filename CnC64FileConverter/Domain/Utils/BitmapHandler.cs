@@ -104,7 +104,7 @@ namespace Nyerguds.ImageManipulation
                         Int32 width = bitmapSource.PixelWidth;
                         Int32 height = bitmapSource.PixelHeight;
                         Int32 bpp = bitmapSource.Format.BitsPerPixel;
-                        Int32 stride = Math.Max(width, GetStride(width, bitmapSource.Format.BitsPerPixel));
+                        Int32 stride = Math.Max(width,  ImageUtils.GetMinimumStride(width, bitmapSource.Format.BitsPerPixel));
                         Byte[] pixel = new Byte[height * stride];
                         bitmapSource.CopyPixels(pixel, stride, 0);
                         WriteableBitmap myBitmap = new WriteableBitmap(width, height, 96, 96, bitmapSource.Format, bitmapSource.Palette);
@@ -130,9 +130,10 @@ namespace Nyerguds.ImageManipulation
                         if (hasTransparency)
                         {
                             Byte[] imageData = ImageUtils.GetImageData(newBitmap, out stride);
-                            newBitmap = ImageUtils.BuildImage(imageData, newBitmap.Width, newBitmap.Height, stride, newBitmap.PixelFormat, colpal, System.Drawing.Color.Empty);
+                            return ImageUtils.BuildImage(imageData, newBitmap.Width, newBitmap.Height, stride, newBitmap.PixelFormat, colpal, System.Drawing.Color.Empty);
                         }
-                        return newBitmap;
+                        else
+                            return newBitmap;
                     }                    
                 }
             }
@@ -141,15 +142,9 @@ namespace Nyerguds.ImageManipulation
                 loadedImage = new Bitmap(ms);
                 paletteLength = loadedImage.Palette.Entries.Length;
             }
-            return loadedImage;
+            return ImageUtils.CloneImage(loadedImage);
         }
 
-        private static Int32 GetStride(Int32 width, Int32 bits)
-        {
-            Int32 stride = bits * width;
-            return (stride / 8) + ((stride % 8) > 0 ? 1 : 0);
-        }
-        
         /// <summary>
         /// Saves as png, reducing the palette to the given length.
         /// </summary>

@@ -37,7 +37,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             Exception e = null;
             try
             {
-                palette = ColorUtils.ReadSixBitPaletteFile(fileData);
+                palette = ColorUtils.ReadSixBitPalette(fileData);
             }
             catch (ArgumentException ex) { e = ex;}
             catch (NotSupportedException ex2) { e = ex2;}
@@ -45,8 +45,8 @@ namespace CnC64FileConverter.Domain.ImageFile
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + e.Message, e);
             }
-            m_palette = ColorUtils.GetColorPalette(palette);
-            this.loadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_palette, Color.Black);
+            m_palette = ColorUtils.GetEightBitColorPalette(palette);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_palette, Color.Black);
         }
 
         public override void LoadImage(String filename)

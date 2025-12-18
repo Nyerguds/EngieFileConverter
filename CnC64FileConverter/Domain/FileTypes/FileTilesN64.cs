@@ -16,10 +16,19 @@ namespace CnC64FileConverter.Domain.ImageFile
         public override String ShortTypeDescription { get { return "N64 " + Bpp + "-bit tile data"; } }
 
         protected virtual Int32 Bpp { get { return 4; } }
+        protected virtual FilePaletteN64 PaletteType { get { return new FilePaletteN64Pa4(); } }
         protected String ExtData { get { return "da" + Bpp; } }
         protected String ExtPalIndex { get { return "nd" + Bpp; } }
         protected String ExtPalFile { get { return "pa" + Bpp; } }
+        protected FilePaletteN64 Palette;
 
+        public override Boolean FileHasPalette { get { return true; } }
+        public override Int32 ColorsInPalette { get { return Palette.ColorsInPalette; } }
+
+        public override Color[] GetColors()
+        {
+            return Palette.GetColors();
+        }
 
         public override void LoadImage(Byte[] fileData)
         {
@@ -33,7 +42,7 @@ namespace CnC64FileConverter.Domain.ImageFile
             String palIndexFileName = filenameBase + ExtPalIndex;
             String palFileName = filenameBase + ExtPalFile;
             if (!File.Exists(dataFileName) || !File.Exists(palIndexFileName) || !File.Exists(palFileName))
-                throw new FileTypeLoadException("Tileset load failed: Can not load the" + ExtData + "/" + ExtPalIndex + "/" + ExtPalFile + "file triplet.");
+                throw new FileTypeLoadException("Tileset load failed: Can not load the " + ExtData + "/" + ExtPalIndex + "/" + ExtPalFile + " file triplet.");
             Byte[] dataFile = File.ReadAllBytes(dataFileName);
             Int32 tileSize = 24 * 3 * Bpp;
             if (dataFile.Length % tileSize != 0)
@@ -41,16 +50,16 @@ namespace CnC64FileConverter.Domain.ImageFile
             Byte[] palIndexFile = File.ReadAllBytes(palIndexFileName);
             if (dataFile.Length / tileSize != palIndexFile.Length)
                 throw new FileTypeLoadException("Tileset load failed: amount of entries in " + ExtPalIndex + "file does not match those in " + ExtData + " file." );
-            FilePaletteN64 palette = new FilePaletteN64();
+            this.Palette = PaletteType;
             try
             {
-                palette.LoadImage(palFileName);
+                this.Palette.LoadImage(palFileName);
             }
             catch(FileTypeLoadException ex)
             {
                 throw new FileTypeLoadException("Could not load tilesets palette file: " + ex.Message, ex);
             }
-            LoadData(dataFile, palIndexFile, palette);            
+            LoadData(dataFile, palIndexFile, this.Palette);
         }
 
         public override void SaveAsThis(N64FileType fileToSave, String savePath)
@@ -74,12 +83,13 @@ namespace CnC64FileConverter.Domain.ImageFile
                     imageData[index] = (Byte)(imageData[index] + increase);
                 }
             }
-            this.loadedImage = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, palette.GetColors(), Color.Empty);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, palette.GetColors(), Color.Empty);
         }
     }
 
     public class FileTilesN64Bpp8 : FileTilesN64Bpp4
     {
         protected override Int32 Bpp { get { return 8; } }
+        protected virtual FilePaletteN64 PaletteType { get { return new FilePaletteN64Pa8(); } }
     }
 }

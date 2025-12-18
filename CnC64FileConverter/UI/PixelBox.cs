@@ -18,7 +18,7 @@ namespace RedCell.UI.Controls
         public PixelBox ()
         {
             // Set default.
-            InterpolationMode = InterpolationMode.Default;
+            InterpolationMode = InterpolationMode.NearestNeighbor;
         }
 
         void PixelBox_Paint(object sender, PaintEventArgs e)
@@ -43,7 +43,7 @@ namespace RedCell.UI.Controls
         /// </summary>
         /// <value>The interpolation mode.</value>
         [Category("Behavior")]
-        [DefaultValue(InterpolationMode.Default)]
+        [DefaultValue(InterpolationMode.NearestNeighbor)]
         public InterpolationMode InterpolationMode { get; set; }
         #endregion
 

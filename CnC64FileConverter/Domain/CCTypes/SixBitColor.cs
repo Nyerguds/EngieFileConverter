@@ -68,8 +68,16 @@ namespace Nyerguds.CCTypes
 
         public Byte[] GetAsByteArray()
         {
-            return new Byte[] {R, G, B};
+            return new Byte[] { R, G, B };
         }
+
+        public void WriteToByteArray(Byte[] array, Int32 offset)
+        {
+            array[offset + 0] = R;
+            array[offset + 1] = G;
+            array[offset + 2] = B;
+        }
+
 
         public override String ToString()
         {

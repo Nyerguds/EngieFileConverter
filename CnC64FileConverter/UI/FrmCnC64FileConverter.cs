@@ -1,7 +1,9 @@
 ﻿using CnC64FileConverter.Domain;
+using CnC64FileConverter.Domain.HeightMap;
 using CnC64FileConverter.Domain.ImageFile;
 using CnC64FileConverter.Domain.Utils;
 using Nyerguds.ImageManipulation;
+using Nyerguds.Ini;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
 using System;
@@ -192,7 +194,7 @@ namespace CnC64FileConverter.UI
         private void BtnOpen_Click(object sender, EventArgs e)
         {
             N64FileType selectedItem;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, N64FileType.SupportedOpenTypes, N64FileType.SupportedSaveTypes, this.m_Filename, "images", null, out selectedItem);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, N64FileType.SupportedOpenTypes, N64FileType.AutoDetectTypes, this.m_Filename, "images", null, out selectedItem);
             if (filename == null)
                 return;
             LoadImage(filename, selectedItem, null);
@@ -231,6 +233,86 @@ namespace CnC64FileConverter.UI
                 lblTransparentColorVal.BackColor = backgroundFillColor;
                 picImage.BackColor = backgroundFillColor;
                 numZoom_ValueChanged(null, null);
+            }
+        }
+
+        private void TsmiToHeightMapAdv_Click(object sender, EventArgs e)
+        {
+            GenerateHeightMap(true);
+        }
+        private void TsmiToHeightMap_Click(object sender, EventArgs e)
+        {
+            GenerateHeightMap(false);
+        }
+        
+        private void GenerateHeightMap(Boolean selectHeightMap)
+        {
+            if (this.m_LoadedFile is FileMapPc)
+            {
+                String baseFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename));
+                String iniFileName = baseFileName + ".ini";
+                String pngFileName = baseFileName + ".png";
+                Bitmap plateauImage = null;
+                if (selectHeightMap)
+                {
+                    N64FileType selectedType;
+                    //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
+                    String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Open height levels image", new Type[] { typeof(FileImage) }, null, pngFileName, "images", null, out selectedType);
+                    if (filename == null)
+                        return;
+                    try
+                    {
+                        if (selectedType == null)
+                            selectedType = new FileImage();
+                        selectedType.LoadImage(filename);
+                        plateauImage = selectedType.GetBitmap();
+                    }
+                    catch(Exception e)
+                    {
+                        MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + e.Message, this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                    if (plateauImage.Width != 64 || plateauImage.Height != 64)
+                    {
+                        MessageBox.Show(this, "Plateaus image needs to be 64x64!", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+                }
+                FileMapPc map = (FileMapPc)m_LoadedFile;
+                IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
+                this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map.Map, mapInfo, plateauImage);
+                this.m_Filename = pngFileName;
+                ReloadUi(null);
+            }
+        }
+
+        private void TsmiTo65x65HeightMap_Click(object sender, EventArgs e)
+        {
+            if (this.m_LoadedFile != null && m_LoadedFile.Width == 64 && m_LoadedFile.Height == 64 && m_LoadedFile is FileImage)
+            {
+                String baseFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename));
+                String pngFileName = baseFileName + "_h.png";
+                Bitmap bm = HeightMapGenerator.GenerateHeightMapImage65x65(m_LoadedFile.GetBitmap());
+                Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref pngFileName);
+                this.m_LoadedFile = new FileImagePng();
+                m_LoadedFile.LoadImage(imageData);
+                this.m_Filename = pngFileName;
+                ReloadUi(null);
+            }
+        }
+
+        private void tsmiToPlateaus_Click(object sender, EventArgs e)
+        {
+            if (this.m_LoadedFile is FileMapPc)
+            {
+                String baseFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename));
+                String iniFileName = baseFileName + ".ini";
+                String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
+                FileMapPc map = (FileMapPc)m_LoadedFile;
+                IniFile mapInfo = !File.Exists(iniFileName) ? null : new IniFile(iniFileName, IniFile.ENCODING_DOS_US);
+                this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64(map.Map, mapInfo);
+                this.m_Filename = plateauFileName;
+                ReloadUi(null);
             }
         }
     }
