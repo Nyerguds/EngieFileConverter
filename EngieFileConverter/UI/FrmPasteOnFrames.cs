@@ -64,7 +64,7 @@ namespace EngieFileConverter.UI
                     filteredTypes.Add(saveType);
             }
             SupportedFileType selectedType;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), this.LastSelectedFolder, "images", null, out selectedType);
+            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), this.LastSelectedFolder, "images", null, true, out selectedType);
             if (filename == null)
                 return;
             this.LastSelectedFolder = Path.GetDirectoryName(filename);

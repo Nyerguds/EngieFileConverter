@@ -3,7 +3,10 @@
 namespace Nyerguds.FileData.Compression
 {
     /// <summary>
-    /// Decoder only. Need to get my hands on an encoder for this...
+    /// Decoder only. Need to get my hands on an encoder for this.
+    /// Information from:
+    /// https://www.vogons.org/viewtopic.php?p=306003#p306003
+    /// https://people.cs.umu.se/isak/snippets/lzhuf.c
     /// </summary>
     public class LzssHuffDecoder
     {

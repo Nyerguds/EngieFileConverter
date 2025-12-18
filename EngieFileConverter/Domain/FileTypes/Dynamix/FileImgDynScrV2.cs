@@ -11,13 +11,13 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            this.LoadFile(fileData, null, true, false);
+            this.LoadFile(fileData, null, true);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.SetFileNames(filename);
-            this.LoadFile(fileData, filename, true, false);
+            this.LoadFile(fileData, filename, true);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

@@ -72,7 +72,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 SaveEnableFilter[] filters = dependentControl.Filters;
                 Int32 nrOfFilters = filters.Length;
                 Boolean hasFilter = false;
-                for (Int32 f = 0; f < nrOfFilters; f++)
+                for (Int32 f = 0; f < nrOfFilters; ++f)
                 {
                     if (filters[f].CheckOption != checkCode)
                         continue;
@@ -85,7 +85,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 if (soc == null)
                     continue;
                 Boolean matches = true;
-                for (Int32 f = 0; f < nrOfFilters; f++)
+                for (Int32 f = 0; f < nrOfFilters; ++f)
                 {
                     if (this.EvaluateFilter(filters[f]))
                         continue;

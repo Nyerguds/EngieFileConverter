@@ -10,7 +10,6 @@ namespace Nyerguds.ImageManipulation
 {
     public static class ColorUtils
     {
-
         const String invalid = "This is not a valid six-bit palette file.";
 
         public static Color ColorFromUInt(UInt32 argb)
@@ -64,7 +63,7 @@ namespace Nyerguds.ImageManipulation
         {
             Color[] eightbitpalette = new Color[sixbitpalette.Length];
             for (Int32 i = 0; i < sixbitpalette.Length; ++i)
-                eightbitpalette[i] = sixbitpalette[i].GetAsColor();
+                eightbitpalette[i] = sixbitpalette[i];
             return eightbitpalette;
         }
 
@@ -130,12 +129,18 @@ namespace Nyerguds.ImageManipulation
         public static ColorSixBit[] ReadSixBitPaletteFile(String palfilename)
         {
             Byte[] readBytes = File.ReadAllBytes(palfilename);
-            return ReadSixBitPaletteFile(readBytes);
+            return ReadSixBitPalette(readBytes);
         }
 
-        public static ColorSixBit[] ReadSixBitPaletteFile(Byte[] paletteData)
+        public static Color[] ReadFromSixBitPaletteFile(String palfilename)
         {
-            if (paletteData.Length != 768)
+            Byte[] readBytes = File.ReadAllBytes(palfilename);
+            return ReadSixBitPaletteAsEightBit(readBytes, 0, 0x100);
+        }
+
+        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData)
+        {
+            if (paletteData.Length != 0x300)
                 throw new ArgumentException(invalid);
             return ReadSixBitPalette(paletteData, 0, 0x100);
         }
@@ -162,7 +167,38 @@ namespace Nyerguds.ImageManipulation
             catch (ArgumentException e)
             {
                 // ArgumentException means some of the values exceeded 63
-                throw new NotSupportedException(invalid, e);
+                throw new ArgumentException(invalid, e);
+            }
+        }
+        
+        public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData)
+        {
+            return ReadSixBitPaletteAsEightBit(paletteData, 0, 0x100);
+        }
+
+        public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData, Int32 start)
+        {
+            return ReadSixBitPaletteAsEightBit(paletteData, start, 0x100);
+        }
+
+        public static Color[] ReadSixBitPaletteAsEightBit(Byte[] paletteData, Int32 start, Int32 colors)
+        {
+            if (paletteData.Length + start < colors * 3)
+                throw new ArgumentException(invalid);
+            Color[] pal = new Color[colors];
+            try
+            {
+                for (Int32 i = 0; i < colors; ++i)
+                {
+                    Int32 index = start + i * 3;
+                    pal[i] = new ColorSixBit(paletteData[index], paletteData[index + 1], paletteData[index + 2]).GetAsColor();
+                }
+                return pal;
+            }
+            catch (ArgumentException e)
+            {
+                // ArgumentException means some of the values exceeded 63
+                throw new ArgumentException(invalid, e);
             }
         }
 
@@ -177,11 +213,22 @@ namespace Nyerguds.ImageManipulation
             Int32 dataLength = paletteData.Length;
             if (dataLength % 3 != 0)
                 throw new ArgumentException("This is not a valid palette file.");
-            return ReadEightBitPaletteFrom(paletteData, 0, readFull ? 256 : dataLength / 3);
+            return ReadEightBitPalette(paletteData, 0, readFull ? 0x100 : Math.Min(0x100, dataLength / 3));
         }
 
-        public static Color[] ReadEightBitPaletteFrom(Byte[] data, Int32 index, Int32 length)
+        public static Color[] ReadEightBitPalette(Byte[] data)
         {
+            return ReadEightBitPalette(data, 0, 0x100);
+        }
+
+        public static Color[] ReadEightBitPalette(Byte[] data, Int32 index)
+        {
+            return ReadEightBitPalette(data, index, 0x100);
+        }
+
+        public static Color[] ReadEightBitPalette(Byte[] data, Int32 index, Int32 length)
+        {
+            length = Math.Min(0x100, Math.Max(0, length));
             Color[] pal = new Color[length];
             Int32 dataEnd = Math.Min(data.Length, index + length * 3);
             for (Int32 i = 0; i < length; ++i)

@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood Amiga Frames CPS"; } }
         public override String[] FileExtensions { get { return new String[] { "cps" }; } }
         public override String ShortTypeDescription { get { return "Westwood Amiga Frames CPS File"; } }
-        public override Int32 ColorsInPalette { get { return this.HasPalette ? this.m_Palette.Length : 0; } }
+        public override Boolean NeedsPalette { get { return !this.HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -46,8 +46,8 @@ namespace EngieFileConverter.Domain.FileTypes
             this.HasPalette = true;
             if (palette == null)
                 throw new FileTypeLoadException("Cannot identify palette!");
-            m_Palette = palette;
-            Int32 images = m_Palette.Length / 32;
+            this.m_Palette = palette;
+            Int32 images = this.m_Palette.Length / 32;
             Int32 frWidth = 160;
             Int32 frHeight = 96;
             this.m_FramesList = new SupportedFileType[images];
@@ -61,7 +61,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 offsetX = index % 320;
                 Int32 offsetY = index / 320 * frHeight;
                 Color[] framePal = new Color[32];
-                Array.Copy(m_Palette, i * 32, framePal, 0, 32);
+                Array.Copy(this.m_Palette, i * 32, framePal, 0, 32);
                 if (firstFramePal == null)
                     firstFramePal= framePal;
                 else if (equalPalettes)
@@ -75,13 +75,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.LoadFileFrame(this, this, curFrImg, filename, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
                 framePic.SetFileClass(this.FrameInputFileClass);
-                framePic.SetColorsInPalette(this.ColorsInPalette);
+                framePic.SetNeedsPalette(this.NeedsPalette);
                 this.m_FramesList[i] = framePic;
             }
-            m_CommonPal = equalPalettes;
+            this.m_CommonPal = equalPalettes;
             try
             {
-                Byte[] combinedImageData = equalPalettes ? imageData : GetCombinedImage(imageData, images);
+                Byte[] combinedImageData = equalPalettes ? imageData : this.GetCombinedImage(imageData, images);
                 if (equalPalettes)
                     this.m_Palette = firstFramePal;
                 this.m_LoadedImage = ImageUtils.BuildImage(combinedImageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
@@ -91,7 +91,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Cannot construct image from read data!", e);
             }
-            this.SetExtraInfo();
+            this.SetExtraInfo(null);
             this.SetFileNames(filename);
         }
 
@@ -132,6 +132,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
+            this.PerformPreliminaryChecks(fileToSave);
             FileFramesWwCpsAmi4 cps = fileToSave as FileFramesWwCpsAmi4;
             Int32 compression = cps != null ? cps.CompressionType : 4;
             return new SaveOption[]
@@ -142,15 +143,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            // Preliminary checks
-            if (fileToSave == null)
-                throw new NotSupportedException("File to save is empty!");
-            SupportedFileType[] frames = fileToSave.Frames;
-            if (!fileToSave.IsFramesContainer || frames == null || frames.Length == 0)
-                throw new NotSupportedException("File to save has no frames!");
-            if (frames.Length > 4)
-                throw new NotSupportedException("This type can only save up to four frames!");
-            
+            SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave);
             // Save options
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);            
@@ -167,16 +160,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap frImage = frame.GetBitmap();
                 Color[] frColors = frImage.Palette.Entries;
                 if (frImage.PixelFormat != PixelFormat.Format8bppIndexed || frColors.Length == 0)
-                    throw new NotSupportedException("Frame " + i + " is not 8-bit indexed!");
+                    throw new ArgumentException("Frame " + i + " is not 8-bit indexed!", "fileToSave");
                 Int32 width = frImage.Width;
                 Int32 height = frImage.Height;
                 Int32 curMax = i < 2 ? 96 : 104;
                 if (width > 160 && height > curMax)
-                    throw new NotSupportedException("Frame " + i + " does not fit in 160×" + curMax + "!");
+                    throw new ArgumentException("Frame " + i + " does not fit in 160×" + curMax + "!", "fileToSave");
                 Int32 stride;
                 Byte[] frData = ImageUtils.GetImageData(frImage, out stride, true);
                 if (frData.Any(p => p >= 32))
-                    throw new NotSupportedException("Pixels in frame " + i + " exceed index 32 on the palette!");
+                    throw new ArgumentException("Pixels in frame " + i + " exceed index 32 on the palette!", "fileToSave");
                 Array.Copy(frColors, 0, fullPalette, i * 32, Math.Min(frColors.Length, 32));
 
                 Int32 index = i * 160;
@@ -185,6 +178,20 @@ namespace EngieFileConverter.Domain.FileTypes
                 ImageUtils.PasteOn8bpp(imageData, 320, 200, 320, frData, width, height, width, new Rectangle(offsetX, offsetY, width, height), null, true);
             }
             return SaveCps(imageData, fullPalette, nrOfFrames, compressionType, CpsVersion.AmigaEob2);
+        }
+
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave)
+        {
+            // Preliminary checks
+            if (fileToSave == null)
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
+            if (frames == null || frames.Length == 0)
+                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames > 4)
+                throw new ArgumentException("This type can only save up to four frames.", "fileToSave");
+            return frames;
         }
     }
 }

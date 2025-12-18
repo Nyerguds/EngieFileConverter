@@ -5,6 +5,7 @@ namespace Nyerguds.FileData.Dynamix
 {
     /// <summary>
     /// The Dynamix LZW decompression class.
+    /// https://www.vogons.org/viewtopic.php?p=273448#p273448
     /// </summary>
     public class DynamixLzwDecoder
     {
@@ -61,7 +62,6 @@ namespace Nyerguds.FileData.Dynamix
             while (outPtr < bufferOut.Length)
             {
                 // get next code
-                //Int32 code = GetBitsRight(this.codeSize, buffer, inPtrEnd, ref inPtr);
                 Int32 code = ArrayUtils.ReadBitsFromByteArray(buffer, ref bitIndex, this.codeSize, inPtrEnd);
 
                 if (code == -1)

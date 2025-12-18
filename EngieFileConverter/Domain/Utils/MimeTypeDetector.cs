@@ -24,8 +24,7 @@ namespace Nyerguds.Util
                 {"torrent", new Byte[] { 100, 56, 58, 97, 110, 110, 111, 117, 110, 99, 101 }},
                 {"ttf", new Byte[] { 0, 1, 0, 0, 0 }},
                 {"zip", new Byte[] { 80, 75, 3, 4 }},
-                {"pcx", new Byte[] { 10 }},
-                
+                {"pcx", new Byte[] { 10 }},                
             };
 
         private static Dictionary<String, String> MIME_TYPES = new Dictionary<String, String>()

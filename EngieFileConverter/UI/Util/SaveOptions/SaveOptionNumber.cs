@@ -67,7 +67,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             if (String.IsNullOrEmpty(max) || !Decimal.TryParse(max, out maxVal))
                 maxVal = Decimal.MaxValue;
             if (minVal > maxVal)
-                throw new NotSupportedException("Initialization error: Given maximum is smaller than given minimum!");
+                throw new ArgumentException("Initialization error: Given maximum is smaller than given minimum!", "info");
             this.numValue.Minimum = minVal;
             this.numValue.Maximum = maxVal;
         }

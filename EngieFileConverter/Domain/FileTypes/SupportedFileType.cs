@@ -12,8 +12,33 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public abstract class SupportedFileType : IFileTypeBroadcaster, IDisposable
     {
+        #region Generic error messages
+        // Input
+        protected static readonly String ERR_FILE_TOO_SMALL = "File is not long enough to be of this type.";
+        protected static readonly String ERR_BAD_SIZE = "Incorrect file size.";
+        protected static readonly String ERR_DECOMPR = "Error decompressing file.";
+        protected static readonly String ERR_DECOMPR_LEN = "Decompressed size does not match.";
+        protected static readonly String ERR_DIM_ZERO = "Image dimensions can't be 0.";
+        // Output
+        protected static readonly String ERR_EMPTY_FILE = "File to save is empty!";
+        protected static readonly String ERR_NO_FRAMES = "This format needs at least one frame.";
+        protected static readonly String ERR_IMAGE_TOO_LARGE = "Image is too large to be saved into this format.";
+        protected static readonly String ERR_EMPTY_FRAMES = "This format can't handle empty frames.";
+        protected static readonly String ERR_FRAMES_DIFF = "This format needs all its frames to be the same size.";
+        protected static readonly String ERR_FRAMES_BPPDIFF = "All frames must have the same color depth.";
+        protected static readonly String ERR_1BPP_INPUT = "This format needs 1bpp input.";
+        protected static readonly String ERR_4BPP_INPUT = "This format needs 4bpp input.";
+        protected static readonly String ERR_8BPP_INPUT = "This format needs 8bpp input.";
+        protected static readonly String ERR_NO_COL = "The given input contains no colors.";
+        protected static readonly String ERR_UNKN_COMPR = "Unknown compression type \"{0}\".";
+        protected static readonly String ERR_320x200 = "This format needs 320x200 input.";
+
+        #endregion
+        /// <summary>Main image in this loaded file. Can be left as null for an empty frame or the main entry of a frames container.</summary>
         protected Bitmap m_LoadedImage;
+        /// <summary>Colour palette currently loaded into the image.</summary>
         protected Color[] m_Palette;
+        /// <summary>Backup colour palette, to allow resetting the palette to its original state. Not used if NeedsPalette is set to return 'false'.</summary>
         protected Color[] m_BackupPalette;
         public SupportedFileType FrameParent { get; set; }
 
@@ -33,12 +58,14 @@ namespace EngieFileConverter.Domain.FileTypes
         public abstract String[] FileExtensions { get; }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public virtual String[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.ShortTypeDescription, this.FileExtensions.Length).ToArray(); } }
+        /// <summary>True if this type can save. Defaults to true.</summary>
+        public virtual Boolean CanSave { get { return true; } }
         /// <summary>Width of the file (if applicable). Normally the same as GetBitmap().Width</summary>
         public virtual Int32 Width { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Width; } }
         /// <summary>Height of the file (if applicable). Normally the same as GetBitmap().Height</summary>
         public virtual Int32 Height { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Height; } }
-        /// <summary>Amount of colors in the palette that is contained inside the image. 0 if the image itself does not contain a palette, even if it generates one.</summary>
-        public virtual Int32 ColorsInPalette { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Palette.Entries.Length; } }
+        /// <summary>True if the type contains no colours of its own, and needs an external palette to display its data. Only needs to be overridden if it return true.</summary>
+        public virtual Boolean NeedsPalette { get { return false; } }
         /// <summary>Full path of the loaded file.</summary>
         public String LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
@@ -51,8 +78,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual Boolean IsFramesContainer { get { return this.Frames != null; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
         public virtual Boolean FramesHaveCommonPalette { get { return this.IsFramesContainer; } }
-        ///// <summary>Returns true if the frames inside this frame container have individual filenames.</summary>
-        //public virtual Boolean FramesHaveNames { get { return false; } }
 
         /// <summary>
         /// This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source, and can normally also be saved from a single-image source.
@@ -63,31 +88,47 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual String ExtraInfo { get; set; }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.</summary>
         public virtual Boolean[] TransparencyMask { get { return null; } }
-
-        protected virtual void BuildFullImage() { }
-
-        //public virtual SaveOption[] GetPostLoadInitOptions()
-        //{
-        //    return new SaveOption[0];
-        //}
-
-        //public virtual void PostLoadInit(SaveOption[] loadOptions) { }
         
+        /// <summary>
+        /// Load a file from byte array. Note that the use of this function is discouraged, since many file types refer 
+        /// to accompanying files, like colour palettes, to complete the loaded data, and these cannot be detected without
+        /// a file path.
+        /// </summary>
+        /// <param name="fileData">The data read from the file.</param>
         public abstract void LoadFile(Byte[] fileData);
 
+        /// <summary>
+        /// Load a file from byte array. The accompanying path is used to name the file on the UI, and to give the
+        /// loading function the opportunity to load accompanying files from the same folder.
+        /// </summary>
+        /// <param name="fileData">The data read from the file.</param>
+        /// <param name="filename">Original path the file was loaded from.</param>
         public virtual void LoadFile(Byte[] fileData, String filename)
         {
             this.LoadFile(fileData);
             this.SetFileNames(filename);
         }
 
-        public virtual void LoadFile(SupportedFileType file)
-        {
-            Byte[] thisBytes = this.SaveToBytesAsThis(file, new SaveOption[0]);
-            this.LoadFile(thisBytes);
-        }
-
+        /// <summary>
+        /// Some animation types are split into separate files, which often means the later files in the sequence
+        /// rely on the previous ones to correctly construct their initial state.
+        /// File types with that issue should override this function, to analyse which files need to be chained
+        /// to get that state. This is a function used by the UI to ask for confirmation for the loading.
+        /// This function is always called on loaded frame container types, and must return null or an empty chain
+        /// to signal that there is no missing data.
+        /// </summary>
+        /// <param name="originalPath">Original path the file was loaded from.</param>
+        /// <returns>The filenames in the required load chain, or null if there is no missing initial data.</returns>
         public virtual List<String> GetFilesToLoadMissingData(String originalPath) { return null; }
+
+        /// <summary>
+        /// Some animation types are split into separate files, which often means the later files in the sequence
+        /// rely on the previous ones to correctly construct their initial state.
+        /// This function will reload the file, using the files in the load chain to construct that initial state.
+        /// </summary>
+        /// <param name="fileData">Data of the original file </param>
+        /// <param name="originalPath">Original path the file was loaded from.</param>
+        /// <param name="loadChain">The sequence of files to load to get to the current file's initial state.</param>
         public virtual void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain) { }
 
         /// <summary>
@@ -130,12 +171,18 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <returns></returns>
         public virtual Color[] GetColors()
         {
-            if (this.m_LoadedImage == null && this.m_Palette == null)
-                return new Color[0];
-            Color[] col1 = this.m_Palette == null ? this.m_LoadedImage.Palette.Entries : this.m_Palette;
-            Color[] col2 = new Color[col1.Length];
-            col1.CopyTo(col2, 0);
-            return col2;
+            return GetColorsInternal() ?? new Color[0];
+        }
+
+        protected Color[] GetColorsInternal()
+        {
+            if (this.BitsPerPixel == 0 || this.BitsPerPixel > 8)
+                return null;
+            if (this.m_Palette != null)
+                return ArrayUtils.CloneArray(m_Palette);
+            if (this.m_LoadedImage != null && (this.m_LoadedImage.PixelFormat & PixelFormat.Indexed) != 0)
+                return this.m_LoadedImage.Palette.Entries;
+            return null;
         }
 
         public virtual void SetColors(Color[] palette)
@@ -147,45 +194,31 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (ReferenceEquals(updateSource, this))
                 return;
-            if (palette == null || palette.Length == 0)
+            if (palette == null)
                 return;
-            Boolean isInternal = this.ColorsInPalette > 0;
-            if (updateSource != null && isInternal)
+            Int32 paletteLength = palette.Length;
+            if (paletteLength == 0)
                 return;
-            if (this.BitsPerPixel != 0)
+            if (this.BitsPerPixel > 0 && this.BitsPerPixel <= 8)
             {
                 Int32 maxLen = 1 << this.BitsPerPixel;
                 // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
-                Int32 paletteLength = Math.Min(maxLen, this.m_LoadedImage == null ? maxLen : this.m_LoadedImage.Palette.Entries.Length);
-                if (palette.Length > paletteLength && palette.Length < maxLen)
-                    paletteLength = palette.Length;
-                Color[] pal = new Color[paletteLength];
-                for (Int32 i = 0; i < paletteLength; ++i)
+                Color[] origPal = GetColorsInternal();
+                Int32 origPalLength = origPal == null ? maxLen : Math.Min(origPal.Length, maxLen);
+                Color[] newPalette = new Color[origPalLength];
+                for (Int32 i = 0; i < origPalLength; ++i)
                 {
-                    if (i < palette.Length)
-                        pal[i] = palette[i];
+                    if (i < paletteLength)
+                        newPalette[i] = palette[i];
                     else
-                        pal[i] = Color.Empty;
+                        newPalette[i] = Color.Empty;
                 }
                 Color[] testpal;
-                if (this.m_BackupPalette == null && (testpal = this.GetColors()) != null && testpal.Length != 0 && isInternal)
-                    this.m_BackupPalette = this.m_Palette == null ? (this.m_LoadedImage == null ? null : this.m_LoadedImage.Palette.Entries) : ArrayUtils.CloneArray(this.m_Palette);
-                this.m_Palette = pal;
+                if (this.m_BackupPalette == null && (testpal = this.GetColors()) != null && testpal.Length != 0 && !this.NeedsPalette)
+                    this.m_BackupPalette = GetColorsInternal();
+                this.m_Palette = newPalette;
                 if (this.m_LoadedImage != null)
-                {
-                    ColorPalette imagePal = this.m_LoadedImage.Palette;
-                    if (imagePal.Entries.Length != pal.Length)
-                        imagePal = ImageUtils.GetPalette(pal);
-                    Int32 entries = imagePal.Entries.Length;
-                    for (Int32 i = 0; i < entries; ++i)
-                    {
-                        if (i < pal.Length)
-                            imagePal.Entries[i] = pal[i];
-                        else
-                            imagePal.Entries[i] = Color.Empty;
-                    }
-                    this.m_LoadedImage.Palette = imagePal;
-                }
+                    this.m_LoadedImage.Palette = ImageUtils.GetPalette(newPalette);
             }
             if (this.IsFramesContainer && !this.FramesHaveCommonPalette)
                 return;
@@ -199,7 +232,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (frames == null)
                 return;
             Int32 nrOfFrames = frames.Length;
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || ReferenceEquals(frame, updateSource))
@@ -207,16 +240,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetColors(palette, this);
             }
         }
-
-        public Boolean NeedsPalette()
-        {
-            Int32 bpc = this.BitsPerPixel;
-            Color[] palette = this.GetColors();
-            Int32 exposedColors = this.ColorsInPalette;
-            Int32 actualColors = palette == null ? 0 : palette.Length;
-            return bpc != 0 && bpc <= 8 && exposedColors != actualColors;
-        }
-
+        
         public virtual void ResetColors()
         {
             // Should already be applied.
@@ -244,15 +268,15 @@ namespace EngieFileConverter.Domain.FileTypes
 
         /// <summary>
         /// Palette types can use this to get the colour out of a SupportedFileType in their SaveToBytesAsThis routine.
-        /// Relies on the current type's bits per pixel setting to get the final palette size.
         /// </summary>
         /// <param name="fileToSave">File to save.</param>
+        /// <param name="targetBpp">Targeted bits per pixel.</param>
         /// <param name="expandToFullSize">Expand to full size.</param>
         /// <returns>The found colours in the input frames.</returns>
-        protected Color[] CheckInputForColors(SupportedFileType fileToSave, Boolean expandToFullSize)
+        public static Color[] CheckInputForColors(SupportedFileType fileToSave, Int32 targetBpp, Boolean expandToFullSize)
         {
             if (fileToSave == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Color[] palEntries = fileToSave.GetColors();
             // check frames
             if ((palEntries == null || palEntries.Length == 0) && fileToSave.IsFramesContainer && fileToSave.Frames != null)
@@ -269,9 +293,9 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Int32 palLength;
             if (palEntries == null || (palLength = palEntries.Length) == 0)
-                throw new NotSupportedException("File to save has no color palette!");
+                throw new ArgumentException("File to save has no color palette!", "fileToSave");
             // Relies on the current type's BPP setting.
-            Int32 palSize = 1 << this.BitsPerPixel;
+            Int32 palSize = 1 << targetBpp;
             if (palEntries.Length == palSize || (!expandToFullSize && palLength < palSize))
                 return palEntries;
             Color[] cols = new Color[palSize];
@@ -298,12 +322,13 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwShpBr),
             typeof(FileFramesWwFntV3),
             typeof(FileFramesWwFntV4),
             typeof(FileFramesFntD2k),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
-            typeof(FileImgWwMhwanh),
+            typeof(FileImgWwMhwanh), // Experimental
             typeof(FileMapWwCc1Pc),
             typeof(FileMapWwCc1N64),
             typeof(FileMapWwCc1PcFromIni),
@@ -311,9 +336,6 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileTilesWwCc1N64Bpp4),
             typeof(FileTilesWwCc1N64Bpp8),
             typeof(FileTilesetWwCc1PC),
-            typeof(FilePalette6Bit),
-            typeof(FilePaletteWwCc1N64Pa8),
-            typeof(FilePaletteWwCc1N64Pa4),
             typeof(FileFramesAdvVga),
             typeof(FileImgKort),
             typeof(FileFramesKortBmp),
@@ -326,12 +348,15 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesMythosVgs),
             typeof(FileFramesMythosVda),
             typeof(FileImgKotB),
+            typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
+            typeof(FilePaletteWwCc1N64Pa8),
+            typeof(FilePaletteWwCc1N64Pa4),
             typeof(FileTblWwPal),
             typeof(FilePaletteWwAmiga),
-            typeof(FilePaletteWwPsx),
+            typeof(FilePaletteWwPsx), // Experimental
             typeof(FileFramesDfPic),
-            typeof(FileFramesIgcSlb), // Experimental
+            typeof(FileFramesIgcSlb),
             typeof(FileFramesLadyGl),
             typeof(FileImgLadyTme),
             typeof(FileImgIgcGx2),
@@ -353,6 +378,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwShpBr),
             typeof(FileFramesWwFntV3),
             typeof(FileFramesWwFntV4),
             typeof(FileFramesFntD2k),
@@ -369,7 +395,8 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileTilesetWwCc1PC),
             typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
-            typeof(FilePaletteWwCc1N64),
+            typeof(FilePaletteWwCc1N64Pa8),
+            typeof(FilePaletteWwCc1N64Pa4),
             typeof(FileTblWwPal),
             typeof(FileFramesAdvVga),
             typeof(FileFramesAdvIco),
@@ -386,6 +413,8 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePaletteWwAmiga),
             typeof(FilePaletteWwPsx),
             typeof(FileFramesDfPic),
+            typeof(FileFramesLadyGl),
+            typeof(FileImgLadyTme),
             typeof(FileFramesIgcSlb),
             typeof(FileImgIgcGx2),
             typeof(FileImgIgcDmp),
@@ -413,6 +442,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwShpBr),
             typeof(FileFramesWwFntV3),
             typeof(FileFramesWwFntV4),
             typeof(FileFramesFntD2k),
@@ -462,7 +492,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // internal check for development.
             Type sft = typeof(SupportedFileType);
             Int32 typesLength = types.Length;
-            for (Int32 i = 0; i < typesLength; i++)
+            for (Int32 i = 0; i < typesLength; ++i)
             {
                 Type t = types[i];
                 if (!t.IsSubclassOf(sft))
@@ -553,7 +583,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Type type = AutoDetectTypes[i];
                 // Skip entries on the already-tried list.
                 Boolean isPreferredType = false;
-                for (Int32 j = 0; j < prefTypesLength; j++)
+                for (Int32 j = 0; j < prefTypesLength; ++j)
                 {
                     if (preferredTypes[j].GetType() != type)
                         continue;
@@ -597,7 +627,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.IsFramesContainer && this.Frames != null)
             {
                 Int32 nrOfFrames = this.Frames.Length;
-                for (Int32 i = 0; i < nrOfFrames; i++)
+                for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
                     SupportedFileType frame = this.Frames[i];
                     if (frame != null)
@@ -625,5 +655,6 @@ namespace EngieFileConverter.Domain.FileTypes
         Image = Image1Bit | Image4Bit | Image8Bit | ImageHiCol,
         FrameSet = ImageHiCol << 1,
         CcMap = FrameSet << 1,
+        RaMap = CcMap << 1,
     }
 }

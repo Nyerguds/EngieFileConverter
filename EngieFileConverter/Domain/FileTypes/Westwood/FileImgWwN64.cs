@@ -25,20 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
         public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
 
-        public override Int32 ColorsInPalette { get { return this.hdrColorsInPalette; } }
-
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {
-            // If it is a hi-colour image, return empty
-            if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
-                return new SaveOption[0];
-            // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = (fileToSave is FileImage || fileToSave.ColorsInPalette != 0);
-            return new SaveOption[]
-            {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
-            };
-        }
+        public override Boolean NeedsPalette { get { return this.hdrColorFormat != 2 && this.hdrColorsInPalette == 0; } }
 
         public override FileClass FileClass
         {
@@ -96,26 +83,18 @@ namespace EngieFileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
-        {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
-            Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
-            return this.SaveImg(fileToSave.GetBitmap(), fileToSave.GetColors().Length, asPaletted);
-        }
-
         protected void LoadFromFileData(Byte[] fileData)
         {
             if (fileData.Length < 16)
                 throw new FileTypeLoadException("File is not long enough to be a valid N64 IMG file.");
-            Int32 hdrDataOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, false);
-            Int32 hdrPaletteOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 4, 4, false);
-            Int16 hdrWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, false);
-            Int16 hdrHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, 2, false);
+            Int32 hdrDataOffset = ArrayUtils.ReadInt32FromByteArrayBe(fileData, 0);
+            Int32 hdrPaletteOffset = ArrayUtils.ReadInt32FromByteArrayBe(fileData, 4);
+            Int16 hdrWidth = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 8);
+            Int16 hdrHeight = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x0A);
             Byte hdrReadBytesPerColor = fileData[0x0C];
             Byte hdrBytesPerColor = hdrReadBytesPerColor;
             this.hdrColorFormat = fileData[0x0D];
-            this.hdrColorsInPalette = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0E, 2, false);
+            this.hdrColorsInPalette = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x0E);
             //if (hdrColorFormat == 2 || hdrPaletteOffset == 0)
             //    hdrColorsInPalette = 0;
             if (hdrDataOffset != 16)
@@ -148,7 +127,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         Int32 offs2 = yOffs2;
                         for (Int32 x = 0; x < hdrWidth; ++x)
                         {
-                            UInt16 val = (UInt16) ArrayUtils.ReadIntFromByteArray(imageData, offs, 2, false);
+                            UInt16 val = ArrayUtils.ReadUInt16FromByteArrayBe(imageData, offs);
                             imageData2[offs2] = (Byte)(val >> 8);
                             offs += 2;
                             offs2 ++;
@@ -185,7 +164,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             try
             {
-                PixelFormat pf = this.GetPixelFormat(hdrColorFormat);
+                PixelFormat pf = this.GetPixelFormat(this.hdrColorFormat);
                 this.m_LoadedImage = ImageUtils.BuildImage(imageData, hdrWidth, hdrHeight, stride, pf, this.m_Palette, null);
                 // Corrects the number of colours in the palette.
                 if (this.m_Palette != null)
@@ -197,10 +176,35 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        protected Byte[] SaveImg(Bitmap image, Int32 colors, Boolean savePalette)
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
+            this.PerformPreliminaryChecks(fileToSave);
+            // If it is a hi-colour image, return empty
+            if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
+                return new SaveOption[0];
+            // If it is a non-image format which does contain colours, offer to save with palette.
+            // Palette option is disabled by default if the palette it would save comes from the UI.
+            return new SaveOption[]
+            {
+                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (!fileToSave.NeedsPalette ? 0 : 1).ToString()),
+            };
+        }
+
+        private Bitmap PerformPreliminaryChecks(SupportedFileType fileToSave)
+        {
+            Bitmap image;
+            if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (image.Width > 0xFFFF || image.Height > 0xFFFF)
-                throw new NotSupportedException("Image is too large!");
+                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
+            return image;
+        }
+
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        {
+            Bitmap image = this.PerformPreliminaryChecks(fileToSave);
+            Int32 colors = fileToSave.GetColors().Length;
+            Boolean savePalette = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             // 0 = 4bpp, 1 = 8bpp, 2 = 16bpp
             Byte colorFormat;
             Int32 width = image.Width;
@@ -253,19 +257,19 @@ namespace EngieFileConverter.Domain.FileTypes
             // Header
             Byte[] fullData = new Byte[0x10 + imageData.Length + paletteData.Length];
             //DataOffset
-            ArrayUtils.WriteIntToByteArray(fullData, 0x00, 4, false, 16);
+            ArrayUtils.WriteInt32ToByteArrayBe(fullData, 0x00, 16);
             //PaletteOffset
-            ArrayUtils.WriteIntToByteArray(fullData, 0x04, 4, false, (UInt32)paletteOffset);
+            ArrayUtils.WriteInt32ToByteArrayBe(fullData, 0x04, paletteOffset);
             //Width
-            ArrayUtils.WriteIntToByteArray(fullData, 0x08, 2, false, (UInt32)width);
+            ArrayUtils.WriteInt16ToByteArrayBe(fullData, 0x08, width);
             //Height
-            ArrayUtils.WriteIntToByteArray(fullData, 0x0A, 2, false, (UInt32)height);
+            ArrayUtils.WriteInt16ToByteArrayBe(fullData, 0x0A, height);
             //BytesPerColor
             fullData[0x0C] = (Byte)palbpc;
             //ColorFormat
             fullData[0x0D] = colorFormat;
             //ColorsInPalette
-            ArrayUtils.WriteIntToByteArray(fullData, 0x0E, 2, false, (UInt32)paletteColors);
+            ArrayUtils.WriteInt16ToByteArrayBe(fullData, 0x0E, paletteColors);
             Int32 targetOffs = 0x10;
 
             // Image data

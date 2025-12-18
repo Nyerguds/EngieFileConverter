@@ -32,7 +32,7 @@ namespace EngieFileConverter.Domain.FileTypes
             const Int32 rnc = 0x53535A4C;
             if (fileData.Length < 4)
                 throw new FileTypeLoadException("Not a Toonstruck CPS!");
-            UInt32 idBytes = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true);
+            UInt32 idBytes = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0);
             if (idBytes == cpsn)
                 this.LoadFile(fileData, filename, true);
             else if (idBytes == lzss || (idBytes & 0xFFFFFF) == rnc)
@@ -41,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
             else if (idBytes == lzss )
             {
                 // todo. Still experimental for now.
-                Int32 decompressedSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true);
+                Int32 decompressedSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0);
                 Byte[] rawData = LzssHuffDecoder.LzssDecode(fileData, 8, fileData.Length, decompressedSize);
                 Int32 palSize = decompressedSize - 256000;
                 Byte[] imageData = palSize == 0 ? rawData : new Byte[256000];
@@ -72,18 +72,16 @@ namespace EngieFileConverter.Domain.FileTypes
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException("File to save is empty!", "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
             if (fileToSave.IsFramesContainer || image.Width != 640 || image.Height != 400 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 640×400 images can be saved as CPS!");
+                throw new ArgumentException("Only 8-bit 640×400 images can be saved as CPS!", "fileToSave");
 
-            // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = fileToSave.ColorsInPalette != 0;
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;
             return new SaveOption[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
+                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (fileToSave.NeedsPalette ? 0 : 1).ToString()),
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
             };
         }

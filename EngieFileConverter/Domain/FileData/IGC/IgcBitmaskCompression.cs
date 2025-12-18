@@ -24,7 +24,7 @@ namespace Nyerguds.FileData.IGC
         {
             Int32 inputLen = stride * height;
             if (inputLen > imageData.Length)
-                throw new NotSupportedException("Error compressing image: array too small to contain an image of the given dimensions!");
+                throw new ArgumentException("Error compressing image: array too small to contain an image of the given dimensions!", "imageData");
             Int32 maskLength = (stride + 7) / 8;
             // Worst case: no duplicate pixels at all, means original size plus (height - 1) masks.
             Int32 outputLen = inputLen + maskLength * (height - 1);

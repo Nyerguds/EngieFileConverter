@@ -18,9 +18,9 @@ namespace EngieFileConverter.Domain.FileTypes
         protected static readonly Regex ROADREGEX1 = new Regex("^D\\d+$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         protected static readonly Regex ROADREGEX2 = new Regex("^FORD[1-2]$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         protected static readonly Regex ROADREGEX3 = new Regex("^BRIDGE[1-4]D?$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        protected static readonly Regex MAPREGEX = new Regex("^SC[GB]\\d{2}\\d*[EWX][A-E]$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        protected static readonly Regex MAPREGEX = new Regex("^SC[GB]\\d{2}\\d*[EWX][A-EL]$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-        protected static Color[] paletteTemperate = new Color[]
+        protected static Color[] PaletteTemperate = new Color[]
         {
             Color.Black,                      // Unused = 0
             Color.FromArgb(0x35, 0x44, 0x35), // Clear = 1
@@ -50,7 +50,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
         };
 
-        protected static Color[] paletteDesert = new Color[]
+        protected static Color[] PaletteDesert = new Color[]
         {
             Color.Black,                      // Unused = 0
             Color.FromArgb(0x88, 0x5E, 0x46), // Clear = 1
@@ -80,7 +80,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
         };
 
-        protected static Color[] paletteSnow = new Color[]
+        protected static Color[] PaletteSnow = new Color[]
         {
             Color.Black,                      // Unused = 0
             Color.FromArgb(0xC8, 0xC8, 0xC8), // Clear = 1
@@ -116,12 +116,11 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Westwood C&C PC map file"; } }
+        public override String ShortTypeDescription { get { return "C&C map file - PC"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "bin" }; } }
         public override Int32 Width { get { return 64; } }
         public override Int32 Height { get { return 64; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerPixel { get { return 0; } }
 
         public Byte[] PCMapData { get; protected set; }
@@ -179,15 +178,16 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Color[] GetColors()
         {
+            // This type does not expost itself as an image, and will pretend not to have a colour palette.
             return null;
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
-            if (mapPc == null)
-                throw new NotSupportedException(String.Empty);
-            return mapPc.PCMapData;
+            FileMapWwCc1Pc cc1PcMap = fileToSave as FileMapWwCc1Pc;
+            if (cc1PcMap == null)
+                throw new ArgumentException("Cannot save the given file as C&C map.", "fileToSave");
+            return ArrayUtils.CloneArray(cc1PcMap.PCMapData);
         }
 
         protected void DetectDataTypeAndConvert(Byte[] fileData, Theater theater, String sourceFile, Rectangle usableArea, Boolean isPc)
@@ -256,7 +256,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 simplifiedMap = MapConversion.SimplifyMap(new CnCMap(fileData));
             }
-            catch(NotSupportedException ex)
+            catch (ArgumentException ex)
             {
                 throw new FileTypeLoadException(ex.Message, ex);
             }
@@ -264,20 +264,20 @@ namespace EngieFileConverter.Domain.FileTypes
             switch (theater)
             {
                 case Theater.Desert:
-                    palette = paletteDesert;
+                    palette = PaletteDesert;
                     break;
                 //case Theater.Jungle:
                 //    palette = paletteTemperate;
                 //    break;
                 case Theater.Temperate:
                 default:
-                    palette = paletteTemperate;
+                    palette = PaletteTemperate;
                     break;
                 case Theater.Winter:
-                    palette = paletteTemperate;
+                    palette = PaletteTemperate;
                     break;
                 case Theater.Snow:
-                    palette = paletteSnow;
+                    palette = PaletteSnow;
                     break;
             }
             Byte[] imageData = new Byte[64 * 64];

@@ -5,6 +5,7 @@ using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -23,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Interactive Girls DMP file"; } }
         public override String[] FileExtensions { get { return new String[] { "dmp" }; } }
         public override String ShortTypeDescription { get { return "Interactive Girls DMP image file"; } }
-        public override Int32 ColorsInPalette { get { return this.m_PaletteLoaded ? base.ColorsInPalette : 0; } }
+        public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_PaletteLoaded;
         public Boolean Combined { get; private set; }
@@ -55,12 +56,14 @@ namespace EngieFileConverter.Domain.FileTypes
             if (baseName != null && baseExt != null && (m = nameEnd.Match(baseName)).Success)
             {
                 combined = true;
+                String baseFileName = m.Groups[1].Value;
                 String baseFilePath = Path.Combine(basePath, m.Groups[1].Value);
                 String[] frameSuffixes = new String[] {"-tl", "-tr", "-bl", "-br"};
                 Byte[][] frames = new Byte[4][];
                 Int32[] widths = new Int32[4];
                 Int32[] heights = new Int32[4];
-                for (Int32 i = 0; i < 4; i++)
+                StringBuilder extraInfo = new StringBuilder();
+                for (Int32 i = 0; i < 4; ++i)
                 {
                     String testPath = baseFilePath + frameSuffixes[i] + baseExt;
                     if (!File.Exists(testPath))
@@ -75,8 +78,11 @@ namespace EngieFileConverter.Domain.FileTypes
                         Int32 frWidth;
                         Byte[] frameData = testPath == curFile ? fileData : File.ReadAllBytes(testPath);
                         frames[i] = this.ReadSingleFrame(frameData, testPath, out frWidth, out frHeight, ref pal2);
-                        if (palette == null)
+                        if (palette == null && pal2 != null)
+                        {
                             palette = pal2;
+                            extraInfo.AppendLine(String.Format("Palette loaded from {0}{1}.pal", baseFileName, frameSuffixes[i]));
+                        }
                         widths[i] = frWidth;
                         heights[i] = frHeight;
                     }
@@ -92,7 +98,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         combined = false;
                         break;
                     }
-                    for (Int32 c = 0; c < 0x300; c++)
+                    for (Int32 c = 0; c < 0x300; ++c)
                     {
                         if (palette[i] == pal2[i])
                             continue;
@@ -115,19 +121,49 @@ namespace EngieFileConverter.Domain.FileTypes
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[2], widths[2], heights[2], widths[2], new Rectangle(0, halfHeight1, widths[2], heights[2]), null, true);
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[3], widths[3], heights[3], widths[3], new Rectangle(halfWidth1, halfHeight1, widths[3], heights[3]), null, true);
                     filename = baseFilePath + baseExt;
-                    this.ExtraInfo = "Composed from four files.";
+                    extraInfo.AppendLine("Composed from four files: ");
+                    extraInfo.Append("  ");
+                    for (Int32 i = 0; i < 4; ++i)
+                    {
+                        extraInfo.Append(baseFileName).Append(frameSuffixes[i]).Append(baseExt);
+                        if (i != 3)
+                            extraInfo.Append(", ");
+                    }
+
+                    this.ExtraInfo = extraInfo.ToString();
                 }
             }
             if (!combined)
             {
                 imageData = this.ReadSingleFrame(fileData, sourcePath, out width, out height, ref palette);
             }
-            m_PaletteLoaded = palette != null;
-            if (m_PaletteLoaded)
-                m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(palette, 0, 0x100));
+            this.m_PaletteLoaded = palette != null;
+            if (this.m_PaletteLoaded)
+                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(palette, 0, 0x100));
             else
-                m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
-            m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, m_Palette, null);
+            {
+                String palFile = Path.Combine(basePath, baseName + ".pal");
+                FileInfo palInfo;
+                if (baseName != null && (palInfo = new FileInfo(palFile)).Exists && palInfo.Length == 0x300)
+                {
+                    palette = File.ReadAllBytes(palFile);
+                    try
+                    {
+                        this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(palette);
+                        this.ExtraInfo = "Palette loaded from " + baseName + ".pal";
+                        this.m_PaletteLoaded = this.m_Palette != null;
+                    }
+                    catch (ArgumentException)
+                    {
+                        this.m_Palette = ColorUtils.ReadEightBitPalette(palette);
+                        this.ExtraInfo = "Palette loaded from " + baseName + ".pal";
+                        this.m_PaletteLoaded = true;
+                    }
+                }
+                if (this.m_Palette == null)
+                    this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
+            }
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             this.SetFileNames(filename);
         }
 
@@ -151,9 +187,9 @@ namespace EngieFileConverter.Domain.FileTypes
             if (hasPalette > 1)
                 throw new FileTypeLoadException("Not an ICG DMP file!");
             Boolean paletteLoaded = hasPalette == 1;
-            width = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-            height = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-            UInt32 padding = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, 6, 4, true);
+            width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+            height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+            UInt32 padding = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 6);
             if (padding != 0)
                 throw new FileTypeLoadException("Not an ICG DMP file!");
             Int32 dataStart = 0x0A + hasPalette * 0x300;
@@ -175,7 +211,7 @@ namespace EngieFileConverter.Domain.FileTypes
             PerformPreliminaryChecks(fileToSave);
             return new SaveOption[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", fileToSave.NeedsPalette() ? "0" : "1"),
+                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", fileToSave.NeedsPalette ? "0" : "1"),
             };
         }
 
@@ -200,8 +236,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] dmpData = new Byte[dataStart + imageLength];
             dmpData[0] = 0x01;
             dmpData[1] = hasPalette;
-            ArrayUtils.WriteIntToByteArray(dmpData, 2, 2, true, (UInt16) fileToSave.Width);
-            ArrayUtils.WriteIntToByteArray(dmpData, 4, 2, true, (UInt16) fileToSave.Height);
+            ArrayUtils.WriteInt16ToByteArrayLe(dmpData, 2, fileToSave.Width);
+            ArrayUtils.WriteInt16ToByteArrayLe(dmpData, 4, fileToSave.Height);
             if (asPaletted)
             {
                 Byte[] palette = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fileToSave.GetColors()));
@@ -209,23 +245,20 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Array.Copy(imageBytes, 0, dmpData, dataStart, imageLength);
             return dmpData;
-            return null;
-
         }
-
 
         public static void PerformPreliminaryChecks(SupportedFileType fileToSave)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("No source data given!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new NotSupportedException("This format needs an 8bpp image.");
+                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
             FileImgIgcDmp dmp = fileToSave as FileImgIgcDmp;
             if (fileToSave.Width == 640 || fileToSave.Height == 400 && dmp != null && dmp.Combined)
-                throw new NotSupportedException("To re-save a combined image, split the image into four 320x200 frames and save the frames as separate .dmp files, with the palette saved into the first (the '-tl') file.");
+                throw new ArgumentException("To re-save a combined image, split the image into four 320x200 frames and save the frames as separate .dmp files, with the palette saved into the first (the '-tl') file.", "fileToSave");
             if (fileToSave.Width > 320 || fileToSave.Height > 200)
-                throw new NotSupportedException("The given image is too large.");
+                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
         }
 
     }

@@ -19,8 +19,12 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "sex" }; } }
         public override String ShortTypeDescription { get { return "SexTris image file"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
-        public override Int32 ColorsInPalette { get { return this.m_PaletteLoaded ? base.ColorsInPalette : 0; } }
+        public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         protected Boolean m_PaletteLoaded;
+
+        // TODO remove when implemented.
+        /// <summary>True if this type can save.</summary>
+        public virtual Boolean CanSave { get { return false; } }
 
         protected static Byte[] DefPalette = {
                         0x1A, 0x1A, 0x1A, 0x3F, 0x26, 0x10, 0x00, 0x33, 0x33, 0x00, 0x3F, 0x3F,
@@ -63,10 +67,10 @@ namespace EngieFileConverter.Domain.FileTypes
             
             if (fileData.Length < 0x309)
                 throw new FileTypeLoadException("Too short to be an " + this.ShortTypeName + ".");
-            Int32 magic01 = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            Int32 magic02 = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+            Int32 magic01 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            Int32 magic02 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
             // Size: the amount of data that follows after the read value (so after offset 7).
-            Int32 size = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 5, 2, true);
+            Int32 size = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 5);
             if (magic01 != 0xFD || fileData.Length != size + 7)
                 throw new FileTypeLoadException("Not an " + this.ShortTypeName + ".");
             Int32 width;
@@ -90,7 +94,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new FileTypeLoadException("End sequence does not match!");
                 Byte[] endbytes = new Byte[endLen];
                 Array.Copy(fileData, dataEnd, endbytes, 0, endLen);
-                for (Int32 i = 0; i < endLen; i++)
+                for (Int32 i = 0; i < endLen; ++i)
                     if (endbytes[i] != this.m_EndSequence[i])
                         throw new FileTypeLoadException("End sequence does not match!");
             }
@@ -102,7 +106,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_PaletteLoaded = true;
                 width = 320;
                 height = size / width;
-                ExtraInfo = "Using default palette.";
+                this.ExtraInfo = "Using default palette.";
             }
             else
                 throw new FileTypeLoadException("Not an " + this.ShortTypeName + ".");

@@ -16,10 +16,14 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "LadyTme"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "LadyLove TME Image"; } }
-        public override String[] FileExtensions { get { return new String[] { "TME", "GL" }; } }
+        public override String[] FileExtensions { get { return new String[] { "tme" }; } }
         public override String ShortTypeDescription { get { return "LadyLove TME Image file"; } }
-        public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : this.m_Palette.Length; } }
+        public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
+
+        // TODO remove when implemented.
+        /// <summary>True if this type can save.</summary>
+        public virtual Boolean CanSave { get { return false; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -35,9 +39,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (frameStart < 0 || frameLength < 6 || frameStart + frameLength > fileData.Length)
                 throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
-            Int32 width = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, frameStart + 0, 2, true);
-            Int32 height = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, frameStart + 2, 2, true);
-            Int32 colors = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, frameStart + 4, 2, true);
+            Int32 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 0);
+            Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 2);
+            Int32 colors = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 4);
             Int32 imgLength = width * height;
             Int32 dataStart = 6 + 3 * colors;
             Int32 frameDataLength = dataStart + imgLength;
@@ -58,7 +62,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 try
                 {
-                    pal = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, frameStart + 6, colors));
+                    pal = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, frameStart + 6, colors);
                 }
                 catch (ArgumentException)
                 {
@@ -88,7 +92,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
             if (!noCol)
             {
-                m_Palette = pal;
+                this.m_Palette = pal;
                 colors = pal.Length;
                 if (colors < 256)
                     this.m_LoadedImage.Palette = ImageUtils.GetPalette(pal, colors);
@@ -99,7 +103,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public void OverridePalette(Color[] pal, String source)
         {
             this.m_Palette = pal;
-            m_LoadedImage.Palette = ImageUtils.GetPalette(m_Palette, pal.Length);
+            this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette, pal.Length);
             if (String.IsNullOrEmpty(this.ExtraInfo))
                 this.ExtraInfo = source;
             else

@@ -78,11 +78,10 @@ namespace Nyerguds.Util.UI
                 if (file.Length != 0x300)
                     return palettes;
                 // Treat as C&C 6-bit colour palette
-                ColorSixBit[] pal = ColorUtils.ReadSixBitPaletteFile(file.FullName);
-                Color[] fullPal = ColorUtils.GetEightBitColorPalette(pal);
+                Color[] fullPal = ColorUtils.ReadFromSixBitPaletteFile(file.FullName);
 
                 String bareName = file.Name;
-                String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(file.Name)) + ".ini";
+                String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
                 if (File.Exists(inipath))
                 {
                     IniFile paletteConfig = new IniFile(inipath);
@@ -99,14 +98,14 @@ namespace Nyerguds.Util.UI
                         Color[] subPalette = new Color[16];
                         Array.Copy(fullPal, i * 16, subPalette, 0, 16);
                         //subPalette[0] = Color.FromArgb(0x00, subPalette[0]);
-                        palettes.Add(new PaletteDropDownInfo(name, 4, subPalette, file.Name, i, prefixIndex, suffixSource));
+                        palettes.Add(new PaletteDropDownInfo(name, 4, subPalette, bareName, i, prefixIndex, suffixSource));
                     }
                 }
                 else
                 {
                     // add as one 256 colour palette
                     //fullPal[0] = Color.FromArgb(0x00, fullPal[0]);
-                    palettes.Add(new PaletteDropDownInfo(file.Name, 8, fullPal, file.Name, 0, false, false));
+                    palettes.Add(new PaletteDropDownInfo(bareName, 8, fullPal, bareName, 0, false, false));
                 }
             }
             catch { /* ignore and continue */ }

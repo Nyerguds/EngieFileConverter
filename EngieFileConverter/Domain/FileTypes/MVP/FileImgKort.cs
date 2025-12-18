@@ -21,10 +21,8 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "KORT Image"; } }
         public override String[] FileExtensions { get { return new String[] { "000", "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "016", "017" }; } }
         public override String ShortTypeDescription { get { return "KORT Image file"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get{ return 8; } }
-
-        public FileImgKort() { }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -41,7 +39,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 datalen = fileData.Length;
             if (datalen == 0 || datalen % 2 != 0)
-                throw new FileTypeLoadException("Illegal size: KORT image files contain byte pairs!");
+                throw new FileTypeLoadException(ERR_BAD_SIZE);
             Int32 len = this.Width * this.Height;
             Byte[] imageData = new Byte[len];
             Int32 destOffs = 0;
@@ -51,16 +49,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 col = fileData[i];
                 Int32 rep = fileData[i+1];
                 if (rep == 0)
-                    throw new FileTypeLoadException("Repetition value 0 encountered. Not a KORT image file.");
+                    throw new FileTypeLoadException(ERR_DECOMPR);
                 for (UInt32 replen = 0; replen < rep; ++replen)
                 {
                     if (destOffs >= len)
-                        throw new FileTypeLoadException("Decoded image does not fit in 320×240!");
+                        throw new FileTypeLoadException(ERR_DECOMPR_LEN);
                     imageData[destOffs++] = (Byte)col;
                 }
             }
             if (destOffs < len)
-                throw new FileTypeLoadException("Decoded image is smaller than 320×240!");
+                throw new FileTypeLoadException(ERR_DECOMPR_LEN);
             this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, null, false);
             Bitmap image = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             // reorder lines
@@ -70,11 +68,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
-            Bitmap image = fileToSave.GetBitmap();
-            if (image.Width != 320 || image.Height != 240 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 320×240 images can be saved as KORT image file!");
+            Bitmap image = this.PerformPreliminaryChecks(fileToSave);
             Int32 stride;
             // stride collapse is probably not needed... 320 is divisible by 4.
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
@@ -98,5 +92,18 @@ namespace EngieFileConverter.Domain.FileTypes
             Array.Copy(comprData, 0, finalData, 0, outPtr);
             return finalData;
         }
+
+        private Bitmap PerformPreliminaryChecks(SupportedFileType fileToSave)
+        {
+            Bitmap image;
+            if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+            if (image.PixelFormat != PixelFormat.Format8bppIndexed)
+                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+            if (image.Width != 320 || image.Height != 200)
+                throw new ArgumentException("This format can only save 320×240 images.", "fileToSave");
+            return image;
+        }
+
     }
 }

@@ -21,7 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood PAL Table"; } }
         public override String[] FileExtensions { get { return new String[] {"pal"}; } }
         public override String ShortTypeDescription  { get { return "Westwood Palette Stretch Table"; } }
-        public override Int32 ColorsInPalette  { get { return 0; } }
+        public override Boolean NeedsPalette  { get { return true; } }
         public override Int32 BitsPerPixel  { get { return 8; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
@@ -48,7 +48,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            Color[] cols = this.CheckInputForColors(fileToSave, true);
+            Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, true);
             List<Int32> ignorelistInput = this.GetIndices(SaveOption.GetSaveOptionValue(saveOptions, "IGI"));
             List<Int32> ignorelistMatch = this.GetIndices(SaveOption.GetSaveOptionValue(saveOptions, "IGM"));
             Boolean dupOnExcluded = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "DUP"));

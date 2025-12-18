@@ -8,7 +8,6 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImage : SupportedFileType
     {
-        protected readonly String FILE_EMPTY = "File to save is empty!";
 
         public override FileClass FileClass
         {
@@ -34,10 +33,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return null; } }
         public override String ShortTypeName { get { return "Image"; } }
         public override String ShortTypeDescription { get { return "Image file"; } }
-        public override String[] FileExtensions
-        {
-            get { return new String[] { "png", "bmp", "gif", "jpg", "jpeg" }; }
-        }
+        public override String[] FileExtensions { get { return new String[] { "png", "bmp", "gif", "jpg", "jpeg" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
         {
@@ -93,8 +89,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
+            // General override in case an Image sub-type has no implementation of this.
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             String filename = "test." + this.FileExtensions[0];
             return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);
         }

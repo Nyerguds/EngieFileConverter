@@ -5,8 +5,22 @@ namespace Nyerguds.ImageManipulation
 {
     public class ColorSixBit
     {
+        //public const Double ConvertValTo8 = 255D / 63D; // 4,0476190
+        //public const Double ConvertValTo6 = 63D / 255D; // 0,2470588
         public const Byte MaxValue = 63;
-        protected readonly String argError = "Color value can not be higher than " + MaxValue + "!";
+        private const String ArgError = "Color value can not be higher than {0}!";
+
+        private static readonly Byte[] ConvertToEightBit = new Byte[64];
+        private static readonly Byte[] ConvertToSixBit = new Byte[256];
+
+        static ColorSixBit()
+        {
+            // Build easy lookup tables for this, so no calculations are ever needed for this later.
+            for (Int32 i = 0; i < 64; ++i)
+                ConvertToEightBit[i] = (Byte)(i * 255 / 63);
+            for (Int32 i = 0; i < 256; ++i)
+                ConvertToSixBit[i] = (Byte)(i * 63 / 255);
+        }
 
         protected Byte m_Red;
         protected Byte m_Green;
@@ -18,7 +32,7 @@ namespace Nyerguds.ImageManipulation
             set
             {
                 if (value > MaxValue)
-                    throw new ArgumentException(this.argError, "value");
+                    throw new ArgumentException(String.Format(ArgError, MaxValue), "value");
                 this.m_Red = value;
             }
         }
@@ -28,7 +42,7 @@ namespace Nyerguds.ImageManipulation
             set
             {
                 if (value > MaxValue)
-                    throw new ArgumentException(this.argError, "value");
+                    throw new ArgumentException(String.Format(ArgError, MaxValue), "value");
                 this.m_Green = value;
             }
         }
@@ -38,7 +52,7 @@ namespace Nyerguds.ImageManipulation
             set
             {
                 if (value > MaxValue)
-                    throw new ArgumentException(this.argError, "value");
+                    throw new ArgumentException(String.Format(ArgError, MaxValue), "value");
                 this.m_Blue = value;
             }
         }
@@ -52,14 +66,14 @@ namespace Nyerguds.ImageManipulation
 
         public ColorSixBit(Color color)
         {
-            this.m_Red = (Byte)(color.R / 4);
-            this.m_Green = (Byte)(color.G / 4);
-            this.m_Blue = (Byte)(color.B / 4);
+            this.m_Red = ConvertToSixBit[color.R];
+            this.m_Green = ConvertToSixBit[color.G];
+            this.m_Blue = ConvertToSixBit[color.B];
         }
 
         public Color GetAsColor()
         {
-            return Color.FromArgb(this.m_Red * 4, this.m_Green * 4, this.m_Blue * 4);
+            return Color.FromArgb(ConvertToEightBit[this.m_Red], ConvertToEightBit[this.m_Green], ConvertToEightBit[this.m_Blue]);
         }
 
         public Byte[] GetAsByteArray()
@@ -74,14 +88,14 @@ namespace Nyerguds.ImageManipulation
             array[offset + 2] = this.m_Blue;
         }
         
-        public static implicit operator Color(ColorSixBit hslColor)
+        public static implicit operator Color(ColorSixBit color)
         {
-            return Color.FromArgb(hslColor.R * 4, hslColor.G * 4, hslColor.B * 4);
+            return color.GetAsColor();
         }
 
         public override String ToString()
         {
-            return String.Format("Values=({0}, {1}, {2}), RGB=({3}, {4}, {5})", this.m_Red, this.m_Green, this.m_Blue, this.m_Red * 4, this.m_Green * 4, this.m_Blue * 4);
+            return String.Format("Values=({0}, {1}, {2}), RGB=({3}, {4}, {5})", this.m_Red, this.m_Green, this.m_Blue, ConvertToEightBit[this.m_Red], ConvertToEightBit[this.m_Green], ConvertToEightBit[this.m_Blue]);
         }
     }
 }

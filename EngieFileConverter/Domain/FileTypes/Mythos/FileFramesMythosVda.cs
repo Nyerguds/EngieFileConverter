@@ -20,13 +20,19 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "vda", "vdx" }; } }
         public override Boolean[] TransparencyMask { get { return (!this._isFramed || (this._noFirstFrame && !this._isChained)) ? base.TransparencyMask : new Boolean[0]; } }
 
+        private const UInt16 FrameEnd = 0xFFFF;
+        private const UInt16 AnimEnd = 0xFFFE;
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFile(fileData, null);
         }
 
+        /// <summary>Indicates that the first drawn chunk does not match the criteria for a full-screen frame.</summary>
         private Boolean _noFirstFrame;
+        /// <summary>Indicates that the first frame was loaded from a previous file.</summary>
         private Boolean _isChained;
+        /// <summary>Indicates that a frames definition file is found, and the frames are constructed.</summary>
         private Boolean _isFramed;
         
         public override List<String> GetFilesToLoadMissingData(String originalPath)
@@ -43,7 +49,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     return null;
             }
             // If a single png file of the same name is found it overrides normal chaining.
-            String pngName = TestForPngStartFrame(originalPath);
+            String pngName = this.TestForPngStartFrame(originalPath);
             if (pngName != null)
                 return new List<String>() { pngName };
             String baseName;
@@ -72,7 +78,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 using (FileFramesMythosVda testFile = new FileFramesMythosVda())
                 {
                     // Check if first frame in VDX is frame 0. If not, all frames will need to be loaded. This is normally 0 though.
-                    Boolean startsWithFrameZero = (ArrayUtils.ReadIntFromByteArray(testBytesVdx, 0, 2, true) & 0x7FFF) == 0;
+                    Boolean startsWithFrameZero = (ArrayUtils.ReadUInt16FromByteArrayLe(testBytesVdx, 0) & 0x7FFF) == 0;
                     List<Point> framesXY;
                     try
                     {
@@ -109,7 +115,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         // But the first referenced frame should always be frame 0... even my VDX optimisation only changes the VDA coordinates, not order.
                         try
                         {
-                            this.BuildAnimationFromChunks(originalPath, testBytesVdx, testFile.m_FramesList, framesXY, null, out noFirstFrame, true);
+                            this.BuildAnimationFromChunks(originalPath, testBytesVdx, testFile.m_FramesList, framesXY, null, true, out noFirstFrame);
                         }
                         catch (FileLoadException)
                         {
@@ -127,7 +133,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     chain.Add(curName);
 
                     // Test for png. png is also end point.
-                    String pngChained = TestForPngStartFrame(curName);
+                    String pngChained = this.TestForPngStartFrame(curName);
                     if (pngChained != null)
                     {
                         chain.Add(pngChained);
@@ -176,7 +182,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     if (i == 0 && chainFilePath.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
                     {
-                        lastFrameData = GetFrameDataFromPng(firstName, ref lastFrameInfo);
+                        lastFrameData = this.GetFrameDataFromPng(firstName, ref lastFrameInfo);
                         if (lastFrameData != null)
                         {
                             fromPng = lastIndex == 0;
@@ -281,7 +287,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this._isFramed)
             {
                 Boolean noFirstFrame;
-                List<SupportedFileType> framesList = this.BuildAnimationFromChunks(vdaName, vdxBytes, this.m_FramesList, framesXY, initialFrameData, out noFirstFrame, false);
+                List<SupportedFileType> framesList = this.BuildAnimationFromChunks(vdaName, vdxBytes, this.m_FramesList, framesXY, initialFrameData, false, out noFirstFrame);
                 this._noFirstFrame = noFirstFrame;
                 // Apply transparency mask.
                 // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
@@ -289,7 +295,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_BackupPalette = null;
                 this.m_FramesList = framesList;
             }
-            if (!_isFramed)
+            if (!this._isFramed)
                 this.ExtraInfo = "VDX file missing; showing raw chunks\n" + this.ExtraInfo;
             this.ExtraInfo += "\nChunks: " + chunks;
         }
@@ -355,7 +361,18 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        private List<SupportedFileType> BuildAnimationFromChunks(String sourcePath, Byte[] framesInfo, List<SupportedFileType> allChunks, List<Point> framesXY, Byte[] initialFrameData, out Boolean noFirstFrame, Boolean testFirstFrame)
+        /// <summary>
+        /// USes the vdx data to builds the animation from the vdachunks.
+        /// </summary>
+        /// <param name="sourcePath">Source path to save into the produced frame objects.</param>
+        /// <param name="framesInfo">Frames info bytes from the vdx file.</param>
+        /// <param name="allChunks">List of chunks to use to produce the frames.</param>
+        /// <param name="framesXY">The X and Y coordinates of the chunks in <see cref="allChunks"/>.</param>
+        /// <param name="initialFrameData">Frame data for a missing first frame, loaded from a previous file.</param>
+        /// <param name="noFirstFrame">Returns whether a missing first frame was detected.</param>
+        /// <param name="testFirstFrame">Only test whether a missing first frame was detected, and immediately return the result.</param>
+        /// <returns>The constructed frames, or null in <see cref="testFirstFrame"/> mode.</returns>
+        private List<SupportedFileType> BuildAnimationFromChunks(String sourcePath, Byte[] framesInfo, List<SupportedFileType> allChunks, List<Point> framesXY, Byte[] initialFrameData, Boolean testFirstFrame, out Boolean noFirstFrame)
         {
             noFirstFrame = initialFrameData != null;
             List<SupportedFileType> framesList = new List<SupportedFileType>();
@@ -376,7 +393,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
-                frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
+                frame.SetNeedsPalette(!this.m_PaletteSet);
                 // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                 frame.SetColors(this.m_Palette, this);
                 frame.SetFileClass(this.FrameInputFileClass);
@@ -386,10 +403,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 chunks = 0;
             while (offset + 2 <= framesInfo.Length)
             {
-                UInt16 curVal = (UInt16)ArrayUtils.ReadIntFromByteArray(framesInfo, offset, 2, true);
-                if (curVal == 0xFFFE)
+                UInt16 curVal = ArrayUtils.ReadUInt16FromByteArrayLe(framesInfo, offset);
+                if (curVal == AnimEnd)
                     break;
-                if (curVal == 0xFFFF)
+                if (curVal == FrameEnd)
                 {
                     // No chunks at all specified for the very first frame. Could happen in a continued animation starting with a pause I guess?
                     if (imageData == null)
@@ -414,7 +431,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     //imageData = null;
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
-                    frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
+                    frame.SetNeedsPalette(!this.m_PaletteSet);
                     // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                     frame.SetColors(this.m_Palette, this);
                     frame.SetFileClass(this.FrameInputFileClass);
@@ -425,6 +442,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
+                    // Since the First frame has no transparent holes, it can't be chunked, so the first frame should always be one chunk.
+                    // More than 0 chunks here means this section was looped once already, so the first frame contains multiple chunks.
                     if (testFirstFrame && chunks > 0)
                     {
                         noFirstFrame = true;
@@ -439,8 +458,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         if (offset + 6 >= framesInfo.Length)
                             throw new FileLoadException("Illegal data order in video frames file!");
-                        xOffset = (UInt16) ArrayUtils.ReadIntFromByteArray(framesInfo, offset + 2, 2, true);
-                        yOffset = (UInt16) ArrayUtils.ReadIntFromByteArray(framesInfo, offset + 4, 2, true);
+                        xOffset = ArrayUtils.ReadUInt16FromByteArrayLe(framesInfo, offset + 2);
+                        yOffset = ArrayUtils.ReadUInt16FromByteArrayLe(framesInfo, offset + 4);
                         offset += 4;
                     }
                     else
@@ -491,43 +510,28 @@ namespace EngieFileConverter.Domain.FileTypes
             return framesList;
         }
 
+        /// <summary>
+        /// Checks if the given bytes contain valid VDX data. The actual check is to see if the length 
+        /// is divisible by 2, and the data ends on the "frame end" and "animation end" markers.
+        /// </summary>
+        /// <param name="fileData"></param>
+        /// <returns></returns>
         protected Boolean CheckForVdx(Byte[] fileData)
         {
             if (fileData.Length < 4 || fileData.Length % 2 != 0)
                 return false;
             // Last two blocks should be FFFF and FFFE.
-            UInt16 intl4 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fileData.Length - 4, 2, true);
-            UInt16 intl2 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fileData.Length - 2, 2, true);
-            if (intl4 == 0xFFFF && intl2 == 0xFFFE)
+            UInt16 lastFrameEnd = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, fileData.Length - 4);
+            UInt16 animationEnd = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, fileData.Length - 2);
+            if (lastFrameEnd == FrameEnd && animationEnd == AnimEnd)
                 return true;
             return false;
         }
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            if (fileToSave == null)
-                return null;
-            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames = frames.Length;
-             if (nrOfFrames == 0)
-                throw new NotSupportedException("This format needs at least one frame.");
-            for (Int32 i = 0; i < nrOfFrames; ++i)
-            {
-                SupportedFileType sft = frames[i];
-                if (sft.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8bpp images.");
-                if (sft.Width != 320 || sft.Height != 200)
-                    throw new NotSupportedException("This format needs 320x200 frames.");
-            }
-            SupportedFileType firstFrame = frames[0];
-            Int32 firstFrameW = firstFrame.Width;
-            Int32 firstFrameH = firstFrame.Height;
-            for (Int32 i = 1; i < nrOfFrames; ++i)
-            {
-                SupportedFileType frame = frames[i];
-                if (frame.Width != firstFrameW || frame.Height != firstFrameH)
-                    throw new NotSupportedException("All frames should have the same dimensions.");
-            }
+            Color[] palette;
+            this.PerformPreliminaryChecks(fileToSave, out palette);
             Int32 compression = 0;
             Boolean noFirstFrame = false;
             FileFramesMythosVgs fileVgs = fileToSave as FileFramesMythosVgs;
@@ -584,30 +588,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, out Byte[] vdxFile)
         {
-            // Preliminary checks
-            if (fileToSave == null)
-                throw new NotSupportedException("No source data given!");
-            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Color[] palette;
+            SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out palette);
             Int32 nrOfFrames = frames.Length;
-            if (nrOfFrames == 0)
-                throw new NotSupportedException("This format needs at least one frame.");
-            Color[] palette = fileToSave.GetColors();
-            SupportedFileType palFile = fileToSave;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
-            {
-                SupportedFileType sft = frames[i];
-                if (sft.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8bpp images.");
-                if (sft.Width != 320 || sft.Height != 200)
-                    throw new NotSupportedException("This format needs 320x200 frames.");
-                if (palette == null || palette.Length == 0)
-                {
-                    palette = sft.GetColors();
-                    palFile = sft;
-                }
-            }
-            if (palFile == null)
-                throw new NotSupportedException("This format needs a color palette.");
             Boolean useChunks = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "OPT")) == 1;
             Boolean chunkDiag = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CH8"));
             Boolean chunkRects = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CHR"));
@@ -649,7 +632,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (imageData[curFrameOffs] == TransparentIndex)
                         {
                             if (previousImageNonTransIndex[curPrevOffs])
-                                throw new NotSupportedException("adding pixels of color #255 on new locations after frame 0 is not supported!");
+                                throw new ArgumentException("adding pixels of color #255 on new locations after frame 0 is not supported!", "fileToSave");
                         }
                         if (imageData[curFrameOffs] == previousImageData[curPrevOffs])
                             imageDataOpt[curFrameOffs] = TransparentIndex;
@@ -748,7 +731,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         finalChunks.Add(finalFrameChunk);
                         allImageRects.Add(new List<Rectangle>() {finalFrameChunk.ImageRect});
                         if (finalChunks.Count > 0x7FFD)
-                            throw new NotSupportedException("Chunk count exceeds " + 0x7FFD + "!");
+                            throw new ArgumentException("Chunk count exceeds " + 0x7FFD + "!", "fileToSave");
                     }
                     // clear this so it can get cleaned up on the copied chunks. It's no longer needed anyway; the reference to the final frame is set.
                     frameChunk.ImageData = null;
@@ -781,9 +764,9 @@ namespace EngieFileConverter.Domain.FileTypes
                             bw.Write((UInt16) (frameChunk.ImageRect.Y));
                         }
                     }
-                    bw.Write((UInt16) 0xFFFF);
+                    bw.Write(FrameEnd);
                 }
-                bw.Write((UInt16)0xFFFE);
+                bw.Write(AnimEnd);
                 bw.Flush();
                 vdxFile = ms.ToArray();
             }
@@ -804,7 +787,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (OverflowException ex)
                     {
-                        throw new NotSupportedException(ex.Message, ex);
+                        throw new ArgumentException(ex.Message, "fileToSave", ex);
                     }
                     if (compressedBytes != null && compressedBytes.Length < chunk.ImageData.Length)
                     {
@@ -816,7 +799,8 @@ namespace EngieFileConverter.Domain.FileTypes
             // Add palette, the easy way.
             Byte[] palData;
             using (FileFramesMythosPal pal = new FileFramesMythosPal())
-                palData = pal.SaveToBytesAsThis(palFile, null);
+            using(FilePalette8Bit inputPal = new FilePalette8Bit(palette))
+                palData = pal.SaveToBytesAsThis(inputPal, null);
             // Full length: headers and data for all chunks.
             Int32 fullLength = palData.Length + finalChunksCount * 0x08 + finalChunks.Sum(x => x.ImageData.Length);
             Byte[] vdaFile = new Byte[fullLength];
@@ -825,10 +809,10 @@ namespace EngieFileConverter.Domain.FileTypes
             for (Int32 i = 0; i < finalChunksCount; ++i)
             {
                 VideoChunk chunk = finalChunks[i];
-                ArrayUtils.WriteIntToByteArray(vdaFile, offset + 0, 2, true, (UInt16) (chunk.ImageRect.Width - 1));
-                ArrayUtils.WriteIntToByteArray(vdaFile, offset + 2, 2, true, (UInt16) (chunk.ImageRect.Height - 1));
+                ArrayUtils.WriteInt16ToByteArrayLe(vdaFile, offset + 0, (chunk.ImageRect.Width - 1));
+                ArrayUtils.WriteInt16ToByteArrayLe(vdaFile, offset + 2, (chunk.ImageRect.Height - 1));
                 vdaFile[offset + 4] = (Byte) (chunk.Compressed ? 0x02 : 0x00);
-                ArrayUtils.WriteIntToByteArray(vdaFile, offset + 5, 2, true, (UInt16) (chunk.ImageRect.X));
+                ArrayUtils.WriteInt16ToByteArrayLe(vdaFile, offset + 5, (chunk.ImageRect.X));
                 vdaFile[offset + 7] = (Byte) (chunk.ImageRect.Y & 0xFF);
                 offset += 8;
                 Byte[] chunkData = chunk.ImageData;
@@ -837,6 +821,31 @@ namespace EngieFileConverter.Domain.FileTypes
                 offset += dataLen;
             }
             return vdaFile;
+        }
+
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out Color[] palette)
+        {
+            // Preliminary checks
+            if (fileToSave == null)
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
+            if (nrOfFrames == 0)
+                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+            palette = fileToSave.GetColors();
+            for (Int32 i = 0; i < nrOfFrames; ++i)
+            {
+                SupportedFileType sft = frames[i];
+                if (sft.BitsPerPixel != 8)
+                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                if (sft.Width != 320 || sft.Height != 200)
+                    throw new ArgumentException(ERR_320x200, "fileToSave");
+                if (palette == null || palette.Length == 0)
+                    palette = sft.GetColors();
+            }
+            if (palette == null)
+                throw new ArgumentException(ERR_NO_COL, "fileToSave");
+            return frames;
         }
 
         /// <summary>
@@ -868,8 +877,8 @@ namespace EngieFileConverter.Domain.FileTypes
             public Int32 GetHashCode(VideoChunk obj)
             {
                 Byte[] imageBytes = new Byte[this.ImageData.Length + 8];
-                ArrayUtils.WriteIntToByteArray(imageBytes, 0, 4, true, (UInt32) this.ImageRect.Width);
-                ArrayUtils.WriteIntToByteArray(imageBytes, 4, 4, true, (UInt32) this.ImageRect.Height);
+                ArrayUtils.WriteInt32ToByteArrayLe(imageBytes, 0, this.ImageRect.Width);
+                ArrayUtils.WriteInt32ToByteArrayLe(imageBytes, 4, this.ImageRect.Height);
                 return (Int32)Crc32.ComputeChecksum(imageBytes);
             }
 

@@ -118,7 +118,7 @@ namespace Nyerguds.ImageManipulation
                 return null;
             try
             {
-                Int32 headerSize = (Int32)ArrayUtils.ReadIntFromByteArray(dibBytes, offset, 4, true);
+                Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(dibBytes, offset);
                 // Only supporting 124-byte DIBV5 in this.
                 // If it fails, try the other type ;)
                 Int32 dibHeaderSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
@@ -211,16 +211,12 @@ namespace Nyerguds.ImageManipulation
             
             Bitmap bitmap = null;
             // Icon handling
-            if (bitMask != null && bitMask.Length > 0)
+            Boolean isIcon = bitMask != null && bitMask.Length > 0;
+            if (isIcon)
             {
                 originalPixelFormat = GetPixelFormat(header.biBitCount);
                 height /= 2;
-                if (originalPixelFormat == PixelFormat.Format32bppRgb)
-                {
-                    // Icons support transparency when they are 32-bit
-                    originalPixelFormat = PixelFormat.Format32bppArgb;
-                }
-                else
+                if (originalPixelFormat != PixelFormat.Format32bppRgb)
                 {
                     Int32 maskStride = ImageUtils.GetClassicStride(width, 1);
                     Byte[] imageDataMask = ImageUtils.ConvertTo8Bit(bitMask, width, height, 0, 1, true, ref maskStride);
@@ -233,8 +229,10 @@ namespace Nyerguds.ImageManipulation
                     {
                         Int32 inputOffs = inputOffsetLine;
                         Int32 outputOffs = outputOffsetLine;
+                        // Apply alpha from mask.
                         for (Int32 x = 0; x < width; ++x)
                         {
+                            // 0 in mask means no transparency.
                             imageData32[outputOffs + 3] = (Byte)(imageDataMask[inputOffs] == 0 ? 255 : 0);
                             inputOffs++;
                             outputOffs += 4;
@@ -247,13 +245,24 @@ namespace Nyerguds.ImageManipulation
                     bitmap.RotateFlip(RotateFlipType.Rotate180FlipX);
                 }
             }
-            if (bitmap == null)
+            if (bitmap != null)
+                return bitmap;
+            if (isIcon && originalPixelFormat == PixelFormat.Format32bppRgb && header.biCompression == BITMAPCOMPRESSION.BI_RGB)
             {
-                imageData = ApplyBitMask(imageData, out originalPixelFormat, width, height, header.biBitCount, 0, bitfields.bfRedMask, bitfields.bfGreenMask, bitfields.bfBlueMask);
-                bitmap = ImageUtils.BuildImage(imageData, width, height, stride, originalPixelFormat, palette, Color.Black);
-                // This is bmp; reverse image lines.
-                bitmap.RotateFlip(RotateFlipType.Rotate180FlipX);
+                // Icons support alpha when they are 32-bit.
+                originalPixelFormat = PixelFormat.Format32bppArgb;
             }
+            else
+            {
+                UInt32 alphaMask = 0;
+                // If icon: force mask to the remainder.
+                if (isIcon && header.biCompression == BITMAPCOMPRESSION.BI_BITFIELDS && bitfields.bfRedMask != 0 && bitfields.bfGreenMask != 0 && bitfields.bfBlueMask != 0)
+                    alphaMask = ~(bitfields.bfRedMask | bitfields.bfGreenMask | bitfields.bfBlueMask);
+                imageData = ApplyBitMask(imageData, out originalPixelFormat, width, height, header.biBitCount, alphaMask, bitfields.bfRedMask, bitfields.bfGreenMask, bitfields.bfBlueMask);
+            }
+            bitmap = ImageUtils.BuildImage(imageData, width, height, stride, originalPixelFormat, palette, Color.Black);
+            // This is bmp; reverse image lines.
+            bitmap.RotateFlip(RotateFlipType.Rotate180FlipX);
             return bitmap;
         }
 
@@ -376,7 +385,7 @@ namespace Nyerguds.ImageManipulation
                 return false;
             try
             {
-                Int32 headerSize = (Int32)ArrayUtils.ReadIntFromByteArray(dibBytes, offset, 4, true);
+                Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(dibBytes, offset);
                 Int32 dibHeaderSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
                 Int32 bitFieldsSize = Marshal.SizeOf(typeof(BITFIELDS));
                 if (dibHeaderSize != headerSize)

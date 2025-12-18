@@ -526,6 +526,42 @@ namespace Nyerguds.ImageManipulation
         /// <param name="image">Input image.</param>
         /// <param name="channelNr">0 = B, 1 = G, 2 = R.</param>
         /// <returns>The requested channel, as two-dimensional Int32 array.</returns>
+        public static Byte[] GetChannelBytes(Bitmap image, Int32 channelNr)
+        {
+            if (channelNr >= 3 || channelNr < 0)
+                throw new IndexOutOfRangeException();
+            Int32 width = image.Width;
+            Int32 height = image.Height;
+            Int32 stride;
+            Byte[] dataBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format24bppRgb);
+            Byte[] channel = new Byte[height * width];
+            Int32 readLineOffs = 0;
+            Int32 writeLineOffs = 0;
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 readOffs = readLineOffs;
+                Int32 writeOffs = writeLineOffs;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    channel[writeOffs] = dataBytes[readOffs + channelNr];
+                    readOffs += 3;
+                    writeOffs++;
+                }
+                readLineOffs += stride;
+                writeLineOffs += width;;
+
+            }
+            return channel;
+        }
+
+        /// <summary>
+        /// Extracts a channel as two-dimensional array.
+        /// Written for a StackOverflow question.
+        /// https://stackoverflow.com/a/50077006/395685
+        /// </summary>
+        /// <param name="image">Input image.</param>
+        /// <param name="channelNr">0 = B, 1 = G, 2 = R.</param>
+        /// <returns>The requested channel, as two-dimensional Int32 array.</returns>
         public static Int32[,] GetChannel(Bitmap image, Int32 channelNr)
         {
             if (channelNr >= 3 || channelNr < 0)
@@ -535,14 +571,16 @@ namespace Nyerguds.ImageManipulation
             Int32 stride;
             Byte[] dataBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format24bppRgb);
             Int32[,] channel = new Int32[height, width];
+            Int32 readLineOffs = 0;
             for (Int32 y = 0; y < height; ++y)
             {
-                Int32 offset = y * stride;
+                Int32 readOffs = readLineOffs;
                 for (Int32 x = 0; x < width; ++x)
                 {
-                    channel[y, x] = dataBytes[offset + channelNr];
-                    offset += 3;
+                    channel[y, x] = dataBytes[readOffs + channelNr];
+                    readOffs += 3;
                 }
+                readLineOffs += stride;
             }
             return channel;
         }
@@ -822,7 +860,7 @@ namespace Nyerguds.ImageManipulation
                     iconWriter.Write(offset);
                     offset += imageLen;
                 }
-                for (Int32 i = 0; i < imgCount; i++)
+                for (Int32 i = 0; i < imgCount; ++i)
                 {
                     // Write image data
                     // png data must contain the whole png data file
@@ -834,6 +872,34 @@ namespace Nyerguds.ImageManipulation
                 return new Icon(ms);
             }
         }
+
+        public static Int32 GetLastClearLine(Byte[] sourceData, Int32 stride, Int32 width, Int32 height, Color checkColor)
+        {
+            // Get color as UInt32 in advance.
+            UInt32 checkColVal = (UInt32)checkColor.ToArgb();
+            // Use MemoryStream with BinaryReader since it can read UInt32 from a byte array directly.
+            using (MemoryStream ms = new MemoryStream(sourceData))
+            using (BinaryReader sr = new BinaryReader(ms))
+            {
+                for (Int32 y = height - 1; y >= 0; --y)
+                {
+                    // Set position in the memory stream to the start of the current row.
+                    ms.Position = stride * y;
+                    // Put loop variable outside "if" so it is retained after the loop.
+                    Int32 x;
+                    // Increment loop variable from 0 to width, reading 32-bit values.
+                    for (x = 0; x < width; ++x)
+                        // Read UInt32 for a whole 32bpp ARGB pixel; compare with check value.
+                        if (sr.ReadUInt32() != checkColVal)
+                            break;
+                    // Test if the loop went through the full width before aborting.
+                    if (x == width)
+                        return y;
+                }
+            }
+            return -1;
+        }
+
 
 #if UNSAFE
         public static unsafe Byte GetIndexedPixelUnsafe(Bitmap b, Int32 x, Int32 y)

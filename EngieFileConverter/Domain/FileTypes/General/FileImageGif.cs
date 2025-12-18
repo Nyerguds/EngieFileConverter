@@ -24,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException(FILE_EMPTY);
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ImageFormat.Gif);
         }
 

@@ -30,7 +30,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood WSA"; } }
         public override String[] FileExtensions { get { return new String[] { "wsa" }; } }
         public override String ShortTypeDescription { get { return "Westwood Animation File"; } }
-        public override Int32 ColorsInPalette { get { return this.m_HasPalette? 0x100 : 0; } }
+        public override Boolean NeedsPalette { get { return !this.m_HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_HasPalette;
         protected WsaVersion m_Version = WsaVersion.Cnc;
@@ -45,19 +45,19 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
-        public override Boolean[] TransparencyMask { get { return m_TransMask; } }
+        public override Boolean[] TransparencyMask { get { return this.m_TransMask; } }
 
 
         public override List<String> GetFilesToLoadMissingData(String originalPath)
         {
-            if (!m_Continues)
+            if (!this.m_Continues)
                 return null;
             Int32 maxWidth = this.Width;
             Int32 maxHeight = this.Height;
-            List<String> cpsName = FindOtherExtFile(originalPath, new FileImgWwCps(), maxWidth, maxHeight);
+            List<String> cpsName = this.FindOtherExtFile(originalPath, new FileImgWwCps(), maxWidth, maxHeight);
             if (cpsName != null)
                 return cpsName;
-            List<String> pngName = FindOtherExtFile(originalPath, new FileImagePng(), maxWidth, maxHeight);
+            List<String> pngName = this.FindOtherExtFile(originalPath, new FileImagePng(), maxWidth, maxHeight);
             if (pngName != null)
                 return pngName;
             String baseNameDummy;
@@ -101,7 +101,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 using (FileFramesWwWsa testFrame = new FileFramesWwWsa())
                 {
                     // Call with testContinue param to abort after confirming initial frame state.
-                    try { testFrame.LoadFromFileData(testBytes, lastName, m_Version, null, 0,0, true); }
+                    try { testFrame.LoadFromFileData(testBytes, lastName, this.m_Version, null, 0,0, true); }
                     catch (HeaderParseException) { return null; }
                     maxWidth = Math.Max(maxWidth, testFrame.Width);
                     maxHeight = Math.Max(maxHeight, testFrame.Height);
@@ -163,9 +163,9 @@ namespace EngieFileConverter.Domain.FileTypes
             String firstName = loadChain.FirstOrDefault();
             if (firstName == null)
                 return;
-            Byte[] lastFrameData = LoadFromOtherExtFile(loadChain, new FileImgWwCps(), out lastFrameWidth, out lastFrameHeight);
+            Byte[] lastFrameData = this.LoadFromOtherExtFile(loadChain, new FileImgWwCps(), out lastFrameWidth, out lastFrameHeight);
             if (lastFrameData == null)
-                lastFrameData = LoadFromOtherExtFile(loadChain, new FileImage(), out lastFrameWidth, out lastFrameHeight);
+                lastFrameData = this.LoadFromOtherExtFile(loadChain, new FileImage(), out lastFrameWidth, out lastFrameHeight);
             Int32 loadChainLength = loadChain.Count;
             for (Int32 i = 0; i < loadChainLength; ++i)
             {
@@ -196,7 +196,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     lastFrameData = ImageUtils.GetImageData(lastFrame, out stride, true);
                 }
             }
-            this.LoadFromFileData(fileData, originalPath, m_Version, lastFrameData, lastFrameWidth, lastFrameHeight, false);
+            this.LoadFromFileData(fileData, originalPath, this.m_Version, lastFrameData, lastFrameWidth, lastFrameHeight, false);
             //String sizeInfo = (lastFrameWidth > this.Width || lastFrameHeight > this.Height) ? ("Original size: " + this.Width + "x" + this.Height) : String.Empty;
             this.ExtraInfo = (this.ExtraInfo + "\nData chained from " + Path.GetFileName(firstName)).TrimStart('\n');
         }
@@ -224,8 +224,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] lastFrameData = ImageUtils.GetImageData(bm, out lastFrameWidth, true);
                 if (lastFrameData != null)
                     loadChain.RemoveAt(0);
-                if (checkType.ColorsInPalette != 0)
-                    m_TransMask = checkType.TransparencyMask;
+                if (!checkType.NeedsPalette)
+                    this.m_TransMask = checkType.TransparencyMask;
                 return lastFrameData;
             }
             catch
@@ -279,7 +279,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 datalen = fileData.Length;
             if (datalen < 14)
                 throw new FileTypeLoadException("File is too small to contain header.");
-            UInt16 nrOfFrames = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+            UInt16 nrOfFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             if (nrOfFrames == 0)
                 throw new FileTypeLoadException("WSA cannot contain 0 frames.");
             UInt16 xPos;
@@ -297,26 +297,26 @@ namespace EngieFileConverter.Domain.FileTypes
                     headerSize = 0x0A;
                     xPos = 0;
                     yPos = 0;
-                    xorWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-                    xorHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-                    deltaBufferSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
+                    xorWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+                    xorHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+                    deltaBufferSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
                     // d2v1 has no flags, and can thus never contain a palette.
                     if (loadVersion == WsaVersion.Dune2v1)
                         headerSize -= 2;
                     else
-                        flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
+                        flags = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
                     break;
                 case WsaVersion.Cnc:
                 case WsaVersion.Poly:
-                    xPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-                    yPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-                    xorWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
-                    xorHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
+                    xPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+                    yPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+                    xorWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
+                    xorHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
                     Int32 buffSize = 2;
                     if (loadVersion == WsaVersion.Poly)
                         buffSize += 2;
                     deltaBufferSize = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, buffSize, true);
-                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A + buffSize, 2, true);
+                    flags = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0A + buffSize);
                     headerSize = 0x0C + buffSize;
                     break;
                 default:
@@ -343,9 +343,9 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 if (fileData.Length <= dataIndexOffset + 4)
                     throw new HeaderParseException("Data too short to contain frames info!");
-                UInt32 curOffs = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
+                UInt32 curOffs = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, dataIndexOffset);
                 frameOffsets[i] = curOffs;
-                if (m_HasPalette)
+                if (this.m_HasPalette)
                     curOffs +=300;
                 if (curOffs > fileData.Length)
                     throw new HeaderParseException("Data too short to contain frames info!");
@@ -366,12 +366,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 try
                 {
                     if (loadVersion != WsaVersion.Poly || forceSixBitPal)
-                        this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(pal));
+                        this.m_Palette = ColorUtils.ReadSixBitPaletteAsEightBit(fileData, paletteOffset);
                     else
-                        this.m_Palette = ColorUtils.ReadEightBitPalette(pal, true);
+                        this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, paletteOffset, 0x100);
                     PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                 }
-                catch (NotSupportedException e)
+                catch (ArgumentException e)
                 {
                     throw new HeaderParseException("Error loading color palette: " + e.Message, e);
                 }
@@ -459,17 +459,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 else if (xPos > 0 || yPos > 0)
                 {
                     finalFrameData = frameData;
-                    finalFrameData = ImageUtils.ChangeStride(finalFrameData, xorWidth, xorHeight, m_Width, true, 0);
-                    finalFrameData = ImageUtils.ChangeHeight(finalFrameData, m_Width, xorHeight, m_Height, true, 0);
+                    finalFrameData = ImageUtils.ChangeStride(finalFrameData, xorWidth, xorHeight, this.m_Width, true, 0);
+                    finalFrameData = ImageUtils.ChangeHeight(finalFrameData, this.m_Width, xorHeight, this.m_Height, true, 0);
                 }
                 else
                     finalFrameData = frameData;
-                Bitmap curFrImg = ImageUtils.BuildImage(finalFrameData, m_Width, m_Height, m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
+                Bitmap curFrImg = ImageUtils.BuildImage(finalFrameData, this.m_Width, this.m_Height, this.m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetFileClass(this.FrameInputFileClass);
-                frame.SetColorsInPalette(this.ColorsInPalette);
+                frame.SetNeedsPalette(this.NeedsPalette);
                 frame.SetExtraInfo(specificInfo.TrimStart('\n'));
                 this.m_FramesList[i] = frame;
             }
@@ -500,8 +500,12 @@ namespace EngieFileConverter.Domain.FileTypes
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = fileToSave != null && !(fileToSave is FileImage) && fileToSave.ColorsInPalette != 0;
+            // Preliminary checks
+            Int32 width;
+            Int32 height;
+            Color[] palette;
+            PerformPreliminaryChecks(fileToSave, out width, out height, out palette);
+            Boolean hasColors = !fileToSave.NeedsPalette;
             WsaVersion type = WsaVersion.Cnc;
             Boolean loop = true;
             Boolean trim = true;
@@ -531,36 +535,15 @@ namespace EngieFileConverter.Domain.FileTypes
             return opts;
         }
 
-
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             // Preliminary checks
-            if (fileToSave == null)
-                throw new NotSupportedException("No source data given!");
-            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
-            if (nrOfFrames == 0)
-                throw new NotSupportedException("This format needs at least one frame.");
-            Int32 width = -1;
-            Int32 height = -1;
-            Color[] palette = fileToSave.GetColors();
-            for (Int32 i = 0; i < nrOfFrames; ++i)
-            {
-                SupportedFileType frame = frames[i];
-                if (frame == null || frame.GetBitmap() == null)
-                    throw new NotSupportedException("WSA can't handle empty frames!");
-                if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("Not all frames in input type are 8-bit images!");
-                if (width == -1 && height == -1)
-                {
-                    width = frame.Width;
-                    height = frame.Height;
-                }
-                else if (width != frame.Width || height != frame.Height)
-                    throw new NotSupportedException("Not all frames in input type are the same size!");
-                if (palette == null || palette.Length == 0)
-                    palette = frame.GetColors();
-            }
+            Int32 width;
+            Int32 height;
+            Color[] palette;
+            SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out width, out height, out palette);
+            Int32 nrOfFrames = frames.Length;
+
             // Save options
             Int32 type;
             WsaVersion saveType;
@@ -586,7 +569,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             // Technically can't happen... I think.
             if (readFrames == 0)
-                throw new NotSupportedException("No frames in source data!");
+                throw new ArgumentException("No frames in source data!","fileToSave");
             if (loop)
                 writeFrames++;
             Byte[][] framesDataUnc = new Byte[writeFrames][];
@@ -686,18 +669,18 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             // Write header
             Int32 offset = 0;
-            ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)readFrames);
+            ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, readFrames);
             offset += 2;
             if (saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2)
             {
-                ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)xOffset);
+                ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, xOffset);
                 offset += 2;
-                ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)yOffset);
+                ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, yOffset);
                 offset += 2;
             }
-            ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)width);
+            ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, width);
             offset += 2;
-            ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)height);
+            ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, height);
             offset += 2;
             ArrayUtils.WriteIntToByteArray(fileData, offset, saveType == WsaVersion.Poly ? 4 : 2, true, (UInt32)deltaBufferSize);
             offset += saveType == WsaVersion.Poly ? 4 : 2;
@@ -706,12 +689,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 flags = asPaletted ? 1 : 0;
                 if (asPaletted & saveSixBitPal)
                     flags |= 2;
-                ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)flags);
+                ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, flags);
                 offset += 2;
             }
             for (Int32 i = 0; i < nrOfOffsets; ++i)
             {
-                ArrayUtils.WriteIntToByteArray(fileData, offset, 4, true, (UInt32) frameOffsets[i]);
+                ArrayUtils.WriteInt32ToByteArrayLe(fileData, offset, frameOffsets[i]);
                 offset += 4;
             }
             if (asPaletted)
@@ -733,6 +716,39 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             return fileData;
         }
+
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out Int32 width, out Int32 height, out Color[] palette)
+        {
+            // Preliminary checks
+            if (fileToSave == null)
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
+            if (nrOfFrames == 0)
+                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+            width = -1;
+            height = -1;
+            palette = CheckInputForColors(fileToSave, 8, true);
+            for (Int32 i = 0; i < nrOfFrames; ++i)
+            {
+                SupportedFileType frame = frames[i];
+                if (frame == null || frame.GetBitmap() == null)
+                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                if (frame.BitsPerPixel != 8)
+                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                if (width == -1 && height == -1)
+                {
+                    width = frame.Width;
+                    height = frame.Height;
+                }
+                else if (width != frame.Width || height != frame.Height)
+                    throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
+                if (palette == null || palette.Length == 0)
+                    palette = frame.GetColors();
+            }
+            return frames;
+        }
+
     }
 
     public enum WsaVersion

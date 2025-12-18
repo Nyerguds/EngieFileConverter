@@ -21,17 +21,21 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
         public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return m_Height; } }
-        public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : m_Palette.Length; } }
+        public override Int32 Height { get { return this.m_Height; } }
+        public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
         public override Int32 BitsPerPixel { get { return 16; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return m_FramesList != null; } }
+        public override Boolean IsFramesContainer { get { return this.m_FramesList != null; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
         public override Boolean FramesHaveCommonPalette { get { return false; } }
+
+        // TODO remove when implemented.
+        /// <summary>True if this type can save.</summary>
+        public virtual Boolean CanSave { get { return false; } }
 
         protected Int32 m_Height;
 
@@ -54,8 +58,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (len % 32 != 0)
                 throw new FileTypeLoadException("Incorrect file size: not a multiple of 32.");
             Int32 palSize = len / 2;
-            m_Height = palSize / 16;
-            Int32 nrOfPalettes = (m_Height + 15) / 16;
+            this.m_Height = palSize / 16;
+            Int32 nrOfPalettes = (this.m_Height + 15) / 16;
             //Format seems to be 16 bit LE ABGR.
             PixelFormatter pf = new PixelFormatter(2, 0x8000, 0x1F, 0x3E0, 0x7C00, true);
             Color[][] palettes = new Color[nrOfPalettes][];
@@ -63,11 +67,11 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 curHeight = 0;
             for (Int32 i = 0; i < nrOfPalettes; ++i)
             {
-                Int32 curPalRows = Math.Min(m_Height - curHeight, 16);
+                Int32 curPalRows = Math.Min(this.m_Height - curHeight, 16);
                 Int32 offset = i << 9; // = (* 256 * 16bit);
                 // Check starting bytes. All PSX palettes start with a 00 00 colour.
                 for (Int32 j = 0; j < curPalRows; ++j)
-                    if (ArrayUtils.ReadIntFromByteArray(fileData, offset + (j << 5), 2, true) != 0)
+                    if (ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + (j << 5)) != 0)
                         throw new FileTypeLoadException("Incorrect data: PSX palettes always start with a transparent value.");
                 palettes[i] = pf.GetColorPalette(fileData, offset, 16 * curPalRows);
                 curHeight += curPalRows;
@@ -76,7 +80,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 stride = 16;
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte) x).ToArray();
 
-            Int32 remainingHeight = m_Height;
+            Int32 remainingHeight = this.m_Height;
             for (Int32 i = 0; i < nrOfPalettes; ++i)
             {
                 if (remainingHeight < 16)
@@ -89,14 +93,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.LoadFileFrame(this, this, paletteImage, sourcePath, i);
                 frame.SetBitsPerColor(8);
                 frame.SetFileClass(this.FrameInputFileClass);
-                frame.SetColorsInPalette(Math.Min(remainingHeight * 16, 256));
                 frame.SetExtraInfo("");
                 this.m_FramesList[i] = frame;
                 remainingHeight -= 16;
             }
             Byte[] fileData2 = ArrayUtils.CloneArray(fileData);
-            PixelFormatter.ReorderBits(fileData2, 16, m_Height, 32, pf, PixelFormatter.Format16BitArgb1555);
-            Bitmap fullImage = ImageUtils.BuildImage(fileData2, 16, m_Height, 32, PixelFormat.Format16bppArgb1555, null, null);
+            PixelFormatter.ReorderBits(fileData2, 16, this.m_Height, 32, pf, PixelFormatter.Format16BitArgb1555);
+            Bitmap fullImage = ImageUtils.BuildImage(fileData2, 16, this.m_Height, 32, PixelFormat.Format16bppArgb1555, null, null);
             this.m_LoadedImage = fullImage;
             this.ExtraInfo = "Contains " + nrOfPalettes + " color palette" + (nrOfPalettes != 1 ? "s" : String.Empty);
             this.m_Palette = null;
@@ -104,12 +107,11 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            // TODO
             throw new NotImplementedException();
             /*/
             Color[] cols = this.CheckInputForColors(fileToSave, true);
             if (cols.Length % 256 != 0)
-                throw new NotSupportedException("PSX palettes must be 256 colors!");
+                throw new ArgumentException("PSX palettes must be 256 colors!", "fileToSave");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
             for (Int32 i = 0; i < cols.Length; ++i)

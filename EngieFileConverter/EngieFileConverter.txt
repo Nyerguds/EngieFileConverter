@@ -50,6 +50,9 @@ Midi Tools. It contains no license but I assume the fact he included the code im
 doesn't mind it being useful to more people.
 https://www.vogons.org/viewtopic.php?p=273448#p273448
 
+The Dynamix LZSHuff decompression was identified thanks to NewRisingSun in that same thread:
+https://www.vogons.org/viewtopic.php?p=306003#p306003
+
 The K.O.R.T. image format was decoded thanks to documentation included in the K.O.R.T. savegame
 editor written by David Eriksson, aka Edison of 2GooD:
 http://www.2good.nu/projekt/korted
@@ -81,6 +84,29 @@ Engie File Converter.
 
 
 Engie File Converter versions:
+
+v1.5.0: (26/02/2020 14:19)
+-Cleaned up loads of obsolete internals related to color palette handling.
+-Six-bit colors now correctly scale up to 0-255, rather than the simple *4 that gave 0-252.
+-Added "Save raw" option, for saving the raw bytes of the loaded image.
+-Added support for the raw 4-bit "cinema" images accompanying the Nova images in
+ Cover Girl Strip Poker. They will be added as frames when found alongside the .PPP file.
+-Fixed transparency issues in the Windows Icon format on 32-bit DIB images.
+-Kings of the Beach PAK format no longer needs an external palette; it's standard EGA.
+-An image split into frames retains the source file's "needs external palette" status.
+-Editing a color on the palette now preserves its alpha value.
+-Added automatic palette loading to PC CPS format.
+-VGS format no longer thinks its input frames need to be 320x200.
+-AdventureSoft VGA format no longer shown the always-empty first frame.
+-AdventureSoft icon format no longer shows an image on frame -1.
+-AdventureSoft icon format can no longer be converted from one large image, since there
+ are tools for splitting frames now.
+-When saving an image as icon, the user is give choices of what sizes to include.
+-Added support for the Blade Runner 16-bit SHP format.
+-Fixed an error that corrupted duplicate characters in the Westwood Font File format.
+-Fixed duplicates check in Dynamix BMP Matrix type.
+-Removed transparency mask on index 0 from Dynamix BMP Matrix type.
+-Removed useless 4-bit view from Dynamix SCR format.
 
 v1.4.9: (29/10/2019 11:05)
 -Added palette visualiser to the "Match to palette" function.

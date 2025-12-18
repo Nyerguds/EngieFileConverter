@@ -21,7 +21,7 @@ namespace Nyerguds.FileData.Westwood
                 Int32 nextLineOffset = outLineOffset + frameWidth;
                 if (offset + 2 >= datalen)
                     throw new ArgumentException("Not enough lines in RLE-Zero data!");
-                Int32 lineLen = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
+                Int32 lineLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset);
                 Int32 end = offset + lineLen;
                 if (lineLen < 2 || end > datalen)
                     throw new ArgumentException("Bad value in RLE-Zero line header!");
@@ -86,7 +86,7 @@ namespace Nyerguds.FileData.Westwood
                     Int64 lineEndOffs = ms.Position;
                     Int64 len = lineEndOffs - lineStartOffs;
                     if (len > UInt16.MaxValue)
-                        throw new NotSupportedException("Compressed line width is too large to store!");
+                        throw new ArgumentException("Compressed line width is too large to store!", "imageData");
                     ms.Position = lineStartOffs;
                     ms.WriteByte((Byte)(len & 0xFF));
                     ms.WriteByte((Byte) ((len >> 8) & 0xFF));

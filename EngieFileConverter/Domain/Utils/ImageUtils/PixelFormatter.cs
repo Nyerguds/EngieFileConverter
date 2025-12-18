@@ -144,7 +144,7 @@ namespace Nyerguds.ImageManipulation
             this.bitMasks[ColA] = maskAlpha;
             UInt32 maxValAlpha = MakeMaxVal(alphaBits);
             this.maxChan[ColA] = maxValAlpha;
-            this.defaultsChan[ColA] = maxValAlpha;
+            this.defaultsChan[ColA] = InternalMax;
 
             Byte redBits = BitsFromMask(maskRed);
             this.bitsAmounts[ColR] = redBits;
@@ -223,7 +223,7 @@ namespace Nyerguds.ImageManipulation
             this.bitMasks[ColA] = MakeMask(alphaBits, alphaShift);
             UInt32 maxValAlpha = MakeMaxVal(alphaBits);
             this.maxChan[ColA] = maxValAlpha;
-            this.defaultsChan[ColA] = maxValAlpha;
+            this.defaultsChan[ColA] = InternalMax;
 
             this.bitsAmounts[ColR] = redBits;
             this.multipliers[ColR] = redMultiplier >= 0 ? redMultiplier : MakeMultiplier(redBits);

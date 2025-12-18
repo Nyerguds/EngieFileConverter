@@ -61,7 +61,7 @@ namespace Nyerguds.ImageManipulation
         {
             Int32 colors = 1 << bitsPerPixel;
             if (colors > 16 || colors <= 0)
-                throw new NotSupportedException("EGA palette can not contain more than 16 colors!");
+                throw new ArgumentException("EGA palette can not contain more than 16 colors!", "bitsPerPixel");
             Color[] pal = new Color[colors];
             Array.Copy(EgaPalette, 0, pal, 0, colors);
             return pal;
@@ -70,7 +70,7 @@ namespace Nyerguds.ImageManipulation
         public static Color[] GetCgaPalette(Byte backgroundColor, Boolean colorBurst, Boolean palette, Boolean intensity, Int32 bitsPerPixel)
         {
             if (backgroundColor > 15)
-                throw new NotSupportedException("CGA palette values only go up to 15!");
+                throw new ArgumentException("CGA palette values only go up to 15!", "backgroundColor");
             Color[] pal = new Color[1 << bitsPerPixel];
             pal[0] = EgaPalette[backgroundColor];
             if (bitsPerPixel == 1)
@@ -79,7 +79,7 @@ namespace Nyerguds.ImageManipulation
                 return pal;
             }
             if (bitsPerPixel != 2)
-                throw new NotSupportedException("CGA palette can only be 1bpp or 2bpp!");
+                throw new ArgumentException("CGA palette can only be 1bpp or 2bpp!","bitsPerPixel");
             Int32 paletteNr = colorBurst ? (palette ? 1 : 0) : 2;
             Byte[] colors = CgaPalettes[paletteNr];
             Int32 intensityAdd = intensity ? 8 : 0;
@@ -340,6 +340,37 @@ namespace Nyerguds.ImageManipulation
                 pal[blackIndex] = Color.Black;
             // Apply transparency
             return ApplyPalTransparencyMask(pal, palTransparencyMask);
+        }
+
+        /// <summary>
+        /// Palette compare. Replacement for SequenceEquals, since it's bloody slow, and with added support to ignore alpha.
+        /// </summary>
+        /// <param name="palette1"></param>
+        /// <param name="palette2"></param>
+        /// <param name="ignoreAlpha"></param>
+        /// <returns></returns>
+        internal static Boolean PalettesAreEqual(Color[] palette1, Color[] palette2, Boolean ignoreAlpha)
+        {
+            // Replacement for SequenceEquals, since it's bloody slow.
+            Int32 pal1Length = palette1.Length;
+            if (pal1Length != palette2.Length)
+                return false;
+            if (ignoreAlpha)
+            {
+                for (Int32 i = 0; i < pal1Length; ++i)
+                {
+                    if ((((UInt32)palette1[i].ToArgb()) & 0x00FFFFFF) == (((UInt32)palette2[i].ToArgb()) & 0x00FFFFFF))
+                        continue;
+                    return false;
+                }
+            }
+            for (Int32 i = 0; i < pal1Length; ++i)
+            {
+                if (palette1[i].ToArgb() == palette2[i].ToArgb())
+                    continue;
+                return false;
+            }
+            return true;
         }
     }
 }

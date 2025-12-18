@@ -439,7 +439,7 @@ namespace Nyerguds.Ini
                 {
                     sw = new StreamWriter(iniFilePath, false, charEncoding);
                     Int32 nrOfLines = initext.Count;
-                    for (Int32 i = 0; i < nrOfLines; i++)
+                    for (Int32 i = 0; i < nrOfLines; ++i)
                         sw.WriteLine(initext[i]);
                 }
                 catch (IOException)
@@ -919,7 +919,7 @@ namespace Nyerguds.Ini
         {
             IniSection section = null;
             Int32 nrOfSections = this.m_IniSections.Count;
-            for (Int32 i = 0; i < nrOfSections; i++)
+            for (Int32 i = 0; i < nrOfSections; ++i)
             {
                 IniSection sec = this.m_IniSections[i];
                 String secname = sec.GetName();
@@ -987,7 +987,7 @@ namespace Nyerguds.Ini
         {
             Int32 nrOfSections = this.m_IniSections.Count;
             List<String> sectionNames = new List<String>(nrOfSections);
-            for (Int32 i = 0; i < nrOfSections; i++)
+            for (Int32 i = 0; i < nrOfSections; ++i)
                 sectionNames.Add(this.m_IniSections[i].GetName());
             return sectionNames;
         }

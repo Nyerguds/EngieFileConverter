@@ -30,15 +30,15 @@ namespace EngieFileConverter.Domain.FileTypes
             // General specs: http://www.dragonwins.com/domains/getteched/bmp/bmpfileformat.htm
             Int32 dataLen = fileData.Length;
             if (dataLen < 18 || fileData[0] != 0x42 || fileData[1] != 0x4D)
-                throw new FileTypeLoadException(LOAD_ERROR);
-            UInt32 size = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, 0x02, 4, true);
-            UInt32 reserved = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, 0x06, 4, true);
-            Int32 headerEnd = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, 4, true);
+                throw new FileTypeLoadException(this.LOAD_ERROR);
+            UInt32 size = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x02);
+            UInt32 reserved = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x06);
+            Int32 headerEnd = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0A);
             if (size != dataLen || reserved != 0 || dataLen < headerEnd)
-                throw new FileTypeLoadException(LOAD_ERROR);
-            Int32 headerSize = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 0x0E, 4, true);
+                throw new FileTypeLoadException(this.LOAD_ERROR);
+            Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0E);
             if (headerEnd < headerSize + 14)
-                throw new FileTypeLoadException(LOAD_ERROR);
+                throw new FileTypeLoadException(this.LOAD_ERROR);
             try
             {
                 if (headerSize == 40)
@@ -81,10 +81,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 sbExtrainfo.Append("Bitmap version: ").Append(version);
             else
                 sbExtrainfo.Append("Unknown bitmap version (header size: ").Append(headerSize).Append(")");
-            if (Image.GetPixelFormatSize(m_LoadedImage.PixelFormat) == 16)
+            if (Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat) == 16)
             {
                 sbExtrainfo.Append("\nBits per color: ");
-                switch (m_LoadedImage.PixelFormat)
+                switch (this.m_LoadedImage.PixelFormat)
                 {
                     case PixelFormat.Format16bppRgb555:
                         sbExtrainfo.Append("R5 G5 B5");
@@ -104,7 +104,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException(FILE_EMPTY);
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ImageFormat.Bmp);
         }
 

@@ -72,7 +72,7 @@ namespace Nyerguds.FileData.Dynamix
             if (chunkData.Length < 5)
                 throw new FileTypeLoadException("Chunk is too short to read compression header!");
             Byte compression = chunkData[0];
-            Int32 uncompressedLength = (Int32)ArrayUtils.ReadIntFromByteArray(chunkData, 1, 4, true);
+            Int32 uncompressedLength = ArrayUtils.ReadInt32FromByteArrayLe(chunkData, 1);
             return Decode(chunkData, 5, null, compression, uncompressedLength);
         }
 

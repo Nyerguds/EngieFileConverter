@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 
 namespace Nyerguds.FileData.EmotionalPictures
 {
@@ -9,15 +8,15 @@ namespace Nyerguds.FileData.EmotionalPictures
         public static Byte[] DecompressPppRle(Byte[] data)
         {
             Int32 len = data.Length;
-            UInt32 expandSize = (UInt32)len * 3;
-            Int32 uncompressedSize = data.Length * 3;
+            Int32 uncompressedSize = len * 3;
+            UInt32 expandSize = (UInt32)uncompressedSize;
             Byte[] bufferOut = new Byte[uncompressedSize];
             Int32 ptr = 0;
             // Decompress flag-based RLE.
             // The flag is 0xFF. It is followed by one byte for the value to fill,
             // and then two bytes for the amount of repetitions.
             Int32 i;
-            for (i = 0; i < len; i++)
+            for (i = 0; i < len; ++i)
             {
                 Byte value = data[i];
                 if (value != 0xFF)
@@ -33,9 +32,11 @@ namespace Nyerguds.FileData.EmotionalPictures
                     value = data[++i];
                     Int32 repeat = data[++i] + (data[++i] << 8);
                     Int32 endPoint = repeat + ptr;
+                    // if the repeat amount is more than the expand size, there's no point in just expanding with the repeat amount;
+                    // the next written byte will need to expand it again then anyway. So expand to their sum instead.
                     if (endPoint > bufferOut.Length)
-                        bufferOut = ExpandBuffer(bufferOut, Math.Max(expandSize, (UInt32)repeat));
-                    for (; ptr < endPoint; ptr++)
+                        bufferOut = ExpandBuffer(bufferOut, repeat >= expandSize ? (UInt32)repeat + expandSize : expandSize);
+                    for (; ptr < endPoint; ++ptr)
                         bufferOut[ptr] = value;
                 }
             }
@@ -58,16 +59,19 @@ namespace Nyerguds.FileData.EmotionalPictures
         public static Byte[] CompressPppRle(Byte[] data)
         {
             Int32 len = data.Length;
+            // Compressed data normally never exceeds original size, since compression only triggers on sequences of 4 or more.
+            // However, since 0xFF bytes always need to be encoded with a flag, a sequence of the type FF XX FF XX FF etc... needs to be taken into account.
+            // Formula for this worse case scenario: "(len + 1) / 2 * 4 + (len / 2)" or "(((len + 1) >> 1) << 2) + (len >> 1)"
+            // for now, we'll just count on expanding with check instead.
             Int32 curBufLen = len;
-            // Compressed data should never exceed original size since compression only triggers on sequences of 4 or more,
-            // though it could in case of 0xFF bytes, since they always need to be encoded with a flag.
+
             Byte[] bufferOut = new Byte[curBufLen];
             Int32 ptr = 0;
-            for (Int32 i = 0; i < len; i++)
+            for (Int32 i = 0; i < len; ++i)
             {
                 Byte value = data[i];
                 Int32 repeat = i;
-                for (; repeat < len && data[repeat] == value; repeat++) { }
+                for (; repeat < len && data[repeat] == value; ++repeat) { }
                 repeat -= i;
                 Boolean compress = repeat >= 4 || value == 0xFF;
                 Int32 needed = ptr + (compress ? 3 : 0);

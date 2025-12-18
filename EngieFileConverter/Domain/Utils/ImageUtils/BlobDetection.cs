@@ -450,7 +450,7 @@ namespace Nyerguds.ImageManipulation
         {
             Boolean[,] pointInList = new Boolean[imageHeight, imageWidth];
             Int32 blobCount = blob.Count;
-            for (Int32 i = 0; i < blobCount; i++)
+            for (Int32 i = 0; i < blobCount; ++i)
             {
                 Point p = blob[i];
                 pointInList[p.Y, p.X] = true;

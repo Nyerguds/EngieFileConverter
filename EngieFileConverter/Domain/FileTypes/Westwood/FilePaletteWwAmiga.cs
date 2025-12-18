@@ -20,8 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
         public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return (this.ColorsInPalette + 15) / 16; } }
-        public override Int32 ColorsInPalette { get { return this.m_Palette.Length; } }
+        public override Int32 Height { get { return (this.m_Palette.Length + 15) / 16; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -72,9 +71,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            Color[] cols = this.CheckInputForColors(fileToSave, true);
+            Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, false);
             if (cols.Length % 16 != 0)
-                throw new NotSupportedException("Amiga palettes must be a multiple of 16 colors!");
+                throw new ArgumentException("Amiga palettes must be a multiple of 16 colors!", "fileToSave");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
             for (Int32 i = 0; i < cols.Length; ++i)
@@ -84,7 +83,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
         {
-            Color[] cols = this.CheckInputForColors(fileToSave, expandToFullSize);
+            Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, false);
             return ColorUtils.GetEightBitPaletteData(cols, expandToFullSize);
         }
     }

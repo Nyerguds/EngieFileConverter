@@ -13,7 +13,7 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileFramesWwShpCc : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
-        public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
@@ -25,8 +25,8 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood C&C1 Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C1 Shape File"; } }
-        public override Int32 ColorsInPalette { get { return this.m_HasPalette ? 0x100 : 0; } }
+        public override String ShortTypeDescription { get { return "Westwood Shape File - C&C"; } }
+        public override Boolean NeedsPalette { get { return !this.m_HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_HasPalette;
 
@@ -56,13 +56,13 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 hdrSize = 0x0E;
             if (fileData.Length < hdrSize)
                 throw new FileTypeLoadException("File is not long enough for header.");
-            UInt16 hdrFrames = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            UInt16 hdrXPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-            UInt16 hdrYPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-            UInt16 hdrWidth = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
-            UInt16 hdrHeight = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
-            //UInt16 hdrDeltaSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, 2, true);
-            UInt16 hdrFlags = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x0C, 2, true);
+            UInt16 hdrFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            UInt16 hdrXPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+            UInt16 hdrYPos = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+            UInt16 hdrWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
+            UInt16 hdrHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
+            //UInt16 hdrDeltaSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0A);
+            UInt16 hdrFlags = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0C);
             if (hdrFrames == 0) // Can be TS SHP; it identifies with an empty first byte IIRC.
                 throw new FileTypeLoadException("Not a C&C1/RA1 SHP file!");
             if (hdrWidth == 0 || hdrHeight == 0)
@@ -93,7 +93,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length != fileSize)
                 throw new FileTypeLoadException("File size does not match size value in header!");
             // Read palette if flag enabled. No games I know support using it, but, might as well be complete.
-            if (m_HasPalette)
+            if (this.m_HasPalette)
             {
                 try
                 {
@@ -215,7 +215,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     framePic.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                     framePic.SetBitsPerColor(this.BitsPerPixel);
                     framePic.SetFileClass(this.FrameInputFileClass);
-                    framePic.SetColorsInPalette(this.ColorsInPalette);
+                    framePic.SetNeedsPalette(this.NeedsPalette);
                     // Get compression info for UI
                     StringBuilder extraInfo = new StringBuilder("Compression: ");
                     if (frameOffsFormat == CcShpFrameFormat.Lcw)
@@ -277,7 +277,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 width;
             Int32 height;
-            this.PerformPreliminaryChecks(ref fileToSave, out width, out height);
+            SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out width, out height);
+            if (frames.Length == 1)
+                return new SaveOption[0];
             return new SaveOption[]
             {
                 new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate LCW frames", "1"),
@@ -290,36 +292,36 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 width;
             Int32 height;
-            this.PerformPreliminaryChecks(ref fileToSave, out width, out height);
+            SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out width, out height);
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean forceDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "FDL"));
             Boolean chainedSizeCheck = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "LMX"));
 
-            Int32 frames = fileToSave.Frames.Length;
+            Int32 nrOfFrames = frames.Length;
             Int32 hdrSize = 0x0E;
             Byte[] header = new Byte[hdrSize];
 
-            ArrayUtils.WriteIntToByteArray(header, 0, 2, true, (UInt16) frames);
-            //ArrayUtils.WriteIntToByteArray(header, 2, 2, true, 0); // XPos
-            //ArrayUtils.WriteIntToByteArray(header, 4, 2, true, 0); // YPos
-            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16) width);
-            ArrayUtils.WriteIntToByteArray(header, 8, 2, true, (UInt16) height);
-            //ArrayUtils.WriteIntToByteArray(header, 0x0A, 2, true, (UInt16)DeltaSize);
-            //ArrayUtils.WriteIntToByteArray(header, 0x0C, 2, true, 0); // Flags
+            ArrayUtils.WriteInt16ToByteArrayLe(header, 0, nrOfFrames);
+            //ArrayUtils.WriteInt16ToByteArrayLe(header, 2, 0); // XPos
+            //ArrayUtils.WriteInt16ToByteArrayLe(header, 4, 0); // YPos
+            ArrayUtils.WriteInt16ToByteArrayLe(header, 6, width);
+            ArrayUtils.WriteInt16ToByteArrayLe(header, 8, height);
+            //ArrayUtils.WriteInt16ToByteArrayLe(header, 0x0A, DeltaSize);
+            //ArrayUtils.WriteInt16ToByteArrayLe(header, 0x0C, 0); // Flags
 
-            OffsetInfo[] framesIndex = new OffsetInfo[frames + 2];
-            Byte[][] framesUncompr = new Byte[frames][];
-            Byte[][] framescompr = new Byte[frames][];
-            Int32[] frameOffsets = new Int32[frames];
-            Int32[] framesDup = new Int32[frames];
-            Boolean[] framesDupSrc = new Boolean[frames];
-            for (Int32 i = 0; i < frames; ++i)
+            OffsetInfo[] framesIndex = new OffsetInfo[nrOfFrames + 2];
+            Byte[][] framesUncompr = new Byte[nrOfFrames][];
+            Byte[][] framescompr = new Byte[nrOfFrames][];
+            Int32[] frameOffsets = new Int32[nrOfFrames];
+            Int32[] framesDup = new Int32[nrOfFrames];
+            Boolean[] framesDupSrc = new Boolean[nrOfFrames];
+            for (Int32 i = 0; i < nrOfFrames; ++i)
                 framesDup[i] = -1;
             // Get these in advance. Will need them all in the end anyway.
-            for (Int32 i = 0; i < frames; ++i)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 Int32 stride;
-                Byte[] uncompr = ImageUtils.GetImageData(fileToSave.Frames[i].GetBitmap(), out stride, true);
+                Byte[] uncompr = ImageUtils.GetImageData(frames[i].GetBitmap(), out stride, true);
                 framesUncompr[i] = uncompr;
                 // Detect identical frames.
                 if (!trimDuplicates)
@@ -334,7 +336,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
                 }
             }
-            Int32 curDataOffs = hdrSize + (frames + 2) * 8; // + palSize
+            Int32 curDataOffs = hdrSize + (nrOfFrames + 2) * 8; // + palSize
             Byte[] comprLCW = WWCompression.LcwCompress(framesUncompr[0]);
             framescompr[0] = comprLCW;
             framesIndex[0] = new OffsetInfo(curDataOffs, CcShpFrameFormat.Lcw, 0, 0);
@@ -352,7 +354,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //    3. XORChain with previous if previous is XORBase or XORChain: XORChain -> chain back and store index of XORBase frame in ref field of OffsetInfo
             // -Take smallest result.
 
-            for (Int32 i = 1; i < frames; ++i)
+            for (Int32 i = 1; i < nrOfFrames; ++i)
             {
                 Int32 duplicate = framesDup[i];
                 // Currently only doing this for LCW frames since compressed lcw of the same frame data is guaranteed to be the same, which is not true for XOR.
@@ -413,14 +415,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 curDataOffs += comprMin;
             }
 
-            Int32 sizeOffs = hdrSize + frames * 8; // + palSize
+            Int32 sizeOffs = hdrSize + nrOfFrames * 8; // + palSize
             Int32 size = curDataOffs;
             Byte[] finalData = new Byte[size];
             Int32 maxDeltaSize = framescompr.Max(f => f.Length);
-            ArrayUtils.WriteIntToByteArray(header, 0x0A, 2, true, (UInt16) maxDeltaSize);
+            ArrayUtils.WriteInt16ToByteArrayLe(header, 0x0A, maxDeltaSize);
             header.CopyTo(finalData, 0);
             Int32 indexOffs = hdrSize;
-            for (Int32 i = 0; i < frames; ++i)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 framesIndex[i].Write(finalData, indexOffs);
                 indexOffs += 8;
@@ -433,32 +435,33 @@ namespace EngieFileConverter.Domain.FileTypes
             return finalData;
         }
 
-        private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height)
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out Int32 width, out Int32 height)
         {
             // Preliminary checks
             if (fileToSave == null)
-                throw new NotSupportedException("No source data given!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new NotSupportedException("This format needs at least one frame.");
+                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
             width = -1;
             height = -1;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new NotSupportedException("SHP can't handle empty frames!");
+                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8bpp images.");
+                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;
                     height = frame.Height;
                 }
                 else if (width != frame.Width || height != frame.Height)
-                    throw new NotSupportedException("Not all frames in input type are the same size!");
+                    throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
             }
+            return frames;
         }
 
         private class OffsetInfo
@@ -479,18 +482,18 @@ namespace EngieFileConverter.Domain.FileTypes
             public static OffsetInfo Read(Byte[] fileData, Int32 offset)
             {
                 Int32 dataOffset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, offset, 3, true);
-                CcShpFrameFormat dataFormat = (CcShpFrameFormat) ArrayUtils.ReadIntFromByteArray(fileData, offset + 3, 1, true);
+                CcShpFrameFormat dataFormat = (CcShpFrameFormat) fileData[offset + 3];
                 Int32 referenceOffset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 3, true);
-                CcShpFrameFormat referenceFormat = (CcShpFrameFormat) ArrayUtils.ReadIntFromByteArray(fileData, offset + 7, 1, true);
+                CcShpFrameFormat referenceFormat = (CcShpFrameFormat) fileData[offset + 7];
                 return new OffsetInfo(dataOffset, dataFormat, referenceOffset, referenceFormat);
             }
 
             public void Write(Byte[] fileData, Int32 offset)
             {
                 ArrayUtils.WriteIntToByteArray(fileData, offset + 0, 3, true, (UInt32) this.DataOffset);
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 3, 1, true, (Byte) this.DataFormat);
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 4, 3, true, (UInt32) ReferenceOffset);
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 7, 1, true, (Byte) this.ReferenceFormat);
+                fileData[offset + 3] = (Byte) this.DataFormat;
+                ArrayUtils.WriteIntToByteArray(fileData, offset + 4, 3, true, (UInt32) this.ReferenceOffset);
+                fileData[offset + 7] = (Byte)this.ReferenceFormat;
             }
         }
 

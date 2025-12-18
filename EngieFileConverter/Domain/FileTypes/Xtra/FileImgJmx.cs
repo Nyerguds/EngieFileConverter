@@ -36,15 +36,15 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 dataLength = fileData.Length;
             if (dataLength < 0x304)
-                throw new FileTypeLoadException("Too short to be a " + ShortTypeName + ".");
-            Int32 width = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x300, 2, true);
-            Int32 height = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x302, 2, true);
+                throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
+            Int32 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x300);
+            Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x302);
             Int32 imgLength = width * height;
             if (dataLength != 0x304 + imgLength)
                 throw new FileTypeLoadException("File size does not match header information.");
             try
             {
-                m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, 0, 256));
+                this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, 0, 256));
             }
             catch (ArgumentException)
             {
@@ -60,20 +60,20 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("No source data given!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new NotSupportedException("This format needs an 8bpp image.");
+                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
             Int32 width = fileToSave.Width;
             Int32 height = fileToSave.Height;
             if (width > 0xFFFF || height > 0xFFFF)
-                throw new NotSupportedException("The given image is too large.");
+                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
             Int32 stride;
             Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] jmxData = new Byte[imageBytes.Length + 0x304];
             Byte[] palette = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fileToSave.GetColors()));
             Array.Copy(palette, 0, jmxData, 0, palette.Length);
-            ArrayUtils.WriteIntToByteArray(jmxData, 0x300, 2, true, (UInt16)width);
-            ArrayUtils.WriteIntToByteArray(jmxData, 0x302, 2, true, (UInt16)height);
+            ArrayUtils.WriteInt16ToByteArrayLe(jmxData, 0x300, width);
+            ArrayUtils.WriteInt16ToByteArrayLe(jmxData, 0x302, height);
             Array.Copy(imageBytes, 0, jmxData, 0x304, imageBytes.Length);
             return jmxData;
         }

@@ -67,7 +67,6 @@ namespace Nyerguds.Util.UI
                     ColorUtils.ReadSixBitPaletteFile(file.FullName);
                 }
                 catch (ArgumentException) { continue; }
-                catch (NotSupportedException) { continue; }
                 String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(name)) + ".ini";
                 Boolean iniExists = File.Exists(inipath);
                 List<PaletteDropDownInfo> currentSubPals;

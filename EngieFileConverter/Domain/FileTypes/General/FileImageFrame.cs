@@ -8,7 +8,7 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileImageFrame : FileImagePng
     {
         protected Int32 m_BitsPerColor= -1;
-        protected Int32 m_ColorsInPalette = -1;
+        protected Boolean? m_NeedsPalette;
         protected Dictionary<String, Object> m_ExtraProps = new Dictionary<String, Object>();
         //protected Boolean[] m_transparencyMask = null;
         public override String ShortTypeName { get { return "Frame"; } }
@@ -17,16 +17,16 @@ namespace EngieFileConverter.Domain.FileTypes
         public Dictionary<String, Object> ExtraProps { get { return this.m_ExtraProps; }}
 
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
+        public override String ShortTypeDescription { get { return this.m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
         public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
         public override FileClass FileClass  { get { return this.m_FileClass ?? base.FileClass; } }
-        public override Int32 ColorsInPalette { get { return this.m_ColorsInPalette != - 1 ? this.m_ColorsInPalette : base.ColorsInPalette; } }
+        public override Boolean NeedsPalette { get { return this.m_NeedsPalette ?? base.NeedsPalette; } }
         //public override Boolean[] TransparencyMask { get { return this.m_transparencyMask; } }
 
         public void SetBitsPerColor(Int32 bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
         public void SetFileClass(FileClass? fileClass) { this.m_FileClass = fileClass; }
         
-        public void SetColorsInPalette(Int32 colorsInPalette) { this.m_ColorsInPalette = colorsInPalette; }
+        public void SetNeedsPalette(Boolean needsPalette) { this.m_NeedsPalette = needsPalette; }
         //public void SetTransparencyMask(Boolean[] transparencyMask) { this.m_transparencyMask = transparencyMask; }
 
         protected String sourcePath;

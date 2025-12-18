@@ -29,7 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            throw new NotSupportedException("This is not a real file format to save. How did you even get here?");
+            throw new ArgumentException("This is not a real file format to save. How did you even get here?", "fileToSave");
         }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -45,7 +45,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean[] TransparencyMask { get { return this.m_TransparencyMask; } }
 
         /// <summary>Amount of colors in the palette that is contained inside the image. 0 if the image itself does not contain a palette, even if it generates one.</summary>
-        public override Int32 ColorsInPalette { get { return this.m_ColorsInPalette == 0 ? (this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Palette.Entries.Length) : m_ColorsInPalette; } }
+        public override Boolean NeedsPalette { get { return this.m_NeedsPalette; } }
 
         /// <summary>
         /// Avoid using this for adding frames: use AddFrame instead.
@@ -55,15 +55,15 @@ namespace EngieFileConverter.Domain.FileTypes
         public String BaseType { get; private set; }
 
         protected Boolean m_CommonPalette;
-        protected Int32 m_ColorsInPalette;
+        protected Boolean m_NeedsPalette;
         protected Int32 m_BitsPerPixel;
         protected Boolean[] m_TransparencyMask;
 
         private Int32 CheckCommonWidth()
         {
-            Int32 nrOfFrames = FramesList.Count;
+            Int32 nrOfFrames = this.FramesList.Count;
             Int32 width = 0;
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType fr = this.FramesList[i];
                 Bitmap bm = fr.GetBitmap();
@@ -79,9 +79,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         private Int32 CheckCommonHeight()
         {
-            Int32 nrOfFrames = FramesList.Count;
+            Int32 nrOfFrames = this.FramesList.Count;
             Int32 height = 0;
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType fr = this.FramesList[i];
                 Bitmap bm = fr.GetBitmap();
@@ -120,9 +120,9 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_BitsPerPixel = bitsPerColor;
         }
 
-        public void SetColorsInPalette(Int32 colorsInPalette)
+        public void SetNeedsPalette(Boolean needsPalette)
         {
-            this.m_ColorsInPalette = colorsInPalette;
+            this.m_NeedsPalette = needsPalette;
         }
 
         public void SetPalette(Color[] palette)
@@ -237,8 +237,8 @@ namespace EngieFileConverter.Domain.FileTypes
             framesContainer.BaseType = currentType.ShortTypeName;
             Color[] pal = currentType.GetColors();
             // 'common palette' logic is started by setting it to True when there is a palette.
-            Boolean commonPalette = pal != null && currentType.ColorsInPalette > 0;
-            Boolean nullPalette = currentType.ColorsInPalette == 0 || pal == null;
+            Boolean commonPalette = pal != null && !currentType.NeedsPalette;
+            Boolean nullPalette = currentType.NeedsPalette || pal == null;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 String currentFrame = frameNames[i];
@@ -249,7 +249,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     frame.LoadFileFrame(framesContainer, currentType, null, currentFrame, -1);
                     frame.SetBitsPerColor(currentType.BitsPerPixel);
                     frame.SetFileClass(currentType.FileClass);
-                    frame.SetColorsInPalette(currentType.ColorsInPalette);
+                    frame.SetNeedsPalette(currentType.NeedsPalette);
                     frame.SetExtraInfo("Empty file.");
                     framesContainer.AddFrame(frame);
                     continue;
@@ -259,17 +259,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     SupportedFileType frameFile = (SupportedFileType)Activator.CreateInstance(currentType.GetType());
                     Byte[] fileData = File.ReadAllBytes(currentFrame);
                     frameFile.LoadFile(fileData, currentFrame);
-                    //FileImageFrame frame = new FileImageFrame();
-                    //frame.LoadFileFrame(framesContainer, frameFile, frameFile.GetBitmap(), currentFrame, -1);
-                    //frame.SetBitsPerColor(frameFile.BitsPerPixel);
-                    //frame.SetFileClass(frameFile.FileClass);
-                    //frame.SetColorsInPalette(frameFile.ColorsInPalette);
-                    //frame.SetExtraInfo(frameFile.ExtraInfo);
                     framesContainer.AddFrame(frameFile);
                     if (commonPalette)
-                        commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
+                        commonPalette = frameFile.GetColors() != null && !frameFile.NeedsPalette && pal.SequenceEqual(frameFile.GetColors());
                     if (nullPalette)
-                        nullPalette = frameFile.ColorsInPalette == 0 || frameFile.GetColors() == null;
+                        nullPalette = frameFile.NeedsPalette;
                 }
                 catch (FileTypeLoadException)
                 {
@@ -281,7 +275,9 @@ namespace EngieFileConverter.Domain.FileTypes
             if (framesContainer.FramesHaveCommonPalette)
             {
                 framesContainer.SetBitsPerPixel(currentType.BitsPerPixel);
-                framesContainer.SetColorsInPalette(currentType.ColorsInPalette);
+                framesContainer.SetNeedsPalette(currentType.NeedsPalette);
+                // Ensures the correct amount of colours is set for the container
+                framesContainer.SetPalette(currentType.GetColors());
                 framesContainer.SetColors(currentType.GetColors());
             }
             return framesContainer;
@@ -317,23 +313,38 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 frameBpp = 0;
             SupportedFileType[] frames = singleImage ? new SupportedFileType[] {framesContainer} : framesContainer.Frames;
             Int32 nrOfFrames = frames.Length;
+            // Explicitly test if all frames have the same colour depth and palette.
             if (!equalPal)
             {
                 Boolean isEqual = true;
                 for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
                     SupportedFileType frame = frames[i];
-                    if (frame == null)
+                    // Skip empty frames.
+                    if (frame == null || frame.GetBitmap() == null)
                         continue;
+                    Int32 curFrameBpp = frame.BitsPerPixel;
+                    if (curFrameBpp > 8)
+                    {
+                        isEqual = false;
+                        break;
+                    }
+                    if (frameBpp == 0)
+                        frameBpp = curFrameBpp;
+                    else if (curFrameBpp != frameBpp)
+                    {
+                        isEqual = false;
+                        break;
+                    }
                     if (framePal == null)
                         framePal = frame.GetColors();
                     else
                     {
-                        if (!framePal.SequenceEqual(frame.GetColors()))
-                        {
-                            isEqual = false;
-                            break;
-                        }
+                        Color[] curFrPal = frame.GetColors();
+                        if (PaletteUtils.PalettesAreEqual(framePal, curFrPal, true))
+                            continue;
+                        isEqual = false;
+                        break;
                     }
                 }
                 if (isEqual)
@@ -342,8 +353,10 @@ namespace EngieFileConverter.Domain.FileTypes
             else
                 framePal = framesContainer.GetColors();
             if (!equalPal)
+            {
                 framePal = null;
-
+                frameBpp = 0;
+            }
             Rectangle pastePos = new Rectangle(pasteLocation, new Size(imWidth, imHeight));
             String name = String.Empty;
             if (framesContainer.LoadedFile != null)
@@ -357,7 +370,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 newfile.SetFileNames(name);
                 newfile.SetCommonPalette(equalPal);
                 newfile.SetBitsPerPixel(framesContainer.BitsPerPixel);
-                newfile.SetColorsInPalette(equalPal && framePal != null ? framePal.Length : framesContainer.ColorsInPalette);
+                newfile.SetNeedsPalette(framesContainer.NeedsPalette);
                 newfile.SetPalette(equalPal ? framePal : null);
                 Boolean[] transMask = framesContainer.TransparencyMask == null ? null : ArrayUtils.CloneArray(framesContainer.TransparencyMask);
                 newfile.SetTransparencyMask(transMask);
@@ -403,8 +416,8 @@ namespace EngieFileConverter.Domain.FileTypes
                         Int32 frBpp = Image.GetPixelFormatSize(frBm.PixelFormat);
                         Int32 frStride;
                         Byte[] frData = ImageUtils.GetImageData(frBm, out frStride);
-                        if(frBpp != 8)
-                            frData = ImageUtils.ConvertTo8Bit(frData, frWidth, frHeight, 0, frBpp, false, ref frStride);
+                        if (frBpp != 8)
+                            frData = ImageUtils.ConvertTo8Bit(frData, frWidth, frHeight, 0, frBpp, true, ref frStride);
                         // determine whether the image to paste needs to be re-matched to the palette.
                         Boolean regenImage = false;
                         if (imData == null)
@@ -418,7 +431,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             }
                             else
                             {
-                                regenImage = !framePal.SequenceEqual(frPalette);
+                                regenImage = !PaletteUtils.PalettesAreEqual(framePal, frPalette, true);
                                 if (regenImage)
                                     framePal = frame.GetColors();
                             }
@@ -435,7 +448,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             {
                                 transGuide = frPalette.Select(col => col.A != 0xFF).ToArray();
                                 imData = ImageUtils.GetImageData(image, out imStride);
-                                imData = ImageUtils.ConvertTo8Bit(imData, imWidth, imHeight, 0, pasteBpp, false, ref imStride);
+                                imData = ImageUtils.ConvertTo8Bit(imData, imWidth, imHeight, 0, pasteBpp, true, ref imStride);
                                 if (!keepInd)
                                 {
                                     imTransMask = imData.Select(px => imPalTrans[px]).ToArray();
@@ -480,7 +493,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameCombined.LoadFileFrame(newfile, frame.ShortTypeDescription, newBm, name, i);
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);
                 frameCombined.SetFileClass(frame.FileClass);
-                frameCombined.SetColorsInPalette(frame.ColorsInPalette);
+                frameCombined.SetNeedsPalette(frame.NeedsPalette);
                 frameCombined.SetExtraInfo(frame.ExtraInfo);
                 newfile.AddFrame(frameCombined);
             }
@@ -500,8 +513,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="matchBpp">Bits per pixel for the palette to match. 0 for no palette matching.</param>
         /// <param name="matchPalette">Palette to match. Only used if <see cref="matchBpp"/> is not 0.</param>
         /// <param name="cloneSource">True to clone the source image, to prevent conflicts in multithreaded use.</param>
+        /// <param name="needsPalette">True to mark the frames object and its frame as needing an external palette.</param>
         /// <returns>A <see cref="FileFrames"/> object that contains the cut-out frames.</returns>
-        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? cropColor, Int32? cropIndex, Int32 matchBpp, Color[] matchPalette, Boolean cloneSource)
+        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? cropColor, Int32? cropIndex, Int32 matchBpp, Color[] matchPalette, Boolean cloneSource, Boolean needsPalette)
         {
             Bitmap editImage = cloneSource ? ImageUtils.CloneImage(image) : image;
             Bitmap[] framesArr = ImageUtils.ImageToFrames(editImage, frameWidth, frameHeight, cropColor, cropIndex, matchBpp, matchPalette, 0, frames - 1);
@@ -510,26 +524,24 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean isMatched = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
             Int32 bpp = isMatched ? matchBpp : Image.GetPixelFormatSize(image.PixelFormat);
             Color[] imPalette = isMatched ? matchPalette : bpp > 8 ? null : image.Palette.Entries;
-            Int32 colorsInPal = isMatched ? matchPalette.Length : imPalette == null ? 0 : imPalette.Length;
-            Boolean indexed = isMatched  || bpp <= 8;
+            Boolean indexed = isMatched || bpp <= 8;
             FileFrames newfile = new FileFrames();
             newfile.SetFileNames(imagePath);
             newfile.SetCommonPalette(indexed);
+            newfile.SetNeedsPalette(indexed && needsPalette);
             newfile.SetBitsPerPixel(bpp);
             newfile.SetPalette(imPalette);
-            newfile.SetColorsInPalette(colorsInPal);
             newfile.SetTransparencyMask(null);
             for (Int32 i = 0; i < framesArr.Length; ++i)
             {
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(newfile, newfile, framesArr[i], imagePath, i);
                 framePic.SetBitsPerColor(bpp);
-                framePic.SetColorsInPalette(colorsInPal);
+                framePic.SetNeedsPalette(indexed && needsPalette);
                 if (framesArr[i] == null && indexed)
                     framePic.SetColors(imPalette);
                 newfile.AddFrame(framePic);
             }
-            //newfile.m_LoadedImage = mainFrame.Length > 0 ? mainFrame[0] : null;
             return newfile;
         }
     }

@@ -23,8 +23,17 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
         public override Int32 BitsPerPixel { get { return 8; } }
-        public override Int32 ColorsInPalette { get { return 256; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
+
+        public FilePalette8Bit() { }
+
+        public FilePalette8Bit(Color[] contents)
+        {
+            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
+            this.m_Palette = new Color[0x100];
+            Array.Copy(contents, m_Palette, Math.Min(contents.Length, 0x100));
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
+        }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -51,7 +60,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            Color[] cols = this.CheckInputForColors(fileToSave, true);
+            Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, true);
             return ColorUtils.GetEightBitPaletteData(cols, true);
         }
 

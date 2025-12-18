@@ -101,7 +101,7 @@ namespace Nyerguds.ImageManipulation
                 case 1: return PixelFormat.Format1bppIndexed;
                 case 4: return PixelFormat.Format4bppIndexed;
                 case 8: return PixelFormat.Format8bppIndexed;
-                default: throw new NotSupportedException("Unsupported indexed pixel format '" + bpp + "'!");
+                default: throw new ArgumentException("Unsupported indexed pixel format '" + bpp + "'!", "fileToSave");
             }
         }
 
@@ -317,7 +317,8 @@ namespace Nyerguds.ImageManipulation
         }        
 
         /// <summary>
-        /// Gets the raw bytes from an image in its original pixel format.
+        /// Gets the raw bytes from an image in its original pixel format. This automatically
+        /// collapses the stride, and returns the data using the minimum stride.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <returns>The raw bytes of the image.</returns>
@@ -328,7 +329,7 @@ namespace Nyerguds.ImageManipulation
         }
         
         /// <summary>
-        /// Gets the raw bytes from an image in its original pixel format.
+        /// Gets the raw bytes from an image in its original pixel format, with its original in-memory stride.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <param name="stride">Stride of the retrieved image data.</param>
@@ -339,7 +340,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Gets the raw bytes from an image in its original pixel format. This automatically
+        /// Gets the raw bytes from an image in the desired pixel format. This automatically
         /// collapses the stride, and returns the data using the minimum stride.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
@@ -350,8 +351,21 @@ namespace Nyerguds.ImageManipulation
             Int32 stride;
             return GetImageData(sourceImage, out stride, desiredPixelFormat, true);
         }
+
         /// <summary>
-        /// Gets the raw bytes from an image, in the given pixel format.
+        /// Gets the raw bytes from an image in its original pixel format.
+        /// </summary>
+        /// <param name="sourceImage">The image to get the bytes from.</param>
+        /// <param name="collapseStride">Collapse the stride to the minimum required for the image data.</param>
+        /// <returns>The raw bytes of the image.</returns>
+        public static Byte[] GetImageData(Bitmap sourceImage, Boolean collapseStride)
+        {
+            Int32 stride;
+            return GetImageData(sourceImage, out stride, sourceImage.PixelFormat, collapseStride);
+        }
+
+        /// <summary>
+        /// Gets the raw bytes from an image, in the given <see cref="System.Drawing.Imaging.PixelFormat">PixelFormat</see>, with its original in-memory stride.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <param name="stride">Stride of the retrieved image data.</param>
@@ -366,8 +380,9 @@ namespace Nyerguds.ImageManipulation
         {
             return GetImageData(sourceImage, out stride, desiredPixelFormat, false);
         }
+
         /// <summary>
-        /// Gets the raw bytes from an image in its original pixel format.
+        /// Gets the raw bytes from an image, in its original <see cref="System.Drawing.Imaging.PixelFormat">PixelFormat</see>.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <param name="stride">Stride of the retrieved image data.</param>
@@ -375,9 +390,11 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The raw bytes of the image.</returns>
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, Boolean collapseStride)
         {
-            return GetImageData(sourceImage, out stride, sourceImage.PixelFormat, collapseStride);
+            if (sourceImage == null)
+                throw new ArgumentNullException("sourceImage", "Source image is null!");
+            return GetImageDataInternal(sourceImage, out stride, sourceImage.PixelFormat, collapseStride);
         }
-        
+
         /// <summary>
         /// Gets the raw bytes from an image, in the desired <see cref="System.Drawing.Imaging.PixelFormat">PixelFormat</see>.
         /// </summary>
@@ -396,19 +413,39 @@ namespace Nyerguds.ImageManipulation
             if (sourceImage == null)
                 throw new ArgumentNullException("sourceImage", "Source image is null!");
             PixelFormat sourcePf = sourceImage.PixelFormat;
-            Int32 width = sourceImage.Width;
-            Int32 height = sourceImage.Height;
-
             if (sourcePf != desiredPixelFormat && (sourcePf & PixelFormat.Indexed) != 0 && (desiredPixelFormat & PixelFormat.Indexed) != 0
                 && Image.GetPixelFormatSize(sourcePf) > Image.GetPixelFormatSize(desiredPixelFormat))
                 throw new ArgumentException("Cannot convert from a higher to a lower indexed pixel format! Use ConvertTo8Bit / ConvertFrom8Bit instead!", "desiredPixelFormat");
+             return GetImageDataInternal(sourceImage, out stride, desiredPixelFormat, collapseStride);
+        }
+
+        private static Byte[] GetImageDataInternal(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat, Boolean collapseStride)
+        {
+            Int32 width = sourceImage.Width;
+            Int32 height = sourceImage.Height;
             BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, desiredPixelFormat);
             stride = sourceData.Stride;
-            Byte[] data = new Byte[stride * height];
-            Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
-            sourceImage.UnlockBits(sourceData);
+            Byte[] data;
             if (collapseStride)
-                data = CollapseStride(data, width, height, Image.GetPixelFormatSize(desiredPixelFormat), ref stride, true);
+            {
+                Int32 actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * width) + 7) / 8;
+                Int64 sourcePos = sourceData.Scan0.ToInt64();
+                Int32 destPos = 0;
+                data = new Byte[actualDataWidth * height];
+                for (Int32 y = 0; y < height; ++y)
+                {
+                    Marshal.Copy(new IntPtr(sourcePos), data, destPos, actualDataWidth);
+                    sourcePos += stride;
+                    destPos += actualDataWidth;
+                }
+                stride = actualDataWidth;
+            }
+            else
+            {
+                data = new Byte[stride * height];
+                Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
+            }
+            sourceImage.UnlockBits(sourceData);
             return data;
         }
 
@@ -1016,7 +1053,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Converts indexed data from line-based 1-bit planar to chunky mode.
+        /// Converts indexed data from line-based planar to chunky mode.
         /// </summary>
         /// <param name="dataPlanar">The data in planar format</param>
         /// <param name="start">Start offset of the image data in the dataPlanar parameter.</param>
@@ -1063,7 +1100,7 @@ namespace Nyerguds.ImageManipulation
                 pixelImage = ConvertFrom8Bit(pixelImage, width, height, outputBpp, true, ref stride);
             return pixelImage;
         }
-
+        
         /// <summary>
         /// Converts RGB or ARGB data from planar to linear.
         /// </summary>

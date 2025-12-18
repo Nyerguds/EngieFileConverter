@@ -15,7 +15,7 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileFramesWwShpLol1 : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
-        public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
@@ -27,8 +27,8 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood LOL 1 Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Lands of Lore 1 Shape File"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override String ShortTypeDescription { get { return "Westwood Shape File - Lands of Lore 1"; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -62,15 +62,15 @@ namespace EngieFileConverter.Domain.FileTypes
             // OffsetInfo / ShapeFileHeader
             if (fileData.Length < 0X0A)
                 throw new FileTypeLoadException("Not long enough for header.");
-            UInt16 hdrSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x00, 2, true);
+            UInt16 hdrSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x00);
             if (hdrSize + 2 > fileData.Length)
                 throw new FileTypeLoadException("Not a Lands of Lore SHP file");
-            UInt16 hdrCompression = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x02, 2, true);
+            UInt16 hdrCompression = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x02);
             this.CompressionType = hdrCompression;
-            Int32 hdrUncompressedSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x04, 4, true);
+            Int32 hdrUncompressedSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x04);
             if (hdrUncompressedSize < 2)
                 throw new FileTypeLoadException("Not a Lands of Lore SHP file");
-            UInt16 hdrPalSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x08, 2, true);
+            UInt16 hdrPalSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x08);
             Int32 dataOffset = 0x0A;
 
             if (hdrPalSize == 768)
@@ -129,16 +129,21 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean isVersion107;
             Int32[] remapFrames;
             this.m_FramesList = FileFramesWwShpD2.LoadFromFileData(uncompressedData, sourcePath, this, "Lands of Lore 1", out isVersion107, out remapFrames);
+            SupportedFileType frame0 = this.m_FramesList.FirstOrDefault();
+            if (frame0 != null)
+            {
+                this.m_Height = this.m_FramesList.Max(fr => fr.Height);
+                this.m_Width = this.m_FramesList.Max(fr => fr.Width);
+            }
             if (this.m_Palette == null)
             {
-                SupportedFileType frame0 = this.m_FramesList.FirstOrDefault();
                 if (frame0 != null)
-                    m_Palette = frame0.GetColors();
+                    this.m_Palette = frame0.GetColors();
             }
             else
             {
                 // Apply previously-loaded palette to all frames. Maybe I should give it to the load function instead...
-                this.SetColors(m_Palette);
+                this.SetColors(this.m_Palette);
             }
             this.IsVersion107 = isVersion107;
             this.RemappedIndices = remapFrames;
@@ -155,15 +160,15 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            FileFramesWwShpD2.PerformPreliminaryChecks(ref fileToSave);
+            SupportedFileType[] frames = FileFramesWwShpD2.PerformPreliminaryChecks(fileToSave);
             // If it is a non-image format which does contain colours, offer to save with palette
             FileFramesWwShpLol1 shp = fileToSave as FileFramesWwShpLol1;
             Int32 compression = shp != null ? shp.CompressionType : 4;
             Boolean hasRemap = shp != null && shp.RemappedIndices != null && shp.RemappedIndices.Length > 0;
-            Boolean probablyRemappedUnit = fileToSave.Frames.Length > 16;
+            Boolean probablyRemappedUnit = frames.Length > 16;
             if (probablyRemappedUnit)
             {
-                Bitmap bm = fileToSave.Frames[16].GetBitmap();
+                Bitmap bm = frames[16].GetBitmap();
                 Int32 width0 = bm.Width;
                 Int32 height0 = bm.Height;
                 Int32 width;
@@ -171,17 +176,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] buffer = ImageUtils.GetImageData(bm, out width, true);
                 buffer = ImageUtils.TrimYHeight(buffer, width, ref height, 0);
                 buffer = ImageUtils.TrimXWidth(buffer, ref width, height, 0);
-                Int32 frWidth = fileToSave.Frames[0].Width;
-                Int32 frHeight = fileToSave.Frames[0].Height;
+                Int32 frWidth = frames[0].Width;
+                Int32 frHeight = frames[0].Height;
                 // check if the 'image' on frame 16 is a compact rectangle without any transparent pixels in it, which might indicate it being a remap table.
                 if (width0 == width + 1 && height0 == height + 1 && !buffer.Any(b => b == 0) && width < 30)
                 {
                     // check if the other frames are all the same size.
-                    for (Int32 i = 1; i < fileToSave.Frames.Length; ++i)
+                    for (Int32 i = 1; i < frames.Length; ++i)
                     {
                         if (i == 16)
                             continue;
-                        SupportedFileType frame = fileToSave.Frames[i];
+                        SupportedFileType frame = frames[i];
                         probablyRemappedUnit = frame.Width == frWidth && frame.Height == frHeight;
                         if (!probablyRemappedUnit)
                             break;
@@ -201,16 +206,17 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
+            SupportedFileType[] frames = FileFramesWwShpD2.PerformPreliminaryChecks(fileToSave);
             Int32 compressionType;
             if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType))
                 compressionType = 4;
             Boolean noFramesCompr = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NCM"));
             Boolean addRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMT"));
-            Boolean addUnitRemap = addRemap && fileToSave.Frames.Length > 16 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMU"));
+            Boolean addUnitRemap = addRemap && frames.Length > 16 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMU"));
             String remapRange = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
             if (addUnitRemap)
             {
-                Int32 frLen = fileToSave.Frames.Length;
+                Int32 frLen = frames.Length;
                 remapRange = "0-15";
                 if (frLen > 17)
                     remapRange += ", 17";
@@ -223,9 +229,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 new SaveOption("RMT", SaveOptionType.Boolean, null, null, addRemap || !String.IsNullOrEmpty(remapRange) ? "1" : "0"),
                 new SaveOption("RMS", SaveOptionType.String, null, null, remapRange)
             };
+            // Lands of Lore Shape format is Dune 2 SHP embedded in CPS format.
             FileFramesWwShpD2 baseShp = new FileFramesWwShpD2();
             Byte[] dune2shpData = baseShp.SaveToBytesAsThis(fileToSave, saveOpts);
             return FileImgWwCps.SaveCps(dune2shpData, null, 0, compressionType, CpsVersion.Pc);
         }
+
     }
 }

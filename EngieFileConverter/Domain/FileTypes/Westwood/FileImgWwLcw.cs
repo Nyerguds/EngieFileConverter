@@ -19,8 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood LCW IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
-        public override String ShortTypeDescription { get { return "Westwood LCW image (Blade Runner)"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override String ShortTypeDescription { get { return "Blade Runner LCW image"; } }
         public override Int32 BitsPerPixel { get{ return 16; } }
         
         public override void LoadFile(Byte[] fileData)
@@ -42,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException("File to save is empty!", "fileToSave");
             return this.SaveImg(fileToSave.GetBitmap());
         }
 
@@ -53,8 +52,8 @@ namespace EngieFileConverter.Domain.FileTypes
 
             Byte[] hdrId = new Byte[3];
             Array.Copy(fileData, hdrId, 3);
-            Int32 hdrWidth = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 3, 4, true);
-            Int32 hdrHeight = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 7, 4, true);
+            Int32 hdrWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 3);
+            Int32 hdrHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 7);
             if (!Encoding.ASCII.GetBytes("LCW").SequenceEqual(hdrId))
                 throw new FileTypeLoadException("File does not start with signature \"LCW\".");
             Int32 stride = ImageUtils.GetMinimumStride(hdrWidth, this.BitsPerPixel);
@@ -71,7 +70,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             try
             {
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, hdrWidth, hdrHeight, stride, PixelFormat.Format16bppRgb555, null, Color.Black);
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, hdrWidth, hdrHeight, stride, PixelFormat.Format16bppRgb555, null, null);
             }
             catch (IndexOutOfRangeException)
             {
@@ -88,8 +87,8 @@ namespace EngieFileConverter.Domain.FileTypes
             fullData[0] = (Byte)'L';
             fullData[1] = (Byte)'C';
             fullData[2] = (Byte)'W';
-            ArrayUtils.WriteIntToByteArray(fullData, 3, 4, true, (UInt32)image.Width);
-            ArrayUtils.WriteIntToByteArray(fullData, 7, 4, true, (UInt32)image.Height);
+            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 3, image.Width);
+            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 7, image.Height);
             compressedData.CopyTo(fullData, DATAOFFSET);
             return fullData;
         }

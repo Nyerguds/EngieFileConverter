@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using Nyerguds.FileData.Compression;
 using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.Text;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -29,7 +31,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood CPS"; } }
         public override String[] FileExtensions { get { return new String[] {"cps"}; } }
         public override String ShortTypeDescription { get { return "Westwood CPS File"; } }
-        public override Int32 ColorsInPalette { get { return this.HasPalette ? this.m_Palette.Length : 0; } }
+        public override Boolean NeedsPalette { get { return !this.HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -51,7 +53,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // 0x4E435053 == "SPCN" string.
             if (asToonstruck)
             {
-                if (fileData.Length > 4 && ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true) == 0x4E435053)
+                if (fileData.Length > 4 && ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0) == 0x4E435053)
                     startOffset = 4;
                 else
                     throw new FileTypeLoadException("Not a Toonstruck CPS!");
@@ -61,8 +63,36 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Bad format for Toonstruck CPS!");
             this.CompressionType = compression;
             this.CpsVersion = cpsVersion;
+            String externalPalette = null;
+            if (palette == null && filename != null)
+            {
+                String palName = Path.GetFileNameWithoutExtension(filename) + ".pal";
+                String palettePath = Path.Combine(Path.GetDirectoryName(filename), palName);
+                FileInfo palInfo = new FileInfo(palettePath);
+                if (cpsVersion == CpsVersion.Pc && palInfo.Exists && palInfo.Length == 0x300)
+                {
+                    try
+                    {
+                        palette = ColorUtils.ReadFromSixBitPaletteFile(palettePath);
+                        externalPalette = palName;
+                    }
+                    catch (ArgumentException) { }
+                }
+                else if (cpsVersion == CpsVersion.AmigaEob1 || cpsVersion == CpsVersion.AmigaEob2 && palInfo.Exists && palInfo.Length == 0x64)
+                {
+                    try
+                    {
+                        FilePaletteWwAmiga amigaPal = new FilePaletteWwAmiga();
+                        Byte[] palBytes = File.ReadAllBytes(palettePath);
+                        amigaPal.LoadFile(palBytes, palettePath);
+                        palette = amigaPal.GetColors();
+                        externalPalette = palName;
+                    }
+                    catch (FileTypeLoadException) { }
+                }
+            }
             this.HasPalette = palette != null;
-            if (this.HasPalette)
+            if (palette != null)
             {
                 Int32 palLen = palette.Length;
                 if (palLen < 256 && imageData.Any(b => b >= palLen))
@@ -83,7 +113,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Cannot construct image from read data!", e);
             }
-            this.SetExtraInfo();
+            this.SetExtraInfo(externalPalette);
             this.SetFileNames(filename);
         }
 
@@ -108,7 +138,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // compensate for 4-byte file size.
             if (asToonstruck)
                 start += 2;
-            compression = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 2, 2, true);
+            compression = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, start + 2);
             if (compression < 0 || compression > 4)
                 throw new FileTypeLoadException("Unknown compression type " + compression);
             // compressions other than 0 and 4 count the full file including size header.
@@ -116,8 +146,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 fileSize += 2;
             if (fileSize != dataLen)
                 throw new FileTypeLoadException("File size in header does not match!");
-            Int32 bufferSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 4, 4, true);
-            Int32 paletteLength = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, start + 8, 2, true);
+            Int32 bufferSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, start + 4);
+            Int32 paletteLength = ArrayUtils.ReadInt16FromByteArrayLe(fileData, start + 8);
             Boolean isPc = bufferSize == 64000;
             Boolean isToon = bufferSize == 256000;
             Boolean amigaPal = bufferSize == 40064;
@@ -154,10 +184,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 catch (ArgumentException ex)
                 {
                     throw new FileTypeLoadException("Could not load CPS palette: " + ex.Message, ex);
-                }
-                catch (NotSupportedException ex2)
-                {
-                    throw new FileTypeLoadException("Could not load CPS palette: " + ex2.Message, ex2);
                 }
             }
             else
@@ -253,7 +279,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return imageData;
         }
 
-        protected void SetExtraInfo()
+        protected void SetExtraInfo(String externalPalette)
         {
             Boolean isAmiga = this.CpsVersion == CpsVersion.AmigaEob1 || this.CpsVersion == CpsVersion.AmigaEob2;
             Boolean isToon = this.CpsVersion == CpsVersion.Toonstruck;
@@ -262,26 +288,24 @@ namespace EngieFileConverter.Domain.FileTypes
             String compression = this.CompressionType == 5 ? "LZSS" : this.compressionTypes[this.CompressionType];
             this.ExtraInfo = "Version: " + (isAmiga ? "Amiga" : isToon ? "Toonstruck" : "PC")
                              + "\nCompression: " + compression
-                             + "\nIncludes palette: " + (this.HasPalette ? "Yes" + (amigaPal1 ? " (EOB 1)" : (amigaPal2 ? " (EOB 2)" : String.Empty)) : "No");
+                             + (externalPalette != null ? ("\nPalette loaded from " + externalPalette.ToUpperInvariant()) : ("\nIncludes palette: " + (this.HasPalette ? "Yes" + (amigaPal1 ? " (EOB 1)" : (amigaPal2 ? " (EOB 2)" : String.Empty)) : "No")));
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {            
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException("File to save is empty!", "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
-            if (fileToSave.IsFramesContainer || image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 320×200 images can be saved as CPS!");
+            if (image == null || image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
+                throw new ArgumentException("Only 8-bit 320×200 images can be saved as CPS!", "fileToSave");
 
-            // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = fileToSave != null && !(fileToSave is FileImage) && fileToSave.ColorsInPalette != 0;
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;
             CpsVersion ver = cps != null ? cps.CpsVersion : CpsVersion.Pc;
             return new SaveOption[]
             {
                 new SaveOption("VER", SaveOptionType.ChoicesList, "Version", "PC,Amiga (EOB 1),Amiga (EOB 2)", ((Int32)ver).ToString()),
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
+                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (fileToSave.NeedsPalette ? 0 : 1).ToString()),
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
             };
         }
@@ -289,10 +313,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException("File to save is empty!", "fileToSave");
             Bitmap image = fileToSave.GetBitmap();
-            if (fileToSave.IsFramesContainer || image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!");
+            if (image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
+                throw new ArgumentException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!", "fileToSave");
             
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 version;
@@ -303,7 +327,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
             if (imageData.Length != this.m_Width * this.m_Height)
-                throw new NotSupportedException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!");
+                throw new ArgumentException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!","fileToSave");
             return SaveCps(imageData, fileToSave.GetColors(), asPaletted ? 1 : 0, compressionType, (CpsVersion) version);
         }
 
@@ -314,7 +338,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (isAmiga)
             {
                 if (imageData.Any(p => p >= 32))
-                    throw new NotSupportedException("Input for amiga images cannot use palette indices higher than 32!");
+                    throw new ArgumentException("Input for amiga images cannot use palette indices higher than 32!", "imageData");
                 // bitplane this stuff!
                 Int32 bufSize = 40000;
                 if (amigaPal)
@@ -346,7 +370,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 i = 0; i < 32; ++i)
                     {
                         UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
-                        ArrayUtils.WriteIntToByteArray(imageDataPlanes, palOffset, 2, false, col);
+                        ArrayUtils.WriteInt16ToByteArrayBe(imageDataPlanes, palOffset, col);
                         palOffset += 2;
                     }
                 }
@@ -373,7 +397,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     compressedData = WWCompression.LcwCompress(imageData);
                     break;
                 default:
-                    throw new NotSupportedException("Unknown compression type given.");
+                    throw new ArgumentException("Unknown compression type given.", "compressionType");
             }
             Int32 dataLength = 10 + compressedData.Length;
             Int32 paletteLength;
@@ -390,18 +414,18 @@ namespace EngieFileConverter.Domain.FileTypes
             if (version == CpsVersion.Toonstruck)
             {
                 // "SPCN" string.
-                ArrayUtils.WriteIntToByteArray(fullData, startOffset + 0, 4, true, 0x4E435053);
+                ArrayUtils.WriteInt32ToByteArrayLe(fullData, startOffset + 0, 0x4E435053);
                 // 4-byte data length
-                ArrayUtils.WriteIntToByteArray(fullData, startOffset + 4, 4, true, (UInt32)(dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
+                ArrayUtils.WriteInt32ToByteArrayLe(fullData, startOffset + 4, (dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
                 startOffset += 6;
             }
             else
             {
-                ArrayUtils.WriteIntToByteArray(fullData, startOffset + 0, 2, true, (UInt32)(dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
+                ArrayUtils.WriteInt16ToByteArrayLe(fullData, startOffset + 0, (dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
             }
-            ArrayUtils.WriteIntToByteArray(fullData, startOffset + 2, 2, true, (UInt32)compressionType);
-            ArrayUtils.WriteIntToByteArray(fullData, startOffset + 4, 4, true, (UInt32)imageData.Length);
-            ArrayUtils.WriteIntToByteArray(fullData, startOffset + 8, 2, true, (UInt32)paletteLength);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, startOffset + 2, compressionType);
+            ArrayUtils.WriteInt32ToByteArrayLe(fullData, startOffset + 4, imageData.Length);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, startOffset + 8, paletteLength);
             Int32 offset = 10;
             if (paletteLength > 0)
             {
@@ -413,7 +437,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 i = 0; i < palLen; ++i)
                     {
                         UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
-                        ArrayUtils.WriteIntToByteArray(palData, i * 2, 2, false, col);
+                        ArrayUtils.WriteInt16ToByteArrayBe(palData, i * 2, col);
                     }
                 }
                 else

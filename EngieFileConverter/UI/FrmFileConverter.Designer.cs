@@ -43,6 +43,7 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiOpen = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSave = new System.Windows.Forms.ToolStripMenuItem();
+            this.TsmiSaveRaw = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSaveFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiEdit = new System.Windows.Forms.ToolStripMenuItem();
@@ -55,7 +56,6 @@
             this.tsmiImageToPalette8Bit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiManagePalettes4Bit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiManagePalettes8Bit = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiMatchToPalette = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiImageToFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiFramesToSingleImage = new System.Windows.Forms.ToolStripMenuItem();
@@ -80,6 +80,10 @@
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorViewer = new Nyerguds.Util.UI.PalettePanel();
             this.pzpImage = new Nyerguds.Util.UI.PixelZoomPanel();
+            this.tsmiMatchToPalette = new System.Windows.Forms.ToolStripMenuItem();
+            this.dsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.changeTo24bitRGBToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             this.SuspendLayout();
@@ -200,6 +204,7 @@
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiOpen,
             this.tsmiSave,
+            this.TsmiSaveRaw,
             this.tsmiSaveFrames,
             this.tsmiExit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
@@ -221,6 +226,14 @@
             this.tsmiSave.Size = new System.Drawing.Size(200, 22);
             this.tsmiSave.Text = "&Save file...";
             this.tsmiSave.Click += new System.EventHandler(this.TsmiSaveClick);
+            // 
+            // TsmiSaveRaw
+            // 
+            this.TsmiSaveRaw.Name = "TsmiSaveRaw";
+            this.TsmiSaveRaw.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.W)));
+            this.TsmiSaveRaw.Size = new System.Drawing.Size(200, 22);
+            this.TsmiSaveRaw.Text = "Save raw...";
+            this.TsmiSaveRaw.Click += new System.EventHandler(this.TsmiSaveRawClick);
             // 
             // tsmiSaveFrames
             // 
@@ -322,14 +335,6 @@
             this.tsmiManagePalettes8Bit.Size = new System.Drawing.Size(227, 22);
             this.tsmiManagePalettes8Bit.Text = "Manage color palettes (&8-bit)";
             this.tsmiManagePalettes8Bit.Click += new System.EventHandler(this.TsmiManagePalettes8BitClick);
-            // 
-            // tsmiMatchToPalette
-            // 
-            this.tsmiMatchToPalette.Name = "tsmiMatchToPalette";
-            this.tsmiMatchToPalette.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
-            this.tsmiMatchToPalette.Size = new System.Drawing.Size(227, 22);
-            this.tsmiMatchToPalette.Text = "Match to pa&lette...";
-            this.tsmiMatchToPalette.Click += new System.EventHandler(this.TsmiMatchToPalette_Click);
             // 
             // tsmiFrames
             // 
@@ -576,6 +581,38 @@
             this.pzpImage.ZoomFactor = 1;
             this.pzpImage.ZoomFactorMinimum = -10;
             // 
+            // tsmiMatchToPalette
+            // 
+            this.tsmiMatchToPalette.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripMenuItem1,
+            this.changeTo24bitRGBToolStripMenuItem,
+            this.dsToolStripMenuItem});
+            this.tsmiMatchToPalette.Name = "tsmiMatchToPalette";
+            this.tsmiMatchToPalette.Size = new System.Drawing.Size(227, 22);
+            this.tsmiMatchToPalette.Text = "Change color depth";
+            // 
+            // dsToolStripMenuItem
+            // 
+            this.dsToolStripMenuItem.Name = "dsToolStripMenuItem";
+            this.dsToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
+            this.dsToolStripMenuItem.Text = "Change to 32 bit ARGB";
+            this.dsToolStripMenuItem.Click += new System.EventHandler(this.TsmiChangeTo32BitArgb_Click);
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.L)));
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(210, 22);
+            this.toolStripMenuItem1.Text = "Match to pa&lette...";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.TsmiMatchToPalette_Click);
+            // 
+            // changeTo24bitRGBToolStripMenuItem
+            // 
+            this.changeTo24bitRGBToolStripMenuItem.Name = "changeTo24bitRGBToolStripMenuItem";
+            this.changeTo24bitRGBToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
+            this.changeTo24bitRGBToolStripMenuItem.Text = "Change to 24-bit RGB";
+            this.changeTo24bitRGBToolStripMenuItem.Click += new System.EventHandler(this.TsmiChangeTo24BitRgb_Click);
+            // 
             // FrmFileConverter
             // 
             this.AllowDrop = true;
@@ -673,7 +710,11 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiImageToFrames;
         private System.Windows.Forms.ToolStripMenuItem tsmiFramesToSingleImage;
         private System.Windows.Forms.ToolStripMenuItem tsmiExtractPal;
+        private System.Windows.Forms.ToolStripMenuItem TsmiSaveRaw;
         private System.Windows.Forms.ToolStripMenuItem tsmiMatchToPalette;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem dsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem changeTo24bitRGBToolStripMenuItem;
     }
 }
 

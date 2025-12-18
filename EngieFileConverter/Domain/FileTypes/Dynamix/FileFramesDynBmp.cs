@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
         protected String[] savecompressionTypes = new String[] { "None", "RLE" };
         //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
-        public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
+        public override Boolean NeedsPalette { get { return !this.m_loadedPalette; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         public override Int32 BitsPerPixel { get { return this.m_bpp; } }
@@ -85,7 +85,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (infChunk == null)
                 throw new FileTypeLoadException("INF chunk not found: not a valid Dynamix BMP file header.");
             Byte[] frameInfo = infChunk.Data;
-            Int32 frames = (Int32)ArrayUtils.ReadIntFromByteArray(frameInfo, 0, 2, true);
+            Int32 frames = ArrayUtils.ReadUInt16FromByteArrayLe(frameInfo, 0);
             if (frameInfo.Length != 2 + frames * 4)
                 throw new FileTypeLoadException("Bad header size: INF chunk is not long enough.");
             if (sourcePath != null)
@@ -117,8 +117,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 heightStart = frames * 2 + 2;
             for (Int32 i = 0; i < frames; ++i)
             {
-                widths[i] = (Int32)ArrayUtils.ReadIntFromByteArray(frameInfo, widthStart + i * 2, 2, true);
-                heights[i] = (Int32)ArrayUtils.ReadIntFromByteArray(frameInfo, heightStart + i * 2, 2, true);
+                widths[i] = ArrayUtils.ReadUInt16FromByteArrayLe(frameInfo, widthStart + i * 2);
+                heights[i] = ArrayUtils.ReadUInt16FromByteArrayLe(frameInfo, heightStart + i * 2);
                 fullDataSize8bit += (widths[i] * heights[i]);
             }
             Int32 addr2 = infChunk.Address + infChunk.Length;
@@ -219,8 +219,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
-                frame.SetFileClass(m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
-                frame.SetColorsInPalette(this.m_loadedPalette ? this.m_Palette.Length : 0);
+                frame.SetFileClass(this.m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
+                frame.SetNeedsPalette(!this.m_loadedPalette);
                 this.m_FramesList[i] = frame;
             }
             if (matrix != null && frames > 0)
@@ -232,8 +232,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (heights.Any(h => h != blockHeight))
                     return;
                 Byte[] matrixData = matrix.Data;
-                Int32 matrixWidth = (Int16)ArrayUtils.ReadIntFromByteArray(matrixData, 0, 2, true);
-                Int32 matrixHeight = (Int16)ArrayUtils.ReadIntFromByteArray(matrixData, 2, 2, true);
+                Int32 matrixWidth = ArrayUtils.ReadInt16FromByteArrayLe(matrixData, 0);
+                Int32 matrixHeight = ArrayUtils.ReadInt16FromByteArrayLe(matrixData, 2);
                 Int32 matrixLen = matrixHeight * matrixWidth;
                 if(matrixLen < frames)
                     return;
@@ -242,7 +242,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[][] matrixFrames = new Byte[matrixLen][];
                 for (Int32 i = 0; i < matrixLen; ++i)
                 {
-                    Int32 frame = (Int16)ArrayUtils.ReadIntFromByteArray(matrixData, 4 + i * 2, 2, true);
+                    Int32 frame = ArrayUtils.ReadInt16FromByteArrayLe(matrixData, 4 + i * 2);
                     // Switch rows and columns; write into corresponding column.
                     matrixFrames[i % matrixHeight * matrixWidth + i / matrixHeight] = framesData[frame];
                 }
@@ -276,63 +276,56 @@ namespace EngieFileConverter.Domain.FileTypes
         protected List<DynamixChunk> SaveToChunks(SupportedFileType fileToSave, Int32 compressionType, Int32 saveType)
         {
             if (fileToSave == null)
-                throw new NotSupportedException("File to save is empty!");
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-            {
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-            }
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
-
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
-                throw new NotSupportedException("Unknown compression type " + compressionType);
+                throw new ArgumentException(String.Format(ERR_UNKN_COMPR, compressionType), "compressionType");
             
             // write save logic for frames
             PixelFormat pf = PixelFormat.Undefined;
             Int32 bpp = 0;
-            Int32 frames = fileToSave.Frames.Length;
-            Byte[][] frameBytes = new Byte[frames][];
-            Int32[] frameWidths = new Int32[frames];
-            Int32[] frameHeights = new Int32[frames];
-            for (Int32 i = 0; i < fileToSave.Frames.Length; ++i)
+            Byte[][] frameBytes = new Byte[nrOfFrames][];
+            Int32[] frameWidths = new Int32[nrOfFrames];
+            Int32[] frameHeights = new Int32[nrOfFrames];
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                SupportedFileType frame = fileToSave.Frames[i];
+                SupportedFileType frame = frames[i];
                 Bitmap bm = frame.GetBitmap();
                 if (bm == null)
-                    throw new NotSupportedException("Dynamix BMP cannot handle empty frames!");
+                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (bm.Width % 8 != 0)
-                    throw new NotSupportedException("Dynamix image formats only support image widths divisible by 8!");
+                    throw new ArgumentException("Dynamix image formats only support image widths divisible by 8.", "fileToSave");
                 if (pf == PixelFormat.Undefined)
                 {
                     pf = bm.PixelFormat;
                     bpp = Image.GetPixelFormatSize(pf);
                     if (pf != PixelFormat.Format4bppIndexed && pf != PixelFormat.Format8bppIndexed)
-                        throw new NotSupportedException("Dynamix BMP frames must be 4bpp or 8bpp!");
+                        throw new ArgumentException("This format needs 4bpp or 8bpp frames.", "fileToSave");
                 }
                 else if (pf != bm.PixelFormat)
-                    throw new NotSupportedException("All frames must have the same color depth!");
+                    throw new ArgumentException(ERR_FRAMES_BPPDIFF, "fileToSave");
                 Int32 stride;
                 Int32 width = bm.Width;
                 Int32 height = bm.Height;
-                Byte[] frameData = ImageUtils.GetImageData(bm, out stride);
-                frameBytes[i] = ImageUtils.CollapseStride(frameData, width, height, bpp, ref stride, true);
+                frameBytes[i] = ImageUtils.GetImageData(bm, out stride, true);
                 frameWidths[i] = width;
                 frameHeights[i] = height;
             }
             List<DynamixChunk> chunks = new List<DynamixChunk>();
             Int32 fullDataLen = frameBytes.Sum(x => x.Length);
-            Byte[] framesIndex = new Byte[frames * 4 + 2];
-            ArrayUtils.WriteIntToByteArray(framesIndex, 0, 2, true, (UInt32)frames);
+            Byte[] framesIndex = new Byte[nrOfFrames * 4 + 2];
+            ArrayUtils.WriteInt16ToByteArrayLe(framesIndex, 0, nrOfFrames);
             Byte[] fullData = new Byte[fullDataLen];
             Int32 offset = 0;
             Int32 widthStart = 2;
-            Int32 heightStart = frames * 2 + 2;
-            for (Int32 i = 0; i < frames; ++i)
+            Int32 heightStart = nrOfFrames * 2 + 2;
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                ArrayUtils.WriteIntToByteArray(framesIndex, widthStart + i * 2, 2, true, (UInt32)frameWidths[i]);
-                ArrayUtils.WriteIntToByteArray(framesIndex, heightStart + i * 2, 2, true, (UInt32)frameHeights[i]);
+                ArrayUtils.WriteInt16ToByteArrayLe(framesIndex, widthStart + i * 2, frameWidths[i]);
+                ArrayUtils.WriteInt16ToByteArrayLe(framesIndex, heightStart + i * 2, frameHeights[i]);
                 Byte[] frameData = frameBytes[i];
                 Array.Copy(frameData, 0, fullData, offset, frameData.Length);
                 offset += frameData.Length;

@@ -20,9 +20,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
         public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return (this.ColorsInPalette + 15) / 16; } }
-        public override Int32 ColorsInPalette { get { return this.m_Palette.Length; } }
+        public override Int32 Height { get { return (this.m_Palette.Length + 15) / 16; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
+        public override Int32 BitsPerPixel { get{ return 8; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -65,22 +65,23 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            throw new NotSupportedException("Use specific PA4 or PA8 type.");
+            throw new ArgumentException("Use specific PA4 or PA8 type.");
         }
 
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
         {
-            Color[] cols = this.CheckInputForColors(fileToSave, expandToFullSize);
+            Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, expandToFullSize);
             return ColorUtils.GetEightBitPaletteData(cols, expandToFullSize);
         }
     }
 
     public class FilePaletteWwCc1N64Pa4 : FilePaletteWwCc1N64
     {
+        public override String IdCode { get { return "WwPal64b4"; } }
         public override FileClass InputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 Pal 4-bit"; } }
+        public override String ShortTypeName { get { return "C&C64 4-bit palette"; } }
         public override String ShortTypeDescription { get { return "Westwood C&C N64 4-bit palettes file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
 
@@ -92,8 +93,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FilePaletteWwCc1N64Pa8 : FilePaletteWwCc1N64
     {
+        public override String IdCode { get { return "WwPal64b8"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 Pal 8-bit"; } }
+        public override String ShortTypeName { get { return "C&C64 8-bit palette"; } }
         public override String ShortTypeDescription { get { return "Westwood C&C N64 8-bit palette file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa8" }; } }
 

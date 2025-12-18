@@ -39,19 +39,19 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 dataLen = fileData.Length;
             if (dataLen < 0x1B)
                 throw new FileTypeLoadException("Too short to be an " + this.ShortTypeDescription + "!");
-            UInt32 magic1 = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, 0x00, 4, true);
-            //UInt16 headsize = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x04, 2, true);
-            Byte bpp = (Byte) ArrayUtils.ReadIntFromByteArray(fileData, 0x06, 1, true);
-            UInt16 width = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x07, 2, true);
-            UInt16 height = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x09, 2, true);
-            //UInt16 aspectX = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0B, 2, true);
-            //UInt16 aspectY = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0D, 2, true);
-            //Byte unknown1 = (Byte) ArrayUtils.ReadIntFromByteArray(fileData, 0x0F, 1, true);
-            //UInt16 subhsize = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x10, 2, true);
-            UInt32 magic2 = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, 0x12, 4, true);
-            //UInt16 unknown2 = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x16, 2, true);
-            //Byte unknown3 = (Byte) ArrayUtils.ReadIntFromByteArray(fileData, 0x18, 1, true);
-            //UInt16 unknown4 = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x19, 2, true);
+            UInt32 magic1 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x00);
+            //UInt16 headsize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x04);
+            Byte bpp = fileData[0x06];
+            UInt16 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x07);
+            UInt16 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x09);
+            //UInt16 aspectX = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0B);
+            //UInt16 aspectY = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0D);
+            //Byte unknown1 = fileData[0x0F];
+            //UInt16 subhsize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x10);
+            UInt32 magic2 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x12);
+            //UInt16 unknown2 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x16);
+            //Byte unknown3 = fileData[0x18];
+            //UInt16 unknown4 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x19);
             if (width == 0 || height == 0)
                 throw new FileTypeLoadException("Dimensions cannot be 0!");
             if (magic1 != 0x01325847 || magic2 != 0x58465053)
@@ -83,11 +83,11 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("No source data given!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new NotSupportedException("This format needs an 8bpp image.");
+                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
             if (fileToSave.Width > 320 || fileToSave.Height > 200)
-                throw new NotSupportedException("The given image is too large.");
+                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
 
             UInt16 width = (UInt16)fileToSave.Width;
             UInt16 height = (UInt16)fileToSave.Height;
@@ -97,19 +97,19 @@ namespace EngieFileConverter.Domain.FileTypes
             imageData = IgcBitMaskCompression.BitMaskCompress(imageData, stride, height);
             imageData = RleCompressionHighBitRepeat.RleEncode(imageData);
             Byte[] data = new Byte[imageData.Length + palette.Length + 0x1B];
-            ArrayUtils.WriteIntToByteArray(data, 0x00, 4, true, 0x01325847); // magic
-            ArrayUtils.WriteIntToByteArray(data, 0x04, 2, true, 0x19); // headsize
-            ArrayUtils.WriteIntToByteArray(data, 0x06, 1, true, 0x08); // BPP
-            ArrayUtils.WriteIntToByteArray(data, 0x07, 2, true, width); // width
-            ArrayUtils.WriteIntToByteArray(data, 0x09, 2, true, height); // height
-            ArrayUtils.WriteIntToByteArray(data, 0x0B, 2, true, 0x04); // xaspect
-            ArrayUtils.WriteIntToByteArray(data, 0x0D, 2, true, 0x03); // yaspect
-            ArrayUtils.WriteIntToByteArray(data, 0x0F, 1, true, 0x00); // unknown1
-            ArrayUtils.WriteIntToByteArray(data, 0x10, 2, true, 0x09); // subhsize
-            ArrayUtils.WriteIntToByteArray(data, 0x12, 4, true, 0x58465053); // shmagic
-            ArrayUtils.WriteIntToByteArray(data, 0x16, 2, true, 0x0F); // unknown2
-            ArrayUtils.WriteIntToByteArray(data, 0x18, 1, true, 0x00); // unknown3
-            ArrayUtils.WriteIntToByteArray(data, 0x19, 2, true, 0x02); // unknown4
+            ArrayUtils.WriteInt32ToByteArrayLe(data, 0x00, 0x01325847); // magic
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x04, 0x19); // headsize
+            data[0x06] = 0x08; // BPP
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x07, width); // width
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x09, height); // height
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x0B, 0x04); // xaspect
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x0D, 0x03); // yaspect
+            data[0x0F] = 0x00; // unknown1
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x10, 0x09); // subhsize
+            ArrayUtils.WriteInt32ToByteArrayLe(data, 0x12, 0x58465053); // shmagic
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x16, 0x0F); // unknown2
+            data[0x18] = 0x00; // unknown3
+            ArrayUtils.WriteInt16ToByteArrayLe(data, 0x19, 0x02); // unknown4
             Array.Copy(palette, 0, data, 0x1B, palette.Length);
             Array.Copy(imageData, 0, data, palette.Length + 0x1B, imageData.Length);
             return data;

@@ -66,7 +66,7 @@ namespace EngieFileConverter.Domain.HeightMap
             if (plateauLevelsImage != null)
             {
                 if (plateauLevelsImage.Width != 64 || plateauLevelsImage.Height != 64)
-                    throw new NotSupportedException("Plateau levels image needs to be 64x64!");
+                    throw new ArgumentException("Plateau levels image needs to be 64x64!", "plateauLevelsImage");
                 Int32 plateauStride;
                 Byte[] plateauData = ImageUtils.GetImageData(ImageUtils.PaintOn32bpp(plateauLevelsImage, Color.Black), out plateauStride);
                 eightBitPlateauData = ImageUtils.Convert32BitToPaletted(plateauData, plateauLevelsImage.Width, plateauLevelsImage.Height, 8, false, LEVEL_COLORS, ref plateauStride);
@@ -268,7 +268,7 @@ namespace EngieFileConverter.Domain.HeightMap
         public static Bitmap GenerateHeightMapImage65x65(Bitmap heightMap64x64)
         {
             if (heightMap64x64.Width != 64 || heightMap64x64.Height != 64)
-                throw new NotSupportedException("Can only convert 64x64 images!");
+                throw new ArgumentException("Can only convert 64x64 images!", "heightMap64x64");
             heightMap64x64 = ImageUtils.ConvertToPalettedGrayscale(heightMap64x64);
             //Bitmap heightMap62x62 = ImageUtils.CloneImage(heightMap64x64, 1, 1, 62, 62);
             Bitmap bp = new Bitmap(65, 65, PixelFormat.Format32bppArgb);

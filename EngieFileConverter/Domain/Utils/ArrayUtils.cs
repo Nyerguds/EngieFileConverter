@@ -27,18 +27,19 @@ namespace Nyerguds.Util
             return swapped;
         }
 
-        public static Boolean ArraysAreEqual<T>(T[] row1, T[] row2) where T : IEquatable<T>
+        public static Boolean ArraysAreEqual<T>(T[] arr1, T[] arr2) where T : IEquatable<T>
         {
             // There's probably a Linq version of this though... Probably .All() or something.
             // But this is with simple arrays.
-            if (row1 == null && row2 == null)
+            if (arr1 == null && arr2 == null)
                 return true;
-            if (row1 == null || row2 == null)
+            if (arr1 == null || arr2 == null)
                 return false;
-            if (row1.Length != row2.Length)
+            Int32 arr1len = arr1.Length;
+            if (arr1len != arr2.Length)
                 return false;
-            for (Int32 i = 0; i < row1.Length; ++i)
-                if (row1[i].Equals(row2[i]))
+            for (Int32 i = 0; i < arr1len; ++i)
+                if (!arr1[i].Equals(arr2[i]))
                     return false;
             return true;
         }
@@ -89,10 +90,72 @@ namespace Nyerguds.Util
             for (Int32 index = 0; index < bytes; ++index)
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                value += (UInt64) (data[offs] << (8 * index));
+                value |= (((UInt64)data[offs]) << (8 * index));
             }
             return value;
         }
+
+        #region ReadIntFromByteArray shortcuts
+        public static Int16 ReadInt16FromByteArrayLe(Byte[] data, Int32 startIndex)
+        {
+            return (Int16)ReadIntFromByteArray(data, startIndex, 2, true);
+        }
+
+        public static Int16 ReadInt16FromByteArrayBe(Byte[] data, Int32 startIndex)
+        {
+            return (Int16)ReadIntFromByteArray(data, startIndex, 2, false);
+        }
+
+        public static UInt16 ReadUInt16FromByteArrayLe(Byte[] data, Int32 startIndex)
+        {
+            return (UInt16)ReadIntFromByteArray(data, startIndex, 2, true);
+        }
+
+        public static UInt16 ReadUInt16FromByteArrayBe(Byte[] data, Int32 startIndex)
+        {
+            return (UInt16)ReadIntFromByteArray(data, startIndex, 2, false);
+        }
+
+        public static Int32 ReadInt32FromByteArrayLe(Byte[] data, Int32 startIndex)
+        {
+            return (Int32)ReadIntFromByteArray(data, startIndex, 4, true);
+        }
+
+        public static Int32 ReadInt32FromByteArrayBe(Byte[] data, Int32 startIndex)
+        {
+            return (Int32)ReadIntFromByteArray(data, startIndex, 4, false);
+        }
+
+        public static UInt32 ReadUInt32FromByteArrayLe(Byte[] data, Int32 startIndex)
+        {
+            return (UInt32)ReadIntFromByteArray(data, startIndex, 4, true);
+        }
+
+        public static UInt32 ReadUInt32FromByteArrayBe(Byte[] data, Int32 startIndex)
+        {
+            return (UInt32)ReadIntFromByteArray(data, startIndex, 4, false);
+        }
+
+        public static Int64 ReadInt64FromByteArrayLe(Byte[] data, Int32 startIndex)
+        {
+            return (Int64)ReadIntFromByteArray(data, startIndex, 8, true);
+        }
+
+        public static Int64 ReadInt64FromByteArrayBe(Byte[] data, Int32 startIndex)
+        {
+            return (Int64)ReadIntFromByteArray(data, startIndex, 8, true);
+        }
+
+        public static UInt64 ReadUInt64FromByteArrayLe(Byte[] data, Int32 startIndex)
+        {
+            return (UInt64)ReadIntFromByteArray(data, startIndex, 8, true);
+        }
+
+        public static UInt64 ReadUInt64FromByteArrayBe(Byte[] data, Int32 startIndex)
+        {
+            return (UInt64)ReadIntFromByteArray(data, startIndex, 8, true);
+        }
+        #endregion
 
         public static void WriteIntToByteArray(Byte[] data, Int32 startIndex, Int32 bytes, Boolean littleEndian, UInt64 value)
         {
@@ -105,6 +168,68 @@ namespace Nyerguds.Util
                 data[offs] = (Byte) (value >> (8 * index) & 0xFF);
             }
         }
+
+        #region WriteIntToByteArray shortcuts
+        public static void WriteInt16ToByteArrayLe(Byte[] data, Int32 startIndex, Int64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 2, true, (UInt64)value);
+        }
+
+        public static void WriteInt16ToByteArrayBe(Byte[] data, Int32 startIndex, Int64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 2, false, (UInt64)value);
+        }
+
+        public static void WriteUInt16ToByteArrayLe(Byte[] data, Int32 startIndex, UInt64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 2, true, value);
+        }
+
+        public static void WriteUInt16ToByteArrayBe(Byte[] data, Int32 startIndex, UInt64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 2, false, value);
+        }
+
+        public static void WriteInt32ToByteArrayLe(Byte[] data, Int32 startIndex, Int64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 4, true, (UInt64)value);
+        }
+
+        public static void WriteInt32ToByteArrayBe(Byte[] data, Int32 startIndex, Int64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 4, false, (UInt64)value);
+        }
+
+        public static void WriteUInt32ToByteArrayLe(Byte[] data, Int32 startIndex, UInt64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 4, true, value);
+        }
+
+        public static void WriteUInt32ToByteArrayBe(Byte[] data, Int32 startIndex, UInt64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 4, false, value);
+        }
+
+        public static void WriteInt64ToByteArrayLe(Byte[] data, Int32 startIndex, Int64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 8, true, (UInt64)value);
+        }
+
+        public static void WriteInt64ToByteArrayBe(Byte[] data, Int32 startIndex, Int64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 8, true, (UInt64)value);
+        }
+
+        public static void WriteUInt64ToByteArrayLe(Byte[] data, Int32 startIndex, UInt64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 8, true, value);
+        }
+
+        public static void WriteUInt64ToByteArrayBe(Byte[] data, Int32 startIndex, UInt64 value)
+        {
+            WriteIntToByteArray(data, startIndex, 8, true, value);
+        }
+        #endregion
 
         public static Int32 ReadBitsFromByteArray(Byte[] dataArr, ref Int32 bitIndex, Int32 codeLen, Int32 bufferInEnd)
         {

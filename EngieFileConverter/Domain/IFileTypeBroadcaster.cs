@@ -12,11 +12,15 @@ namespace Nyerguds.Util
         String[] FileExtensions { get; }
         /// <summary>Brief name and description of the specific type for each extension, for the types dropdown in the save file dialog.</summary>
         String[] DescriptionsForExtensions { get; }
+        /// <summary>Supported types can always be loaded, but this indicates if save functionality to this type is also available.</summary>
+        Boolean CanSave { get; }
     }
 
     /// <summary>File load exceptions. These are typically ignored in favour of checking the next type to try.</summary>
+    [Serializable]
     public class FileTypeLoadException : Exception
     {
+        /// <summary>USed to store the attempted load type in the Data dictionary to allow serialization.</summary>
         protected readonly String DataAttemptedLoadedType = "AttemptedLoadedType";
 
         /// <summary>File type that was attempted to be loaded and threw this exception.</summary>
@@ -50,5 +54,4 @@ namespace Nyerguds.Util
         public HeaderParseException(String message, String attemptedLoadedType) : base(message, attemptedLoadedType) { }
         public HeaderParseException(String message, String attemptedLoadedType, Exception innerException) : base(message, attemptedLoadedType, innerException) { }
     }
-
 }

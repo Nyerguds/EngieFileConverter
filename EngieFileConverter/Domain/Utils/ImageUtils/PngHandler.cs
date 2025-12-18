@@ -34,7 +34,7 @@ namespace Nyerguds.ImageManipulation
             Int32 idLen = PNG_IDENTIFIER.Length;
             if (data.Length < PNG_IDENTIFIER.Length)
                 return false;
-            for (Int32 i = 0; i < idLen; i++)
+            for (Int32 i = 0; i < idLen; ++i)
                 if (data[i] != PNG_IDENTIFIER[i])
                     return false;
             return true;
@@ -105,17 +105,17 @@ namespace Nyerguds.ImageManipulation
             Byte[] chunkNamebytes = Encoding.ASCII.GetBytes(chunkName);
             if (chunkNamebytes.Length != 4)
                 throw new ArgumentException("Chunk must be 4 bytes!", "chunkName");
-            Int32 curLength;
-            ArrayUtils.WriteIntToByteArray(target, offset, curLength = 4, false, (UInt32) chunkData.Length);
-            offset += curLength;
+            ArrayUtils.WriteInt32ToByteArrayBe(target, offset, chunkData.Length);
+            offset += 4;
             Int32 nameOffset = offset;
-            Array.Copy(chunkNamebytes, 0, target, offset, curLength = 4);
-            offset += curLength;
-            Array.Copy(chunkData, 0, target, offset, curLength = chunkData.Length);
+            Array.Copy(chunkNamebytes, 0, target, offset, 4);
+            offset += 4;
+            Int32 curLength = chunkData.Length;
+            Array.Copy(chunkData, 0, target, offset, curLength);
             offset += curLength;
             UInt32 crcval = Crc32.ComputeChecksum(target, nameOffset, chunkData.Length + 4);
-            ArrayUtils.WriteIntToByteArray(target, offset, curLength = 4, false, crcval);
-            offset += curLength;
+            ArrayUtils.WriteInt32ToByteArrayBe(target, offset, crcval);
+            offset += 4;
             return offset;
         }
 
@@ -132,7 +132,7 @@ namespace Nyerguds.ImageManipulation
                 throw new IndexOutOfRangeException("Bad chunk size in png image.");
             // Don't want to use BitConverter; then you have to check platform endianness and all that mess.
             //Int32 length = data[offset + 3] + (data[offset + 2] << 8) + (data[offset + 1] << 16) + (data[offset] << 24);
-            Int32 length = (Int32) ArrayUtils.ReadIntFromByteArray(data, chunkOffset, 4, false);
+            Int32 length = ArrayUtils.ReadInt32FromByteArrayBe(data, chunkOffset);
             if (length < 0 || chunkOffset + 12 + length > data.Length)
                 throw new IndexOutOfRangeException("Bad chunk size in png image.");
             return length;
@@ -193,7 +193,7 @@ namespace Nyerguds.ImageManipulation
                 return false;
             Byte[] checksum = new Byte[4];
             Array.Copy(data, chunkOffset + 8 + chunkLength, checksum, 0, 4);
-            UInt32 readChecksum = (UInt32) ArrayUtils.ReadIntFromByteArray(checksum, 0, 4, false);
+            UInt32 readChecksum = ArrayUtils.ReadUInt32FromByteArrayBe(checksum, 0);
             UInt32 calculatedChecksum = Crc32.ComputeChecksum(data, chunkOffset + 4, chunkLength + 4);
             return readChecksum == calculatedChecksum;
         }

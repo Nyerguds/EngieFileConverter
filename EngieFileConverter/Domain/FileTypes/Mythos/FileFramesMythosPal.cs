@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            LoadFile(fileData, null);
+            this.LoadFile(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -37,7 +37,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.LoadFromFileData(fileData, filename, true, true, false, out framesXY, false);
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
             PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, null);
-            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_Palette, Color.Black);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new SaveOption[0]; }

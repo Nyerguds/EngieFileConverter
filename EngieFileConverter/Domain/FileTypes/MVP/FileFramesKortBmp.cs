@@ -21,7 +21,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "KORT BMP"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
         public override String ShortTypeDescription { get { return "KORT frames file"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -50,10 +50,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 datalen = fileData.Length;
             if (datalen < 4)
                 throw new FileTypeLoadException("Bad header size.");
-            Int32 nrOfFrames = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+            Int32 nrOfFrames = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0);
             if (nrOfFrames < 0)
                 throw new FileTypeLoadException("Bad number of frames.");
-            Int32 fixed0016 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+            Int32 fixed0016 = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 2);
             if (fixed0016 != 0x0016)
                 throw new FileTypeLoadException("Bad value in header.");
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
@@ -63,15 +63,15 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 if (offset + 12 >= datalen)
                     throw new FileTypeLoadException("File is too short to contain frame header " + i);
-                Int32 frameNumber = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
+                Int32 frameNumber = ArrayUtils.ReadInt16FromByteArrayLe(fileData, offset);
                 if (frameNumber != i)
                     throw new FileTypeLoadException("Bad frame order in file!");
-                Int32 frWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true);
-                Int32 frHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
-                Int32 stride = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 6, 2, true);
+                Int32 frWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 2);
+                Int32 frHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 4);
+                Int32 stride = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 6);
                 if (frWidth > stride)
                     throw new FileTypeLoadException("Inconsistent data in file!");
-                Int32 dataSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 8, 4, true);
+                Int32 dataSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, offset + 8);
                 if (offset + dataSize >= datalen)
                     throw new FileTypeLoadException("File is too short to contain data of frame " + i);
                 offset += 12;
@@ -84,7 +84,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
-                frame.SetColorsInPalette(0);
+                frame.SetNeedsPalette(true);
                 this.m_FramesList[i] = frame;
                 offset += dataSize;
             }
@@ -96,14 +96,14 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new NotSupportedException("No frames found in source data!");
+                throw new ArgumentException("No frames found in source data!", "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null)
-                    throw new NotSupportedException("KORT BMP can't handle empty frames!");
+                    throw new ArgumentException("KORT BMP can't handle empty frames!", "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("Not all frames in input type are 8-bit images!");
+                    throw new ArgumentException("Not all frames in input type are 8-bit images!", "fileToSave");
             }
             Byte[][] frameData = new Byte[nrOfFrames][];
             Int32[] widths = new Int32[nrOfFrames];
@@ -126,17 +126,17 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             Int32 fullSize = 4 + nrOfFrames * 12 + frameData.Sum(x => x.Length);
             Byte[] fullData = new Byte[fullSize];
-            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32)nrOfFrames);
-            ArrayUtils.WriteIntToByteArray(fullData, 2, 2, true, 0x16);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0, nrOfFrames);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 2, 0x16);
             Int32 offset = 4;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                ArrayUtils.WriteIntToByteArray(fullData, offset + 0, 2, true, (UInt32)i);
-                ArrayUtils.WriteIntToByteArray(fullData, offset + 2, 2, true, (UInt32)widths[i]);
-                ArrayUtils.WriteIntToByteArray(fullData, offset + 4, 2, true, (UInt32)heights[i]);
-                ArrayUtils.WriteIntToByteArray(fullData, offset + 6, 2, true, (UInt32)strides[i]);
+                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 0, i);
+                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 2, widths[i]);
+                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 4, heights[i]);
+                ArrayUtils.WriteInt16ToByteArrayLe(fullData, offset + 6, strides[i]);
                 Int32 datalength = frameData[i].Length;
-                ArrayUtils.WriteIntToByteArray(fullData, offset + 8, 4, true, (UInt32)datalength);
+                ArrayUtils.WriteInt32ToByteArrayLe(fullData, offset + 8, datalength);
                 offset += 12;
                 Array.Copy(frameData[i], 0, fullData, offset, datalength);
                 offset += datalength;

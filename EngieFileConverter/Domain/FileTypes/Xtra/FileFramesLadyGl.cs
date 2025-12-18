@@ -23,9 +23,12 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 BitsPerPixel { get { return 8; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
-        public override Boolean FramesHaveCommonPalette { get { return m_CommonPalette; } }
+        public override Boolean FramesHaveCommonPalette { get { return this.m_CommonPalette; } }
         private Boolean m_CommonPalette = false;
-        public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : this.m_Palette.Length; } }
+        public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
+
+        public override Boolean CanSave { get { return false; } }
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -34,7 +37,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.LoadFromFileData(fileData, filename);
-            this.SetFileNames(filename);
         }
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
@@ -55,10 +57,11 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 if (File.Exists(baseName + ".GL"))
-                    archiveData = fileData;
-                else if (File.Exists(baseName + ".GLT"))
                     tableData = fileData;
+                else if (File.Exists(baseName + ".GLT"))
+                    archiveData = fileData;
             }
+            Boolean isTable = tableData != null;
             if (archiveData == null && tableData == null)
                 throw new FileTypeLoadException("Cannot find accompanying file.");
             if (archiveData == null && File.Exists(baseName + ".GL"))
@@ -91,8 +94,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (actualNameLen == 0 || actualNameLen > 12 || nameSplit[0].Length > 8 || nameSplit.Length > 2 || (nameSplit.Length == 2 && nameSplit[1].Length > 3))
                     throw new FileTypeLoadException("Internal filename does not match DOS 8.3 format.");
                 String framePath = Path.Combine(basePath, fileName);
-                Int32 fileOffset = (Int32) ArrayUtils.ReadIntFromByteArray(tableData, tableOffset + nameLen, 4, true);
-                Int32 fileLength = (Int32) ArrayUtils.ReadIntFromByteArray(tableData, tableOffset + nameLen + 4, 4, true);
+                Int32 fileOffset = ArrayUtils.ReadInt32FromByteArrayLe(tableData, tableOffset + nameLen);
+                Int32 fileLength = ArrayUtils.ReadInt32FromByteArrayLe(tableData, tableOffset + nameLen + 4);
                 tableOffset += entryLen;
                 if (fileOffset < 0 || fileLength < 0)
                     throw new FileTypeLoadException("Bad data in table.");
@@ -113,7 +116,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     FileImgLadyTme tmeFrame = new FileImgLadyTme();
                     tmeFrame.LoadFromFileData(archiveData, framePath, fileOffset, fileLength);
-                    if (tmeFrame.ColorsInPalette > 0)
+                    if (!tmeFrame.NeedsPalette)
                     {
                         lastPalette = tmeFrame.GetColors();
                         lastPalFrame = fileName + " (frame " + frameNr + ")";
@@ -147,7 +150,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     FileImgLadyTme sft = frames[i] as FileImgLadyTme;
                     if (sft == null)
                         continue;
-                    if (sft.ColorsInPalette == 0 || !firstPal.SequenceEqual(sft.GetColors()))
+                    if (sft.NeedsPalette || !firstPal.SequenceEqual(sft.GetColors()))
                     {
                         this.m_CommonPalette = false;
                         break;
@@ -158,12 +161,19 @@ namespace EngieFileConverter.Domain.FileTypes
                     this.m_Palette = firstPal;
                 }
             }
+            this.LoadedFile = sourcePath;
+            String curPath = Path.GetFileNameWithoutExtension(sourcePath);
+            if (isTable)
+                curPath = curPath + ".GL/" + Path.GetExtension(sourcePath).TrimStart('.');
+            else
+                curPath = curPath + Path.GetExtension(sourcePath) + "/GLT";
+            this.LoadedFileName = curPath;
         }
 
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            throw new NotSupportedException("Not supported.");
+            throw new NotSupportedException();
         }
 
     }

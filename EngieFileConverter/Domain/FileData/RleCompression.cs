@@ -47,6 +47,7 @@ namespace Nyerguds.FileData.Compression
     {
         #region overridables to tweak in subclasses
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
+        
         protected virtual UInt32 MaxRepeatValue { get { return 0x7F; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
         protected virtual UInt32 MaxCopyValue { get { return 0x7F; } }

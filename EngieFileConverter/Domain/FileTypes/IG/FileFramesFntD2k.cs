@@ -29,7 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "IG Font (Dune 2000)"; } }
         public override String[] FileExtensions { get { return new String[] { "fnt" }; } }
         public override String ShortTypeDescription { get { return "IG Font (Dune 2000)"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -91,11 +91,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte currentSymbol = (Byte)((firstSymbol + i) & 0xFF);
                 if (readOffset + 8 > datalen)
                     throw new FileTypeLoadException("File data too short for symbol header of symbol #" + firstSymbol + ".");
-                Int32 origSymbolWidth = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset, 4, true);
+                Int32 origSymbolWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
                 Int32 symbolWidth = origSymbolWidth + padding;
                 this.m_Width = Math.Max(symbolWidth, this.m_Width);
                 readOffset += 4;
-                Int32 symbolHeight = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset, 4, true);
+                Int32 symbolHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
                 readOffset += 4;
                 Int32 symbolReadSize = origSymbolWidth * symbolHeight;
                 Bitmap curFrImg = null;
@@ -119,7 +119,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.ExtraInfo = "Space symbol width in header: " + spaceWidth
                 + "\nFirst symbol index: " + firstSymbol
-                + "\nPadding between pixels: " + padding
+                + "\nPadding between symbols: " + padding + " pixel" + (padding == 1 ? String.Empty : "s")
                 + "\nFont height in header: " + maxHeight;
         }
 
@@ -141,7 +141,7 @@ namespace EngieFileConverter.Domain.FileTypes
             framePic.LoadFileFrame(this, this, curFrImg, sourcePath, currentSymbol);
             framePic.SetBitsPerColor(this.BitsPerPixel);
             framePic.SetFileClass(this.FrameInputFileClass);
-            framePic.SetColorsInPalette(this.ColorsInPalette);
+            framePic.SetNeedsPalette(this.NeedsPalette);
             framePic.SetColors(this.m_Palette);
             StringBuilder extraInfo = new StringBuilder();
             extraInfo.Append("Data: ").Append(dataLength).Append(" byte");
@@ -152,7 +152,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 extraInfo.Append("\nStored image dimensions: ").Append(width).Append("x").Append(height);
                 if (width > 0 && height > 0 && padding > 0)
-                    extraInfo.Append("\nApplied padding: ").Append(padding);
+                    extraInfo.Append("\nApplied padding: ").Append(padding).Append(" pixel").Append(padding == 1 ? String.Empty : "s");
             }
             framePic.SetExtraInfo(extraInfo.ToString());
             this.m_FramesList[currentSymbol] = framePic;
@@ -162,7 +162,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 maxUsedHeight;
-            this.PerformPreliminaryChecks(ref fileToSave, out maxUsedHeight);
+            this.PerformPreliminaryChecks(fileToSave, out maxUsedHeight);
             FileFramesWwFntV3 fontFile = fileToSave as FileFramesWwFntV3;
             Int32 fontHeight = fontFile != null ? fontFile.Height : maxUsedHeight;
             return new SaveOption[]
@@ -176,41 +176,40 @@ namespace EngieFileConverter.Domain.FileTypes
             return this.SaveFont(fileToSave, saveOptions);
         }
 
-        private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 height)
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out Int32 height)
         {
             // Preliminary checks
             SupportedFileType[] frames = fileToSave.Frames;
             if (!fileToSave.IsFramesContainer || frames == null)
-                throw new NotSupportedException("No frames found in source data!");
+                throw new ArgumentException("No frames found in source data!", "fileToSave");
             Int32 frameLen = frames.Length;
             if (frameLen == 0)
-                throw new NotSupportedException("No frames found in source data!");
+                throw new ArgumentException("No frames found in source data!", "fileToSave");
             if (frameLen < 32)
-                throw new NotSupportedException("Dune 2000 font needs to contain at least 32 characters!");
+                throw new ArgumentException("Dune 2000 font needs to contain at least 32 characters!", "fileToSave");
             if (frameLen > 256)
-                throw new NotSupportedException("Dune 2000 font can only handle up to 256 frames!");
+                throw new ArgumentException("Dune 2000 font can only handle up to 256 frames!", "fileToSave");
             height = -1;
             for (Int32 i = 0; i < frameLen; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
-                    throw new NotSupportedException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!");
+                    throw new ArgumentException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!", "fileToSave");
                 height = Math.Max(height, frame.Height);
                 if (i == 32 && frame.Width > 255)
-                throw new NotSupportedException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!");
+                    throw new ArgumentException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!", "fileToSave");
                 if (height > 255)
-                    throw new NotSupportedException("Frame dimensions exceed 255!");
+                    throw new ArgumentException("Frame dimensions exceed 255!", "fileToSave");
             }
+            return frames;
         }
 
         protected Byte[] SaveFont(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             Int32 fontHeight;
-            PerformPreliminaryChecks(ref fileToSave, out fontHeight);
+            SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out fontHeight);
             // Override the one from the preliminary check.
             fontHeight = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "FHE"));
-
-            SupportedFileType[] frames = fileToSave.Frames;
             Int32 origFrameLen = frames.Length;
             if (origFrameLen < 0x100)
             {
@@ -222,7 +221,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     framePic.LoadFileFrame(fileToSave, fileToSave, null, null, i);
                     framePic.SetBitsPerColor(fileToSave.BitsPerPixel);
                     framePic.SetFileClass(fileToSave.FrameInputFileClass);
-                    framePic.SetColorsInPalette(fileToSave.ColorsInPalette);
+                    framePic.SetNeedsPalette(fileToSave.NeedsPalette);
                     framePic.SetColors(fileToSave.GetColors());
                     newFrames[i] = fileToSave;
                 }
@@ -300,9 +299,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType frame = baseList[i];
                 Int32 width = frame == null || frame.Width == 0 ? 0 : (frame.Width - globalOpenSpace);
                 Int32 height = frame == null ? 0 : frame.Height;
-                ArrayUtils.WriteIntToByteArray(fileData, writeOffset, 4, true, (UInt32)width);
+                ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset, width);
                 writeOffset += 4;
-                ArrayUtils.WriteIntToByteArray(fileData, writeOffset, 4, true, (UInt32)height);
+                ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset, height);
                 writeOffset += 4;
                 Byte[] bdata = framesList[i];
                 if (bdata != null)

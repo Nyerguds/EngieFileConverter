@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
 using Nyerguds.FileData.Agos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
@@ -27,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "AdvSoft VGA"; } }
         public override String[] FileExtensions { get { return new String[] { "vga" }; } }
         public override String ShortTypeDescription { get { return "AdventureSoft VGA file"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 4; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
@@ -56,36 +54,49 @@ namespace EngieFileConverter.Domain.FileTypes
         
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            if (fileData.Length < 16)
+            Int32 dataLen = fileData.Length;
+            if (dataLen < 16)
                 throw new FileTypeLoadException("Not long enough for header.");
-            Int32 firstNonEmpty = 0;
-            Int32 headerEnd;
-            while ((headerEnd = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, firstNonEmpty * 8, 4, false)) == 0)
-                firstNonEmpty++;
-            if (headerEnd < 0 || headerEnd >= fileData.Length || headerEnd % 8 != 0)
-                throw new FileTypeLoadException("Invalid header length.");
-            List<UInt32> offsets = new List<UInt32>();
-            List<UInt16> widths = new List<UInt16>();
-            List<UInt16> heights = new List<UInt16>();
-            List<Boolean> compressedFlags = new List<Boolean>();
-            Int32 readOffset = 0;
-
-            while (readOffset + 8 < fileData.Length && readOffset < headerEnd)
+            for (Int32 i = 0; i < 8; ++i)
+                if (fileData[i] != 0)
+                    throw new FileTypeLoadException("Header needs to start with an empty entry.");
+            Int32 firstNonEmpty = 8;
+            Int32 headerEnd = -1;
+            while (firstNonEmpty + 8 <= dataLen && (headerEnd = ArrayUtils.ReadInt32FromByteArrayBe(fileData, firstNonEmpty)) == 0)
             {
-                UInt32 dataOffset = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset, 4, false);
-                if (dataOffset != 0 && dataOffset < headerEnd)
-                    throw new FileTypeLoadException("Bad offset in header.");
-                offsets.Add(dataOffset);
-                UInt16 imageHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, readOffset + 4, 2, false);
-                compressedFlags.Add((imageHeight & 0x8000) != 0);
-                heights.Add((UInt16)(imageHeight & 0x7FFF));
-                UInt16 imagewidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, readOffset + 6, 2, false);
-                widths.Add(imagewidth);
-                readOffset += 8;
+                if (ArrayUtils.ReadUInt32FromByteArrayBe(fileData, firstNonEmpty + 4) != 0)
+                    throw new FileTypeLoadException("Bad data in trailing empty frames.");
+                firstNonEmpty += 8;
             }
-            Int32 frames = offsets.Count;
+            if (headerEnd <= 0 || headerEnd >= dataLen || headerEnd % 8 != 0 || firstNonEmpty > headerEnd)
+                throw new FileTypeLoadException("Invalid header length.");
+
+            Int32 frames = (headerEnd - 8) / 8;
+            if (frames == 0)
+                throw new FileTypeLoadException("No frames found.");
+            UInt32[] offsets = new UInt32[frames];
+            UInt16[] widths = new UInt16[frames];
+            UInt16[] heights = new UInt16[frames];
+            Boolean[] compressedFlags = new Boolean[frames];
+            Int32 readOffset = 8;
+            Int32 index = 0;
+            while (readOffset + 8 < dataLen && readOffset < headerEnd)
+            {
+                UInt32 dataOffset = ArrayUtils.ReadUInt32FromByteArrayBe(fileData, readOffset);
+                if (dataOffset != 0 && (dataOffset < headerEnd || dataOffset > dataLen))
+                    throw new FileTypeLoadException("Bad offset in header.");
+                offsets[index] = dataOffset;
+                UInt16 imageHeight = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, readOffset + 4);
+                compressedFlags[index] = (imageHeight & 0x8000) != 0;
+                heights[index] = (UInt16)(imageHeight & 0x7FFF);
+                UInt16 imagewidth = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, readOffset + 6);
+                widths[index] = imagewidth;
+                readOffset += 8;
+                index++;
+            }
             this.m_FramesList = new SupportedFileType[frames];
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
+            Int32 emptyFrames = 0;
             for (Int32 i = 0; i < frames; ++i)
             {
                 UInt32 imageOffset = offsets[i];
@@ -95,10 +106,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 dataStride = ImageUtils.GetMinimumStride(imageWidth, 4);
                 Int32 neededDataSize = imageHeight * dataStride;
                 Bitmap frameImage;
-
                 if (imageHeight == 0 || imageWidth == 0 || imageOffset == 0)
                 {
                     frameImage = null;
+                    emptyFrames++;
                 }
                 else
                 {
@@ -129,7 +140,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
-                frame.SetColorsInPalette(0);
+                frame.SetNeedsPalette(true);
                 frame.SetBitsPerColor(4);
                 frame.SetFileClass(FileClass.Image4Bit);
                 if (compressed)
@@ -138,6 +149,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     frame.SetExtraInfo("Empty frame");
                 this.m_FramesList[i] = frame;
             }
+            this.ExtraInfo = "Non-empty frames: " + (frames - emptyFrames) + "\n"
+                             + "Empty frames: " + emptyFrames;
         }
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
@@ -148,22 +161,24 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-                throw new NotSupportedException("AdventureSoft VGA saving for single frame is not supported!");
+                throw new ArgumentException("AdventureSoft VGA saving for single frame is not supported!", "fileToSave");
             if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
+                throw new ArgumentException("No frames found in source data!", "fileToSave");
             Boolean noCompression = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NOCMP"));
-            Int32 nrOfFr = fileToSave.Frames.Length;
+            // Always starts with an empty frame. seems to be an integral part of the format.
+            Int32 nrOfFr = fileToSave.Frames.Length + 1;
             Byte[][] data = new Byte[nrOfFr][];
             Int32[] offsets = new Int32[nrOfFr];
             Int32[] widths = new Int32[nrOfFr];
             Int32[] heights = new Int32[nrOfFr];
             Boolean[] compressed = new Boolean[nrOfFr];
             Int32 offset = nrOfFr*8;
-            for (Int32 i = 0; i < nrOfFr; ++i)
+            // Start at 1, keep index 0 empty.
+            for (Int32 i = 1; i < nrOfFr; ++i)
             {
-                SupportedFileType frame = fileToSave.Frames[i];
+                SupportedFileType frame = fileToSave.Frames[i - 1];
                 Bitmap image = frame.GetBitmap();
                 if (image == null)
                 {
@@ -176,7 +191,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     offsets[i] = 0;
                 }
                 else if (frame.BitsPerPixel != 4)
-                    throw new NotSupportedException("AdventureSoft VGA frames need to be 4 BPP images!");
+                    throw new ArgumentException("AdventureSoft VGA frames need to be 4 BPP images!", "fileToSave");
                 else
                 {
                     Int32 width = image.Width;
@@ -204,12 +219,12 @@ namespace EngieFileConverter.Domain.FileTypes
             for (Int32 i = 0; i < nrOfFr; ++i)
             {
                 Int32 indexOffset = i * 8;
-                ArrayUtils.WriteIntToByteArray(finalFile, indexOffset, 4, false, (UInt32)offsets[i]);
+                ArrayUtils.WriteInt32ToByteArrayBe(finalFile, indexOffset, offsets[i]);
                 Int32 height = heights[i];
                 if (compressed[i])
                     height |= 0x8000;
-                ArrayUtils.WriteIntToByteArray(finalFile, indexOffset + 4, 2, false, (UInt32)height);
-                ArrayUtils.WriteIntToByteArray(finalFile, indexOffset + 6, 2, false, (UInt32)widths[i]);
+                ArrayUtils.WriteInt16ToByteArrayBe(finalFile, indexOffset + 4, height);
+                ArrayUtils.WriteInt16ToByteArrayBe(finalFile, indexOffset + 6, widths[i]);
                 if (data[i] != null)
                     Array.Copy(data[i], 0, finalFile, offsets[i], data[i].Length);
             }

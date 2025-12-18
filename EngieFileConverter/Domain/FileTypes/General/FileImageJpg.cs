@@ -32,7 +32,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException(FILE_EMPTY);
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Int32 quality;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "QUA"), out quality);
             quality = Math.Max(1, Math.Min(quality, 100));

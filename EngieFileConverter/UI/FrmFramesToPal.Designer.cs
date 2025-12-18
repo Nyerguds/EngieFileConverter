@@ -34,7 +34,7 @@
             this.btnCancel.Location = new System.Drawing.Point(467, 337);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 201;
+            this.btnCancel.TabIndex = 7;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.BtnCancelClick);
@@ -45,7 +45,7 @@
             this.btnConvert.Location = new System.Drawing.Point(386, 337);
             this.btnConvert.Name = "btnConvert";
             this.btnConvert.Size = new System.Drawing.Size(75, 23);
-            this.btnConvert.TabIndex = 200;
+            this.btnConvert.TabIndex = 6;
             this.btnConvert.Text = "Convert";
             this.btnConvert.UseVisualStyleBackColor = true;
             this.btnConvert.Click += new System.EventHandler(this.BtnConvertClick);
@@ -57,7 +57,7 @@
             this.lblMatchPalette.Location = new System.Drawing.Point(339, 20);
             this.lblMatchPalette.Name = "lblMatchPalette";
             this.lblMatchPalette.Size = new System.Drawing.Size(75, 13);
-            this.lblMatchPalette.TabIndex = 45;
+            this.lblMatchPalette.TabIndex = 0;
             this.lblMatchPalette.Text = "Match palette:";
             // 
             // cmbPalType
@@ -68,7 +68,7 @@
             this.cmbPalType.Location = new System.Drawing.Point(452, 17);
             this.cmbPalType.Name = "cmbPalType";
             this.cmbPalType.Size = new System.Drawing.Size(90, 21);
-            this.cmbPalType.TabIndex = 46;
+            this.cmbPalType.TabIndex = 1;
             this.cmbPalType.SelectedIndexChanged += new System.EventHandler(this.CmbPalTypeSelectedIndexChanged);
             // 
             // cmbPalettes
@@ -79,7 +79,7 @@
             this.cmbPalettes.Location = new System.Drawing.Point(342, 45);
             this.cmbPalettes.Name = "cmbPalettes";
             this.cmbPalettes.Size = new System.Drawing.Size(200, 21);
-            this.cmbPalettes.TabIndex = 50;
+            this.cmbPalettes.TabIndex = 2;
             this.cmbPalettes.SelectedIndexChanged += new System.EventHandler(this.cmbPalettes_SelectedIndexChanged);
             // 
             // pzpFramePreview
@@ -93,7 +93,7 @@
             this.pzpFramePreview.Location = new System.Drawing.Point(11, 12);
             this.pzpFramePreview.Name = "pzpFramePreview";
             this.pzpFramePreview.Size = new System.Drawing.Size(322, 350);
-            this.pzpFramePreview.TabIndex = 100;
+            this.pzpFramePreview.TabIndex = 8;
             this.pzpFramePreview.ZoomFactor = 1;
             this.pzpFramePreview.ZoomFactorMinimum = -10;
             // 
@@ -105,23 +105,23 @@
             0,
             0,
             0});
-            this.numCurFrame.Location = new System.Drawing.Point(452, 272);
+            this.numCurFrame.Location = new System.Drawing.Point(452, 282);
             this.numCurFrame.Name = "numCurFrame";
             this.numCurFrame.SelectedText = "";
             this.numCurFrame.SelectionLength = 0;
             this.numCurFrame.SelectionStart = 0;
             this.numCurFrame.Size = new System.Drawing.Size(90, 20);
-            this.numCurFrame.TabIndex = 203;
+            this.numCurFrame.TabIndex = 5;
             this.numCurFrame.ValueChanged += new System.EventHandler(this.FrameChanged);
             // 
             // lblCurFrame
             // 
             this.lblCurFrame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.lblCurFrame.AutoSize = true;
-            this.lblCurFrame.Location = new System.Drawing.Point(358, 274);
+            this.lblCurFrame.Location = new System.Drawing.Point(358, 284);
             this.lblCurFrame.Name = "lblCurFrame";
             this.lblCurFrame.Size = new System.Drawing.Size(66, 13);
-            this.lblCurFrame.TabIndex = 202;
+            this.lblCurFrame.TabIndex = 4;
             this.lblCurFrame.Text = "Show frame:";
             // 
             // palPreviewPal
@@ -136,7 +136,7 @@
             this.palPreviewPal.Remap = null;
             this.palPreviewPal.SelectedIndices = new int[0];
             this.palPreviewPal.Size = new System.Drawing.Size(194, 194);
-            this.palPreviewPal.TabIndex = 204;
+            this.palPreviewPal.TabIndex = 3;
             // 
             // FrmFramesToPal
             // 

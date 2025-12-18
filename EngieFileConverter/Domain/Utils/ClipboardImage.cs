@@ -50,7 +50,7 @@ namespace Nyerguds.Util
                 clipboardimage = retrievedData.GetData(DataFormats.Bitmap) as Bitmap;
             if (clipboardimage == null && formats.Contains(typeof(Bitmap).FullName))
                 clipboardimage = retrievedData.GetData(typeof(Bitmap)) as Bitmap;
-            if (clipboardimage == null && formats.Contains(typeof (Image).FullName))
+            if (clipboardimage == null && formats.Contains(typeof(Image).FullName))
             {
                 Image clipImage = retrievedData.GetData(typeof (Image)) as Image;
                 clipboardimage = clipImage as Bitmap;
@@ -108,7 +108,6 @@ namespace Nyerguds.Util
         {
             if (!retrievedData.GetDataPresent(identifier))
                 return null;
-            // Get the dib header
             Object data = retrievedData.GetData(identifier);
             if (!(data is MemoryStream))
                 return null;

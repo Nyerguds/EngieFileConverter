@@ -29,7 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "DaisyField Pictures"; } }
         public override String[] FileExtensions { get { return new String[] { "pic" }; } }
         public override String ShortTypeDescription { get { return "DaisyField Pictures File"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Boolean FramesHaveCommonPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -50,13 +50,13 @@ namespace EngieFileConverter.Domain.FileTypes
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             const Int32 palSize = 0x300;
-            Int32 frameSize = Width * Height;
+            Int32 frameSize = this.Width * this.Height;
             Int32 frameDataSize = frameSize + palSize;
             Int32 fileDataLength = fileData.Length;
             if (fileDataLength % frameDataSize != 0)
                 throw new FileTypeLoadException("Not a DaisyField PIC file!");
             Int32 nrOfFrames = fileDataLength / frameDataSize;
-            m_FramesList = new SupportedFileType[nrOfFrames];
+            this.m_FramesList = new SupportedFileType[nrOfFrames];
             Int32 readIndex = 0;
             for (Int32 f = 0; f < nrOfFrames; ++f)
             {
@@ -66,7 +66,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Array.Copy(fileData, palReadIndex, framePalData, 0, palSize);
                 Byte[] frameData = new Byte[frameSize];
                 Array.Copy(fileData, imgReadIndex, frameData, 0, frameSize);
-                for (Int32 i = 0; i < palSize; i++)
+                for (Int32 i = 0; i < palSize; ++i)
                 {
                     Byte curVal = framePalData[i];
                     // All values are between 0x40 and 0x80;
@@ -75,14 +75,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     framePalData[i] = (Byte)(curVal ^ 0x55);
                 }
                 Color[] frPalette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(framePalData, 0));
-                for (Int32 i = 0; i < frameSize; i++)
+                for (Int32 i = 0; i < frameSize; ++i)
                     frameData[i] = (Byte)(frameData[i] ^ 0x55);
                 Bitmap curFrImg = ImageUtils.BuildImage(frameData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, frPalette, null);
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, f);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
                 framePic.SetFileClass(this.FrameInputFileClass);
-                framePic.SetColorsInPalette(this.ColorsInPalette);
                 this.m_FramesList[f] = framePic;
                 readIndex += frameDataSize;
             }
@@ -91,23 +90,23 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null)
-                throw new NotSupportedException("No source data given!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames;
             if (frames == null || (nrOfFrames = frames.Length) == 0)
-                throw new NotSupportedException("This format needs at least one frame.");
+                throw new ArgumentException(ERR_NO_FRAMES);
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new NotSupportedException("This format can't handle empty frames!");
+                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8bpp images.");
+                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
                 if (frame.Width != 320 || frame.Height != 200)
-                    throw new NotSupportedException("This format needs 320x200 images.");
+                    throw new ArgumentException(ERR_320x200, "fileToSave");
             }
             const Int32 palSize = 0x300;
-            Int32 frameSize = Width * Height;
+            Int32 frameSize = this.Width * this.Height;
             Int32 frameDataSize = frameSize + palSize;
             Int32 fileDataLength = nrOfFrames * frameDataSize;
             Byte[] outBytes = new Byte[fileDataLength];
@@ -117,13 +116,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType frame = frames[i];
                 Bitmap fr = frame.GetBitmap();
                 Byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fr.Palette.Entries));
-                for (Int32 j = 0; j < palSize; j++)
+                for (Int32 j = 0; j < palSize; ++j)
                     sixBitCols[j] = (Byte)(sixBitCols[j] ^ 0x55);
                 Array.Copy(sixBitCols, 0, outBytes, writeOffset, palSize);
                 writeOffset += palSize;
                 Int32 stride;
                 Byte[] imageBytes = ImageUtils.GetImageData(fr, out stride, true);
-                for (Int32 j = 0; j < frameSize; j++)
+                for (Int32 j = 0; j < frameSize; ++j)
                     imageBytes[j] = (Byte)(imageBytes[j] ^ 0x55);
                 Array.Copy(imageBytes, 0, outBytes, writeOffset, frameSize);
                 writeOffset += frameSize;

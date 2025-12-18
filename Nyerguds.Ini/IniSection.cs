@@ -403,7 +403,7 @@ namespace Nyerguds.Ini
         public void Clear()
         {
             Int32 nrOfKeys = this.m_iniKeysUpper.Count;
-            for (Int32 i = 0; i < nrOfKeys; i++)
+            for (Int32 i = 0; i < nrOfKeys; ++i)
             {
                 String key = this.m_iniKeysUpper[i];
                 if (!this.m_iniKeysRemoved.Contains(key))

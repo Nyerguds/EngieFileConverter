@@ -59,7 +59,7 @@ namespace Nyerguds.FileData.Dynamix
         {
             Byte[] fullData = new Byte[data.Length + 5];
             fullData[0] = compressionType;
-            ArrayUtils.WriteIntToByteArray(fullData, 1, 4, true, uncompressedSize);
+            ArrayUtils.WriteInt32ToByteArrayLe(fullData, 1, uncompressedSize);
             Array.Copy(data, 0, fullData, 5, data.Length);
             this.m_data = fullData;
         }
@@ -85,7 +85,7 @@ namespace Nyerguds.FileData.Dynamix
         {
             Array.Copy(Encoding.ASCII.GetBytes(this.Identifier + ":"), 0, target, offset, 4);
             offset += 4;
-            ArrayUtils.WriteIntToByteArray(target, offset, 4, true, (UInt32)(this.DataLength));
+            ArrayUtils.WriteInt32ToByteArrayLe(target, offset, (this.DataLength));
             offset += 4;
             if (this.IsContainer)
                 target[offset - 1] |= 0x80;
@@ -177,7 +177,7 @@ namespace Nyerguds.FileData.Dynamix
                 throw new FileTypeLoadException("Bad chunk size in Dynamix image.");
             // Don't want to use BitConverter; then you have to check platform endianness and all that mess.
             //Int32 length = data[offset + 3] + (data[offset + 2] << 8) + (data[offset + 1] << 16) + (data[offset] << 24);
-            Int32 length = (Int32)ArrayUtils.ReadIntFromByteArray(data, offset + 4, 4, true);
+            Int32 length = ArrayUtils.ReadInt32FromByteArrayLe(data, offset + 4);
             // Sometimes has a byte 80 there? Some flag I guess...
             length = (Int32)((UInt32)length & 0x7FFFFFFF);
             if (length < 0 || length + offset + 8 > data.Length)

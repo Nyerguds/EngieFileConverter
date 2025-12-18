@@ -33,10 +33,14 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
-        public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : this.m_Palette.Length; } }
+        public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
+
+        // TODO remove when implemented.
+        /// <summary>True if this type can save.</summary>
+        public virtual Boolean CanSave { get { return false; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -78,7 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Could not load tilesets palette file: " + ex.Message, ex);
             }
             Int32 singlePalSize = 1 << this.Bpp;
-            if (palette.ColorsInPalette < (maxPalIndex + 1) * singlePalSize)
+            if (palette.GetColors().Length < (maxPalIndex + 1) * singlePalSize)
                 throw new FileTypeLoadException("Palette indices file (" + this.ExtPalIndex + ") references higher index than the amount of colors in the palette!");
             Byte[] tileIdsFile = File.ReadAllBytes(tileIDsFileNamesFileName);
             if (tileIdsFile.Length != entries * 2)
@@ -136,10 +140,10 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            throw new NotSupportedException("Saving as this type is not supported.");
+            throw new NotImplementedException();
         }
 
-        protected override void BuildFullImage()
+        protected void BuildFullImage()
         {
             Int32 nrOftiles = this.m_rawTiles.Length;
             this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_rawTiles, 24, 24, 24, nrOftiles, this.m_Palette, 1);
@@ -167,9 +171,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public void ConvertToTiles(String outputFolder, String baseName, SupportedFileType outputType)
         {
             if (!(outputType is FileImage))
-                throw new NotSupportedException("Exporting tileset as type " + outputType.ShortTypeName + " is not supported.");
+                throw new ArgumentException("Exporting tileset as type " + outputType.ShortTypeName + " is not supported.", "outputType");
             if (outputType is FileImageJpg)
-                throw new NotSupportedException("JPEG? No. Fuck off. Don't do that to those poor 24×24 paletted images.");
+                throw new ArgumentException("JPEG? No. Don't do that to those poor 24×24 paletted images.", "outputType");
             String ext = "." + outputType.FileExtensions[0];
             Int32 nrOfTiles = this.m_tilesList.Length;
             for (Int32 i = 0; i < nrOfTiles; ++i)
@@ -177,7 +181,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileTileCc1N64 tile = this.m_tilesList[i];
                 TileInfo ti;
                 if (!MapConversion.TILEINFO.TryGetValue(tile.CellData.HighByte, out ti))
-                    throw new NotSupportedException("Bad mapping in " + this.ExtTileIds + " file!");
+                    throw new ArgumentException("Bad mapping in " + this.ExtTileIds + " file!");
                 String outputName = ti.TileName + "_" + tile.CellData.LowByte.ToString("D3") + "_pal" + tile.PaletteIndex.ToString("D2") + ext;
                 String outputPath = Path.Combine(outputFolder, outputName);
                 outputType.SaveAsThis(tile, outputPath, new SaveOption[0]);
@@ -230,7 +234,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Bad mapping!");
             this.TileInfo = ti;
             String baseName = ti == null ? Path.GetFileNameWithoutExtension(sourceFileName) : ti.TileName;
-            this.LoadedFileName = baseName + "_" + lowByte.ToString("D3");
+            this.LoadedFileName = baseName + "_" + lowByte.ToString("D3") + Path.GetExtension(sourceFileName);
             this.LoadedFile = Path.Combine(Path.GetDirectoryName(sourceFileName), this.LoadedFileName);
             this.CellData = new CnCMapCell(highByte ?? 0xFF, lowByte);
             this.PaletteIndex = paletteIndex;
@@ -243,17 +247,17 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            throw new NotSupportedException("Loading as this type is not supported.");
+            throw new FileTypeLoadException("Loading as this type is not supported.");
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            throw new NotSupportedException("Loading as this type is not supported.");
+            throw new FileTypeLoadException("Loading as this type is not supported.");
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            throw new NotSupportedException("Saving as this type is not supported.");
+            throw new NotImplementedException();
         }
     }
 }

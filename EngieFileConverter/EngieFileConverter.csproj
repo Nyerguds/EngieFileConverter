@@ -64,6 +64,7 @@
     <Compile Include="Domain\FileData\EmotionalPictures\PppCompression.cs" />
     <Compile Include="Domain\FileData\IGC\IgcBitMaskCompression.cs" />
     <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpBr.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgJmx.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgBif.cs" />

@@ -26,12 +26,14 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Interactive Girls archive"; } }
         public override String[] FileExtensions { get { return new String[] { "slb", "m3" }; } }
         public override String ShortTypeDescription { get { return "Interactive Girls SLB archive"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Boolean FramesHaveCommonPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
-        
+
+        public override Boolean CanSave { get { return false; } }
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -46,7 +48,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             Int32 fileDataLength = fileData.Length;
-            if (fileDataLength < 8 || ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true) != 0)
+            if (fileDataLength < 8 || ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0) != 0)
                 throw new FileTypeLoadException("Not an IGC SLB file!");
 
             Int32 readOffs=4;
@@ -56,13 +58,13 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 indexOffs;
             do
             {
-                indexOffs = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, readOffs, 4, true);
+                indexOffs = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffs);
                 minOffs = Math.Min(minOffs, indexOffs);
-                if (indexOffs > fileDataLength)
+                if (indexOffs > fileDataLength || indexOffs == 0 || indexOffs < minOffs)
                     throw new FileTypeLoadException("Not an IGC SLB file!");
                 Boolean isImage = indexOffs + 0x1B <= fileDataLength
-                        && 0x01325847 == ArrayUtils.ReadIntFromByteArray(fileData, indexOffs, 4, true)
-                        && 0x58465053 == ArrayUtils.ReadIntFromByteArray(fileData, indexOffs + 0x12, 4, true);
+                        && 0x01325847 == ArrayUtils.ReadUInt32FromByteArrayLe(fileData, indexOffs)
+                        && 0x58465053 == ArrayUtils.ReadUInt32FromByteArrayLe(fileData, indexOffs + 0x12);
                 offsetsList.Add(indexOffs);
                 offsetsListValid.Add(isImage);
                 readOffs += 4;
@@ -77,6 +79,8 @@ namespace EngieFileConverter.Domain.FileTypes
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 Int32 readStart = offsetsList[i];
+                if (readStart < readOffs)
+                    throw new FileTypeLoadException("Not an ICG SLB file!");
                 Int32 readEnd = offsetsList[i + 1];
                 Int32 frameSize = readEnd - readStart;
                 String curName = basePath + "-" + i.ToString("D5");
@@ -86,9 +90,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     emptyFramePic.LoadFileFrame(this, this, null, curName + ".dat", -1);
                     emptyFramePic.SetBitsPerColor(this.BitsPerPixel);
                     emptyFramePic.SetFileClass(this.FrameInputFileClass);
-                    emptyFramePic.SetColorsInPalette(this.ColorsInPalette);
+                    emptyFramePic.SetNeedsPalette(this.NeedsPalette);
                     String extraInfo = "Data file: " + frameSize + " bytes";
-                    if (frameSize > 2 && ArrayUtils.ReadIntFromByteArray(fileData, readStart, 2, true) == 0x7E7C)
+                    if (frameSize > 2 && ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readStart) == 0x7E7C)
                         extraInfo += "\nDetected as script file (text)";
                     emptyFramePic.SetExtraInfo(extraInfo);
                     this.m_FramesList[i] = emptyFramePic;
@@ -107,7 +111,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            return null;
+            throw new NotSupportedException();
         }
 
     }

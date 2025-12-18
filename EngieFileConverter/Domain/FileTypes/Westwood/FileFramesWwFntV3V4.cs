@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Westwood Font v3"; } }
         public override String[] FileExtensions { get { return new String[] { "fnt" }; } }
         public override String ShortTypeDescription { get { return "Westwood Font v3 (Dune II, C&C1, RA1)"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 4; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -56,18 +56,18 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 fileLength = fileData.Length;
             if (fileLength < 0x14)
                 throw new FileTypeLoadException(ERR_NOHEADER);
-            Int32 fileLSizeHeader = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x00, 2, true);
+            Int32 fileLSizeHeader = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x00);
             if (fileLSizeHeader != fileLength)
                 throw new FileTypeLoadException(ERR_SIZEHEADER);
             Byte dataFormat = fileData[0x02];
             //Byte unknown03 = fileData[0x03];
-            //this.Unknown04 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x04, 2, true);
-            Int32 fontDataOffsetsListOffset = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x06, 2, true);
-            Int32 widthsListOffset = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x08, 2, true);
+            //this.Unknown04 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x04);
+            Int32 fontDataOffsetsListOffset = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x06);
+            Int32 widthsListOffset = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x08);
             // use this for pos on TS format
-            Int32 fontDataOffset = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, 2, true);
-            Int32 heightsListOffset = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0C, 2, true);
-            //UInt16 unknown0E = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0E, 2, true);
+            Int32 fontDataOffset = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0A);
+            Int32 heightsListOffset = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0C);
+            //UInt16 unknown0E = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0E);
             //Byte AlwaysZero = fileData[0x10];
             Int32 length;
             Boolean isV4 = dataFormat == 0x02;
@@ -102,7 +102,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //FontDataOffset
             Int32[] fontDataOffsetsList = new Int32[length];
             for (Int32 i = 0; i < length; ++i)
-                fontDataOffsetsList[i] = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fontDataOffsetsListOffset + i * 2, 2, true) + (isV4 ? fontDataOffset : 0);
+                fontDataOffsetsList[i] = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, fontDataOffsetsListOffset + i * 2) + (isV4 ? fontDataOffset : 0);
             List<Byte> widthsList = new List<Byte>();
             for (Int32 i = 0; i < length; ++i)
             {
@@ -139,7 +139,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap curFrImg = null;
                 if (frFullSize8bit > 0)
                 {
-                    Byte[] fullData;
                     try
                     {
                         Byte[] fullData8Bit;
@@ -151,7 +150,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             fullData8Bit = new Byte[frFullSize8bit];
                             ImageUtils.PasteOn8bpp(fullData8Bit, width, fullHeight, width, data8Bit, width, height, stride, new Rectangle(0, yOffset, width, height), transMask, true);
                         }
-                        fullData = ImageUtils.ConvertFrom8Bit(fullData8Bit, width, fullHeight, bitsLength, true, ref stride);
+                        Byte[] fullData = ImageUtils.ConvertFrom8Bit(fullData8Bit, width, fullHeight, bitsLength, true, ref stride);
                         curFrImg = ImageUtils.BuildImage(fullData, width, fullHeight, stride, isV4 ? PixelFormat.Format8bppIndexed : PixelFormat.Format4bppIndexed, this.m_Palette, null);
                     }
                     catch (ArgumentOutOfRangeException ex)
@@ -167,7 +166,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
                 framePic.SetFileClass(this.FrameInputFileClass);
-                framePic.SetColorsInPalette(this.ColorsInPalette);
+                framePic.SetNeedsPalette(this.NeedsPalette);
                 StringBuilder extraInfo = new StringBuilder();
                 extraInfo.Append("Data: ").Append(frDataSize).Append(" bytes");
                 if (frDataSize > 0)
@@ -184,7 +183,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 maxUsedWidth;
             Int32 maxUsedHeight;
-            this.PerformPreliminaryChecks(ref fileToSave, out maxUsedWidth, out maxUsedHeight);
+            this.PerformPreliminaryChecks(fileToSave, out maxUsedWidth, out maxUsedHeight);
             FileFramesWwFntV3 fontFile = fileToSave as FileFramesWwFntV3;
             Int32 fontWidth = fontFile != null ? fontFile.Width : maxUsedWidth;
             Int32 fontHeight = fontFile != null ? fontFile.Height : maxUsedHeight;
@@ -200,41 +199,19 @@ namespace EngieFileConverter.Domain.FileTypes
             return this.SaveV3V4Font(fileToSave, saveOptions, false);
         }
 
-        private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height)
-        {
-            // Preliminary checks
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-                throw new NotSupportedException("No frames found in source data!");
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
-            if (fileToSave.Frames.Length > 256)
-                throw new NotSupportedException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames!");
-            width = -1;
-            height = -1;
-            SupportedFileType[] frames = fileToSave.Frames;
-            Int32 nrOfFrames = frames.Length;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
-            {
-                SupportedFileType frame = frames[i];
-                if (frame.BitsPerPixel != this.BitsPerPixel)
-                    throw new NotSupportedException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!");
-                width = Math.Max(width, frame.Width);
-                height = Math.Max(height, frame.Height);
-                if (width > 255 || height > 255)
-                    throw new NotSupportedException("Frame dimensions exceed 255!");
-            }
-        }
-
         protected Byte[] SaveV3V4Font(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean forV4)
         {
-            Int32 fontWidth = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "WI"));
-            Int32 fontHeight = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "HE"));
+            Int32 fontWidth;
+            Int32 fontHeight;
+            SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out fontWidth, out fontHeight);
+            //Ignore values returned from check; overwrite with save options.
+            fontWidth = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "WI"));
+            fontHeight = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "HE"));
 
-            Int32 imagesCount = fileToSave.Frames.Length;
+            Int32 imagesCount = frames.Length;
             Byte[][] imageData = new Byte[imagesCount][];
             Byte[] widthsList = new Byte[imagesCount];
             Byte[] heightsList = new Byte[imagesCount * 2];
-
             // header + UInt16 index + Byte heights
             Int32 offsetsListOffset = 0x14;
             Int32 widthsListOffset = offsetsListOffset + imagesCount * 2;
@@ -246,7 +223,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 bitsLength = forV4 ? 8 : 4;
             for (Int32 i = 0; i < imagesCount; ++i)
             {
-                Bitmap bm = fileToSave.Frames[i].GetBitmap();
+                Bitmap bm = frames[i].GetBitmap();
                 Int32 imgWidth = bm == null ? 0 : bm.Width;
                 Int32 imgHeight = bm == null ? 0 : bm.Height;
                 Int32 stride = 0;
@@ -261,35 +238,56 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (refHeight == 0)
                     yOffset = imgHeight;
                 imgHeight = refHeight;
+
                 if (bitsLength < 8)
                     imageData[i] = ImageUtils.ConvertFrom8Bit(imgData8bit, imgWidth, imgHeight, bitsLength, false, ref stride);
                 else
                     imageData[i] = ArrayUtils.CloneArray(imgData8bit);
+                
+                //StringBuilder sb = new StringBuilder();
+                //for (int y = 0; y < imgHeight; y++)
+                //{
+                //    for (int x = 0; x < stride; x++)
+                //    {
+                //        sb.Append(imageData[i][y * stride + x].ToString("X2"));
+                //    }
+                //    sb.AppendLine();
+                //}
+                //String icon = sb.ToString();
+
                 widthsList[i] = (Byte)imgWidth;
                 heightsList[i * 2] = (Byte)yOffset;
                 heightsList[i * 2 + 1] = (Byte)imgHeight;
             }
             Int32 fontOffset = forV4 ? 0 : fontOffsetStart;
-            Byte[] fontDataOffsetsList = this.CreateImageIndex(imageData, 0, false, ref fontOffset, true, true, true);
+            Byte[] fontDataOffsetsList;
+            try
+            {
+                fontDataOffsetsList = this.CreateImageIndex(imageData, 0, false, ref fontOffset, true, true, true);
+            }
+            catch (OverflowException ex)
+            {
+                throw new ArgumentException(ex.Message, "fileToSave", ex);
+            }
             // V3 (C&C/RA) has its Y/height list after the image data.
             if (!forV4)
                 heightsListOffset = fontOffset;
             Int32 fullLength = !forV4 ? (heightsListOffset + imagesCount * 2) : (fontOffset + fontOffsetStart);
             if (fullLength > UInt16.MaxValue)
-                throw new NotSupportedException("The full font data size exceeds the maximum of " + UInt16.MaxValue + " bytes supported for " + ShortTypeName + ".");
+                throw new ArgumentException("The full font data size exceeds the maximum of " + UInt16.MaxValue + " bytes supported for " + this.ShortTypeName + ".", "fileToSave");
             Byte[] fullData = new Byte[fullLength];
 
             // write header
-            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32)fullLength);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0, fullLength);
             fullData[0x02] = (Byte)(forV4 ? 0x02 : 0x00);       // Byte DataFormat
             fullData[0x03] = (Byte)(forV4 ? 0 : 5);             // Byte Unknown03 (0x05 in EOB/C&C/RA1, 0x00 in TS)
             fullData[0x04] = 0x0e;                              // UInt16 Unknown04, low byte; (always 0x0e)
             fullData[0x05] = 0x00;                              // UInt16 Unknown04, high byte; (always 0x00)
-            ArrayUtils.WriteIntToByteArray(fullData, 0x06, 2, true, (UInt16)offsetsListOffset);
-            ArrayUtils.WriteIntToByteArray(fullData, 0x08, 2, true, (UInt16)widthsListOffset);
-            ArrayUtils.WriteIntToByteArray(fullData, 0x0A, 2, true, (UInt16)fontOffsetStart);
-            ArrayUtils.WriteIntToByteArray(fullData, 0x0C, 2, true, (UInt16)heightsListOffset);
-            ArrayUtils.WriteIntToByteArray(fullData, 0x0E, 2, true, (UInt16)(forV4 ? 0 : 0x1012));
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x06, offsetsListOffset);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x08, widthsListOffset);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x0A, fontOffsetStart);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x0C, heightsListOffset);
+            ArrayUtils.WriteInt16ToByteArrayLe(fullData, 0x0E, (forV4 ? 0 : 0x1012));
             fullData[0x10] = 0x00;                              // Byte AlwaysZero (Always 0x00)
             fullData[0x11] = (Byte)(forV4 ? 0 : imagesCount - 1);  // Byte LastSymbolIndex (for non-TS)
             fullData[0x12] = (Byte)fontHeight;                // Byte FontHeight
@@ -312,6 +310,32 @@ namespace EngieFileConverter.Domain.FileTypes
             return fullData;
         }
 
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out Int32 width, out Int32 height)
+        {
+            // Preliminary checks
+            if (fileToSave == null)
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            if (frames == null || frames.Length == 0)
+                throw new ArgumentException(ERR_NO_FRAMES, "fileToSave");
+            if (frames.Length > 256)
+                throw new ArgumentException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames!", "fileToSave");
+            width = -1;
+            height = -1;
+            Int32 nrOfFrames = frames.Length;
+            for (Int32 i = 0; i < nrOfFrames; ++i)
+            {
+                SupportedFileType frame = frames[i];
+                if (frame.BitsPerPixel != this.BitsPerPixel)
+                    throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
+                width = Math.Max(width, frame.Width);
+                height = Math.Max(height, frame.Height);
+                if (width > 255 || height > 255)
+                    throw new ArgumentException("Frame dimensions exceed 255!", "fileToSave");
+            }
+            return frames;
+        }
+
         /// <summary>
         ///     Creates a 16-bit little endian index of reference addresses, starting from the given dataOffset.
         ///     After the procedure, dataOffset will have the address behind the last data to write.
@@ -328,7 +352,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte[] CreateImageIndex(Byte[][] imageData, Int32 startIndex, Boolean reduce, ref Int32 dataOffset, Boolean usesNullOffset, Boolean optimise, Boolean unsigned)
         {
             Int32 maxValue = unsigned ? (Int32)UInt16.MaxValue : Int16.MaxValue;
-            Int32[] refslist = optimise ? this.CreateOptimizedRefsList(imageData, startIndex, false) : null;
+            Int32[] refslist = optimise ? this.CreateOptimizedRefsList(imageData, startIndex) : null;
             Int32 symbols = imageData.Length;
             Int32 writeDiff = reduce ? -startIndex : 0;
             Byte[] fontDataOffsetsList = new Byte[(reduce ? symbols - startIndex : symbols) * 2];
@@ -347,7 +371,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (dataOffset > maxValue)
                         throw new OverflowException("Data too large: this format cannot address data that exceeds " + maxValue + " bytes!");
                     // Data is not null and not a duplicate: write offset and advance offset ptr.
-                    ArrayUtils.WriteIntToByteArray(fontDataOffsetsList, (i + writeDiff) * 2, 2, true, (UInt32)dataOffset);
+                    ArrayUtils.WriteInt16ToByteArrayLe(fontDataOffsetsList, (i + writeDiff) * 2, dataOffset);
                     dataOffset += imageData[i].Length;
                 }
                 else
@@ -368,37 +392,21 @@ namespace EngieFileConverter.Domain.FileTypes
         /// </summary>
         /// <param name="imageData">Image data array</param>
         /// <param name="startIndex">Start index in the array.</param>
-        /// <param name="fillInBeforeStart">True to fill indices before startIndex with their own index.</param>
         /// <returns></returns>
-        protected Int32[] CreateOptimizedRefsList(Byte[][] imageData, Int32 startIndex, Boolean fillInBeforeStart)
+        protected Int32[] CreateOptimizedRefsList(Byte[][] imageData, Int32 startIndex)
         {
             Int32 imagesCount = imageData.Length;
             Int32[] refsList = new Int32[imagesCount];
-            for (Int32 i = fillInBeforeStart ? 0 : startIndex; i < imagesCount; ++i)
-                refsList[i] = i;
-            for (Int32 i = startIndex; i < imagesCount; ++i)
+            for (Int32 checkedEntry = startIndex; checkedEntry < imagesCount; ++checkedEntry)
             {
-                // Already detected as duplicate of something else; skip it.
-                if (refsList[i] != i)
-                    continue;
-                // Only check the entries after this one. The ones before it are already processed anyway, and did not find this one as dupe.
-                for (Int32 dupetest = i + 1; dupetest < imagesCount; ++dupetest)
+                for (Int32 dupetest = startIndex; dupetest < imagesCount; ++dupetest)
                 {
-                    Byte[] currData = imageData[i];
-                    Byte[] testData = imageData[dupetest];
-                    Int32 currDataLen = currData.Length;
-                    if (currDataLen != testData.Length)
-                        continue;
-                    Boolean dataEqual = true;
-                    for (Int32 b = 0; b < currDataLen; ++b)
+                    if (dupetest == checkedEntry || ArrayUtils.ArraysAreEqual(imageData[checkedEntry], imageData[dupetest]))
                     {
-                        if (currData[b] == testData[b])
-                            continue;
-                        dataEqual = false;
+                        // reached the own index, or the data matches. Either way, set ref and continue with next one.
+                        refsList[checkedEntry] = dupetest;
                         break;
                     }
-                    if (dataEqual)
-                        refsList[i] = dupetest;
                 }
             }
             return refsList;

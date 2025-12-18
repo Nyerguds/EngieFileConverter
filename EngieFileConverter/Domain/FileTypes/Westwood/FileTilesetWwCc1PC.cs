@@ -17,12 +17,12 @@ namespace EngieFileConverter.Domain.FileTypes
         // maybe add FrameSet input later... not supported for now though.
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String[] FileExtensions { get { return new String[] { "tmp", "tem", "win", "des", "sno" }; } }
+        public override String[] FileExtensions { get { return new String[] { "icn", "tem", "win", "des", "sno" }; } }
         public override String ShortTypeName { get { return "C&C Tileset"; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C PC Tileset File"; } }
+        public override String ShortTypeDescription { get { return "Westwood Tileset File - C&C PC"; } }
 
         public override Int32 BitsPerPixel { get { return 8; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
@@ -58,7 +58,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return m_TilesList == null ? null : this.m_TilesList.Cast<SupportedFileType>().ToArray(); } }
+        public override SupportedFileType[] Frames { get { return this.m_TilesList == null ? null : this.m_TilesList.Cast<SupportedFileType>().ToArray(); } }
         /// <summary>
         /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
         /// C&amp;C tileset files are bit of an edge case, though, since they contains no overall dimensions. Files with known tile names as filename get their X and Y from the tile info.
@@ -169,19 +169,19 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 fileLen = fileData.Length;
             if (fileLen < 0x20)
                 return;
-            this.hdrTileWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x00, 2, true);
-            this.hdrTileHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x02, 2, true);
-            this.hdrNrOfTiles = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x04, 2, true);
-            this.hdrZero1 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x06, 2, true);
-            this.hdrSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x08, 4, true);
-            this.hdrImgStart = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x0C, 4, true);
-            this.hdrZero2 = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x10, 4, true);
-            this.hdrID1 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x14, 2, true);
-            this.hdrID2 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 0x16, 2, true);
+            this.hdrTileWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x00);
+            this.hdrTileHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x02);
+            this.hdrNrOfTiles = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x04);
+            this.hdrZero1 = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x06);
+            this.hdrSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x08);
+            this.hdrImgStart = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0C);
+            this.hdrZero2 = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x10);
+            this.hdrID1 = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x14);
+            this.hdrID2 = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x16);
             //61020000 == 0x261
-            this.hdrIndexImages = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x18, 4, true);
+            this.hdrIndexImages = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x18);
             //60020000 = 0x260
-            this.hdrIndexTilesetImagesList = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x1C, 4, true);
+            this.hdrIndexTilesetImagesList = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x1C);
             if (this.hdrSize != fileData.Length)
                 throw new FileTypeLoadException("File size in header does not match.");
             if (this.hdrTileHeight != 24 || this.hdrTileWidth != 24)
@@ -194,7 +194,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Tileset files with 0 tiles are not supported!");
         }
 
-        protected override void BuildFullImage()
+        protected void BuildFullImage()
         {
             Int32 nrOftiles = this.m_Tiles.Length;
             this.m_LoadedImage = ImageUtils.Tile8BitImages(this.m_Tiles, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, nrOftiles, this.m_Palette, this.m_CompositeFrameTilesWidth);
@@ -203,15 +203,15 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave.BitsPerPixel != 8)
-                throw new NotSupportedException("Can only save 8 BPP images as this type.");
+                throw new ArgumentException("Can only save 8 BPP images as this type.", "fileToSave");
             Bitmap bitmap = fileToSave.GetBitmap();
             if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
-                throw new NotSupportedException("The file dimensions are not a multiple of 24×24!");
+                throw new ArgumentException("The file dimensions are not a multiple of 24×24!", "fileToSave");
             Int32 nrOfFramesX = bitmap.Width / 24;
             Int32 nrOfFramesY = bitmap.Height / 24;
             Int32 nrOfFrames = nrOfFramesX * nrOfFramesY;
             if (nrOfFrames > 255)
-                throw new NotSupportedException("File dimensions are too large!");
+                throw new ArgumentException("File dimensions are too large!", "fileToSave");
             Int32 stride;
             Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
             Byte[][] tempFrames = new Byte[nrOfFrames][];
@@ -259,16 +259,16 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] finalData = new Byte[size];
 
             // Width
-            ArrayUtils.WriteIntToByteArray(finalData, 0x00, 2, true, 24);
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x00, 24);
             // Height
-            ArrayUtils.WriteIntToByteArray(finalData, 0x02, 2, true, 24);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x04, 2, true, (UInt32)nrOfFrames);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x08, 4, true, (UInt32)size);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x0C, 4, true, (UInt32)indexImgStart);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x14, 2, true, 0xFFFF);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x16, 2, true, 0x0D1A);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x18, 4, true, (UInt32)indexImages);
-            ArrayUtils.WriteIntToByteArray(finalData, 0x1C, 4, true, (UInt32)indexTilesetImagesList);
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x02, 24);
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x04, nrOfFrames);
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x08, size);
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x0C, indexImgStart);
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x14, 0xFFFF);
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x16, 0x0D1A);
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x18, indexImages);
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x1C, indexTilesetImagesList);
 
             for (Int32 i = 0; i < actualFrames; ++i)
                 Array.Copy(tempFrames[i], 0, finalData, indexImgStart + tileLength * i, tileLength);
@@ -282,7 +282,7 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         public override Int32 BitsPerPixel { get { return 8; } }
         public override String ShortTypeDescription { get { return "C&C terrain tile"; } }
-        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean NeedsPalette { get { return true; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }

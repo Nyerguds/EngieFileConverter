@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Windows.Graphics2d;
@@ -60,9 +61,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 const Int32 hdrSize = 6;
                 if (fileData.Length < hdrSize)
                     throw new HeaderParseException("Not long enough for header.");
-                UInt16 hdrReserved = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-                UInt16 hdrType = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-                UInt16 hdrNumberOfImages = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
+                UInt16 hdrReserved = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+                UInt16 hdrType = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+                UInt16 hdrNumberOfImages = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
                 //ICONDIR hdr = ArrayUtils.StructFromByteArray<ICONDIR>(fileData);
                 if (hdrReserved != 0)
                     throw new HeaderParseException("Invalid values in header.");
@@ -83,17 +84,17 @@ namespace EngieFileConverter.Domain.FileTypes
                     // 1 image height
                     Byte dirEntryHeight = fileData[offset + 1];
                     // 2 number of colors
-                    Byte dirEntryPaletteLength = fileData[offset + 2];
+                    //Byte dirEntryPaletteLength = fileData[offset + 2];
                     // 3 reserved
-                    Byte dirEntryReserved = fileData[offset + 3];
+                    //Byte dirEntryReserved = fileData[offset + 3];
                     // 4-5 color planes
-                    UInt16 dirEntryColorPlanes = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
+                    //UInt16 dirEntryColorPlanes = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 4);
                     // 6-7 bits per pixel
-                    UInt16 dirEntryBitsPerPixel = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 6, 2, true);
+                    //UInt16 dirEntryBitsPerPixel = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 6);
                     // 8-11 size of image data
-                    UInt32 dirEntryImageLength = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 8, 4, true);
+                    UInt32 dirEntryImageLength = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 8);
                     // 12-15 offset of image data
-                    UInt32 dirEntryImageOffset = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 12, 4, true);
+                    UInt32 dirEntryImageOffset = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 12);
 
                     //ICONDIRENTRY info = ArrayUtils.ReadStructFromByteArray<ICONDIRENTRY>(fileData, offset);
                     UInt32 imageOffset = dirEntryImageOffset;
@@ -172,8 +173,6 @@ namespace EngieFileConverter.Domain.FileTypes
                         default: fc = FileClass.ImageHiCol; break;
                     }
                     framePic.SetFileClass(fc);
-                    framePic.SetColorsInPalette(this.ColorsInPalette);
-                    //framePic.SetExtraInfo();
                     this.m_FramesList = new SupportedFileType[1];
                     this.m_FramesList[0] = framePic;
                     this.m_LoadedImage = ImageUtils.CloneImage(bm);
@@ -211,6 +210,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 opts.Add(new SaveOption("INC", SaveOptionType.Boolean, "Include formats larger than source image", "1"));
                 opts.Add(new SaveOption("PIX", SaveOptionType.Boolean, "Use pixel zoom for larger images", "0"));
             }
+            opts.Add(new SaveOption("16", SaveOptionType.Boolean, "Include 16x16", "1"));
+            opts.Add(new SaveOption("24", SaveOptionType.Boolean, "Include 24x24", "1"));
+            opts.Add(new SaveOption("32", SaveOptionType.Boolean, "Include 32x32", "1"));
+            opts.Add(new SaveOption("48", SaveOptionType.Boolean, "Include 48x48", "1"));
+            opts.Add(new SaveOption("64", SaveOptionType.Boolean, "Include 64x64", "1"));
+            opts.Add(new SaveOption("128", SaveOptionType.Boolean, "Include 128x128", "1"));
+            opts.Add(new SaveOption("256", SaveOptionType.Boolean, "Include 256x256", "1"));
             return opts.ToArray();
         }
 
@@ -219,10 +225,22 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean makeSquare = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "SQR"));
             Boolean upscale = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "INC"));
             Boolean pixelZoom = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PIX"));
+            Int32[] sizes = new Int32[] { 16, 24, 32, 48, 64, 128, 256 };
+            Int32 nrOfSizes = sizes.Length;
+            List<Int32> lstSizes = new List<Int32>();
+            for (Int32 i = 0; i < nrOfSizes; ++i)
+            {
+                Int32 curSize = sizes[i];
+                Boolean included = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, curSize.ToString(CultureInfo.InvariantCulture)));
+                if (included)
+                    lstSizes.Add(curSize);
+            }
+            if (lstSizes.Count == 0)
+                throw new ArgumentException("The icon needs to contain at least one image!", "fileToSave");
             Bitmap bm = fileToSave.GetBitmap();
             using (MemoryStream ms = new MemoryStream())
             {
-                ConvertToIcon(bm, ms, makeSquare, upscale, pixelZoom);
+                ConvertToIcon(bm, ms, makeSquare, upscale, pixelZoom, lstSizes.ToArray());
                 return ms.ToArray();
             }
         }
@@ -236,19 +254,20 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="makeSquare">True to pad the top and bottom of the icons with transparency to make the saved icons square.</param>
         /// <param name="upscale">True to also save the image in sizes larger than the original image.</param>
         /// <param name="pixelZoom">Use pixel scaling for resizing to sizes larger than the original image.</param>
+        /// <param name="sizes">Icon sizes to be included.</param>
         /// <returns>True if the the icon was succesfully generated.</returns>
-        public static Boolean ConvertToIcon(Bitmap inputBitmap, Stream output, Boolean makeSquare, Boolean upscale, Boolean pixelZoom)
+        public static Boolean ConvertToIcon(Bitmap inputBitmap, Stream output, Boolean makeSquare, Boolean upscale, Boolean pixelZoom, Int32[] sizes)
         {
             if (inputBitmap == null)
                 throw new ArgumentNullException("inputBitmap", "Input bitmap cannot be null.");
             if (output == null)
                 throw new ArgumentNullException("output", "Output stream cannot be null.");
+            if (sizes.Length == 0)
+                throw new ArgumentNullException("sizes", "Need at least one icon size!");
 
             List<Byte[]> images = new List<Byte[]>();
-            Int32[] sizes = new Int32[] {16, 32, 48, 128, 256};
             List<Byte> widths = new List<Byte>();
             List<Byte> heights = new List<Byte>();
-            List<Int32> bpp = new List<Int32>();
             Int32 maxDim = Math.Max(inputBitmap.Width, inputBitmap.Height);
             // Generate bitmaps for all the sizes and toss them in streams
             Int32 sizesLen = sizes.Length;
@@ -395,7 +414,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     iconWriter.Write(offset);
                     offset += imageLen;
                 }
-                for (Int32 i = 0; i < imgCount; i++)
+                for (Int32 i = 0; i < imgCount; ++i)
                 {
                     // Write image data
                     // png data must contain the whole png data file

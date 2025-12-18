@@ -21,10 +21,11 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Dynamix SCR"; } }
         public override String ShortTypeDescription { get { return "Dynamix Screen file v1"; } }
 
+        protected String[] saveTypes = new String[] { "VGA/BIN", "MA8" };
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
         protected String[] savecompressionTypes = new String[] { "None", "RLE" /*, "LZW", "LZSS" */};
         public override Int32 BitsPerPixel { get { return this.m_bpp; } }
-        public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
+        public override Boolean NeedsPalette { get { return !this.m_loadedPalette; } }
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
@@ -32,31 +33,14 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean FramesHaveCommonPalette { get { return true; } }
 
         /// <summary>
-        /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
+        /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames.
+        /// Types with frames where this is set to false wil not get an index -1 in the frames list.
         /// Dynamix SCR is one of the rare cases where the frames visualisation is completely extra. 
         /// </summary>
         public override Boolean IsFramesContainer { get { return false; } }
         public Boolean IsMa8 { get; private set; }
-                
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {
-            Bitmap img = fileToSave.GetBitmap();
-            if (img == null)
-                return null;
-            Boolean is4bpp = img.PixelFormat == PixelFormat.Format4bppIndexed;
-            SaveOption[] opts = new SaveOption[is4bpp ? 1 : 2];
-            Int32 opt = 0;
-            if (!is4bpp)
-            {
-                FileImgDynScr toSaveScr = fileToSave as FileImgDynScr;
-                Int32 saveType = toSaveScr != null && toSaveScr.IsMa8 ? 1 : 0;
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", saveType.ToString());
-            }
-            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), 1.ToString());
-            return opts;
-        }
 
-        protected Boolean m_loadedPalette = false;
+        protected Boolean m_loadedPalette;
         protected Int32 m_bpp = 8;
         private SupportedFileType[] m_FramesList;
 
@@ -75,16 +59,16 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            this.LoadFile(fileData, null, false, false);
+            this.LoadFile(fileData, null, false);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.SetFileNames(filename);
-            this.LoadFile(fileData, filename, false, false);
+            this.LoadFile(fileData, filename, false);
         }
         
-        public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2, Boolean asFrame)
+        public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2)
         {
             if (fileData.Length < 0x10)
                 throw new FileTypeLoadException("File is not long enough to be a valid SCR file.");
@@ -103,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Cannot find image dimensions chunk!");
             // This does not gracefully continue in the autodetect: the type is confirmed, but not supported.
             if ("VQT:".Equals(firstChunk))
-                throw new NotSupportedException("SCR files with VQT section are currently not supported.");
+                throw new FileTypeLoadException("SCR files with VQT section are currently not supported.");
             if (sourcePath != null)
             {
                 String output = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
@@ -129,8 +113,8 @@ namespace EngieFileConverter.Domain.FileTypes
             DynamixChunk dimChunk = DynamixChunk.ReadChunk(scrChunk.Data, "DIM");
             if (dimChunk != null && dimChunk.DataLength == 4)
             {
-                width = (Int32)ArrayUtils.ReadIntFromByteArray(dimChunk.Data, 0, 2, true);
-                height = (Int32)ArrayUtils.ReadIntFromByteArray(dimChunk.Data, 2, 2, true);
+                width = ArrayUtils.ReadUInt16FromByteArrayLe(dimChunk.Data, 0);
+                height = ArrayUtils.ReadUInt16FromByteArrayLe(dimChunk.Data, 2);
             }
             DynamixChunk binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "BIN");
             this.IsMa8 = false;
@@ -143,8 +127,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    if (asFrame)
-                        binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
+                    binChunk = DynamixChunk.ReadChunk(scrChunk.Data, "VGA");
                     if (binChunk == null)
                         throw new FileTypeLoadException("Cannot find BIN chunk!");
                 }
@@ -194,42 +177,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     pf = PixelFormat.Format4bppIndexed;
                     if (this.m_Palette != null)
-                    {
-                        if (asFrame)
-                            this.m_Palette = this.Make4BitPalette(this.m_Palette);
-                        else
-                            this.m_Palette = this.m_Palette.Take(Math.Min(this.m_Palette.Length, 16)).ToArray();
-                    }
+                        this.m_Palette = this.m_Palette.Take(Math.Min(this.m_Palette.Length, 16)).ToArray();
                 }
                 else
                     pf = PixelFormat.Format8bppIndexed;
-            }
-            else if (!asFrame)
-            {
-                this.m_FramesList = new SupportedFileType[2];
-                DynamixChunk[] content = new DynamixChunk[dimChunk == null ? 1 : 2];
-                Int32 chIndex = 0;
-                if (dimChunk != null)
-                {
-                    content[0] = dimChunk;
-                    chIndex++;
-                }
-                content[chIndex] = vgaChunk;
-                DynamixChunk fourBitImage = DynamixChunk.BuildChunk("SCR", content);
-                FileImgDynScr fourbitFrame = new FileImgDynScr();
-                FileImgDynScr eightbitFrame = new FileImgDynScr();
-                fourbitFrame.SetFileNames(sourcePath);
-                fourbitFrame.LoadFile(fourBitImage.WriteChunk(), sourcePath, v2, true);
-                fourbitFrame.FrameParent = this;
-                eightbitFrame.SetFileNames(sourcePath);
-                eightbitFrame.LoadFile(fileData, sourcePath, v2, true);
-                if (this.m_loadedPalette)
-                    this.LoadedFileName += "/PAL";
-                eightbitFrame.FrameParent = this;
-                this.m_FramesList[0] = eightbitFrame;
-                this.m_FramesList[1] = fourbitFrame;
-                pf = PixelFormat.Format8bppIndexed;
-                this.m_LoadedImage = eightbitFrame.GetBitmap();
             }
             else
             {
@@ -261,6 +212,29 @@ namespace EngieFileConverter.Domain.FileTypes
             return fullPal;
         }
 
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            Bitmap img = fileToSave.GetBitmap();
+            if (img == null)
+                return null;
+            Boolean is4bpp = img.PixelFormat == PixelFormat.Format4bppIndexed;
+            SaveOption[] opts = new SaveOption[is4bpp ? 1 : 2];
+            Int32 opt = 0;
+            Int32 compressionType = 1;
+            if (!is4bpp)
+            {
+                FileImgDynScr toSaveScr = fileToSave as FileImgDynScr;
+                Int32 saveType = toSaveScr != null && toSaveScr.IsMa8 ? 1 : 0;
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", String.Join(",", saveTypes), saveType.ToString());
+                if (fileToSave.ExtraInfo != null && fileToSave.ExtraInfo.Contains(saveTypes[saveType] + ":" + this.savecompressionTypes[0]))
+                    compressionType = 0;
+            }
+            else if (fileToSave.ExtraInfo != null && fileToSave.ExtraInfo.Contains("BIN:" + this.savecompressionTypes[0]))
+                compressionType = 0;
+            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), compressionType.ToString());
+            return opts;
+        }
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, saveOptions, false);
@@ -269,25 +243,25 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean v2)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 saveType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
             Bitmap image = fileToSave.GetBitmap();
             if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
-                throw new NotSupportedException("Only 4-bit or 8-bit images can be saved as Dynamix SCR!");
+                throw new ArgumentException("This format needs 4bpp or 8bpp images.", "fileToSave");
 
             if (!v2 && (image.Width != 320 || image.Height != 200))
-                throw new NotSupportedException("Only 320×200 images can be saved as Dynamix SCR v1!");
+                throw new ArgumentException("Dynamix SCR version 1 only supports 320×200 images.", "fileToSave");
             List<DynamixChunk> chunks = new List<DynamixChunk>();
             if (v2)
             {
                 if (image.Width % 8 !=0)
-                    throw new NotSupportedException("Dynamix image formats only support image widths divisible by 8!");
+                    throw new ArgumentException("Dynamix image formats only support image widths divisible by 8.", "fileToSave");
                 Byte[] dimensions = new Byte[4];
-                ArrayUtils.WriteIntToByteArray(dimensions, 0, 2, true, (UInt32)image.Width);
-                ArrayUtils.WriteIntToByteArray(dimensions, 2, 2, true, (UInt32)image.Height);
+                ArrayUtils.WriteInt16ToByteArrayLe(dimensions, 0, image.Width);
+                ArrayUtils.WriteInt16ToByteArrayLe(dimensions, 2, image.Height);
                 DynamixChunk dimChunk = new DynamixChunk("DIM", dimensions);
                 chunks.Add(dimChunk);
             }
@@ -295,11 +269,11 @@ namespace EngieFileConverter.Domain.FileTypes
             // collapse stride should not be needed since this type only handles widths divisible by 8, but whatevs.
             Byte[] data = ImageUtils.GetImageData(image, out stride, true);
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
-                throw new NotSupportedException("Unknown compression type " + compressionType);
+                throw new ArgumentException(String.Format(ERR_UNKN_COMPR, compressionType), "saveOptions");
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)
-                throw new NotSupportedException("LZW compression is currently not supported!");
+                throw new ArgumentException("LZW compression is currently not supported!", "saveOptions");
             Boolean asMa8 = saveType == 1;
             if (asMa8) // MA8 seems to have indices 0 and FF switched
                 DynamixCompression.SwitchBackground(data);

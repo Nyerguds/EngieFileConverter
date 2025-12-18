@@ -20,9 +20,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "BIF image"; } }
         public override String[] FileExtensions { get { return new String[] { "bif" }; } }
-        public override String ShortTypeDescription { get { return "BIF image file"; } }
+        public override String ShortTypeDescription { get { return "BIF image file (15 Move Hole)"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
-        public override Int32 ColorsInPalette { get { return this.m_PaletteLoaded ? base.ColorsInPalette : 0; } }
+        public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         protected Boolean m_PaletteLoaded;
 
         public override void LoadFile(Byte[] fileData)
@@ -39,26 +39,34 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 dataLength = fileData.Length;
             if (dataLength < 4)
-                throw new FileTypeLoadException("Too short to be a " + ShortTypeName + ".");
-            Int32 width = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            Int32 height = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+                throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
+            Int32 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+            if (width > Int16.MaxValue || height > Int16.MaxValue)
+                throw new FileTypeLoadException("Not a " + this.ShortTypeName + ".");
             Int32 imgLength = width * height;
             if (dataLength < imgLength + 4)
-                throw new FileTypeLoadException("Too short to be a " + ShortTypeName + ".");
+                throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
             // Only accept if all the rest is 00
             Int32 padding = dataLength - 4 - imgLength;
             if (padding > 0)
-                for (Int32 i = imgLength + 4; i < dataLength; i++)
+                for (Int32 i = imgLength + 4; i < dataLength; ++i)
                     if (fileData[i] != 0)
-                        throw new FileTypeLoadException("Not a " + ShortTypeName + ".");
+                        throw new FileTypeLoadException("Not a " + this.ShortTypeName + ".");
             String paletteFilename = Path.GetFileNameWithoutExtension(sourcePath) + ".pal";
             String palettePath = sourcePath == null ? null : Path.Combine(Path.GetDirectoryName(sourcePath), paletteFilename);
             List<String> extraInfo = new List<String>();
+            this.m_PaletteLoaded = false;
             if (palettePath != null && File.Exists(palettePath) && new FileInfo(palettePath).Length == 0x300)
             {
-                m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(palettePath));
-                m_PaletteLoaded = true;
-                extraInfo.Add("Palette loaded from " + paletteFilename);
+                try
+                {
+                    this.m_Palette = ColorUtils.ReadFromSixBitPaletteFile(palettePath);
+                    this.m_PaletteLoaded = true;
+                }
+                catch (ArgumentException) { }
+                if (this.m_PaletteLoaded)
+                    extraInfo.Add("Palette loaded from " + paletteFilename);
             }
             if (padding > 0)
                 extraInfo.Add("End padding: " + padding + " bytes");
@@ -73,18 +81,18 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("No source data given!");
+                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new NotSupportedException("This format needs an 8bpp image.");
+                throw new ArgumentException(ERR_8BPP_INPUT, "fileToSave");
             Int32 width = fileToSave.Width;
             Int32 height = fileToSave.Height;
             if (width > 0xFFFF || height > 0xFFFF)
-                throw new NotSupportedException("The given image is too large.");
+                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
             Int32 stride;
             Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] bifData = new Byte[imageBytes.Length + 4];
-            ArrayUtils.WriteIntToByteArray(bifData, 0, 2, true, (UInt16)width);
-            ArrayUtils.WriteIntToByteArray(bifData, 2, 2, true, (UInt16)height);
+            ArrayUtils.WriteInt16ToByteArrayLe(bifData, 0, width);
+            ArrayUtils.WriteInt16ToByteArrayLe(bifData, 2, height);
             Array.Copy(imageBytes, 0, bifData, 4, imageBytes.Length);
             return bifData;
         }

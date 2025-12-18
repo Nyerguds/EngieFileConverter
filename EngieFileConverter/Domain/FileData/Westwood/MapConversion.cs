@@ -256,7 +256,7 @@ namespace Nyerguds.FileData.Westwood
                         else
                             terrain = info.PrimaryHeightType;
                     }
-                    else throw new NotSupportedException("Unknown terrain data encountered.");
+                    else throw new ArgumentException("Unknown terrain data encountered.", "mapData");
                 }
                 simplifiedMap[i] = terrain;
             }
