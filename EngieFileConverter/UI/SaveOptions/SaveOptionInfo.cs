@@ -22,6 +22,8 @@ namespace EngieFileConverter.UI
                     return new SaveOptionChoices(property, controller);
                 case SaveOptionType.Color:
                     return new SaveOptionColor(property, controller);
+                case SaveOptionType.Palette:
+                    return new SaveOptionPalette(property, controller);
                 case SaveOptionType.FileOpen:
                     throw new NotImplementedException("Not yet implemented.");
                 case SaveOptionType.FileSave:

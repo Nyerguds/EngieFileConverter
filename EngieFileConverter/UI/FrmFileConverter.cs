@@ -987,7 +987,7 @@ namespace EngieFileConverter.UI
             Int32? trimIndex = frameCutter.TrimIndex;
             Int32 matchBpp = frameCutter.MatchBpp;
             Color[] matchPalette = frameCutter.MatchPalette;
-            FileFrames frames = FileFrames.CutImageIntoFrames(image, imagePath, frameWidth, frameHeight, maxFrames, trimColor, trimIndex, matchBpp, matchPalette, null);
+            FileFrames frames = FileFrames.CutImageIntoFrames(image, imagePath, frameWidth, frameHeight, maxFrames, trimColor, trimIndex, matchBpp, matchPalette);
             SupportedFileType oldFile = this.m_LoadedFile;
             this.m_LoadedFile = frames;
             this.AutoSetZoom();
@@ -1004,17 +1004,19 @@ namespace EngieFileConverter.UI
 
             PixelFormat highestPf = PixelFormat.Undefined;
             Int32 highestBpp = 0;
+            Color[] palette = null;
             foreach (Bitmap img in frameImages)
             {
                 if (img == null)
                     continue;
                 PixelFormat curPf = img.PixelFormat;
                 Int32 curBpp = Image.GetPixelFormatSize(curPf);
-                if (curBpp > highestBpp)
-                {
-                    highestPf = curPf;
-                    highestBpp = curBpp;
-                }
+                if (curBpp <= highestBpp)
+                    continue;
+                highestPf = curPf;
+                highestBpp = curBpp;
+                if (highestBpp <= 8)
+                    palette = img.Palette.Entries;
             }
             if (highestBpp == 0)
                 return;
@@ -1026,6 +1028,7 @@ namespace EngieFileConverter.UI
             SaveOption[] so = new SaveOption[4];
             Boolean hasAlpha = true;
             Boolean hasSimpleTrans = false;
+            String paletteStr = null;
             if (highestBpp == 16)
             {
                 hasAlpha = false;
@@ -1035,12 +1038,16 @@ namespace EngieFileConverter.UI
             {
                 hasAlpha = false;
             }
+            else if (highestBpp <= 8 && palette != null)
+            {
+                paletteStr = String.Join(",", palette.Select(c => ColorUtils.HexStringFromColor(c, false)).ToArray());
+            }
 
             so[0] = new SaveOption("FRW", SaveOptionType.Number, "Frame width",maxWidth + ",", maxWidth.ToString());
             so[1] =     new SaveOption("FRH", SaveOptionType.Number, "Frame height",maxHeight + ",", maxHeight.ToString());
             so[2] =     new SaveOption("FPL", SaveOptionType.Number, "Frames per line","1," + frames, ((Int32)Math.Sqrt(frames)).ToString());
             if (highestBpp <= 8)
-                so[3] = new SaveOption("BGI", SaveOptionType.Number, "Background colour around frames", "0," + ((1 << highestBpp) - 1), "0");
+                so[3] = new SaveOption("BGI", SaveOptionType.Palette, "Background colour around frames", highestBpp + "|" + paletteStr, "0");
             else
                 so[3] = new SaveOption("BGC", SaveOptionType.Color, "Background colour around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
 

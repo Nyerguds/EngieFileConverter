@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
-using System.Drawing.Drawing2D;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -417,10 +416,9 @@ namespace EngieFileConverter.Domain.FileTypes
             return newfile;
         }
 
-        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette, Int32[] matchExcludeIndices)
+        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette)
         {
-            //Bitmap[] mainFrame = ImageUtils.ImageToFrames(image, image.Width, image.Height, null, null, matchBpp, matchPalette, 0, 0);
-            Bitmap[] framesArr = ImageUtils.ImageToFrames(image, frameWidth, frameHeight, trimColor, trimIndex, matchBpp, matchPalette, matchExcludeIndices, 0, frames - 1);
+            Bitmap[] framesArr = ImageUtils.ImageToFrames(image, frameWidth, frameHeight, trimColor, trimIndex, matchBpp, matchPalette, 0, frames - 1);
 
             Boolean isMatched = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
             Int32 bpp = isMatched ? matchBpp : Image.GetPixelFormatSize(image.PixelFormat);

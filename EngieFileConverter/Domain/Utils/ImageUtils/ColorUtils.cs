@@ -288,9 +288,12 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        public static String HexStringFromColor(Color color)
+        public static String HexStringFromColor(Color color, Boolean withAlpha)
         {
-            return "#" + ((UInt32)color.ToArgb()).ToString("X8");
+            UInt32 colVal = (UInt32) color.ToArgb();
+            if (!withAlpha)
+                colVal = colVal & 0xFFFFFF;
+            return "#" + colVal.ToString(withAlpha ? "X8" : "X6");
         }
 
     }

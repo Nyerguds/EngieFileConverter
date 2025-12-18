@@ -146,7 +146,7 @@ namespace EngieFileConverter.UI.SaveOptions
                 col = Color.FromArgb(chkTransparent.Checked ? 0x00 : 0xFF, col);
             else if (numAlpha.Enabled)
                 col = Color.FromArgb((Int32)numAlpha.Value, col);
-            this.Info.SaveData = ColorUtils.HexStringFromColor(col);
+            this.Info.SaveData = ColorUtils.HexStringFromColor(col, true);
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

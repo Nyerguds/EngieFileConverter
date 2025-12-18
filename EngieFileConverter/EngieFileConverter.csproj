@@ -105,6 +105,9 @@
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BlobDetection.cs" />
     <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionChoices.resx">
+      <DependentUpon>SaveOptionChoices.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\SaveOptions\SaveOptionColor.resx">
       <DependentUpon>SaveOptionColor.cs</DependentUpon>
     </EmbeddedResource>
@@ -179,17 +182,23 @@
     <Compile Include="UI\FrmSetAlpha.Designer.cs">
       <DependentUpon>FrmSetAlpha.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionChoices.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionChoices.Designer.cs">
+      <DependentUpon>SaveOptionChoices.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\SaveOptions\SaveOptionColor.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="UI\SaveOptions\SaveOptionColor.Designer.cs">
       <DependentUpon>SaveOptionColor.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionChoices.cs">
+    <Compile Include="UI\SaveOptions\SaveOptionPalette.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\SaveOptions\SaveOptionChoices.Designer.cs">
-      <DependentUpon>SaveOptionChoices.cs</DependentUpon>
+    <Compile Include="UI\SaveOptions\SaveOptionPalette.Designer.cs">
+      <DependentUpon>SaveOptionPalette.cs</DependentUpon>
     </Compile>
     <Compile Include="UI\SaveOptions\SaveOptionString.cs">
       <SubType>UserControl</SubType>
@@ -301,8 +310,8 @@
     <EmbeddedResource Include="UI\FrmSetAlpha.resx">
       <DependentUpon>FrmSetAlpha.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="UI\SaveOptions\SaveOptionChoices.resx">
-      <DependentUpon>SaveOptionChoices.cs</DependentUpon>
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionPalette.resx">
+      <DependentUpon>SaveOptionPalette.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\SaveOptions\SaveOptionString.resx">
       <DependentUpon>SaveOptionString.cs</DependentUpon>

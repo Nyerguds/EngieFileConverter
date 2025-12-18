@@ -119,8 +119,6 @@ namespace EngieFileConverter.UI
                     this.pzpFramePreview.ZoomFactor = Math.Max(1, maxZoom);
                 }
                 Int32 frameNr = (Int32) this.numCurFrame.Value;
-                Int32 rectY = frameNr / framesX;
-                Int32 rectX = frameNr % framesX;
                 Int32? trimIndex = null;
                 Color? trimColor = null;
                 Int32 matchBpp = 0;
@@ -130,7 +128,7 @@ namespace EngieFileConverter.UI
                     if (m_OriginalBpp > 8)
                         trimColor = lblTrimColor.TrueBackColor;
                     else
-                        trimIndex = lblTrimColor.Tag is Int32 ? (Int32?)lblTrimColor.Tag : null;
+                        trimIndex = lblTrimColor.Tag as Int32?;
                 }
                 PaletteDropDownInfo pdd = cmbPalettes.SelectedItem as PaletteDropDownInfo;
                 if (chkMatchPalette.Checked && pdd != null)
@@ -138,7 +136,7 @@ namespace EngieFileConverter.UI
                     matchBpp = pdd.BitsPerPixel;
                     matchPalette = pdd.Colors;
                 }
-                Bitmap[] result = ImageUtils.ImageToFrames(this.m_Image, width, height, trimColor, trimIndex, matchBpp, matchPalette, null, frameNr, frameNr);
+                Bitmap[] result = ImageUtils.ImageToFrames(this.m_Image, width, height, trimColor, trimIndex, matchBpp, matchPalette, frameNr, frameNr);
                 Bitmap bmp = result.Length > 0 ? result[0] : null;
                 this.pzpFramePreview.Image = bmp;
                 Int32 frWidth = bmp != null ? bmp.Width : 0;
@@ -169,9 +167,15 @@ namespace EngieFileConverter.UI
             UpdateUiInfo(false);
         }
 
-        private void lblTrimColor_KeyPress(object sender, KeyPressEventArgs e)
+        private void lblTrimColor_KeyPress(Object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == ' ' || e.KeyChar == '\r' || e.KeyChar == '\n')
+                this.PickTrimColor();
+        }
+
+        private void lblTrimColor_MouseClick(Object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
                 this.PickTrimColor();
         }
 
@@ -189,25 +193,20 @@ namespace EngieFileConverter.UI
                     return;
                 Color col = cdl.Color;
                 this.lblTrimColor.TrueBackColor = cdl.Color;
-                this.lblTrimColorVal.Text = ColorUtils.HexStringFromColor(col);
+                this.lblTrimColorVal.Text = ColorUtils.HexStringFromColor(col, false);
             }
             else
             {
                 FrmPalette palSelect = new FrmPalette(m_OriginalPalette.ToArray(), false, ColorSelMode.Single);
-                palSelect.SelectedIndices = new Int32[] { lblTrimColor.Tag is Int32 ? (Int32)lblTrimColor.Tag : 0 };
+                palSelect.SelectedIndices = new Int32[] { lblTrimColor.Tag as Int32? ?? 0 };
                 if (palSelect.ShowDialog() != DialogResult.OK)
                     return;
                 Int32 selectedColor = palSelect.SelectedIndices.Length == 0 ? 0 : palSelect.SelectedIndices[0];
                 lblTrimColor.Tag = selectedColor;
                 lblTrimColor.TrueBackColor = m_OriginalPalette[selectedColor];
+                this.lblTrimColorVal.Text = "Index " + selectedColor;
             }
             this.UpdateUiInfo(false);
-        }
-
-        private void lblTrimColor_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
-                this.PickTrimColor();
         }
 
         private void ChkMatchPaletteCheckedChanged(Object sender, EventArgs e)
@@ -234,39 +233,6 @@ namespace EngieFileConverter.UI
             if (!chkMatchPalette.Checked || m_Loading)
                 return;
             UpdateUiInfo(false);
-        }
-
-
-        private void TextBoxCheckLines(Object sender, EventArgs e)
-        {
-            if (this.m_Loading)
-                return;
-            const String editing = "editing";
-            TextBox textbox = sender as TextBox;
-            if (textbox == null)
-                return;
-            if (editing.Equals(textbox.Tag))
-                return;
-            try
-            {
-                // Remove any line breaks.
-                textbox.Tag = editing;
-                Int32 caret = textbox.SelectionStart;
-                Int32 len1 = textbox.Text.Length;
-                Char[] text = textbox.Text.Replace("\n", String.Empty).Replace("\r", String.Empty).ToCharArray();
-                if (AllowedCharsMask != null)
-                    for (Int32 i = 0; i < text.Length; i++)
-                        if (!AllowedCharsMask.Contains(text[i]))
-                            text[i] = '\0';
-                textbox.Text = new String(text).Replace("\0", String.Empty);
-                Int32 len2 = textbox.Text.Length;
-                textbox.SelectionStart = Math.Min(caret - (len1 - len2), textbox.Text.Length);
-                UpdateUiInfo(false);
-            }
-            finally
-            {
-                textbox.Tag = null;
-            }
         }
         
         private void BtnCancelClick(Object sender, EventArgs e)

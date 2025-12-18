@@ -56,6 +56,8 @@ namespace EngieFileConverter.Domain.FileTypes
         ChoicesList,
         /// <summary>Color selector. Set InitValue to "A" to enable alpha selector. Set to "T" to enable only transparency on/off selector.</summary>
         Color,
+        /// <summary>To do. InitValue should be the palette bpp, then a pipe, and then a palette of comma-separated hex value triplets, and the initial selection index as SaveData.</summary>
+        Palette,
         /// <summary>File selector. Use InitValue to specify a File Open mask.</summary>
         FileOpen,
         /// <summary>Additional file to be written. Use InitValue to specify a File Save mask.</summary>

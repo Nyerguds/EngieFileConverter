@@ -1457,7 +1457,7 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        public static Bitmap[] ImageToFrames(Bitmap image, Int32 width, Int32 height, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette, Int32[] matchExcludeIndices, Int32 framesRangeMin, Int32 framesRangeMax)
+        public static Bitmap[] ImageToFrames(Bitmap image, Int32 width, Int32 height, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette, Int32 framesRangeMin, Int32 framesRangeMax)
         {
             if (image == null)
                 return new Bitmap[0];
@@ -1477,11 +1477,11 @@ namespace Nyerguds.ImageManipulation
             Bitmap[] bmpFrames = new Bitmap[nrOfFrames];
             Boolean doMatching = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
             Bitmap edImage = null;
-            Int32 edImageStride = 0;
             Byte[] edImageData = null;
             Byte[] remapTable = null;
             if (indexed)
             {
+                Int32 edImageStride;
                 edImageData = GetImageData(image, out edImageStride);
                 edImageData = ConvertTo8Bit(edImageData, fullWidth, fullHeight, 0, bpp, true, ref edImageStride);
                 if (doMatching)
@@ -1493,7 +1493,7 @@ namespace Nyerguds.ImageManipulation
                     {
                         if (i >= orig.Length)
                             break;
-                        remapTable[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(orig[i], matchPalette, matchExcludeIndices.ToList());
+                        remapTable[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(orig[i], matchPalette, null);
                     }
                 }
             }
@@ -1513,7 +1513,7 @@ namespace Nyerguds.ImageManipulation
                     bmp = GetCutFrameHiCol(edImage, section, origPf, trimColor, matchBpp, matchPalette);
                 bmpFrames[frameNr - min] = bmp;
             }
-            if (convertTo32 && edImage != null)
+            if (convertTo32)
                 edImage.Dispose();
             return bmpFrames;
         }

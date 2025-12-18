@@ -74,6 +74,10 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.3.2: (20/08/2018 14:15)
+-Added a palette selector for the fill colour in the frames-to-image options list.
+-Fixed a crash when matching an indexed image to a palette in the image-to-frames window.
+
 v1.3.1: (18/08/2018 20:15)
 -The background colour selector on the UI is now a control selectable with [Tab].
 -Added support for C&C SHP files with a loop frame.
@@ -292,7 +296,7 @@ v1.0: (04/04/2017 22:33)
 -Added code to correctly open paletted png images that contain transparency.
 -Added code to correctly open and save paletted png images with incomplete colour palettes.
 -Added theater detection for maps. If there's an ini, it'll read it from that.
--Added support for PC and N64 coluor palettes.
+-Added support for PC and N64 colour palettes.
 -Added support for saving N64 IMG format, and specifically paletteless greyscale IMG.
 -Added read support for terrain tiles; the're triplets of DA4/ND4/PA4 or DA8/ND8/PA8 files.
 
