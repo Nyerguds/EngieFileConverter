@@ -116,7 +116,7 @@
     <Compile Include="Domain\FileTypes\Dynamix\FileFramesDynBmp.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwCps.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwLcw.cs" />
-    <Content Include="Domain\FileTypes\Westwood\FileMapWwRa1Pc.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileMapWwRa1Pc.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScr.cs" />
     <Compile Include="Domain\FileData\Westwood\HeightTerrainType.cs" />
     <Compile Include="Domain\FileData\Westwood\TerrainType.cs" />

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EngieFileConverter.Domain.CCTypes;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -14,6 +13,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.None; } }
         public override FileClass InputFileClass { get { return FileClass.None; } }
 
+        public override String IdCode { get { return "WwRa1Map"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "RA Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -33,16 +33,22 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             String fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
             IniFile mapini = new IniFile(fileDataText, IniFile.ENCODING_DOS_US);
-            ReadRAMap(mapini);
+            ReadRAMap(mapini, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            IniFile mapini = new IniFile(filename, IniFile.ENCODING_DOS_US);
-            ReadRAMap(mapini);
+            String fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
+            IniFile mapini = new IniFile(filename, fileDataText, IniFile.ENCODING_DOS_US);
+            ReadRAMap(mapini, filename);
         }
 
-        private void ReadRAMap(IniFile mapini)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReadRAMap(IniFile mapini, String path)
         {
             List<String> sectionNames = mapini.GetSectionNames();
             if (!sectionNames.Contains("MapPack"))
@@ -50,12 +56,56 @@ namespace EngieFileConverter.Domain.FileTypes
             if (!sectionNames.Contains("Map"))
                 throw new FileTypeLoadException("No [Map] section found in file!");
 
+            Byte[] mapTerrain = ExpandRAMap(mapini, "MapPack");
+            Byte[] mapOverlay = ExpandRAMap(mapini, "OverlayPack");
+            SetFileNames(path);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+
+        private Byte[] ExpandRAMap(IniFile mapIniFile, String section)
         {
-            throw new NotImplementedException();
+            Dictionary<String, String> sectionValues = mapIniFile.GetSectionContent(section);
+            StringBuilder sb = new StringBuilder();
+            Int32 lineNr = 1;
+            while (sectionValues.ContainsKey(lineNr.ToString()))
+            {
+                sb.Append(sectionValues[lineNr.ToString()]);
+                lineNr++;
+            }
+            Byte[] compressedMap = Convert.FromBase64String(sb.ToString());
+            Int32 readPtr = 0;
+            Int32 writePtr = 0;
+            Byte[] mapFile = new Byte[128 * 128 * 3];
+
+            while (readPtr + 4 <= compressedMap.Length)
+            {
+                UInt32 uLength = (UInt32)ArrayUtils.ReadIntFromByteArray(compressedMap, readPtr, 4, true);
+                Int32 length = (Int32)(uLength & 0xDFFFFFFF);
+                readPtr += 4;
+                Byte[] dest = new Byte[8192];
+                Int32 readPtr2 = readPtr;
+                Int32 decompressed = Nyerguds.FileData.Westwood.WWCompression.LcwDecompress(compressedMap, ref readPtr2, dest, 0);
+                Array.Copy(dest, 0, mapFile, writePtr, decompressed);
+                readPtr += length;
+                writePtr += decompressed;
+            }
+            return mapFile;
+            /*/
+            // Align from 24 to 32 bit
+            Byte[] mapFile2 = new Byte[128 * 128 * 16];
+            writePtr = 0;
+            for (Int32 i = 0; i < mapFile.Length; i += 3)
+            {
+                writePtr += 8;
+                mapFile2[writePtr++] = mapFile[i];
+                mapFile2[writePtr++] = mapFile[i + 1];
+                mapFile2[writePtr++] = mapFile[i + 2];
+                writePtr += 5;
+            }
+            File.WriteAllBytes("SCA01EA_expanded16.BIN", mapFile2);
+            //*/
         }
+
     }
 
 }

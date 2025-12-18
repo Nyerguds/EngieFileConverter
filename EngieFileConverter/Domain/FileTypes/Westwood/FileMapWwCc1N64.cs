@@ -11,6 +11,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.CcMap; } }
         public override FileClass InputFileClass { get { return FileClass.CcMap; } }
 
+        public override String IdCode { get { return "WwCc1MapN64"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Map"; } }
         public override String ShortTypeDescription { get { return "Westwood C&C N64 map file"; } }
@@ -20,32 +21,23 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public FileMapWwCc1N64() { }
 
+        public override void LoadFile(Byte[] fileData)
+        {
+            LoadFile(fileData, false);
+        }
+
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            this.LoadFile(fileData, filename, null, null, false);
+        }
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
             if (mapPc == null)
-                throw new NotSupportedException(String.Empty);
+                throw new NotSupportedException("Not a map file!");
             return mapPc.N64MapData;
         }
-
-        /*/
-        protected override Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile)
-        {
-            if (fileData.Length != 8192)
-                throw new FileTypeLoadException("Incorrect file size.");
-            Int32 len = fileData.Length / 2;
-            for (Int32 i = 0; i < len; ++i)
-            {
-                Byte hiByte = fileData[i * 2];
-                Byte loByte = fileData[i * 2 + 1];
-                if (hiByte == 0xFF && loByte == 0x00)
-                        throw new FileTypeLoadException("Bad format for clear N64 terrain!");
-            }
-            this.N64MapData = fileData;
-            this.PCMapData = this.IdentifyTheaterAndConvert(fileData, ref theater, true, sourceFile);
-            return this.ReadMapAsImage(this.PCMapData, theater, Rectangle.Empty);
-        }
-        //*/
     }
 
     public class FileMapWwCc1N64FromIni : FileMapWwCc1N64
@@ -68,7 +60,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
             Byte[] mapFileData = File.ReadAllBytes(mapFilename);
-            base.LoadFile(mapFileData, mapFilename, fileData, filename);
+            base.LoadFile(mapFileData, mapFilename, fileData, filename, false);
         }
     }
 }

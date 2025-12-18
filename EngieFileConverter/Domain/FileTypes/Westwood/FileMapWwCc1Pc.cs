@@ -110,7 +110,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0xAA, 0xAA, 0xDA), // Blue, Snow = 19
         };
 
-        public override String IdCode { get { return "WwCcMap"; } }
+        public override String IdCode { get { return "WwCc1MapPC"; } }
         public override FileClass FileClass { get { return FileClass.CcMap; } }
         public override FileClass InputFileClass { get { return FileClass.CcMap; } }
         /// <summary>Very short code name for this type.</summary>
@@ -134,23 +134,36 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            this.PCMapData = fileData;
-            Theater theater = (Theater)0xFF;
-            this.N64MapData = this.IdentifyTheaterAndConvert(fileData, ref theater, true, null);
-            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, Rectangle.Empty);
+            this.LoadFile(fileData, true);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            this.LoadFile(fileData, filename, null, null);
+            this.LoadFile(fileData, filename, null, null, true);
         }
 
-        public virtual void LoadFile(Byte[] fileData, String filename, Byte[] iniContents, String iniFile)
+        public void LoadFile(Byte[] fileData, Boolean isPc)
+        {
+            this.PCMapData = fileData;
+            Theater theater = (Theater)0xFF;
+            Int32 errToN64;
+            Byte[] mapDataToN64 = this.IdentifyTheaterAndConvert(fileData, ref theater, false, null, out errToN64);
+            Int32 errToPc;
+            Byte[] mapDataToPC = this.IdentifyTheaterAndConvert(fileData, ref theater, false, null, out errToPc);
+            if ((isPc && errToN64 > errToPc) || (!isPc && errToPc > errToN64))
+                throw new FileTypeLoadException("Not a " + (isPc ? "PC" : "N64") + " C&C Map file!");
+            this.PCMapData = isPc ? fileData : mapDataToPC;
+            this.N64MapData = isPc ? mapDataToN64 : fileData;
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, Rectangle.Empty);
+        }
+
+        public void LoadFile(Byte[] fileData, String filename, Byte[] iniContents, String iniFile, Boolean isPc)
         {
             IniInfo iniInfo = this.GetIniInfo(iniFile ?? filename, (Theater)0xFF, iniContents);
             Theater theater = iniInfo == null ? (Theater)0xFF : iniInfo.Theater;
             Rectangle usableArea = iniInfo == null ? Rectangle.Empty : new Rectangle(iniInfo.X, iniInfo.Y, iniInfo.Width, iniInfo.Height);
-            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, filename, usableArea);
+            this.DetectDataTypeAndConvert(fileData, theater, filename, usableArea, isPc);
+            this.m_LoadedImage = this.ReadMapAsImage(this.PCMapData, theater, usableArea);
             if (iniInfo != null)
             {
                 this.ExtraInfo = "Ini info loaded from \"" + Path.GetFileName(iniInfo.File) + "\"" + Environment.NewLine
@@ -177,13 +190,21 @@ namespace EngieFileConverter.Domain.FileTypes
             return mapPc.PCMapData;
         }
 
-        protected virtual Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, String sourceFile, Rectangle usableArea)
+        protected void DetectDataTypeAndConvert(Byte[] fileData, Theater theater, String sourceFile, Rectangle usableArea, Boolean isPc)
         {
-            this.PCMapData = fileData;
-            if (this.PCMapData.Length != 8192)
+            if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
-            this.N64MapData = this.IdentifyTheaterAndConvert(this.PCMapData, ref theater, false, sourceFile);
-            return this.ReadMapAsImage(this.PCMapData, theater, usableArea);
+            Int32 errCells;
+            Byte[] convertedData = this.IdentifyTheaterAndConvert(fileData, ref theater, !isPc, sourceFile, out errCells);
+            if (errCells > 0)
+            {
+                Int32 errCells2;
+                this.IdentifyTheaterAndConvert(fileData, ref theater, isPc, sourceFile, out errCells2);
+                if (errCells > errCells2)
+                    throw new FileTypeLoadException("Not a " + (isPc ? "PC" : "N64") + " C&C Map file!");
+            }
+            this.PCMapData = isPc ? fileData : convertedData;
+            this.N64MapData = isPc ? convertedData : fileData;
         }
 
         protected IniInfo GetIniInfo(String filename, Theater defaultTheater, Byte[] iniData)
@@ -219,6 +240,13 @@ namespace EngieFileConverter.Domain.FileTypes
             return info;
         }
 
+        /// <summary>
+        /// Converts a map to image.
+        /// </summary>
+        /// <param name="fileData">File data for a PC C&amp;C type map.</param>
+        /// <param name="theater">Theater of the map.</param>
+        /// <param name="usableArea"></param>
+        /// <returns></returns>
         protected Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, Rectangle usableArea)
         {
             if (fileData.Length != 8192)
@@ -283,11 +311,11 @@ namespace EngieFileConverter.Domain.FileTypes
             return ImageUtils.BuildImage(imageData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Black);
         }
 
-        protected Byte[] IdentifyTheaterAndConvert(Byte[] fileData, ref Theater theater, Boolean toPC, String sourceFile)
+        protected Byte[] IdentifyTheaterAndConvert(Byte[] fileData, ref Theater theater, Boolean toPC, String sourceFile, out Int32 errorCells)
         {
             Dictionary<Int32, CnCMapCell> mappingDes = toPC ? MapConversion.DESERT_MAPPING : MapConversion.DESERT_MAPPING_REVERSED;
             Dictionary<Int32, CnCMapCell> mappingTem = toPC ? MapConversion.TEMPERATE_MAPPING : MapConversion.TEMPERATE_MAPPING_REVERSED;
-
+            errorCells = 0;
             if (theater != (Theater)0xFF)
             {
                 Dictionary<Int32, CnCMapCell> mapping = null;
@@ -304,8 +332,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if (mapping != null)
                 {
-                    List<CnCMapCell> errorcells;
-                    fileData = this.ConvertMap(fileData, mapping, toPC, out errorcells);
+                    List<CnCMapCell> errCells;
+                    fileData = this.ConvertMap(fileData, mapping, toPC, out errCells);
+                    errorCells = errCells.Count;
                 }
                 else
                     theater = (Theater)0xFF;
@@ -323,12 +352,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     fileData = dataDesert;
                     theater = Theater.Desert;
+                    errorCells = errorcellsDesert.Count;
                 }
                 else
                 {
                     // if sourceFile == null, use temperate as fallback if the amount of errors is equal
                     fileData = dataTemperate;
                     theater = Theater.Temperate;
+                    errorCells = errorcellsTemperate.Count;
                 }
             }
             return fileData;
@@ -362,7 +393,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
             Byte[] mapFileData = File.ReadAllBytes(mapFilename);
-            base.LoadFile(mapFileData, mapFilename, fileData, filename);
+            base.LoadFile(mapFileData, mapFilename, fileData, filename, true);
         }
 
     }
