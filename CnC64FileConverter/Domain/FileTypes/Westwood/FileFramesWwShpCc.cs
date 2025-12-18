@@ -228,7 +228,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("Empty frames found!");
-                if ((frame.FileClass & FileClass.Image8Bit) == 0)
+                if ((frame.FileClass & FileClass.ImageIndexed) == 0)
                     throw new NotSupportedException("All frames need to be 8-bit paletted!");
                 Bitmap bm = frame.GetBitmap();
                 if (bm == null)
@@ -248,13 +248,17 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             PreCheckSplitShadows(file, sourceShadowIndex, destShadowIndex, false);
             FileFrames newfile = new FileFrames();
-            Int32 framesOffs = file.Frames.Length;
-            SupportedFileType[] shadowFrames = new SupportedFileType[framesOffs];
+            newfile.SetCommonPalette(true);
+            newfile.SetBitsPerColor(8);
+            newfile.SetColorsInPalette(0);
+            Boolean[] transMask = file.TransparencyMask;
+            newfile.SetTransparencyMask(transMask);
+            SupportedFileType[] shadowFrames = new SupportedFileType[file.Frames.Length];
             Boolean shadowFound = false;
+            Color[] palette = null;
             for (Int32 i = 0; i < file.Frames.Length; i++)
             {
                 SupportedFileType frame = file.Frames[i];
-                
                 String folder = null;
                 String name = String.Empty;
                 String ext = String.Empty;
@@ -273,6 +277,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     folder = Path.GetDirectoryName(file.LoadedFile);
                 
                 Bitmap bm = frame.GetBitmap();
+                if (palette == null)
+                    palette = bm.Palette.Entries;
                 Int32 width = frame.Width;
                 Int32 height = frame.Height;
                 Int32 stride;
@@ -310,7 +316,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         imageDataShadow = ImageUtils.ConvertFrom8Bit(imageDataShadow, width, height, bpp, bpp != 1, ref stride2);
                     }
                 }
-                Bitmap imageNoShadows = ImageUtils.BuildImage(imageData, width, height, stride, bm.PixelFormat, bm.Palette.Entries, null);
+                Bitmap imageNoShadows = ImageUtils.BuildImage(imageData, width, height, stride, bm.PixelFormat, palette, null);
                 String nameNoShadows = name + ext;
                 if (folder != null)
                     nameNoShadows = Path.Combine(folder, nameNoShadows);
@@ -318,9 +324,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameNoShadows.LoadFileFrame(newfile, file, imageNoShadows, nameNoShadows, i);
                 frameNoShadows.SetBitsPerColor(frame.BitsPerPixel);
                 frameNoShadows.SetColorsInPalette(frame.ColorsInPalette);
+                frameNoShadows.SetTransparencyMask(transMask);
                 newfile.AddFrame(frameNoShadows);
                 
-                Bitmap imageOnlyShadows = ImageUtils.BuildImage(imageDataShadow, width, height, stride, bm.PixelFormat, bm.Palette.Entries, null);
+                Bitmap imageOnlyShadows = ImageUtils.BuildImage(imageDataShadow, width, height, stride, bm.PixelFormat, palette, null);
                 String nameOnlyShadows = name + "_s" + ext;
                 if (folder != null)
                     nameOnlyShadows = Path.Combine(folder, nameOnlyShadows);
@@ -328,10 +335,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameOnlyShadows.LoadFileFrame(newfile, file, imageOnlyShadows, nameOnlyShadows, i);
                 frameOnlyShadows.SetBitsPerColor(frame.BitsPerPixel);
                 frameOnlyShadows.SetColorsInPalette(frame.ColorsInPalette);
+                frameOnlyShadows.SetTransparencyMask(transMask);
                 shadowFrames[i] = frameOnlyShadows;
             }
             foreach (SupportedFileType shadowFrame in shadowFrames)
                 newfile.AddFrame(shadowFrame);
+            newfile.SetColors(palette);
             return newfile;
         }
 

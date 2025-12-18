@@ -147,6 +147,12 @@
     <Compile Include="UI\FrmManagePalettes.designer.cs">
       <DependentUpon>FrmManagePalettes.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\FrmSetAlpha.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FrmSetAlpha.Designer.cs">
+      <DependentUpon>FrmSetAlpha.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\SaveOptions\SaveOptionChoices.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -238,6 +244,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\FrmManagePalettes.resx">
       <DependentUpon>FrmManagePalettes.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\FrmSetAlpha.resx">
+      <DependentUpon>FrmSetAlpha.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\SaveOptions\SaveOptionChoices.resx">
       <DependentUpon>SaveOptionChoices.cs</DependentUpon>

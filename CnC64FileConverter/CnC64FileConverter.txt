@@ -65,6 +65,14 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.15: (10/07/2018 18:35)
+-Saving Mythos VDA no longer allows frames after 0 to have pixels of colour 255 on new locations.
+-Disallowed saving frame types as palettes since some types don't have a global palette.
+-Fixed "File not found" error when trying to load a Mythos VDA file without VDX.
+-Added the ability to change the alpha value on palette indices. PNG supports such palette-alpha.
+-Mythos animations now show the total chunk count in the file on the index frame.
+-Added more detailed save options for the Mythos animations compression algorithm.
+
 v1.2.14: (28/06/2018 13:50)
 -A VDA chained from png will now indicate its first frame the same way as a normally loaded png.
 -Fixed bug that could let WSA load chaining skip missing files (which wouldn't load correctly).

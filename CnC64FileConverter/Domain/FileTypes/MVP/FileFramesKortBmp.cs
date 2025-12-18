@@ -68,20 +68,21 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 frameNumber = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
                 if (frameNumber != i)
                     throw new FileTypeLoadException("Bad frame order in file!");
-                Int32 frWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true);
-                Int32 frHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
-                Int32 stride = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 6, 2, true);
+                Int32 frWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true);
+                Int32 frHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
+                Int32 stride = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 6, 2, true);
                 if (frWidth > stride)
                     throw new FileTypeLoadException("Inconsistent data in file!");
                 Int32 dataSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 8, 4, true);
-                if (dataSize < 0 || offset + dataSize >= datalen)
+                if (offset + dataSize >= datalen)
                     throw new FileTypeLoadException("File is too short to contain data of frame " + i);
                 offset += 12;
                 Byte[] frameData = new Byte[dataSize];
                 Array.Copy(fileData, offset, frameData, 0, dataSize);
-                Bitmap frameImage = ImageUtils.BuildImage(frameData, frWidth, frHeight, ImageUtils.GetMinimumStride(frWidth, 8), PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
+                Bitmap frameImage = (frWidth != 0 && frHeight!= 0) ? ImageUtils.BuildImage(frameData, frWidth, frHeight, stride, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black) : null;
                 // reorder lines
-                frameImage.RotateFlip(RotateFlipType.Rotate180FlipX);
+                if (frameImage != null)
+                    frameImage.RotateFlip(RotateFlipType.Rotate180FlipX);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);

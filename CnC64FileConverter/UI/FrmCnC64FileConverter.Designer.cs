@@ -506,10 +506,12 @@
             this.palColorViewer.Palette = null;
             this.palColorViewer.Remap = null;
             this.palColorViewer.SelectedIndices = new int[0];
+            this.palColorViewer.ShowColorToolTipsAlpha = true;
             this.palColorViewer.Size = new System.Drawing.Size(226, 226);
             this.palColorViewer.TabIndex = 122;
             this.palColorViewer.TransItemBackColor = System.Drawing.Color.Empty;
             this.palColorViewer.ColorLabelMouseDoubleClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseDoubleClick);
+            this.palColorViewer.ColorLabelMouseClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseClick);
             // 
             // numZoom
             // 
@@ -570,7 +572,7 @@
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(904, 554);
+            this.ClientSize = new System.Drawing.Size(904, 555);
             this.Controls.Add(this.lblValInfo);
             this.Controls.Add(this.btnResetPalette);
             this.Controls.Add(this.btnSavePalette);

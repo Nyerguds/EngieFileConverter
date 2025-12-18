@@ -163,7 +163,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 h = bmToSave.Height;
             Boolean addSq = w != h;
             Boolean addInc = Math.Max(w, h) < 256;
-            //Boolean makeSquare, Boolean upscale, Boolean smooth
             List<SaveOption> opts = new List<SaveOption>();
             if (addSq)
                 opts.Add(new SaveOption("SQR", SaveOptionType.Boolean, "Pad frames to square formats", null, "1"));
@@ -190,7 +189,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
 
         /// <summary>
-        /// Converts a PNG image to a icon (ico) with all the sizes windows likes
+        /// Converts an image to a icon (ico) with all the sizes windows likes
         /// </summary>
         /// <param name="inputBitmap">The input bitmap</param>
         /// <param name="output">The output stream</param>
@@ -206,7 +205,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new ArgumentNullException("output", "Output stream cannot be null.");
             
             List<Byte[]> images = new List<Byte[]>();
-            Int32[] sizes = new Int32[] {16, 32, 48, 256 };
+            Int32[] sizes = new Int32[] {16, 32, 48, 128, 256 };
             List<Byte> widths = new List<Byte>();
             List<Byte> heights = new List<Byte>();
             List<Int32> bpp = new List<Int32>();

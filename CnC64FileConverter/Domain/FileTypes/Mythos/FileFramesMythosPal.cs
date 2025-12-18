@@ -11,8 +11,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
 
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
-        public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
-        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.None; } }
 
         public override String ShortTypeName { get { return "Mythos Visage palette"; } }
         public override String ShortTypeDescription { get { return "Mythos Visage palette file"; } }

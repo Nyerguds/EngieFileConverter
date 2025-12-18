@@ -10,8 +10,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePalette6Bit : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
-        public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
-        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.None; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "6-bit pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>

@@ -11,55 +11,12 @@ namespace Nyerguds.ImageManipulation
 {
     public static class ImageUtils
     {
-        public static Color[] ConvertToColors(Byte[] colorData, Bitmap sourceImage, Int32? depth)
-        {
-            Int32 colDepth;
-            if (depth.HasValue)
-                colDepth = depth.Value;
-            else
-                colDepth = Image.GetPixelFormatSize(sourceImage.PixelFormat);
-            // Get color components count
-            Int32 byteCount = colDepth / 8;
-            if (depth != 32 && depth != 24)
-                throw new NotSupportedException("Unsupported colour depth!");
-
-            // colorData.Length / byteCount
-            Color[] newColors = new Color[sourceImage.Width];
-            for (Int32 i = 0; i < newColors.Length; i++)
-            {
-                Int32 pos = i * byteCount;
-                Color clr = Color.Empty;
-
-                // Get start index of the specified pixel
-
-                if (depth == 32) // For 32 bpp: get Red, Green, Blue and Alpha
-                {
-                    Byte b = colorData[pos];
-                    Byte g = colorData[pos + 1];
-                    Byte r = colorData[pos + 2];
-                    Byte a = colorData[pos + 3]; // a
-                    clr = Color.FromArgb(a, r, g, b);
-                }
-                else if (depth == 24) // For 24 bpp: get Red, Green and Blue
-                {
-                    Byte b = colorData[pos];
-                    Byte g = colorData[pos + 1];
-                    Byte r = colorData[pos + 2];
-                    clr = Color.FromArgb(r, g, b);
-                }
-                newColors[i] = clr;
-            }
-            return newColors;
-        }
-
-        public static Int32 GetPixelFormatSize(Bitmap image)
-        {
-            return Image.GetPixelFormatSize(image.PixelFormat);
-        }
 
         public static ColorPalette GetColorPalette(Color[] colors, PixelFormat pf)
         {
-            ColorPalette cp = new Bitmap(1, 1, pf).Palette;
+            ColorPalette cp;
+            using (Bitmap bm = new Bitmap(1, 1, pf))
+                cp = bm.Palette;
             for (Int32 i = 0; i < colors.Length && i < cp.Entries.Length; i++)
                 cp.Entries[i] = colors[i];
             return cp;
@@ -74,7 +31,7 @@ namespace Nyerguds.ImageManipulation
         {
             Byte[] fileData = File.ReadAllBytes(path);
             using (MemoryStream ms = new MemoryStream(fileData))
-            using(Bitmap bm = new Bitmap(ms))
+            using (Bitmap bm = new Bitmap(ms))
                 return CloneImage(bm);
         }
 
@@ -124,7 +81,7 @@ namespace Nyerguds.ImageManipulation
                     Int32 stride;
                     Byte[] fourBitData = GetImageData(image, out stride);
                     Byte[] eightBitData = ConvertTo8Bit(fourBitData, image.Width, image.Height, 0, 4, true, ref stride);
-                    using(Bitmap img2 = BuildImage(eightBitData, image.Width, image.Height, stride, PixelFormat.Format8bppIndexed, image.Palette.Entries, Color.Black))
+                    using (Bitmap img2 = BuildImage(eightBitData, image.Width, image.Height, stride, PixelFormat.Format8bppIndexed, image.Palette.Entries, Color.Black))
                         img2.Save(ms, saveFormat);
                 }
                 else if (saveFormat.Equals(ImageFormat.Png))
@@ -226,40 +183,69 @@ namespace Nyerguds.ImageManipulation
             return newImageData;
         }
 
-
+        /// <summary>
+        /// Compares the data of two images of the same non-indexed pixel format, taking their respective strides into account.
+        /// </summary>
+        /// <param name="imageData1">Data of the first image.</param>
+        /// <param name="stride1">Stride of the first image.</param>
+        /// <param name="imageData2">Data of the second image.</param>
+        /// <param name="stride2">Stride of the second image.</param>
+        /// <param name="width">Image width.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="pf">Pixel format of the images.</param>
+        /// <returns>True if the content matches.</returns>
         public static Boolean CompareHiColorImages(Byte[] imageData1, Int32 stride1, Byte[] imageData2, Int32 stride2, Int32 width, Int32 height, PixelFormat pf)
         {
             Int32 byteSize = Image.GetPixelFormatSize(pf) / 8;
+            Int32 index1 = 0;
+            Int32 index2 = 0;
             for (Int32 y = 0; y < height; y++)
             {
+                Int32 offset1 = index1;
+                Int32 offset2 = index2;
+
                 for (Int32 x = 0; x < width; x++)
                 {
-                    Int32 offset1 = y * stride1 + x * byteSize;
-                    Int32 offset2 = y * stride2 + x * byteSize;
                     for (Int32 n = 0; n > byteSize; n++)
                         if (imageData1[offset1 + n] != imageData2[offset2 + n])
                             return false;
+                    offset1 += byteSize;
+                    offset2 += byteSize;
                 }
+                index1 += stride1;
+                index2 += stride2;
             }
             return true;
         }
 
-        public static Byte[] Match8BitDataToPalette(Byte[] imageData, Int32 width, Int32 height, Color[] sourcePalette, Color[] targetPalette)
+        /// <summary>
+        /// MAtches the data from an 8-bit image to a different palette. This handles the full stride.
+        /// </summary>
+        /// <param name="imageData">Image data.</param>
+        /// <param name="stride">Image stride.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="sourcePalette">Palette of the source data.</param>
+        /// <param name="targetPalette">Target palette to convert to.</param>
+        /// <returns>The converted image data.</returns>
+        public static Byte[] Match8BitDataToPalette(Byte[] imageData, Int32 stride, Int32 height, Color[] sourcePalette, Color[] targetPalette)
         {
-            Byte[] newImageData = new Byte[width * height];
+            Byte[] newImageData = new Byte[stride * height];
             for (Int32 i = 0; i < imageData.Length; i++)
             {
                 Int32 currentVal = imageData[i];
-                Color c;
-                if (currentVal < sourcePalette.Length)
-                    c = sourcePalette[imageData[i]];
-                else
-                    c = Color.Black;
+                Color c = currentVal < sourcePalette.Length ? sourcePalette[imageData[i]] : Color.Black;
                 newImageData[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(c, targetPalette, null);
             }
             return newImageData;
         }
 
+        /// <summary>
+        /// Converts an image to paletted format.
+        /// </summary>
+        /// <param name="originalImage">Original image</param>
+        /// <param name="bpp">Desired bits per pixel for the paletted image (should be less than or equal to 8)</param>
+        /// <param name="palette">The colour palette.</param>
+        /// <returns>A bitmap of the desired colour depth matched to the given palette.</returns>
         public static Bitmap ConvertToPalette(Bitmap originalImage, Int32 bpp, Color[] palette)
         {
             PixelFormat pf = GetIndexedPixelFormat(bpp);
@@ -268,7 +254,7 @@ namespace Nyerguds.ImageManipulation
             if (originalImage.PixelFormat != PixelFormat.Format32bppArgb)
             {
                 using (Bitmap bm32bpp = PaintOn32bpp(originalImage, Color.Black))
-                    imageData = GetImageData(originalImage, out stride);
+                    imageData = GetImageData(bm32bpp, out stride);
             }
             else
                 imageData = GetImageData(originalImage, out stride);
@@ -276,6 +262,17 @@ namespace Nyerguds.ImageManipulation
             return BuildImage(palettedData, originalImage.Width, originalImage.Height, stride, pf, palette, Color.Black);
         }
 
+        /// <summary>
+        /// Converts 32 bit per pixel image data to match a given colour palette, and returns it as array in the desired pixel format.
+        /// </summary>
+        /// <param name="imageData">Image data.</param>
+        /// <param name="width">Image width.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="bpp">Bits per pixel.</param>
+        /// <param name="bigEndianBits">True to use big endian ordered data in the indexed array if <paramref name="bpp "/> is less than 8.</param>
+        /// <param name="palette">Colour palette to match to.</param>
+        /// <param name="stride">Stride. Will be adjusted by the function.</param>
+        /// <returns></returns>
         public static Byte[] Convert32BitToPaletted(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, Color[] palette, ref Int32 stride)
         {
             if (stride < width * 4)
@@ -308,7 +305,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Gets the raw bytes from an image.
+        /// Gets the raw bytes from an image in its original pixel format.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <param name="stride">Stride of the retrieved image data.</param>
@@ -319,18 +316,22 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Gets the raw bytes from an image.
+        /// Gets the raw bytes from an image. Note that <paramref name="desiredPixelFormat"/> has limitations when it comes to indexed formats:
+        /// giving an indexed pixel format if the sourceImage is an indexed image with a lower bpp will throw an exception, since GDI+ does not support that,
+        /// and if you give an indexed pixel format and the source is non-indexed, the colours will be matched to the standard Windows palette for that format.
         /// </summary>
         /// <param name="sourceImage">The image to get the bytes from.</param>
         /// <param name="stride">Stride of the retrieved image data.</param>
-        /// <param name="desiredPixelFormat">PixelFormat in which the data needs to be retrieved.</param>
+        /// <param name="desiredPixelFormat">PixelFormat in which the data needs to be retrieved. Use <paramref name="sourceImage"/>.PixelFormat for no conversion.</param>
         /// <returns>The raw bytes of the image.</returns>
         public static Byte[] GetImageData(Bitmap sourceImage, out Int32 stride, PixelFormat desiredPixelFormat)
         {
             if (sourceImage == null)
                 throw new ArgumentNullException("sourceImage", "Source image is null!");
-            if (((desiredPixelFormat & PixelFormat.Indexed) != 0) && ((sourceImage.PixelFormat & PixelFormat.Indexed) == 0))
-                throw new ArgumentException("An RGB pixel format cannot be converted to an indexed pixel format.", "desiredPixelFormat");
+            if ((sourceImage.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed
+                && (desiredPixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed
+                && Image.GetPixelFormatSize(sourceImage.PixelFormat) > Image.GetPixelFormatSize(desiredPixelFormat))
+                throw new ArgumentException("Cannot convert from a higher to a lower indexed pixel format! Use ConvertFrom8Bit instead!", "desiredPixelFormat");
             BitmapData sourceData = sourceImage.LockBits(new Rectangle(0, 0, sourceImage.Width, sourceImage.Height), ImageLockMode.ReadOnly, desiredPixelFormat);
             stride = sourceData.Stride;
             Byte[] data = new Byte[stride * sourceImage.Height];
@@ -384,7 +385,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="sourceData">Byte array of raw source data</param>
         /// <param name="width">Width of the image</param>
         /// <param name="height">Height of the image</param>
-        /// <param name="stride">Scanline length inside the data</param>
+        /// <param name="stride">Scanline length inside the data. If this is negative, the image is built from the bottom up (BMP format).</param>
         /// <param name="pixelFormat">Pixel format</param>
         /// <param name="palette">Color palette</param>
         /// <param name="defaultColor">Default color to fill in on the palette if the given colors don't fully fill it.</param>
@@ -553,7 +554,7 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 i = 0; i < blankArray.Length; i++)
                     blankArray[i] = paintColor;
             return BuildImage(blankArray, width, height, width, PixelFormat.Format8bppIndexed, pal, Color.Empty);
-            }
+        }
 
         public static Bitmap GenerateCheckerboardImage(Int32 width, Int32 height, Color[] colors, Byte color1, Byte color2)
         {
@@ -842,23 +843,6 @@ namespace Nyerguds.ImageManipulation
 
         /// <summary>
         /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
-        /// Stride is assumed to be the minimum needed to contain the data. Output stride will be the same as the width.
-        /// </summary>
-        /// <param name="fileData">The file data.</param>
-        /// <param name="width">Width of the image.</param>
-        /// <param name="height">Height of the image.</param>
-        /// <param name="start">Start offset of the image data in the fileData parameter.</param>
-        /// <param name="bitsLength">Amount of bits used by one pixel.</param>
-        /// <param name="bigEndian">True if the bits in the original image data are stored as big-endian.</param>
-        /// <returns>The image data in a 1-byte-per-pixel format, with a stride exactly the same as the width.</returns>
-        public static Byte[] ConvertTo8Bit(Byte[] fileData, Int32 width, Int32 height, Int32 start, Int32 bitsLength, Boolean bigEndian)
-        {
-            Int32 stride = GetMinimumStride(width, bitsLength);
-            return ConvertTo8Bit(fileData, width, height, start, bitsLength, bigEndian, ref stride);
-        }
-
-        /// <summary>
-        /// Converts given raw image data for a paletted image to 8-bit, so we have a simple one-byte-per-pixel format to work with.
         /// </summary>
         /// <param name="fileData">The file data.</param>
         /// <param name="width">Width of the image.</param>
@@ -884,7 +868,7 @@ namespace Nyerguds.ImageManipulation
             // File check, and getting actual data.
             if (start + size > fileData.Length)
                 throw new IndexOutOfRangeException("Data exceeds array bounds!");
-            // Actual conversion porcess.
+            // Actual conversion process.
             for (Int32 y = 0; y < height; y++)
             {
                 for (Int32 x = 0; x < width; x++)
@@ -908,22 +892,6 @@ namespace Nyerguds.ImageManipulation
 
         /// <summary>
         /// Converts given raw image data for a paletted 8-bit image to lower amount of bits per pixel.
-        /// Stride is assumed to be the same as the width. Output stride is the minimum needed to contain the data.
-        /// </summary>
-        /// <param name="data8bit">The eight bit per pixel image data</param>
-        /// <param name="width">The width of the image</param>
-        /// <param name="height">The height of the image</param>
-        /// <param name="bitsLength">The new amount of bits per pixel</param>
-        /// <param name="bigEndian">True if the bits in the new image data are to be stored as big-endian. One-bit images should generally be big-endian, while 4-bit ones should not be.</param>
-        /// <returns>The image data converted to the requested amount of bits per pixel.</returns>
-        public static Byte[] ConvertFrom8Bit(Byte[] data8bit, Int32 width, Int32 height, Int32 bitsLength, Boolean bigEndian)
-        {
-            Int32 stride = width;
-            return ConvertFrom8Bit(data8bit, width, height, bitsLength, bigEndian, ref stride);
-        }
-
-        /// <summary>
-        /// Converts given raw image data for a paletted 8-bit image to lower amount of bits per pixel.
         /// </summary>
         /// <param name="data8bit">The eight bit per pixel image data</param>
         /// <param name="width">The width of the image</param>
@@ -941,7 +909,7 @@ namespace Nyerguds.ImageManipulation
             // Should not be needed if data is correct, but eh.
             Int32 bitmask = (1 << bitsLength) - 1;
             Byte[] dataXbit = new Byte[newStride * height];
-            // Actual conversion porcess.
+            // Actual conversion process.
             for (Int32 y = 0; y < height; y++)
             {
                 for (Int32 x = 0; x < width; x++)
@@ -1350,7 +1318,7 @@ namespace Nyerguds.ImageManipulation
             // Get the first colour that matches that maximum.
             return colorFreq.FirstOrDefault(x => x.Value == max).Key;
         }
-        
+
         public static Rectangle GetCropBounds(Bitmap image, Color blankPixel, Int32 borderSizePixels = 5, Rectangle? searchArea = null)
         {
             // Not too worried about the other boundaries; the "for" loops will exclude those anyway.
@@ -1464,7 +1432,7 @@ namespace Nyerguds.ImageManipulation
                 // Actually has same bit amounts : simply reorder the data.
                 for (Int32 y = 0; y < height; y++)
                 {
-                    Int32 offset = y*stride;
+                    Int32 offset = y * stride;
                     for (Int32 x = 0; x < width; x++)
                     {
                         UInt32[] rgbaValues = inputFormat.GetRawComponents(imageData, offset);
@@ -1479,7 +1447,7 @@ namespace Nyerguds.ImageManipulation
                 // Bits differ: convert through Color.
                 for (Int32 y = 0; y < height; y++)
                 {
-                    Int32 offset = y*stride;
+                    Int32 offset = y * stride;
                     for (Int32 x = 0; x < width; x++)
                     {
                         Color col = inputFormat.GetColor(imageData, offset);
@@ -1517,19 +1485,19 @@ namespace Nyerguds.ImageManipulation
             if (width <= 0)
                 return null;
             // Create the array. Since it's 8-bit, this is one byte per pixel.
-            Byte[] imageArray = new Byte[width*height];
+            Byte[] imageArray = new Byte[width * height];
             // Parse all values into the array
             // Y = lines, X = csv values
             for (Int32 y = 0; y < height; y++)
             {
-                Int32 offset = y*width;
+                Int32 offset = y * width;
                 // Skip indices before "startColumn". Target offset starts from the start of the line anyway.
                 for (Int32 x = startColumn; x < values[y].Length; x++)
                 {
                     Int32 val;
                     // Don't know if Trim is needed here. Depends on the file.
                     if (Int32.TryParse(values[y][x].Trim(), out val))
-                        imageArray[offset] = (Byte) Math.Max(0, Math.Min(val, maxValue));
+                        imageArray[offset] = (Byte)Math.Max(0, Math.Min(val, maxValue));
                     offset++;
                 }
             }
@@ -1552,7 +1520,7 @@ namespace Nyerguds.ImageManipulation
             BitmapData sourceData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
             Int32 stride = sourceData.Stride;
             Byte[] data = new Byte[stride * b.Height];
-            Marshal.Copy(sourceData.Scan0, data, 0, data.Length);            
+            Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
             // iterate
             for (Int32 y = 0; y < height; y++)
             {
@@ -1594,7 +1562,7 @@ namespace Nyerguds.ImageManipulation
             Int32 imageHeight = height;
             if (makeSquare)
             {
-                Int32 padding = Math.Abs(width - height)/2;
+                Int32 padding = Math.Abs(width - height) / 2;
                 Int32 max = Math.Max(width, height);
                 if (width > height)
                     padY = padding;
@@ -1632,17 +1600,17 @@ namespace Nyerguds.ImageManipulation
             }
             return destImage;
         }
-        
+
         public static Byte[] BayerToRgb2x2Orig(Byte[] arr, ref Int32 width, ref Int32 height, ref Int32 stride, Boolean greenFirst, Boolean blueRowFirst)
         {
             Int32 actualWidth = width - 1;
             Int32 actualHeight = height - 1;
-            Int32 actualStride = actualWidth*3;
-            Byte[] result = new Byte[actualStride*actualHeight];
+            Int32 actualStride = actualWidth * 3;
+            Byte[] result = new Byte[actualStride * actualHeight];
             for (Int32 y = 0; y < actualHeight; y++)
             {
-                Int32 curPtr = y*stride;
-                Int32 resPtr = y*actualStride;
+                Int32 curPtr = y * stride;
+                Int32 resPtr = y * actualStride;
                 for (Int32 x = 0; x < actualWidth; x++)
                 {
                     // Get correct colour components from sliding window
@@ -1658,11 +1626,11 @@ namespace Nyerguds.ImageManipulation
                     // Blue
                     result[resPtr + 0] = blueCol;
                     // Green
-                    result[resPtr + 1] = (Byte) ((greenCol1 + greenCol2)/2);
+                    result[resPtr + 1] = (Byte)((greenCol1 + greenCol2) / 2);
                     // Red
                     result[resPtr + 2] = redCol;
                     curPtr++;
-                    resPtr+=3;
+                    resPtr += 3;
                 }
             }
             height = actualHeight;
@@ -1761,13 +1729,13 @@ namespace Nyerguds.ImageManipulation
                     Byte valBlue;
 
                     Byte cntrCol = arr[curPtr];
-                    Byte? tplfCol = y == 0 || x == 0       ? (Byte?)null : arr[curPtr - stride - 1];
-                    Byte? tpcnCol = y == 0                 ? (Byte?)null : arr[curPtr - stride];
+                    Byte? tplfCol = y == 0 || x == 0 ? (Byte?)null : arr[curPtr - stride - 1];
+                    Byte? tpcnCol = y == 0 ? (Byte?)null : arr[curPtr - stride];
                     Byte? tprtCol = y == 0 || x == lastCol ? (Byte?)null : arr[curPtr - stride + 1];
-                    Byte? cnlfCol = x == 0                  ? (Byte?)null : arr[curPtr - 1];
-                    Byte? cnrtCol = x == lastCol            ? (Byte?)null : arr[curPtr + 1];
+                    Byte? cnlfCol = x == 0 ? (Byte?)null : arr[curPtr - 1];
+                    Byte? cnrtCol = x == lastCol ? (Byte?)null : arr[curPtr + 1];
                     Byte? btlfCol = y == lastRow || x == 0 ? (Byte?)null : arr[curPtr + stride - 1];
-                    Byte? btcnCol = y == lastRow           ? (Byte?)null : arr[curPtr + stride];
+                    Byte? btcnCol = y == lastRow ? (Byte?)null : arr[curPtr + stride];
                     Byte? btrtCol = y == lastRow || x == lastCol ? (Byte?)null : arr[curPtr + stride + 1];
 
                     if (isGreen)
@@ -1783,7 +1751,7 @@ namespace Nyerguds.ImageManipulation
                         valGreen = GetAverageCol(tpcnCol, cnrtCol, btcnCol, cnlfCol);
                         Byte cornerCol = GetAverageCol(tplfCol, tprtCol, btlfCol, btrtCol);
                         valRed = isBlueRow ? cornerCol : cntrCol;
-                        valBlue = isBlueRow ? cntrCol : cornerCol;                        
+                        valBlue = isBlueRow ? cntrCol : cornerCol;
                     }
                     result[resPtr + 0] = valBlue;
                     result[resPtr + 1] = valGreen;
@@ -1799,7 +1767,7 @@ namespace Nyerguds.ImageManipulation
         private static Byte GetAverageCol(params Byte?[] cols)
         {
             Int32 colsCount = 0;
-            foreach(Byte? col in cols)
+            foreach (Byte? col in cols)
                 if (col.HasValue) colsCount++;
             Int32 avgVal = 0;
             foreach (Byte? col in cols)
@@ -1841,13 +1809,12 @@ namespace Nyerguds.ImageManipulation
             Int32 newWidth = origChannel.GetLength(1) / lossfactor;
             // to avoid rounding errors
             Int32 origHeight = newHeight * lossfactor;
-            Int32 origWidth = newWidth *lossfactor;
+            Int32 origWidth = newWidth * lossfactor;
             Int32[,] newChannel = new Int32[newHeight, newWidth];
-            Int32 newX = 0;
             Int32 newY = 0;
             for (Int32 y = 1; y < origHeight; y += lossfactor)
             {
-                newX = 0;
+                Int32 newX = 0;
                 for (Int32 x = 1; x < origWidth; x += lossfactor)
                 {
                     newChannel[newY, newX] = origChannel[y, x];
@@ -1947,7 +1914,7 @@ namespace Nyerguds.ImageManipulation
                 {
                     for (Int32 x = 0; x < width; x++)
                     {
-                        Byte val = (Byte) (brightness[y, x] * groups);
+                        Byte val = (Byte)(brightness[y, x] * groups);
                         Int32 num;
                         historigram.TryGetValue(val, out num);
                         historigram[val] = num + 1;
@@ -1987,7 +1954,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
         public static List<List<Point>> FindBlobs<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Int32 mergeThreshold, Boolean getEdgesOnly)
         {
-            List<Boolean[,]> inBlobs = new List<Boolean[,]>();
+            List<Boolean[,]> inBlobs;
             List<List<Point>> blobs = FindBlobs(data, width, height, clearsThreshold, allEightEdges, getEdgesOnly, out inBlobs);
             MergeBlobs(blobs, width, height, null, mergeThreshold);
             return blobs;
@@ -2008,7 +1975,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
         public static List<Boolean[,]> FindBlobsAsBooleans<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Int32 mergeThreshold, Boolean getEdgesOnly)
         {
-            List<Boolean[,]> inBlobs = new List<Boolean[,]>();
+            List<Boolean[,]> inBlobs;
             List<List<Point>> blobs = FindBlobs(data, width, height, clearsThreshold, allEightEdges, getEdgesOnly, out inBlobs);
             MergeBlobs(blobs, width, height, inBlobs, mergeThreshold);
             return inBlobs;
@@ -2029,9 +1996,11 @@ namespace Nyerguds.ImageManipulation
         {
             List<List<Point>> blobs = new List<List<Point>>();
             inBlobs = new List<Boolean[,]>();
+            // Used for fast checking. Not returned, since in the end it'll just end up containing the threshold function applied to the data.
+            Boolean[,] combinedBlobs = new Boolean[height, width]; 
             for (Int32 y = 0; y < height; y++)
                 for (Int32 x = 0; x < width; x++)
-                    BuildBlobsCollection(x, y, data, width, height, clearsThreshold, blobs, inBlobs, allEightEdges, getEdgesOnly);
+                    BuildBlobsCollection(x, y, data, width, height, clearsThreshold, blobs, inBlobs, combinedBlobs, allEightEdges, getEdgesOnly);
             return blobs;
         }
 
@@ -2094,7 +2063,6 @@ namespace Nyerguds.ImageManipulation
                         if (i == j)
                             continue;
                         List<Point> blob2 = blobs[j];
-                        Boolean[,] inBlob2 = inBlobs == null ? null : inBlobs[j];
                         if (blob2.Count == 0)
                             continue;
                         Rectangle bounds2 = collBounds[j];
@@ -2104,6 +2072,7 @@ namespace Nyerguds.ImageManipulation
                             // checks against duplicates in these collections.
                             continueMerge = true;
                             blob1.AddRange(blob2);
+                            // Mark all points on boolean array. Easier to use the points list for this instead of the second inBlobs array.
                             if (inBlobs != null)
                                 foreach (Point p in blob2)
                                     inBlob1[p.Y, p.X] = true;
@@ -2148,7 +2117,7 @@ namespace Nyerguds.ImageManipulation
         /// If the point was already found in one of the collections, the function does nothing.
         /// Loop this over every pixel of an image to detect all blobs.
         /// </summary>
-        /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
+        /// <typeparam name="T">Type of the list to detect equal neighbours in. This system allows any kind of data to be taken as input.</typeparam>
         /// <param name="pointX">X-coordinate of the current point.</param>
         /// <param name="pointY">Y-coordinate of the current point.</param>
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
@@ -2159,7 +2128,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="inBlobs">The list of point collections represented as boolean arrays, for very quick checks to see if a set of coordinates is in a collection.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
-        public static void BuildBlobsCollection<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, List<List<Point>> blobs, List<Boolean[,]> inBlobs, Boolean allEightEdges, Boolean getEdgesOnly)
+        public static void BuildBlobsCollection<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, List<List<Point>> blobs, List<Boolean[,]> inBlobs, Boolean[,] combinedBlobs, Boolean allEightEdges, Boolean getEdgesOnly)
         {
             // If the point does not equal the value to detect, abort.
             if (!clearsThreshold(data, pointY, pointX))
@@ -2196,13 +2165,15 @@ namespace Nyerguds.ImageManipulation
         public static void BuildBlob<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, out List<Point> blob, out Boolean[,] inBlob, Boolean allEightEdges, Boolean edgeOnly)
         {
             // set up return variables
-            blob = new List<Point>();
-            inBlob = new Boolean[height, width];
-
+            blob = null;
+            inBlob = null;
             // If the given point does not equal the value to detect, abort.
             if (!clearsThreshold(data, pointY, pointX))
                 return;
-            
+            // Initialize return variables
+            blob = new List<Point>();
+            inBlob = new Boolean[height, width];
+
             // setting up variables to use...
             List<Point> edgeCollection = new List<Point>();
             Int32 lastX = width - 1;
@@ -2216,6 +2187,7 @@ namespace Nyerguds.ImageManipulation
             // Start looking.
             while (edgeCollection.Count > 0)
             {
+                // 1. Add current edge collection to the blob.
                 if (!edgeOnly)
                     blob.AddRange(edgeCollection);
                 foreach (Point p in edgeCollection)
@@ -2231,15 +2203,16 @@ namespace Nyerguds.ImageManipulation
                         || !clearsThreshold(data, y + 1, x)))
                         blob.Add(p);
                 }
-                // Search all neighbouring pixels of the current neighbours list.
+                // 2. Search all neighbouring pixels of the current neighbours list.
                 foreach (Point ed in edgeCollection)
                 {
-                    // gets all 8 neighbouring pixels.
+                    // 3. gets all (4 or 8) neighbouring pixels.
                     List<Point> neighbours = GetNeighbours(ed.X, ed.Y, lastX, lastY, allEightEdges);
                     foreach (Point p in neighbours)
                     {
                         Int32 x = p.X;
                         Int32 y = p.Y;
+                        // 4. If the point is not already in the blob or in the new edge collection, and clears the threshold, add it to the new edge collection.
                         if (!inBlob[y, x] && !inNewEdgeCollection[y, x]
                             && clearsThreshold(data, y, x))
                         {
@@ -2248,6 +2221,7 @@ namespace Nyerguds.ImageManipulation
                         }
                     }
                 }
+                // 5. Replace edge collection with new edge collection.
                 edgeCollection.Clear();
                 edgeCollection.AddRange(newEdgeCollection);
                 newEdgeCollection.Clear();
@@ -2294,7 +2268,7 @@ namespace Nyerguds.ImageManipulation
             }
             return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
         }
-        
+
         public static List<Point> GetBlobEdgePoints(List<Point> blob, Int32 imageWidth, Int32 imageHeight)
         {
             Boolean[,] pointInList = new Boolean[imageHeight, imageWidth];
@@ -2318,5 +2292,69 @@ namespace Nyerguds.ImageManipulation
             return edgePoints;
         }
         
+        public static Bitmap BitmapTo1Bpp(Bitmap source)
+        {
+            Rectangle rect = new Rectangle(0, 0, source.Width, source.Height);
+            Bitmap dest = new Bitmap(rect.Width, rect.Height, PixelFormat.Format1bppIndexed);
+            dest.SetResolution(source.HorizontalResolution, source.VerticalResolution);
+            BitmapData sourceData = source.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format1bppIndexed);
+            BitmapData targetData = dest.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format1bppIndexed);
+            Int32 actualDataWidth = (rect.Width + 7) / 8;
+            Int32 h = source.Height;
+            Int32 origStride = sourceData.Stride;
+            Int32 targetStride = targetData.Stride;
+            Byte[] imageData = new Byte[actualDataWidth];
+            IntPtr sourcePos = sourceData.Scan0;
+            IntPtr destPos = targetData.Scan0;
+            // Copy line by line, skipping by stride but copying actual data width
+            for (Int32 y = 0; y < h; y++)
+            {
+                Marshal.Copy(sourcePos, imageData, 0, actualDataWidth);
+                Marshal.Copy(imageData, 0, destPos, actualDataWidth);
+                sourcePos = new IntPtr(sourcePos.ToInt64() + origStride);
+                destPos = new IntPtr(destPos.ToInt64() + targetStride);
+            }
+            dest.UnlockBits(targetData);
+            source.UnlockBits(sourceData);
+            return dest;
+        }
+
+    public static Boolean IsGrayscale(Bitmap cur)
+    {
+        // Indexed format, and no non-gray colours in the images palette: immediate pass.
+        if ((cur.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed
+            && cur.Palette.Entries.All(c => c.R == c.G && c.R == c.B))
+            return true;
+        BitmapData curBitmapData = cur.LockBits(new Rectangle(0, 0, cur.Width, cur.Height),
+            ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        Int32 stride = curBitmapData.Stride;
+        Byte[] data = new Byte[stride * cur.Height];
+        Marshal.Copy(curBitmapData.Scan0, data, 0, data.Length);
+        cur.UnlockBits(curBitmapData);
+
+        Int32 curRowOffs = 0;
+        for (Int32 y = 0; y < cur.Height; y++)
+        {
+            // Set offset to start of current row
+            Int32 curOffs = curRowOffs;
+            for (Int32 x = 0; x < cur.Width; x++)
+            {
+                Byte b = data[curOffs];
+                Byte g = data[curOffs + 1];
+                Byte r = data[curOffs + 2];
+                Byte a = data[curOffs + 3];
+                // Increase offset to next colour
+                curOffs += 4;
+                if (a == 0)
+                    continue;
+                if (r != b || b != g || r != g)
+                    return false;
+            }
+            // Increase row offset
+            curRowOffs += stride;
+        }
+        return true;
+    }
+
     }
 }

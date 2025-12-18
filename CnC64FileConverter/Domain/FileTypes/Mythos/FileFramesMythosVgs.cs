@@ -23,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
 
-        public override FileClass FileClass { get { return (this.m_FramesList != null && this.m_FramesList.Count > 0) ? FileClass.FrameSet : FrameInputFileClass; } }
+        public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
@@ -280,7 +280,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (this.ExtraInfo.Length > 0)
                 this.ExtraInfo += "\n";
             this.ExtraInfo += "Used compression: " + this.compressionTypes[this.CompressionType];
-
             if (offset != fileData.Length)
                 throw new FileTypeLoadException("Image load failed.");
             if (m_PaletteSet && m_FramesList.Count == 0)
@@ -290,7 +289,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_LoadedImage = m_FramesList[0].GetBitmap();
                 m_FramesList.Clear();
                 this.ExtraInfo += "\nTreated as single image.";
-
             }
         }
         

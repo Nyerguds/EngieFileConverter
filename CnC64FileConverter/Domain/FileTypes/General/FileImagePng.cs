@@ -22,13 +22,16 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             SupportedFileType parType = fileToSave.FrameParent;
-            Boolean mainTypeIndexed = (fileToSave.FileClass & FileClass.ImageIndexed) != 0;
+            Boolean mainTypeIndexed = (fileToSave.FileClass & FileClass.ImageIndexed) != 0 || (fileToSave.IsFramesContainer && (fileToSave.FrameInputFileClass & FileClass.ImageIndexed) != 0);
             Boolean parTypeIndexed = parType != null && ((parType.FileClass & FileClass.ImageIndexed) != 0 || (parType.FrameInputFileClass & FileClass.ImageIndexed) != 0);
             // Does not support indexed graphics; don't show the option at all.
             if (!mainTypeIndexed && !parTypeIndexed)
                 return new SaveOption[0];            
             Boolean mainTypeHasMask = fileToSave.TransparencyMask != null && fileToSave.TransparencyMask.Any(b => b);
             Boolean parTypeHasMask = parType != null && parType.TransparencyMask != null && parType.TransparencyMask.Any(b => b);
+            Color[] pal = fileToSave.GetColors();
+            if (!mainTypeHasMask && !parTypeHasMask && pal != null && pal.All(c => c.A == 255))
+                return new SaveOption[0];
             // Default to true if the type has a specific forced transparent index; this kind of transparency is usually best removed for editing.
             return new SaveOption[]
             {

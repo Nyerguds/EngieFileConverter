@@ -98,7 +98,7 @@ namespace Nyerguds.GameData.Mythos
                 // only one pixel required to write a repeat code if the value is the flag.
                 UInt32 requiredRepeat = (UInt32) (cur == flag ? 1 : 3);
                 UInt32 detectedRepeat;
-                if ((curLineEnd - inPtr > 2 || requiredRepeat == 1) && (detectedRepeat = RepeatingAhead(buffer, len, inPtr, requiredRepeat)) == requiredRepeat)
+                if ((curLineEnd - inPtr >= requiredRepeat) && (detectedRepeat = RepeatingAhead(buffer, len, inPtr, requiredRepeat)) == requiredRepeat)
                 {
                     // Found more than 2 bytes (or a flag byte). Worth compressing. Apply run-length encoding.
                     UInt32 start = inPtr;

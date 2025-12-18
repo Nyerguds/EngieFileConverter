@@ -11,7 +11,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileFrames : FileImage
     {
-        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass FileClass { get { return FileClass.FrameSet | base.FileClass; } }
         public override FileClass InputFileClass { get { return FileClass.None; } }
 
         public override String ShortTypeName { get { return "Frames"; } }
@@ -32,10 +32,16 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary>True if all frames in this frames container have a common palette.</summary>
-        public override Boolean FramesHaveCommonPalette { get { return this._commonPalette; } }
+        public override Boolean FramesHaveCommonPalette { get { return this.m_CommonPalette; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
-        
+        public override Boolean HasCompositeFrame { get { return this.m_LoadedImage != null; } }
+        public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1 ? this.m_BitsPerColor : base.BitsPerPixel; } }
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return this.m_TransparencyMask; } }
+
+        /// <summary>Amount of colors in the palette that is contained inside the image. 0 if the image itself does not contain a palette, even if it generates one.</summary>
+        public override Int32 ColorsInPalette { get { return this.m_ColorsInPalette == 0 ? (this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Palette.Entries.Length) : m_ColorsInPalette; } }
+
         /// <summary>
         /// Avoid using this for adding frames: use AddFrame instead.
         /// </summary>
@@ -43,7 +49,11 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public String BaseType { get; private set; }
 
-        protected Boolean _commonPalette;
+        protected Boolean m_CommonPalette;
+        protected Int32 m_ColorsInPalette;
+        protected Int32 m_BitsPerColor;
+        protected Boolean[] m_TransparencyMask;
+
         /// <summary>
         /// Adds a frame to the list, setting its FrameParent property to this object.
         /// </summary>
@@ -52,6 +62,31 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             frame.FrameParent = this;
             this.FramesList.Add(frame);
+        }
+
+        public void SetCompositeFrame(Bitmap compositeBitmap)
+        {
+            this.m_LoadedImage = compositeBitmap;
+        }
+
+        public void SetCommonPalette(Boolean commonPalette)
+        {
+            this.m_CommonPalette = commonPalette;
+        }
+
+        public void SetBitsPerColor(Int32 bitsPerColor)
+        {
+            this.m_BitsPerColor = bitsPerColor;
+        }
+
+        public void SetColorsInPalette(Int32 colorsInPalette)
+        {
+            this.m_ColorsInPalette = colorsInPalette;
+        }
+
+        public void SetTransparencyMask(Boolean[] transparencyMask)
+        {
+            this.m_TransparencyMask = transparencyMask;
         }
 
         public static String[] GetFrameFilesRange(String path, out String baseName)
@@ -151,7 +186,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             framesContainer.BaseType = currentType.ShortTypeName;
             Color[] pal = currentType.GetColors();
-            framesContainer._commonPalette = pal != null && currentType.ColorsInPalette > 0;
+            framesContainer.m_CommonPalette = pal != null && currentType.ColorsInPalette > 0;
             foreach (String currentFrame in frameNames)
             {
                 if (new FileInfo(currentFrame).Length == 0)
@@ -174,8 +209,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frame.SetBitsPerColor(frameFile.BitsPerPixel);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);
-                    if (framesContainer._commonPalette)
-                        framesContainer._commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
+                    if (framesContainer.m_CommonPalette)
+                        framesContainer.m_CommonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
                 }
                 catch (FileTypeLoadException)
                 {

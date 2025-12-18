@@ -72,9 +72,9 @@ namespace CnC64FileConverter.UI
         public List<PaletteDropDownInfo> LoadDefaultPalettes()
         {
             List<PaletteDropDownInfo> palettes = new List<PaletteDropDownInfo>();
-            palettes.Add(new PaletteDropDownInfo("Black/White", 1, new Color[] { Color.Black, Color.White }, null, -1, false, false));
-            palettes.Add(new PaletteDropDownInfo("White/Black", 1, new Color[] { Color.White, Color.Black }, null, -1, false, false));
-            palettes.Add(new PaletteDropDownInfo("Black/Red", 1, new Color[] { Color.Black, Color.Red }, null, -1, false, false));
+            palettes.Add(new PaletteDropDownInfo("Black/White", 1, new Color[] {Color.Black, Color.White}, null, -1, false, false));
+            palettes.Add(new PaletteDropDownInfo("White/Black", 1, new Color[] {Color.White, Color.Black}, null, -1, false, false));
+            palettes.Add(new PaletteDropDownInfo("Black/Red", 1, new Color[] {Color.Black, Color.Red}, null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("Grayscale B->W", 4, PaletteUtils.GenerateGrayPalette(4, null, false), null, -1, false, false));
             //palettes.Add(new PaletteDropDownInfo("Heights Blue->Red", 4, PaletteUtils.GenerateRainbowPalette(4, false, false, true, 0, 160.0 / 240.0), null, -1, false, false));
             palettes.Add(new PaletteDropDownInfo("Grayscale W->B", 4, PaletteUtils.GenerateGrayPalette(4, null, true), null, -1, false, false));
@@ -116,7 +116,7 @@ namespace CnC64FileConverter.UI
 
         private void Frm_DragDrop(Object sender, DragEventArgs e)
         {
-            String[] files = (String[])e.Data.GetData(DataFormats.FileDrop);
+            String[] files = (String[]) e.Data.GetData(DataFormats.FileDrop);
             if (files.Length != 1)
                 return;
             String path = files[0];
@@ -181,8 +181,20 @@ namespace CnC64FileConverter.UI
                                 MessageBox.Show(this, "File type" + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            // any test code can come here
-
+                            /*/
+                            Bitmap bmp = m_LoadedFile.GetBitmap();
+                            if (bmp != null)
+                            {
+                                Int32 stride;
+                                Byte[] blackAndWhite = ImageUtils.GetImageData(bmp, out stride, PixelFormat.Format1bppIndexed);
+                                Bitmap bwBitmap = ImageUtils.BuildImage(blackAndWhite, bmp.Width, bmp.Height, stride, PixelFormat.Format1bppIndexed, new[] { Color.Black, Color.White }, null);
+                                FileImagePng png = new FileImagePng();
+                                png.LoadFile(bwBitmap, path);
+                                SupportedFileType oldFile = m_LoadedFile;
+                                m_LoadedFile = png;
+                                //oldFile.Dispose();
+                            }
+                            //*/
                         }
                     }
                 }
@@ -207,7 +219,7 @@ namespace CnC64FileConverter.UI
                     }
                     else
                     {
-                        m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
+                        this.m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
                     }
                 }
                 if (filesChain == null && (isEmptyFile || error == null))
@@ -221,8 +233,14 @@ namespace CnC64FileConverter.UI
                         this.m_LoadedFile = null;
                         if (detectSource != null)
                         {
-                            try { detectSource.Dispose(); }
-                            catch (Exception) { /* ignore */ }
+                            try
+                            {
+                                detectSource.Dispose();
+                            }
+                            catch (Exception)
+                            {
+                                /* ignore */
+                            }
                         }
                     }
                     else
@@ -232,8 +250,14 @@ namespace CnC64FileConverter.UI
                 this.ReloadUi(true);
                 if (!ReferenceEquals(this.m_LoadedFile, oldLoaded))
                 {
-                    try { oldLoaded.Dispose(); }
-                    catch (Exception) { /* ignore */ }
+                    try
+                    {
+                        oldLoaded.Dispose();
+                    }
+                    catch (Exception)
+                    {
+                        /* ignore */
+                    }
                 }
                 if (error != null)
                     MessageBox.Show(this, "File loading failed: " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -442,7 +466,7 @@ namespace CnC64FileConverter.UI
             Boolean hasFrames = this.m_LoadedFile.Frames != null && this.m_LoadedFile.Frames.Length > 0;
             Boolean isFrame = !frames && hasFrames && this.numFrame.Value != -1;
             SupportedFileType loadedFile = isFrame ? this.m_LoadedFile.Frames[(Int32) this.numFrame.Value] : this.m_LoadedFile;
-            Type selectType = frames ? typeof(FileImagePng) : loadedFile.GetType();
+            Type selectType = frames ? typeof (FileImagePng) : loadedFile.GetType();
             Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
             FileClass loadedFileType = loadedFile.FileClass;
             FileClass frameFileType = FileClass.None;
@@ -456,7 +480,7 @@ namespace CnC64FileConverter.UI
             List<Type> filteredTypes = new List<Type>();
             foreach (Type saveType in saveTypes)
             {
-                SupportedFileType tmpsft = (SupportedFileType)Activator.CreateInstance(saveType);
+                SupportedFileType tmpsft = (SupportedFileType) Activator.CreateInstance(saveType);
                 FileClass diff = tmpsft.InputFileClass & (frames ? frameFileType : loadedFileType);
                 if ((diff & ~FileClass.FrameSet) != 0 || (!frames && (tmpsft.FrameInputFileClass & frameFileType) != 0))
                     filteredTypes.Add(saveType);
@@ -475,7 +499,7 @@ namespace CnC64FileConverter.UI
                 if (newSelectType == null)
                     newSelectType = filteredTypes.FirstOrDefault(x => x.IsSubclassOf(selectType));
                 if (newSelectType == null)
-                    newSelectType = typeof(FileImagePng);
+                    newSelectType = typeof (FileImagePng);
                 selectType = newSelectType;
             }
             String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, filteredTypes.ToArray(), false, true, loadedFile.LoadedFile, out selectedItem);
@@ -517,7 +541,7 @@ namespace CnC64FileConverter.UI
             catch (NotSupportedException ex)
             {
                 String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
-                    + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
+                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
                 MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
@@ -620,7 +644,7 @@ namespace CnC64FileConverter.UI
                 case ColorStatus.External:
                     PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
                     resetEnabled = currentPal != null && currentPal.IsChanged();
-                    if (fileLoaded)// && currentPal.Colors.Length != loadedFile.GetColors().Length)
+                    if (fileLoaded) // && currentPal.Colors.Length != loadedFile.GetColors().Length)
                         pal = loadedFile.GetColors();
                     else
                         pal = currentPal.Colors;
@@ -638,8 +662,8 @@ namespace CnC64FileConverter.UI
                 // Fix for palettes larger than the colour depth would normally allow (can happen on png)
                 while (1 << bpp < pal.Length)
                     bpp *= 2;
-                if (bpp == 2)
-                    bpp = 4;
+                //if (bpp == 2)
+                //    bpp = 4;
                 bpp = Math.Min(8, bpp);
             }
             else
@@ -647,7 +671,6 @@ namespace CnC64FileConverter.UI
                 bpp = 0;
             }
             PalettePanel.InitPaletteControl(bpp, this.palColorViewer, pal, PALETTE_DIM);
-            //this.palColorViewer.MaxColors = pal.Length;
         }
 
         private void PicImage_Click(Object sender, EventArgs e)
@@ -682,6 +705,7 @@ namespace CnC64FileConverter.UI
         {
             this.GenerateHeightMap(true);
         }
+
         private void TsmiToHeightMap_Click(Object sender, EventArgs e)
         {
             this.GenerateHeightMap(false);
@@ -699,7 +723,7 @@ namespace CnC64FileConverter.UI
             {
                 SupportedFileType selectedType;
                 //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
-                String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] { typeof(FileImage) }, pngFileName, "images", null, out selectedType);
+                String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] {typeof (FileImage)}, pngFileName, "images", null, out selectedType);
                 if (filename == null)
                     return;
                 try
@@ -721,7 +745,7 @@ namespace CnC64FileConverter.UI
                     return;
                 }
             }
-            FileMapWwCc1Pc map = (FileMapWwCc1Pc)this.m_LoadedFile;
+            FileMapWwCc1Pc map = (FileMapWwCc1Pc) this.m_LoadedFile;
             this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map, plateauImage, null);
             this.ReloadUi(false);
         }
@@ -744,7 +768,7 @@ namespace CnC64FileConverter.UI
         {
             if (!(this.m_LoadedFile is FileMapWwCc1Pc))
                 return;
-            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64((FileMapWwCc1Pc)this.m_LoadedFile, "_lvl");
+            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64((FileMapWwCc1Pc) this.m_LoadedFile, "_lvl");
             this.ReloadUi(false);
         }
 
@@ -811,6 +835,8 @@ namespace CnC64FileConverter.UI
                 default:
                     return;
             }
+            SupportedFileType shownFile = this.GetShownFile();
+            this.picImage.Image = shownFile.GetBitmap();
             this.RefreshImage(false);
             this.RefreshColorControls();
         }
@@ -929,26 +955,116 @@ namespace CnC64FileConverter.UI
             this.m_CustomColors = cdl.CustomColors;
             if (res == DialogResult.OK)
             {
-                ColorStatus cs = this.GetColorStatus();
-                palpanel.Palette[colindex] = cdl.Color;
-                if (cs != ColorStatus.None)
-                {
-                    Color[] pal = loadedFile.GetColors();
-                    if (pal.Length > colindex)
-                        pal[colindex] = cdl.Color;
-                    loadedFile.SetColors(pal);
-                    if (cs == ColorStatus.External)
-                    {
-                        PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
-                        if (currentPal != null && currentPal.Colors.Length > colindex)
-                            currentPal.Colors[colindex] = cdl.Color;
-                    }
-                    SupportedFileType shownFile = this.GetShownFile();
-                    this.picImage.Image = shownFile.GetBitmap();
-                }
-                this.RefreshImage(false);
-                this.RefreshColorControls();
+                this.SetPaletteColor(palpanel, colindex, cdl.Color, loadedFile);
             }
+        }
+
+        private void SetPaletteColor(PalettePanel palpanel, Int32 colindex, Color color, SupportedFileType loadedFile)
+        {
+            ColorStatus cs = this.GetColorStatus();
+            palpanel.Palette[colindex] = color;
+            if (cs != ColorStatus.None)
+            {
+                Color[] pal = loadedFile.GetColors();
+                if (pal.Length > colindex)
+                    pal[colindex] = color;
+                loadedFile.SetColors(pal);
+                if (cs == ColorStatus.External)
+                {
+                    PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
+                    if (currentPal != null && currentPal.Colors.Length > colindex)
+                        currentPal.Colors[colindex] = color;
+                }
+                SupportedFileType shownFile = this.GetShownFile();
+                this.picImage.Image = shownFile.GetBitmap();
+            }
+            this.RefreshImage(false);
+            this.RefreshColorControls();
+        }
+
+
+        private void PalColorViewer_ColorLabelMouseClick(Object sender, PaletteClickEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                return;
+            ContextMenu cm = new ContextMenu();
+            if (this.palColorViewer.Palette.Length <= e.Index)
+                return;
+            MenuItem miEd = new MenuItem("Edit...", this.EditColor);
+            miEd.Tag = e.Index;
+            cm.MenuItems.Add(miEd);
+            MenuItem miTr = new MenuItem("Set transparent", this.SetColorTransparent);
+            miTr.Tag = e.Index;
+            cm.MenuItems.Add(miTr);
+            MenuItem miOp = new MenuItem("Set opaque", this.SetColorOpaque);
+            miOp.Tag = e.Index;
+            cm.MenuItems.Add(miOp);
+            MenuItem miAl = new MenuItem("Set alpha...", this.SetColorAlpha);
+            miAl.Tag = e.Index;
+            cm.MenuItems.Add(miAl);
+
+            cm.Show((Control)sender, e.Location);
+        }
+
+        private void EditColor(Object sender, EventArgs e)
+        {
+            MenuItem cm = sender as MenuItem;
+            if (cm == null)
+                return;
+            if (!(cm.Tag is Int32))
+                return;
+            Int32 index = (Int32)cm.Tag;
+            ColorDialog cdl = new ColorDialog();
+            cdl.Color = this.palColorViewer.Palette[index];
+            cdl.FullOpen = true;
+            cdl.CustomColors = this.m_CustomColors;
+            DialogResult res = cdl.ShowDialog(this);
+            this.m_CustomColors = cdl.CustomColors;
+            if (res != DialogResult.OK)
+                return;
+            SupportedFileType loadedFile = this.GetShownFile();
+            this.SetPaletteColor(this.palColorViewer, index, cdl.Color, loadedFile);
+        }
+
+        private void SetColorTransparent(Object sender, EventArgs e)
+        {
+            this.SetPalColorAlpha(sender, e, 0);
+        }
+        
+        private void SetColorOpaque(Object sender, EventArgs e)
+        {
+            this.SetPalColorAlpha(sender, e, 255);
+        }
+
+        private void SetColorAlpha(Object sender, EventArgs e)
+        {
+            MenuItem cm = sender as MenuItem;
+            if (cm == null)
+                return;
+            if (!(cm.Tag is Int32))
+                return;
+            Int32 index = (Int32)cm.Tag;
+            Color col = this.palColorViewer.Palette[index];
+            FrmSetAlpha alphaForm = new FrmSetAlpha(col.A);
+            if (alphaForm.ShowDialog(this) != DialogResult.OK)
+                return;
+            col = Color.FromArgb(alphaForm.Alpha, col);
+            SupportedFileType loadedFile = this.GetShownFile();
+            this.SetPaletteColor(this.palColorViewer, index, col, loadedFile);
+        }
+
+        private void SetPalColorAlpha(Object sender, EventArgs e, Int32 alpha)
+        {
+            MenuItem cm = sender as MenuItem;
+            if (cm == null)
+                return;
+            if (!(cm.Tag is Int32))
+                return;
+            Int32 index = (Int32)cm.Tag;
+            Color col = this.palColorViewer.Palette[index];
+            col = Color.FromArgb(alpha, col);
+            SupportedFileType loadedFile = this.GetShownFile();
+            this.SetPaletteColor(this.palColorViewer, index, col, loadedFile);
         }
 
         private enum ColorStatus
@@ -977,8 +1093,112 @@ namespace CnC64FileConverter.UI
 
         private void tsmiCombineShadows_Click(Object sender, EventArgs e)
         {
-            // todo
+#if DEBUG
+            TestBed();
+#endif
         }
 
+#if DEBUG
+        private void TestBed()
+        {
+            ViewKortExeIcons();
+        }
+
+        private void ViewKortExeIcons()
+        {
+            // any test code can come here
+            Byte[] oneBppImage = new Byte[] {
+                0xFF, 0x1F, 0xFF, 0x0F, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFF, 0x00, 0x7F, 0x00, 0x3F, 0x00, 
+                0x1F, 0x00, 0x3F, 0x00, 0xFF, 0x01, 0xFF, 0x01, 0xFF, 0xE0, 0xFF, 0xF0, 0xFF, 0xF8, 0xFF, 0xF8, 
+                0x00, 0x00, 0x00, 0x40, 0x00, 0x60, 0x00, 0x70, 0x00, 0x78, 0x00, 0x7C, 0x00, 0x7E, 0x00, 0x7F, 
+                0x80, 0x7F, 0x00, 0x7C, 0x00, 0x4C, 0x00, 0x06, 0x00, 0x06, 0x00, 0x03, 0x00, 0x03, 0x00, 0x00, 
+                0xF0, 0xFF, 0xE0, 0xFF, 0xC0, 0xFF, 0x81, 0xFF, 0x03, 0xFF, 0x07, 0x06, 0x0F, 0x00, 0x1F, 0x00, 
+                0x3F, 0x80, 0x7F, 0xC0, 0xFF, 0xE0, 0xFF, 0xF1, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+                0x00, 0x00, 0x06, 0x00, 0x0C, 0x00, 0x18, 0x00, 0x30, 0x00, 0x60, 0x00, 0xC0, 0x70, 0x80, 0x39, 
+                0x00, 0x1F, 0x00, 0x0E, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+                0x1F, 0xF0, 0x0F, 0xE0, 0x07, 0xC0, 0x03, 0x80, 0x41, 0x04, 0x61, 0x0C, 0x81, 0x03, 0x81, 0x03, 
+                0x81, 0x03, 0x61, 0x0C, 0x41, 0x04, 0x03, 0x80, 0x07, 0xC0, 0x0F, 0xE0, 0x10, 0xF0, 0xFF, 0xFF, 
+                0x00, 0x00, 0xC0, 0x07, 0x20, 0x09, 0x10, 0x11, 0x08, 0x21, 0x04, 0x40, 0x04, 0x40, 0x3C, 0x78, 
+                0x04, 0x40, 0x04, 0x40, 0x08, 0x21, 0x10, 0x11, 0x20, 0x09, 0xC0, 0x07, 0x00, 0x00, 0x00, 0x00, 
+                0xFF, 0xF3, 0xFF, 0xE1, 0xFF, 0xE1, 0xFF, 0xE1, 0xFF, 0xE1, 0x49, 0xE0, 0x00, 0xE0, 0x00, 0x80, 
+                0x00, 0x00, 0x00, 0x00, 0xFC, 0x07, 0xF8, 0x07, 0xF9, 0x9F, 0xF1, 0x8F, 0x03, 0xC0, 0x00, 0xE0, 
+                0x00, 0x0C, 0x00, 0x12, 0x00, 0x12, 0x00, 0x12, 0x00, 0x12, 0xB6, 0x13, 0x49, 0x12, 0x49, 0x72, 
+                0x49, 0x92, 0x01, 0x90, 0x01, 0x90, 0x01, 0x80, 0x02, 0x40, 0x02, 0x40, 0x04, 0x20, 0xF8, 0x1F, 
+                0xFF, 0x8F, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFB, 0x80, 0x71, 0xC0, 0x31, 0xE0, 0x11, 0xF0, 
+                0x01, 0xF8, 0x03, 0xFC, 0x07, 0xFE, 0x03, 0xFF, 0x01, 0xF8, 0x20, 0xF0, 0x70, 0xF8, 0xF9, 0xFF, 
+                0x00, 0x00, 0x00, 0x70, 0x00, 0x78, 0x00, 0x5C, 0x00, 0x2E, 0x04, 0x17, 0x84, 0x0B, 0xC4, 0x05, 
+                0xEC, 0x02, 0x78, 0x01, 0xB0, 0x00, 0x68, 0x00, 0xD4, 0x00, 0x8A, 0x07, 0x04, 0x00, 0x00, 0x00, 
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
+                0x00, 0x00, 0x6A, 0x69, 0x4C, 0x49, 0x4C, 0x49, 0x6A, 0x6D, 0x00, 0x00, 0xE0, 0x0E, 0xA0, 0x04, 
+                0xA0, 0x04, 0xE0, 0x04, 0x00, 0x00, 0xAE, 0x6E, 0xA4, 0x4A, 0xE4, 0x4A, 0xA4, 0x6E, 0x00, 0x00 };
+
+            Color[] palette = new Color[4];
+            palette[0] = Color.Black;
+            palette[1] = Color.FromArgb(0, 255, 0, 255);
+            palette[2] = Color.White;
+            palette[3] = Color.Red;
+            ColorPalette pal = BitmapHandler.GetPalette(palette);
+            Int32 frames = oneBppImage.Length / 64;
+            Int32 fullWidth = 16;
+            Int32 fullHeight = frames * 16;
+            Int32 fullStride = 16;
+            Byte[] fullImage = new Byte[fullStride * fullHeight];
+            FileFrames framesContainer = new FileFrames();
+            for (Int32 i = 0; i < frames; i ++)
+            {
+                Int32 start = i * 64;
+                Int32 start2 = start + 32;
+                Byte[] curImage1 = new Byte[32];
+                for (Int32 j = 0; j < 32; j += 2)
+                {
+                    curImage1[j] = oneBppImage[start + j + 1];
+                    curImage1[j + 1] = oneBppImage[start + j];
+                }
+                Int32 stride1 = 2;
+                curImage1 = ImageUtils.ConvertTo8Bit(curImage1, 16, 16, 0, 1, true, ref stride1);
+
+                Byte[] curImage2 = new Byte[32];
+                for (Int32 j = 0; j < 32; j += 2)
+                {
+                    curImage2[j] = oneBppImage[start2 + j + 1];
+                    curImage2[j + 1] = oneBppImage[start2 + j];
+                }
+                Int32 stride2 = 2;
+                curImage2 = ImageUtils.ConvertTo8Bit(curImage2, 16, 16, 0, 1, true, ref stride2);
+
+                Byte[] imageFinal = new Byte[256];
+                Int32 strideFinal = 16;
+                for (Int32 j = 0; j < 256; j++)
+                {
+                    imageFinal[j] = (Byte)((curImage2[j] << 1) | curImage1[j]);
+                }
+                ImageUtils.PasteOn8bpp(fullImage, fullWidth, fullHeight, fullWidth, imageFinal, 16, 16, strideFinal, new Rectangle(0, i * 16, 16, 16), null, true);
+                imageFinal = ImageUtils.ConvertFrom8Bit(imageFinal, 16, 16, 4, true, ref strideFinal);
+                Bitmap frameImage = ImageUtils.BuildImage(imageFinal, 16,16,strideFinal, PixelFormat.Format4bppIndexed, palette, Color.Empty);
+                frameImage.Palette = pal;
+                
+
+                FileImageFrame frame = new FileImageFrame();
+                frame.LoadFileFrame(framesContainer, "Icon", frameImage, "Icon" + i.ToString("D3") + ".png", -1);
+                frame.SetBitsPerColor(2);
+                frame.SetColorsInPalette(4);
+                framesContainer.AddFrame(frame);
+            }
+            fullImage = ImageUtils.ConvertFrom8Bit(fullImage, fullWidth, fullHeight, 4, true, ref fullStride);
+            Bitmap composite = ImageUtils.BuildImage(fullImage, fullWidth, fullHeight, fullStride, PixelFormat.Format4bppIndexed, palette, Color.Empty);
+            composite.Palette = pal;
+            framesContainer.SetCompositeFrame(composite);
+            framesContainer.SetBitsPerColor(2);
+            framesContainer.SetColorsInPalette(4);
+            framesContainer.SetCommonPalette(true);
+            SupportedFileType oldFile = this.m_LoadedFile;
+            this.m_LoadedFile = framesContainer;
+            this.AutoSetZoom();
+            this.ReloadUi(true);
+            if (oldFile != null)
+                oldFile.Dispose();
+        }
+#endif
     }
 }

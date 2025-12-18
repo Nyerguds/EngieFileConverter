@@ -84,10 +84,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         public virtual List<String> GetFilesToLoadMissingData(String originalPath) { return null; }
         public virtual void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain) { }
 
-        // Annoyingly, chain loading and asking to load previous data are mutually exclusive...
-        //public virtual String[] ChainLoadFilenames(String originalPath, out String baseName) { return FileFrames.GetFrameFilesRange(originalPath, out baseName); }
-        //public virtual FileFrames ChainLoadFiles(ref String[] fileNames, String originalPath) { return null; }
-
         /// <summary>
         /// Get specific options for saving a file to this format. Can be made to depend on the input file and the output path.
         /// </summary>
@@ -145,23 +141,26 @@ namespace CnC64FileConverter.Domain.FileTypes
                 return;
             if (palette == null || palette.Length == 0)
                 return;
+            Boolean isInternal = this.ColorsInPalette > 0;
             // Override this in types that don't have a palette, like grayscale N64 images.
             // This function should only be called from UI "if (BitsPerColor != 0 && !FileHasPalette)"
             if (this.BitsPerPixel != 0)
             {
+                Int32 maxLen = 1 << this.BitsPerPixel;
                 Boolean[] transMask = this.TransparencyMask;
                 Int32 transMaskLen = transMask == null ? 0 : transMask.Length;
-                Int32 paletteLength = Math.Max(1 << this.BitsPerPixel, this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Palette.Entries.Length);
+                // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
+                Int32 paletteLength = Math.Min(maxLen, this.m_LoadedImage == null ? maxLen : this.m_LoadedImage.Palette.Entries.Length);
                 Color[] pal = new Color[paletteLength];
                 for (Int32 i = 0; i < paletteLength; i++)
                 {
                     if (i < palette.Length)
-                        pal[i] = (i < transMaskLen && transMask[i]) ? Color.FromArgb(0x00, palette[i]) : Color.FromArgb(0xFF, palette[i]);
+                        pal[i] = transMask == null || isInternal ? palette[i] : (i < transMaskLen && transMask[i]) ? Color.FromArgb(0x00, palette[i]) : Color.FromArgb(0xFF, palette[i]);
                     else
                         pal[i] = Color.Empty;
                 }
                 Color[] testpal;
-                if (this.m_BackupPalette == null && (testpal = this.GetColors()) != null && testpal.Length != 0 && this.ColorsInPalette != 0)
+                if (this.m_BackupPalette == null && (testpal = this.GetColors()) != null && testpal.Length != 0 && isInternal)
                     this.m_BackupPalette = this.m_Palette == null ? (this.m_LoadedImage == null ? null : this.m_LoadedImage.Palette.Entries) : this.m_Palette.ToArray();
                 this.m_Palette = pal;
                 if (this.m_LoadedImage != null)

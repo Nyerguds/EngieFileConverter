@@ -52,7 +52,6 @@ namespace Nyerguds.Util.UI
         private Boolean _ScrollValidatesEnter = true;
         private Boolean _UpDownValidatesEnter = true;
 
-
         public EnhNumericUpDown()
         {
             this.MouseWheelIncrement = 1;
@@ -90,7 +89,6 @@ namespace Nyerguds.Util.UI
                 this.Text = value.ToString();
             }
             this.Select(firstIllegalChar,0);
-            
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
