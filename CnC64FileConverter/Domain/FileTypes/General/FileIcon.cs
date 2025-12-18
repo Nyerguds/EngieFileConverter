@@ -56,15 +56,18 @@ namespace CnC64FileConverter.Domain.FileTypes
             HeaderParseException hpe;
             try
             {
-                Int32 hdrSize = Marshal.SizeOf(typeof (ICONDIR));
+                UInt16 hdrReserved = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+                UInt16 hdrType = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+                UInt16 hdrNumberOfImages = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
+                Int32 hdrSize = 6;
                 if (fileData.Length < hdrSize)
                     throw new HeaderParseException("Not long enough for header.");
-                ICONDIR hdr = ArrayUtils.StructFromByteArray<ICONDIR>(fileData);
-                if (hdr.Reserved != 0)
+                //ICONDIR hdr = ArrayUtils.StructFromByteArray<ICONDIR>(fileData);
+                if (hdrReserved != 0)
                     throw new HeaderParseException("Invalid values in header.");
-                UInt32 nrOfImages = hdr.NumberOfImages;
-                Int32 indexItemSize = Marshal.SizeOf(typeof (ICONDIRENTRY));
-                if (fileData.Length < hdrSize + nrOfImages*indexItemSize)
+                UInt32 nrOfImages = hdrNumberOfImages;
+                Int32 indexItemSize = 16;// Marshal.SizeOf(typeof (ICONDIRENTRY));
+                if (fileData.Length < hdrSize + nrOfImages * indexItemSize)
                     throw new HeaderParseException("Not long enough for images index.");
                 if (nrOfImages == 0)
                     throw new HeaderParseException("No images in given icon.");
@@ -72,17 +75,34 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_FramesList = new SupportedFileType[nrOfImages];
                 for (Int32 i = 0; i < nrOfImages; i++)
                 {
-                    ICONDIRENTRY info = ArrayUtils.ReadStructFromByteArray<ICONDIRENTRY>(fileData, offset);
-                    UInt32 imageOffset = info.ImageOffset;
-                    UInt32 imageLength = info.ImageLength;
+                    // 0 image width (is 0 for "256")
+                    Byte dirEntryWidth = fileData[offset];
+                    // 1 image height
+                    Byte dirEntryHeight = fileData[offset+1];
+                    // 2 number of colors
+                    Byte dirEntryPaletteLength = fileData[offset+2];
+                    // 3 reserved
+                    Byte dirEntryReserved = fileData[offset+3];
+                    // 4-5 color planes
+                    UInt16 dirEntryColorPlanes = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
+                    // 6-7 bits per pixel
+                    UInt16 dirEntryBitsPerPixel = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 6, 2, true);
+                    // 8-11 size of image data
+                    UInt32 dirEntryImageLength = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 8, 4, true);
+                    // 12-15 offset of image data
+                    UInt32 dirEntryImageOffset = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 12, 4, true);
+
+                    //ICONDIRENTRY info = ArrayUtils.ReadStructFromByteArray<ICONDIRENTRY>(fileData, offset);
+                    UInt32 imageOffset = dirEntryImageOffset;
+                    UInt32 imageLength = dirEntryImageLength;
                     if (imageOffset + imageLength > fileData.Length)
                         throw new HeaderParseException("Bad header data: offset and length for image " + i + " do not fit in file.");
                     Byte[] frameData = new Byte[imageLength];
                     Array.Copy(fileData, imageOffset, frameData, 0, imageLength);
                     String type = MimeTypeDetector.GetMimeType(frameData)[0];
                     Bitmap bmp;
-                    Int32 frWidth = info.Width == 0 ? 0x100 : info.Width;
-                    Int32 frHeight = info.Height == 0 ? 0x100 : info.Height;
+                    Int32 frWidth = dirEntryWidth == 0 ? 0x100 : dirEntryWidth;
+                    Int32 frHeight = dirEntryHeight == 0 ? 0x100 : dirEntryHeight;
                     PixelFormat originalPixelFormat = PixelFormat.Undefined;
                     if (frWidth == 0 || frHeight == 0)
                         throw new HeaderParseException("Icon dimensions cannot be zero.");

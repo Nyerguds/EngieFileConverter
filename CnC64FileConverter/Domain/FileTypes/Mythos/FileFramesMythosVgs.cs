@@ -184,7 +184,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         // Palette found! Extract palette and skip frame so it doesn't get added to the list.
                         Byte[] paletteData = new Byte[0x300];
                         Array.Copy(imageData, PAL_IDENTIFIER.Length + 1, paletteData, 0, 0x300);
-                        this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(paletteData));
+                        this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(paletteData));
                         PaletteUtils.ApplyTransparencyGuide(this.m_Palette, transMask);
                         this.m_PaletteSet = true;
                         this.ExtraInfo =  "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame";
@@ -232,13 +232,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                         String palName = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath) + ".PAL");
                         if (File.Exists(palName))
                         {
+                            Byte[] palData = File.ReadAllBytes(palName);
+                            // Try loading the file as different palette types.
                             Type[] paletteTypes = {typeof(FileFramesMythosPal), typeof(FilePalette6Bit), typeof(FilePalette8Bit)};
                             for (Int32 i = 0; i < paletteTypes.Length && this.m_Palette == null; i++)
                             {
                                 try
                                 {
                                     SupportedFileType palFile = (SupportedFileType)Activator.CreateInstance(paletteTypes[i]);
-                                    Byte[] palData = File.ReadAllBytes(palName);
                                     palFile.LoadFile(palData, palName);
                                     this.m_Palette = palFile.GetColors();
                                 }

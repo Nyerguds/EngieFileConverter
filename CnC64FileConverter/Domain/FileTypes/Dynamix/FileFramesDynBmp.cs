@@ -27,6 +27,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected String[] savecompressionTypes = new String[] { "None", "RLE", "LZSS" };
         //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
         public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         public override Int32 BitsPerPixel { get { return this.m_bpp; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
@@ -98,6 +99,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         Byte[] palData = File.ReadAllBytes(palName);
                         palDyn.LoadFile(palData, palName);
                         this.m_Palette = palDyn.GetColors();
+                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, TransparencyMask);
                         this.m_loadedPalette = true;
                         this.LoadedFileName += "/PAL";
                     }

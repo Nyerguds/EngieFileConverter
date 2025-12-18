@@ -20,7 +20,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return this.ColorsInPalette / 16; } }
-        public override Int32 ColorsInPalette { get { return this.m_Palette == null? 0 : this.m_Palette.Length; } }
+        public override Int32 ColorsInPalette { get { return this.m_Palette.Length; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
         {

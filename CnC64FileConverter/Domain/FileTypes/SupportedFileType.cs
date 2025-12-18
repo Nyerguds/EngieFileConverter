@@ -55,7 +55,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public virtual Boolean HasCompositeFrame { get { return false; } }
         /// <summary>Extra info to be shown on the UI, like detected internal compression type in a loaded file.</summary>
         public virtual String ExtraInfo { get; protected set; }
-        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.</summary>
         public virtual Boolean[] TransparencyMask { get { return null; } }
 
         protected virtual void BuildFullImage() { }
@@ -226,6 +226,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if ((palEntries == null || palEntries.Length == 0) && fileToSave.IsFramesContainer && fileToSave.Frames != null)
             {
                 SupportedFileType[] frames = fileToSave.Frames;
+                // Find first palette in the frames.
                 for (Int32 i = 0; i < frames.Length && (palEntries == null || palEntries.Length == 0); i++)
                     palEntries = frames[i].GetColors();
             }
@@ -333,7 +334,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImgWwCps),
             typeof(FileFramesWwWsa),
             typeof(FileImgWwLcw),
-            //typeof(FileFramesWwShpCc),
+            typeof(FileFramesWwShpCc),
             typeof(FileTilesetWwCc1PC),
             typeof(FileImgWwN64),
             typeof(FilePaletteWwCc1N64Pa4),

@@ -27,6 +27,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Westwood CPS File"; } }
         public override Int32 ColorsInPalette { get { return this.hasPalette ? 256 : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -62,7 +63,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 ColorSixBit[] palette;
                 try
                 {
-                    palette = ColorUtils.ReadSixBitPalette(pal);
+                    palette = ColorUtils.ReadSixBitPaletteFile(pal);
                 }
                 catch (ArgumentException ex)
                 {

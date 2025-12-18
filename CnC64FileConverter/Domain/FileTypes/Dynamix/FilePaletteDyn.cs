@@ -18,6 +18,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Dynamix palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
@@ -46,7 +47,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Exception e = null;
             try
             {
-                palette = ColorUtils.ReadSixBitPalette(vgaChunk.Data);
+                palette = ColorUtils.ReadSixBitPaletteFile(vgaChunk.Data);
             }
             catch (ArgumentException ex) { e = ex; }
             catch (NotSupportedException ex2) { e = ex2; }

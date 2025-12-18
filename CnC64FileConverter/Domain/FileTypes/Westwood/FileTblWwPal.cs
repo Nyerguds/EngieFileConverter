@@ -22,6 +22,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription  { get { return "Westwood Palette Stretch Table"; } }
         public override Int32 ColorsInPalette  { get { return 0; } }
         public override Int32 BitsPerPixel  { get { return 8; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {

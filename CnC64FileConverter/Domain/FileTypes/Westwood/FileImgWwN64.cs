@@ -54,6 +54,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
 
         public override Int32 ColorsInPalette { get { return this.hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
+        public override Boolean[] TransparencyMask { get { return this.hdrColorFormat == 2 ? null : new Boolean[0]; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {

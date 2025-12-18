@@ -231,7 +231,6 @@ namespace Nyerguds.Util
                     b = GetStructBytes(info.GetValue(obj), littleEndian);
                 allValuesDict.Add(info.MetadataToken, b);
             }
-
             Byte[][] allValues = new Byte[allValuesDict.Count][];
             for (Int32 i = 0; i < fi.Length; i++)
             {

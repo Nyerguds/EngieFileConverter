@@ -18,18 +18,21 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Mythos Visage Animation"; } }
         public override String ShortTypeDescription { get { return "Mythos Visage Animation file"; } }
         public override String[] FileExtensions { get { return new String[] { "vda", "vdx" }; } }
-        public override Boolean[] TransparencyMask { get { return null; } }
+        public override Boolean[] TransparencyMask { get { return (!this._isFramed || (this._noFirstFrame && !this._isChained)) ? this.CreateTransparencyMask() : new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFile(fileData, null);
         }
-        public Boolean NoFirstFrame { get; set; }
+
+        private Boolean _noFirstFrame;
+        private Boolean _isChained;
+        private Boolean _isFramed;
         
         public override List<String> GetFilesToLoadMissingData(String originalPath)
         {
             // No missing data.
-            if (!this.NoFirstFrame)
+            if (!this._noFirstFrame)
                 return null;
             
             // Wrong file. Switch to the VDA one.
@@ -146,14 +149,14 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] lastFrameData = null;
             SupportedFileType lastFrame = null;
             String firstName = loadChain.First();
-            if (loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
+            Boolean isPng = loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase);
+            if (isPng)
             {
                 String pngName = loadChain[0];
                 if (File.Exists(pngName))
                 {
                     try
                     {
-                        
                         FileImageFrame pngFile = new FileImageFrame();
                         // Uses specific PNG loading from its superclass, since
                         // FileImageFrame inherits from png and still contains its mime type.
@@ -170,7 +173,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                             pngFile.Dispose();
                         }
                     }
-                    catch { return; }// can't load as png file. Abort.
+                    catch { return; } // can't load as png file. Abort.
                 }
             }
             Int32 lastIndex = loadChain.Count - 1;
@@ -204,7 +207,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.ExtraInfo += "\nData chained from " + Path.GetFileName(firstName);
                 FileImageFrame last = lastFrame as FileImageFrame;
                 if (last != null)
-                    last.SetExtraInfo((last.ExtraInfo + "\nLoaded from previous file").TrimStart('\n'));
+                    last.SetExtraInfo((last.ExtraInfo + "\n" + (isPng ? "PNG loaded as base frame" : "Loaded from previous file")).TrimStart('\n'));
                 this.m_FramesList.Insert(0, lastFrame);
             }
         }
@@ -245,19 +248,24 @@ namespace CnC64FileConverter.Domain.FileTypes
                     this.LoadedFileName += "/" + Path.GetExtension(vdxName).TrimStart('.').ToUpper();
             }
             List<Point> framesXY;
+            this._isFramed = vdxBytes != null;
+            this._isChained = initialFrameData != null;
             this.LoadFromFileData(vdaBytes, vdaName, false, false, true, out framesXY, false);
             this.m_Palette = PaletteUtils.ApplyTransparencyGuide(this.m_Palette, null);
             Int32 chunks = this.m_FramesList.Count;
-            if (vdxBytes != null)
+            if (this._isFramed)
             {
                 Boolean noFirstFrame;
                 List<SupportedFileType> framesList = this.BuildAnimationFromChunks(vdaName, vdxBytes, this.m_FramesList, framesXY, initialFrameData, out noFirstFrame, false);
-                this.NoFirstFrame = noFirstFrame;
+                this._noFirstFrame = noFirstFrame;
+                // Apply transparency mask.
+                // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
+                this.SetColors(this.m_Palette, this);
+                this.m_BackupPalette = null;
                 this.m_FramesList = framesList;
             }
             this.ExtraInfo += "\nChunks: " + chunks;
         }
-
 
         private void GetLoadFileInfo(Byte[] fileData, String filename, out Byte[] vdaBytes, out Byte[] vdxBytes, out String vdaName, out String vdxName)
         {
@@ -332,7 +340,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (initialFrameData != null && initialFrameData.Length != arraySize)
                 throw new FileTypeLoadException("Bad start frame data length!");
             Byte[] imageData = initialFrameData == null ? null : initialFrameData.ToArray();
-            Boolean[] transMask = this.CreateTransparencyMask();
+            Boolean[] pasteTransMask = this.CreateTransparencyMask();
+            Boolean[] imageTransMask = pasteTransMask;
             Int32 chunks = 0;
             while (offset + 2 <= framesInfo.Length)
             {
@@ -341,25 +350,30 @@ namespace CnC64FileConverter.Domain.FileTypes
                     break;
                 if (curVal == 0xFFFF)
                 {
-                    // No chunks at all specified for the very first frame. Could happen in a continued animation I guess?
+                    // No chunks at all specified for the very first frame. Could happen in a continued animation starting with a pause I guess?
                     if (imageData == null)
                     {
                         noFirstFrame = true;
                         if (testFirstFrame)
                             return null;
-                        imageData = Enumerable.Repeat(TransparentIndex, arraySize).ToArray();
+                        imageData = new Byte[arraySize];
+                        for (Int32 i = 0; i < arraySize; i++)
+                            imageData[i] = TransparentIndex;
                     }
                     if (testFirstFrame)
                         return null;
-                    if (noFirstFrame && framesList.Count == 0)
+                    if (framesList.Count == 0)
                     {
-                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, transMask);
+                        if (!noFirstFrame || initialFrameData != null)
+                            imageTransMask = null;
+                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, imageTransMask);
                     }
                     Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
                     frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
-                    frame.SetTransparencyMask(noFirstFrame ? transMask : null);
+                    frame.SetTransparencyMask(imageTransMask);
+                    // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                     frame.SetColors(this.m_Palette, this);
                     frame.SetExtraInfo(CHUNKS + chunks);
                     framesList.Add(frame);
@@ -426,7 +440,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     {
                         if (imageWidth < xOffset + width || imageHeight < yOffset + height)
                             throw new FileLoadException("Illegal data in video frames file: paint coordinates out of bounds!");
-                        ImageUtils.PasteOn8bpp(imageData, imageWidth, imageHeight, imageStride, currentFrameData, width, height, stride, new Rectangle(xOffset, yOffset, width, height), transMask, true);
+                        ImageUtils.PasteOn8bpp(imageData, imageWidth, imageHeight, imageStride, currentFrameData, width, height, stride, new Rectangle(xOffset, yOffset, width, height), pasteTransMask, true);
                     }
                     chunks++;
                     offset += 2;
@@ -485,12 +499,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                 compression = 0;
             FileFramesMythosVda fileVda = fileToSave as FileFramesMythosVda;
             if (fileVda != null)
-                noFirstFrame = fileVda.NoFirstFrame;
+                noFirstFrame = fileVda._noFirstFrame;
             return new SaveOption[]
             {
                 new SaveOption("OPT", SaveOptionType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks", "1"),
-                new SaveOption("CH8", SaveOptionType.Boolean, "Chunk optimisation: Include diagonal neighbours", "1"),
-                new SaveOption("CHR", SaveOptionType.Boolean, "Chunk optimisation: Group overlapping chunks", "1"),
+                new SaveOption("CH8", SaveOptionType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", "1"),
+                new SaveOption("CHR", SaveOptionType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", "1"),
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
                 new SaveOption("CUT", SaveOptionType.Boolean, "Leave off the first frame (difference frames only)", noFirstFrame? "1" : "0"),
             };
@@ -508,13 +522,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             String vdxName;
             if (savePath.EndsWith(".VDX", StringComparison.InvariantCultureIgnoreCase))
             {
-                vdaName = Path.Combine(Path.GetDirectoryName(savePath), Path.GetFileNameWithoutExtension(savePath) + ".VDA");
+                vdaName = Path.Combine(Path.GetDirectoryName(savePath), Path.GetFileNameWithoutExtension(savePath) + ".vda");
                 vdxName = savePath;
             }
             else // No explicit check on VDA.
             {
                 vdaName = savePath;
-                vdxName = Path.Combine(Path.GetDirectoryName(savePath), Path.GetFileNameWithoutExtension(savePath) + ".VDX");
+                vdxName = Path.Combine(Path.GetDirectoryName(savePath), Path.GetFileNameWithoutExtension(savePath) + ".vdx");
             }
             Byte[] vdxFile;
             Byte[] data = this.SaveToBytesAsThis(fileToSave, saveOptions, out vdxFile);
@@ -677,8 +691,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                         frameChunk.FinalIndex = finalChunks.Count;
                         finalChunks.Add(finalFrameChunk);
                         allImageRects.Add(new List<Rectangle>() { finalFrameChunk.ImageRect });
-                        if (finalChunks.Count >= 0x7FFF)
-                            throw new NotSupportedException("Chunk count exceeds " + 0x7FFF + "!");
+                        if (finalChunks.Count > 0x7FFE)
+                            throw new NotSupportedException("Chunk count exceeds " + 0x7FFE + "!");
                     }
                     // clear this so it can get cleaned up. It's no longer needed anyway; the reference to the final frame is set.
                     frameChunk.ImageData = null;

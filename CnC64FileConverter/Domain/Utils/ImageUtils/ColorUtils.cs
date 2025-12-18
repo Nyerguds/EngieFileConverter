@@ -9,6 +9,9 @@ namespace Nyerguds.ImageManipulation
 {
     public static class ColorUtils
     {
+
+        const String invalid = "This is not a valid six-bit palette file.";
+
         public static Color ColorFromUInt(UInt32 argb)
         {
             return Color.FromArgb((Byte)((argb >> 0x18) & 0xFF), (Byte)((argb >> 0x10) & 0xFF), (Byte)((argb >> 0x08) & 0xFF), (Byte)(argb & 0xFF));
@@ -158,15 +161,20 @@ namespace Nyerguds.ImageManipulation
         public static ColorSixBit[] ReadSixBitPaletteFile(String palfilename)
         {
             Byte[] readBytes = File.ReadAllBytes(palfilename);
-            return ReadSixBitPalette(readBytes);
+            return ReadSixBitPaletteFile(readBytes);
         }
 
-        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData)
+        public static ColorSixBit[] ReadSixBitPaletteFile(Byte[] paletteData)
         {
-            const String invalid = "This is not a valid six-bit palette file.";
             if (paletteData.Length != 768)
                 throw new ArgumentException(invalid);
+            return ReadSixBitPalette(paletteData, 0);
+        }
 
+        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData, Int32 start)
+        {
+            if (paletteData.Length + start < 768)
+                throw new ArgumentException(invalid);
             ColorSixBit[] pal = new ColorSixBit[256];
             try
             {

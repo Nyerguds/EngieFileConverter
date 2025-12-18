@@ -295,9 +295,11 @@ namespace Nyerguds.GameData.Westwood
 				        //long set 0b11111110
 				        if (flag == 0xFE)
 				        {
-                            if (readOffset + 1 >= readEnd)
+                            if (readOffset >= readEnd)
                                 return writeOffset;
                             cpysize = input[readOffset++];
+                            if (readOffset >= readEnd)
+                                return writeOffset;
                             cpysize += (UInt16)((input[readOffset++]) << 8);
 					        if (cpysize > writeEnd - writeOffset)
                                 cpysize = (UInt16)(writeEnd - writeOffset);
@@ -319,18 +321,22 @@ namespace Nyerguds.GameData.Westwood
 					        //long move, abs 0b11111111
 					        if (flag == 0xFF)
 					        {
-                                if (readOffset + 1 >= readEnd)
+                                if (readOffset >= readEnd)
                                     return writeOffset;
                                 cpysize = input[readOffset++];
+                                if (readOffset >= readEnd)
+                                    return writeOffset;
 						        cpysize += (UInt16)((input[readOffset++]) << 8);
 						        if (cpysize > writeEnd - writeOffset)
 							        cpysize = (UInt16)(writeEnd - writeOffset);
-                                if (readOffset + 1 >= readEnd)
+                                if (readOffset >= readEnd)
                                     return writeOffset;
                                 offset = input[readOffset++];
-						        offset += (UInt16)((input[readOffset++]) << 8);
-
-						        //extended format for VQA32
+                                if (readOffset >= readEnd)
+                                    return writeOffset;
+                                offset += (UInt16)((input[readOffset++]) << 8);
+                                
+                                //extended format for VQA32
 						        if (relative)
 							        s = writeOffset - offset;
 						        else
@@ -348,10 +354,12 @@ namespace Nyerguds.GameData.Westwood
 					        {
 						        if (cpysize > writeEnd - writeOffset)
 							        cpysize = (UInt16)(writeEnd - writeOffset);
-                                if (readOffset + 1 >= readEnd)
+                                if (readOffset >= readEnd)
                                     return writeOffset;
                                 offset = input[readOffset++];
-						        offset += (UInt16)((input[readOffset++]) << 8);
+                                if (readOffset >= readEnd)
+                                    return writeOffset;
+                                offset += (UInt16)((input[readOffset++]) << 8);
 						        //extended format for VQA32
 						        if (relative)
 							        s = writeOffset - offset;
@@ -574,19 +582,20 @@ namespace Nyerguds.GameData.Westwood
         /// </summary>
         /// <param name="data">The data to apply the xor to</param>
         /// <param name="xorSource">The the delta data to apply</param>
-        public static void ApplyXorDelta(Byte[] data, Byte[] xorSource, Int32 xorStart, Int32 xorEnd)
+        /// <param name="xorStart"></param>
+        /// <param name="xorEnd"></param>
+        public static void ApplyXorDelta(Byte[] data, Byte[] xorSource, ref Int32 xorStart, Int32 xorEnd)
         {
             // Nyer's C# conversion: replacements for write and read for pointers.
             Int32 putp = 0;
-            Int32 getp = xorStart;
             Byte value = 0;
             Int32 dataEnd = data.Length;
-            if(xorEnd == 0)
+            if (xorEnd <= 0)
                 xorEnd = xorSource.Length;
-            while (putp < dataEnd && getp < xorEnd)
+            while (putp < dataEnd && xorStart < xorEnd)
             {
                 //DEBUG_SAY("XOR_Delta Put pos: %u, Get pos: %u.... ", putp - scast<sint8*>(dest), getp - scast<sint8*>(source));
-                Byte cmd = xorSource[getp++];
+                Byte cmd = xorSource[xorStart++];
                 UInt16 count = cmd;
                 Boolean xorval = false;
 
@@ -595,12 +604,12 @@ namespace Nyerguds.GameData.Westwood
                     //0b00000000
                     if (cmd == 0)
                     {
-                        if (getp >= xorEnd)
+                        if (xorStart >= xorEnd)
                             return;
-                        count = (UInt16)(xorSource[getp++] & 0xFF);
-                        if (getp >= xorEnd)
+                        count = (UInt16)(xorSource[xorStart++] & 0xFF);
+                        if (xorStart >= xorEnd)
                             return;
-                        value = xorSource[getp++];
+                        value = xorSource[xorStart++];
                         xorval = true;
                         //DEBUG_SAY("0b00000000 Val Count %d ", count);
                         //0b0???????
@@ -616,12 +625,12 @@ namespace Nyerguds.GameData.Westwood
                         //DEBUG_SAY("0b1??????? Skip Count %d\n", count);
                         continue;
                     }
-                    if (getp + 1 >= xorEnd)
+                    if (xorStart >= xorEnd)
                         return;
-                    count = (UInt16)((xorSource[getp] & 0xFF) + (xorSource[getp + 1] << 8));
-                    getp += 2;
-
-                    //DEBUG_SAY("Eval %u ", count);
+                    count = (UInt16) (xorSource[xorStart++] & 0xFF);
+                    if (xorStart >= xorEnd)
+                        return;
+                    count += (UInt16) (xorSource[xorStart++] << 8);
 
                     //0b10000000 0 0
                     if (count == 0)
@@ -641,9 +650,9 @@ namespace Nyerguds.GameData.Westwood
                     if ((count & 0x4000) != 0)
                     {
                         count &= 0x3FFF;
-                        if (getp >= xorEnd)
+                        if (xorStart >= xorEnd)
                             return;
-                        value = xorSource[getp++];
+                        value = xorSource[xorStart++];
                         //DEBUG_SAY("0b10000000 11 Val Count %d ", count);
                         xorval = true;
                         //0b10000000 10
@@ -670,9 +679,9 @@ namespace Nyerguds.GameData.Westwood
                     //DEBUG_SAY("XOR Source to Dest\n");
                     for (; count > 0; --count)
                     {
-                        if (putp >= dataEnd || getp >= xorEnd)
+                        if (putp >= dataEnd || xorStart >= xorEnd)
                             return;
-                        data[putp++] ^= xorSource[getp++];
+                        data[putp++] ^= xorSource[xorStart++];
                     }
                 }
             }

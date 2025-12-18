@@ -113,10 +113,14 @@ namespace Nyerguds.ImageManipulation
         {
             switch (bpp)
             {
-                case 1: return PixelFormat.Format1bppIndexed;
-                case 4: return PixelFormat.Format4bppIndexed;
-                case 8: return PixelFormat.Format8bppIndexed;
-                default: throw new NotSupportedException("Unsupported indexed pixel format '" + bpp + "'!");
+                case 1:
+                    return PixelFormat.Format1bppIndexed;
+                case 4:
+                    return PixelFormat.Format4bppIndexed;
+                case 8:
+                    return PixelFormat.Format8bppIndexed;
+                default:
+                    throw new NotSupportedException("Unsupported indexed pixel format '" + bpp + "'!");
             }
         }
 
@@ -170,7 +174,7 @@ namespace Nyerguds.ImageManipulation
                     if (c.A < 128)
                         newImageData[outputOffs] = 0;
                     else
-                        newImageData[outputOffs] = (Byte)(Math.Min((c.R * 0.3) + (c.G * 0.59) + (c.B * 0.11), 255) / divvalue);
+                        newImageData[outputOffs] = (Byte) (Math.Min((c.R * 0.3) + (c.G * 0.59) + (c.B * 0.11), 255) / divvalue);
                     inputOffs += 4;
                     outputOffs++;
                 }
@@ -234,7 +238,7 @@ namespace Nyerguds.ImageManipulation
             {
                 Int32 currentVal = imageData[i];
                 Color c = currentVal < sourcePalette.Length ? sourcePalette[imageData[i]] : Color.Black;
-                newImageData[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(c, targetPalette, null);
+                newImageData[i] = (Byte) ColorUtils.GetClosestPaletteIndexMatch(c, targetPalette, null);
             }
             return newImageData;
         }
@@ -293,7 +297,7 @@ namespace Nyerguds.ImageManipulation
                     if (c.A < 128)
                         newImageData[outputOffs] = 0;
                     else
-                        newImageData[outputOffs] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(c, palette, transparentIndices);
+                        newImageData[outputOffs] = (Byte) ColorUtils.GetClosestPaletteIndexMatch(c, palette, transparentIndices);
                     inputOffs += 4;
                     outputOffs++;
                 }
@@ -434,13 +438,13 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 x = 0; x < width; x++)
                 {
                     // UInt32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
-                    UInt32 val = (UInt32)data[x, y];
+                    UInt32 val = (UInt32) data[x, y];
                     // This code clears out everything but a specific part of the value
                     // and then shifts the remaining piece down to the lowest byte
-                    dataBytes[byteIndex + 0] = (Byte)(val & 0x000000FF); // B
-                    dataBytes[byteIndex + 1] = (Byte)((val & 0x0000FF00) >> 08); // G
-                    dataBytes[byteIndex + 2] = (Byte)((val & 0x00FF0000) >> 16); // R
-                    dataBytes[byteIndex + 3] = (Byte)((val & 0xFF000000) >> 24); // A
+                    dataBytes[byteIndex + 0] = (Byte) (val & 0x000000FF); // B
+                    dataBytes[byteIndex + 1] = (Byte) ((val & 0x0000FF00) >> 08); // G
+                    dataBytes[byteIndex + 2] = (Byte) ((val & 0x00FF0000) >> 16); // R
+                    dataBytes[byteIndex + 3] = (Byte) ((val & 0xFF000000) >> 24); // A
                     // More efficient than multiplying
                     byteIndex += 4;
                 }
@@ -453,14 +457,14 @@ namespace Nyerguds.ImageManipulation
             Int32 width = data.GetLength(0);
             Int32 height = data.GetLength(1);
             Int32 byteIndex = 0;
-            Byte[] dataBytes = new Byte[height * width * 4];
+            Byte[] dataBytes = new Byte[height * width];
             for (Int32 y = 0; y < height; y++)
             {
                 for (Int32 x = 0; x < width; x++)
                 {
                     // Int32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
                     // This uses the lowest byte, which is the blue component.
-                    dataBytes[byteIndex] = (Byte)((UInt32)data[x, y] & 0xFF);
+                    dataBytes[byteIndex] = (Byte) ((UInt32) data[x, y] & 0xFF);
                     // More efficient than multiplying
                     byteIndex++;
                 }
@@ -479,58 +483,63 @@ namespace Nyerguds.ImageManipulation
         public static Boolean HasTransparency(Bitmap bitmap)
         {
             // not an alpha-capable color format.
-            if ((bitmap.Flags & (Int32)ImageFlags.HasAlpha) == 0)
+            if ((bitmap.Flags & (Int32) ImageFlags.HasAlpha) == 0)
                 return false;
-            Int32 colDepth = Image.GetPixelFormatSize(bitmap.PixelFormat);
+            // Indexed format, and no alpha colours in the images palette: immediate pass.
+            if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.A == 255))
+                return false;
+            Int32 stride;
+            Byte[] data = GetImageData(bitmap, out stride, PixelFormat.Format32bppArgb);
             Int32 height = bitmap.Height;
             Int32 width = bitmap.Height;
-            Int32 stride;
-            // Indexed formats. Special case because the colours on the palette have the transparency.
-            if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && colDepth <= 8)
-            {
-                ColorPalette pal = bitmap.Palette;
-                // Find the transparent indices on the palette.
-                List<Int32> transCols = new List<Int32>();
-                for (Int32 i = 0; i < pal.Entries.Length; i++)
-                {
-                    Color col = pal.Entries[i];
-                    if (col.A != 255)
-                        transCols.Add(i);
-                }
-                // none of the entries in the palette have transparency information.
-                if (transCols.Count == 0)
-                    return false;
-                // Check pixels for existence of the transparent index.
-                Byte[] bytes = GetImageData(bitmap, out stride);
-                bytes = ConvertTo8Bit(bytes, width, height, 0, colDepth, bitmap.PixelFormat == PixelFormat.Format1bppIndexed, ref stride);
-                foreach (Byte b in bytes)
-                {
-                    if (transCols.Contains(b))
-                        return true;
-                }
-                return false;
-            }
-            Byte[] bytes32bit;
-            if (bitmap.PixelFormat != PixelFormat.Format32bppArgb)
-            {
-                using (Bitmap bitmap2 = PaintOn32bpp(bitmap, null))
-                    bytes32bit = GetImageData(bitmap2, out stride);
-            }
-            else
-            {
-                bytes32bit = GetImageData(bitmap, out stride);
-            }
+            Int32 curRowOffs = 0;
             for (Int32 y = 0; y < height; y++)
             {
-                Int32 inputOffs = y * stride + 3;
+                // Set offset to first alpha value on current row
+                Int32 curOffs = curRowOffs + 3;
                 for (Int32 x = 0; x < width; x++)
                 {
-                    if (bytes32bit[inputOffs] != 255)
+                    if (data[curOffs] != 255)
                         return true;
-                    inputOffs += 4;
-                }
+                    curOffs += 4;
+               }
+                // Increase row offset
+                curRowOffs += stride;
             }
             return false;
+        }
+
+        public static Boolean IsGrayscale(Bitmap bitmap)
+        {
+            // Indexed format, and no non-gray colours in the images palette: immediate pass.
+            if ((bitmap.PixelFormat & PixelFormat.Indexed) != 0 && bitmap.Palette.Entries.All(c => c.R == c.G && c.R == c.B))
+                return true;
+            Int32 stride;
+            Byte[] data = GetImageData(bitmap, out stride, PixelFormat.Format32bppArgb);
+            Int32 curRowOffs = 0;
+            Int32 height = bitmap.Height;
+            Int32 width = bitmap.Height;
+            for (Int32 y = 0; y < height; y++)
+            {
+                // Set offset to start of current row
+                Int32 curOffs = curRowOffs;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    Byte b = data[curOffs];
+                    Byte g = data[curOffs + 1];
+                    Byte r = data[curOffs + 2];
+                    Byte a = data[curOffs + 3];
+                    // Increase offset to next colour
+                    curOffs += 4;
+                    if (a == 0)
+                        continue;
+                    if (r != g || r != b)
+                        return false;
+                }
+                // Increase row offset
+                curRowOffs += stride;
+            }
+            return true;
         }
 
         private static Color[] GeneratePalette(Color[] colors, Color def)
@@ -883,7 +892,7 @@ namespace Nyerguds.ImageManipulation
                     if (bigEndian)
                         shift = 8 - shift - bitsLength;
                     // Get data and store it.
-                    data8bit[index8bit] = (Byte)((fileData[indexXbit] >> shift) & bitmask);
+                    data8bit[index8bit] = (Byte) ((fileData[indexXbit] >> shift) & bitmask);
                 }
             }
             stride = newStride;
@@ -924,7 +933,7 @@ namespace Nyerguds.ImageManipulation
                     if (bigEndian)
                         shift = 8 - shift - bitsLength;
                     // Get data, reduce to bit rate, shift it and store it.
-                    dataXbit[indexXbit] |= (Byte)((data8bit[index8bit] & bitmask) << shift);
+                    dataXbit[indexXbit] |= (Byte) ((data8bit[index8bit] & bitmask) << shift);
                 }
             }
             stride = newStride;
@@ -1497,7 +1506,7 @@ namespace Nyerguds.ImageManipulation
                     Int32 val;
                     // Don't know if Trim is needed here. Depends on the file.
                     if (Int32.TryParse(values[y][x].Trim(), out val))
-                        imageArray[offset] = (Byte)Math.Max(0, Math.Min(val, maxValue));
+                        imageArray[offset] = (Byte) Math.Max(0, Math.Min(val, maxValue));
                     offset++;
                 }
             }
@@ -1507,7 +1516,7 @@ namespace Nyerguds.ImageManipulation
             for (Int32 i = 0; i <= maxValue; i++)
             {
                 // Away from zero rounding: 2.4 => 2 ; 2.5 => 3
-                Byte v = (Byte)Math.Round(i * mulFactor, MidpointRounding.AwayFromZero);
+                Byte v = (Byte) Math.Round(i * mulFactor, MidpointRounding.AwayFromZero);
                 palette[i] = Color.FromArgb(v, v, v);
             }
             return BuildImage(imageArray, width, height, width, PixelFormat.Format8bppIndexed, palette, Color.White);
@@ -1626,7 +1635,7 @@ namespace Nyerguds.ImageManipulation
                     // Blue
                     result[resPtr + 0] = blueCol;
                     // Green
-                    result[resPtr + 1] = (Byte)((greenCol1 + greenCol2) / 2);
+                    result[resPtr + 1] = (Byte) ((greenCol1 + greenCol2) / 2);
                     // Red
                     result[resPtr + 2] = redCol;
                     curPtr++;
@@ -1678,10 +1687,10 @@ namespace Nyerguds.ImageManipulation
                     Byte? tpCol2 = null;
                     Byte? tpCol3 = null;
                     Byte? lfCol = null;
-                    Byte? rtCol = x == lastCol ? (Byte?)null : arr[curPtr + 1];
+                    Byte? rtCol = x == lastCol ? (Byte?) null : arr[curPtr + 1];
                     Byte? btCol1 = null;
-                    Byte? btCol2 = y == lastRow ? (Byte?)null : arr[curPtr + stride];
-                    Byte? btCol3 = y == lastRow || x == lastCol ? (Byte?)null : arr[curPtr + stride + 1];
+                    Byte? btCol2 = y == lastRow ? (Byte?) null : arr[curPtr + stride];
+                    Byte? btCol3 = y == lastRow || x == lastCol ? (Byte?) null : arr[curPtr + stride + 1];
 
                     if (isGreen)
                     {
@@ -1729,14 +1738,14 @@ namespace Nyerguds.ImageManipulation
                     Byte valBlue;
 
                     Byte cntrCol = arr[curPtr];
-                    Byte? tplfCol = y == 0 || x == 0 ? (Byte?)null : arr[curPtr - stride - 1];
-                    Byte? tpcnCol = y == 0 ? (Byte?)null : arr[curPtr - stride];
-                    Byte? tprtCol = y == 0 || x == lastCol ? (Byte?)null : arr[curPtr - stride + 1];
-                    Byte? cnlfCol = x == 0 ? (Byte?)null : arr[curPtr - 1];
-                    Byte? cnrtCol = x == lastCol ? (Byte?)null : arr[curPtr + 1];
-                    Byte? btlfCol = y == lastRow || x == 0 ? (Byte?)null : arr[curPtr + stride - 1];
-                    Byte? btcnCol = y == lastRow ? (Byte?)null : arr[curPtr + stride];
-                    Byte? btrtCol = y == lastRow || x == lastCol ? (Byte?)null : arr[curPtr + stride + 1];
+                    Byte? tplfCol = y == 0 || x == 0 ? (Byte?) null : arr[curPtr - stride - 1];
+                    Byte? tpcnCol = y == 0 ? (Byte?) null : arr[curPtr - stride];
+                    Byte? tprtCol = y == 0 || x == lastCol ? (Byte?) null : arr[curPtr - stride + 1];
+                    Byte? cnlfCol = x == 0 ? (Byte?) null : arr[curPtr - 1];
+                    Byte? cnrtCol = x == lastCol ? (Byte?) null : arr[curPtr + 1];
+                    Byte? btlfCol = y == lastRow || x == 0 ? (Byte?) null : arr[curPtr + stride - 1];
+                    Byte? btcnCol = y == lastRow ? (Byte?) null : arr[curPtr + stride];
+                    Byte? btrtCol = y == lastRow || x == lastCol ? (Byte?) null : arr[curPtr + stride + 1];
 
                     if (isGreen)
                     {
@@ -1772,7 +1781,7 @@ namespace Nyerguds.ImageManipulation
             Int32 avgVal = 0;
             foreach (Byte? col in cols)
                 avgVal += col.GetValueOrDefault();
-            return colsCount == 0 ? (Byte)0x80 : (Byte)(avgVal / colsCount);
+            return colsCount == 0 ? (Byte) 0x80 : (Byte) (avgVal / colsCount);
         }
 
 
@@ -1842,9 +1851,9 @@ namespace Nyerguds.ImageManipulation
                 Int32 offset = y * stride;
                 for (Int32 x = 0; x < width; x++)
                 {
-                    PixelValues[offset + 0] = (Byte)blueChannel[y, x];
-                    PixelValues[offset + 1] = (Byte)greenChannel[y, x];
-                    PixelValues[offset + 2] = (Byte)redChannel[y, x];
+                    PixelValues[offset + 0] = (Byte) blueChannel[y, x];
+                    PixelValues[offset + 1] = (Byte) greenChannel[y, x];
+                    PixelValues[offset + 2] = (Byte) redChannel[y, x];
                     offset += 3;
                 }
             }
@@ -1914,7 +1923,7 @@ namespace Nyerguds.ImageManipulation
                 {
                     for (Int32 x = 0; x < width; x++)
                     {
-                        Byte val = (Byte)(brightness[y, x] * groups);
+                        Byte val = (Byte) (brightness[y, x] * groups);
                         Int32 num;
                         historigram.TryGetValue(val, out num);
                         historigram[val] = num + 1;
@@ -1982,7 +1991,24 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Detects a list of all blobs in the image.
+        /// Detects a list of all blobs in the image. Does no merging.
+        /// </summary>
+        /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
+        /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
+        /// <param name="width">Image width.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
+        /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
+        public static List<List<Point>> FindBlobs<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Boolean getEdgesOnly)
+        {
+            List<Boolean[,]> inBlobs;
+            List<List<Point>> blobs = FindBlobs(data, width, height, clearsThreshold, allEightEdges, getEdgesOnly, out inBlobs);
+            return blobs;
+        }
+
+        /// <summary>
+        /// Detects a list of all blobs in the image, returning both the blobs and the boolean representations of the blobs. Does no merging.
         /// </summary>
         /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
@@ -1996,11 +2022,9 @@ namespace Nyerguds.ImageManipulation
         {
             List<List<Point>> blobs = new List<List<Point>>();
             inBlobs = new List<Boolean[,]>();
-            // Used for fast checking. Not returned, since in the end it'll just end up containing the threshold function applied to the data.
-            Boolean[,] combinedBlobs = new Boolean[height, width]; 
             for (Int32 y = 0; y < height; y++)
                 for (Int32 x = 0; x < width; x++)
-                    BuildBlobsCollection(x, y, data, width, height, clearsThreshold, blobs, inBlobs, combinedBlobs, allEightEdges, getEdgesOnly);
+                    AddBlobForPoint(x, y, data, width, height, clearsThreshold, blobs, inBlobs, allEightEdges, getEdgesOnly);
             return blobs;
         }
 
@@ -2008,12 +2032,11 @@ namespace Nyerguds.ImageManipulation
         /// Merge any blobs that fall in each other's square bounds, to reduce the amount of stray pixels.
         /// Bounds are inflated by the amount of pixels specified in mergeThreshold.
         /// </summary>
-        /// <param name="blobs">Collection of blobs</param>
+        /// <param name="blobs">The collection of blobs. The objects in this are adapted.</param>
         /// <param name="width">width of full image. Use -1 to detect from blob bounds.</param>
         /// <param name="height">Height of full image. Use -1 to detect from blob bounds.</param>
-        /// <param name="inBlobs"></param>
+        /// <param name="inBlobs">Boolean arrays that contain whether pixels are in a blob. If not null, these are adapted too.</param>
         /// <param name="mergeThreshold">The found blobs are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
-        /// <returns></returns>
         public static void MergeBlobs(List<List<Point>> blobs, Int32 width, Int32 height, List<Boolean[,]> inBlobs, Int32 mergeThreshold)
         {
             if (width == -1 || height == -1)
@@ -2030,7 +2053,7 @@ namespace Nyerguds.ImageManipulation
                             height = point.Y;
                     }
                 }
-                // because width and height are sizes, not highest ccordinates.
+                // because width and height are sizes, not highest coordinates.
                 width++;
                 height++;
             }
@@ -2040,55 +2063,58 @@ namespace Nyerguds.ImageManipulation
             Rectangle imageBounds = new Rectangle(0, 0, width, height);
             if (continueMerge)
             {
-                foreach (List<Point> coll in blobs)
-                    collBounds.Add(GetBlobBounds(coll));
-                foreach (Rectangle rect in collBounds)
+                foreach (Rectangle rect in blobs.Select(GetBlobBounds))
                 {
-                    Rectangle r = Rectangle.Inflate(rect, mergeThreshold, mergeThreshold);
-                    collBoundsInfl.Add(Rectangle.Intersect(imageBounds, r));
+                    collBounds.Add(rect);
+                    Rectangle rectInfl = Rectangle.Inflate(rect, mergeThreshold, mergeThreshold);
+                    collBoundsInfl.Add(Rectangle.Intersect(imageBounds, rectInfl));
                 }
             }
+            Int32 blobsCount = blobs.Count;
             while (continueMerge)
             {
                 continueMerge = false;
-                for (Int32 i = 0; i < blobs.Count; i++)
+                for (Int32 i = 0; i < blobsCount; i++)
                 {
                     List<Point> blob1 = blobs[i];
-                    Boolean[,] inBlob1 = inBlobs == null ? null : inBlobs[i];
                     if (blob1.Count == 0)
                         continue;
+                    Boolean[,] inBlob1 = inBlobs == null ? null : inBlobs[i];
                     Rectangle checkBounds = collBoundsInfl[i];
-                    for (Int32 j = 0; j < blobs.Count; j++)
+                    for (Int32 j = 0; j < blobsCount; j++)
                     {
                         if (i == j)
                             continue;
                         List<Point> blob2 = blobs[j];
                         if (blob2.Count == 0)
                             continue;
+                        // collBounds corresponds to blobs in length.
                         Rectangle bounds2 = collBounds[j];
-                        if (checkBounds.IntersectsWith(bounds2))
-                        {
-                            // should be safe without checks; there are already
-                            // checks against duplicates in these collections.
-                            continueMerge = true;
-                            blob1.AddRange(blob2);
-                            // Mark all points on boolean array. Easier to use the points list for this instead of the second inBlobs array.
-                            if (inBlobs != null)
-                                foreach (Point p in blob2)
-                                    inBlob1[p.Y, p.X] = true;
-                            Rectangle rect1New = GetBlobBounds(blob1);
-                            collBounds[i] = rect1New;
-                            Rectangle rect1NewInfl = Rectangle.Inflate(rect1New, mergeThreshold, mergeThreshold);
-                            collBoundsInfl[i] = Rectangle.Intersect(imageBounds, rect1NewInfl);
-                            blob2.Clear();
-                            // don't bother clearing inBlob2; it doesn't actually get referenced, and gets filtered out at the end.
-                            collBounds[j] = new Rectangle(0, 0, 0, 0);
-                        }
+                        if (!checkBounds.IntersectsWith(bounds2))
+                            continue;
+                        // should be safe without checks; there are already
+                        // checks against duplicates in these collections.
+                        continueMerge = true;
+                        blob1.AddRange(blob2);
+                        // Mark all points on boolean array. Easier to use the points list for this instead of the second inBlobs array.
+                        if (inBlob1 != null)
+                            foreach (Point p in blob2)
+                                inBlob1[p.Y, p.X] = true;
+                        Rectangle rect1New = GetBlobBounds(blob1);
+                        collBounds[i] = rect1New;
+                        Rectangle rect1NewInfl = Rectangle.Inflate(rect1New, mergeThreshold, mergeThreshold);
+                        collBoundsInfl[i] = Rectangle.Intersect(imageBounds, rect1NewInfl);
+                        blob2.Clear();
+                        // don't bother clearing inBlob2 or colbounds[j]; they don't get referenced anymore,
+                        // and the cleared blob's boolean array gets filtered out at the end.
                     }
                 }
             }
             // Filter out removed entries.
-            Int32[] nonEmptyIndices = Enumerable.Range(0, blobs.Count).Where(i => blobs[i].Count > 0).ToArray();
+            Int32[] nonEmptyIndices = Enumerable.Range(0, blobsCount).Where(i => blobs[i].Count > 0).ToArray();
+            // Nothing to remove.
+            if (nonEmptyIndices.Length == blobsCount)
+                return;
             if (inBlobs != null)
             {
                 List<Boolean[,]> trimmedInBlobs = new List<Boolean[,]>();
@@ -2113,9 +2139,8 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Builds a list of all points adjacent to the current point, and adds it to the list of point collections.
-        /// If the point was already found in one of the collections, the function does nothing.
-        /// Loop this over every pixel of an image to detect all blobs.
+        /// If the current point clears the threshold and is not already present in the given blobs collection, this builds a list of all points
+        /// adjacent to the current point and adds it to the list of blobs. Loop this over every pixel of an image to detect all blobs.
         /// </summary>
         /// <typeparam name="T">Type of the list to detect equal neighbours in. This system allows any kind of data to be taken as input.</typeparam>
         /// <param name="pointX">X-coordinate of the current point.</param>
@@ -2124,129 +2149,112 @@ namespace Nyerguds.ImageManipulation
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
         /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
-        /// <param name="blobs">List of point collections.</param>
-        /// <param name="inBlobs">The list of point collections represented as boolean arrays, for very quick checks to see if a set of coordinates is in a collection.</param>
+        /// <param name="blobs">Current list of point collections to add new detected blobs to.</param>
+        /// <param name="inBlobs">Current list of point collections represented as boolean arrays, for very quick checks to see if a set of coordinates is in a collection.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
-        public static void BuildBlobsCollection<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, List<List<Point>> blobs, List<Boolean[,]> inBlobs, Boolean[,] combinedBlobs, Boolean allEightEdges, Boolean getEdgesOnly)
+        public static void AddBlobForPoint<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, List<List<Point>> blobs, List<Boolean[,]> inBlobs, Boolean allEightEdges, Boolean getEdgesOnly)
         {
-            // If the point does not equal the value to detect, abort.
+            // If the point does not clear the threshold, abort.
             if (!clearsThreshold(data, pointY, pointX))
                 return;
-            // if the point is already in any of the collections, abort.
+            // if the point is already in any of the collections, abort. The inBlobs collection reduces this to just one simple array index check per existing blob.
             foreach (Boolean[,] inCheckBlob in inBlobs)
                 if (inCheckBlob[pointY, pointX])
                     return;
-            List<Point> blob;
+            // Initialize blob
+            List<Point> blob = new List<Point>();
             // existence check optimisation in the form of a boolean grid that is kept synced with the points in the collection.
-            Boolean[,] inBlob;
-            BuildBlob(pointX, pointY, data, width, height, clearsThreshold, out blob, out inBlob, allEightEdges, getEdgesOnly);
-            // should never happen; it starts off with the given pixel.
-            if (blob.Count == 0)
-                return;
-            blobs.Add(blob);
-            inBlobs.Add(inBlob);
-        }
-
-        /// <summary>
-        /// Builds a list of all points adjacent to the current point, and adds it to the list of point collections.
-        /// </summary>
-        /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
-        /// <param name="pointX">X-coordinate of the current point.</param>
-        /// <param name="pointY">Y-coordinate of the current point.</param>
-        /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
-        /// <param name="width">Image width.</param>
-        /// <param name="height">Image height.</param>
-        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
-        /// <param name="blob">Point collection that is returned.</param>
-        /// <param name="inBlob">The point collection represented as boolean array, for very quick checks to see if a set of coordinates is in the collection.</param>
-        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
-        /// <param name="edgeOnly">True to make the lists in 'blob' only contain the edge points of the blob. The 'inBlob' array will still have all points marked.</param>
-        public static void BuildBlob<T>(Int32 pointX, Int32 pointY, T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, out List<Point> blob, out Boolean[,] inBlob, Boolean allEightEdges, Boolean edgeOnly)
-        {
-            // set up return variables
-            blob = null;
-            inBlob = null;
-            // If the given point does not equal the value to detect, abort.
-            if (!clearsThreshold(data, pointY, pointX))
-                return;
-            // Initialize return variables
-            blob = new List<Point>();
-            inBlob = new Boolean[height, width];
-
-            // setting up variables to use...
-            List<Point> edgeCollection = new List<Point>();
+            Boolean[,] inBlob = new Boolean[height, width];
+            // setting up all variables to use, making sure nothing needs to be fetched inside the loops
+            List<Point> currentEdge = new List<Point>();
             Int32 lastX = width - 1;
             Int32 lastY = height - 1;
-            List<Point> newEdgeCollection = new List<Point>();
-            Boolean[,] inNewEdgeCollection = new Boolean[height, width];
-
+            List<Point> nextEdge = new List<Point>();
+            Boolean[,] inNextEdge = new Boolean[height, width];
+            Int32 clearLen = inNextEdge.Length;
             // starting point
-            edgeCollection.Add(new Point(pointX, pointY));
-
+            currentEdge.Add(new Point(pointX, pointY));
             // Start looking.
-            while (edgeCollection.Count > 0)
+            while (currentEdge.Count > 0)
             {
                 // 1. Add current edge collection to the blob.
-                if (!edgeOnly)
-                    blob.AddRange(edgeCollection);
-                foreach (Point p in edgeCollection)
+                // Memory-unoptimised: add all points.
+                if (!getEdgesOnly)
+                    blob.AddRange(currentEdge);
+                foreach (Point p in currentEdge)
                 {
                     Int32 x = p.X;
                     Int32 y = p.Y;
                     inBlob[y, x] = true;
-                    if (edgeOnly &&
+                    // Memory-optimised: add edge points only. inBlob will still contain all points.
+                    if (getEdgesOnly &&
                         (x == 0 || y == 0 || x == lastX || y == lastY
-                        || !clearsThreshold(data, y - 1, x)
-                        || !clearsThreshold(data, y, x - 1)
-                        || !clearsThreshold(data, y, x + 1)
-                        || !clearsThreshold(data, y + 1, x)))
+                         || !clearsThreshold(data, y - 1, x)
+                         || !clearsThreshold(data, y, x - 1)
+                         || !clearsThreshold(data, y, x + 1)
+                         || !clearsThreshold(data, y + 1, x)))
                         blob.Add(p);
                 }
                 // 2. Search all neighbouring pixels of the current neighbours list.
-                foreach (Point ed in edgeCollection)
+                foreach (Point ep in currentEdge)
                 {
                     // 3. gets all (4 or 8) neighbouring pixels.
-                    List<Point> neighbours = GetNeighbours(ed.X, ed.Y, lastX, lastY, allEightEdges);
+                    List<Point> neighbours = GetNeighbours(ep.X, ep.Y, lastX, lastY, allEightEdges);
                     foreach (Point p in neighbours)
                     {
                         Int32 x = p.X;
                         Int32 y = p.Y;
                         // 4. If the point is not already in the blob or in the new edge collection, and clears the threshold, add it to the new edge collection.
-                        if (!inBlob[y, x] && !inNewEdgeCollection[y, x]
-                            && clearsThreshold(data, y, x))
+                        if (!inBlob[y, x] && !inNextEdge[y, x] && clearsThreshold(data, y, x))
                         {
-                            newEdgeCollection.Add(p);
-                            inNewEdgeCollection[y, x] = true;
+                            nextEdge.Add(p);
+                            inNextEdge[y, x] = true;
                         }
                     }
                 }
-                // 5. Replace edge collection with new edge collection.
-                edgeCollection.Clear();
-                edgeCollection.AddRange(newEdgeCollection);
-                newEdgeCollection.Clear();
-                Array.Clear(inNewEdgeCollection, 0, inNewEdgeCollection.Length);
+                // 5. Replace edge collection contents with new edge collection.
+                currentEdge.Clear();
+                currentEdge.AddRange(nextEdge);
+                nextEdge.Clear();
+                Array.Clear(inNextEdge, 0, clearLen);
             }
+            blobs.Add(blob);
+            inBlobs.Add(inBlob);
         }
 
+        /// <summary>
+        /// Gets the list of neighbouring points around one point in an image.
+        /// </summary>
+        /// <param name="x">X-coordinate of the point to get neighbours of.</param>
+        /// <param name="y">Y-coordinate of the point to get neighbours of.</param>
+        /// <param name="lastX">Last valid X-coordinate on the image.</param>
+        /// <param name="lastY">Last valid Y-coordinate on the image.</param>
+        /// <param name="allEight">True to include diagonal neighbours.</param>
+        /// <returns>The list of all valid neighbours around the given coordinate.</returns>
         private static List<Point> GetNeighbours(Int32 x, Int32 y, Int32 lastX, Int32 lastY, Boolean allEight)
         {
-            List<Point> neighbours = new List<Point>();
-            if (allEight && x > 0 && y > 0)
-                neighbours.Add(new Point(x - 1, y - 1));
+            // Init to max value top optimise list expand operations.
+            List<Point> neighbours = new List<Point>(allEight ? 8 : 4);
+            //Direct neighbours
             if (y > 0)
                 neighbours.Add(new Point(x, y - 1));
-            if (allEight && x < lastX && y > 0)
-                neighbours.Add(new Point(x + 1, y - 1));
             if (x > 0)
                 neighbours.Add(new Point(x - 1, y));
             if (x < lastX)
                 neighbours.Add(new Point(x + 1, y));
-            if (allEight && x > 0 && y < lastY)
-                neighbours.Add(new Point(x - 1, y + 1));
             if (y < lastY)
                 neighbours.Add(new Point(x, y + 1));
-            if (allEight && x < lastX && y < lastY)
+            if (!allEight)
+                return neighbours;
+            // Diagonals.
+            if (x > 0 && y > 0)
+                neighbours.Add(new Point(x - 1, y - 1));
+            if (x < lastX && y > 0)
+                neighbours.Add(new Point(x + 1, y - 1));
+            if (x > 0 && y < lastY)
+                neighbours.Add(new Point(x - 1, y + 1));
+            if (x < lastX && y < lastY)
                 neighbours.Add(new Point(x + 1, y + 1));
             return neighbours;
         }
@@ -2291,7 +2299,7 @@ namespace Nyerguds.ImageManipulation
             }
             return edgePoints;
         }
-        
+
         public static Bitmap BitmapTo1Bpp(Bitmap source)
         {
             Rectangle rect = new Rectangle(0, 0, source.Width, source.Height);
@@ -2318,43 +2326,6 @@ namespace Nyerguds.ImageManipulation
             source.UnlockBits(sourceData);
             return dest;
         }
-
-    public static Boolean IsGrayscale(Bitmap cur)
-    {
-        // Indexed format, and no non-gray colours in the images palette: immediate pass.
-        if ((cur.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed
-            && cur.Palette.Entries.All(c => c.R == c.G && c.R == c.B))
-            return true;
-        BitmapData curBitmapData = cur.LockBits(new Rectangle(0, 0, cur.Width, cur.Height),
-            ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-        Int32 stride = curBitmapData.Stride;
-        Byte[] data = new Byte[stride * cur.Height];
-        Marshal.Copy(curBitmapData.Scan0, data, 0, data.Length);
-        cur.UnlockBits(curBitmapData);
-
-        Int32 curRowOffs = 0;
-        for (Int32 y = 0; y < cur.Height; y++)
-        {
-            // Set offset to start of current row
-            Int32 curOffs = curRowOffs;
-            for (Int32 x = 0; x < cur.Width; x++)
-            {
-                Byte b = data[curOffs];
-                Byte g = data[curOffs + 1];
-                Byte r = data[curOffs + 2];
-                Byte a = data[curOffs + 3];
-                // Increase offset to next colour
-                curOffs += 4;
-                if (a == 0)
-                    continue;
-                if (r != b || b != g || r != g)
-                    return false;
-            }
-            // Increase row offset
-            curRowOffs += stride;
-        }
-        return true;
-    }
 
     }
 }

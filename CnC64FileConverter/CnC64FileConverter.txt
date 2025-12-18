@@ -65,6 +65,10 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.16: (16/07/2018 08:50)
+-Implemented Westwood Shape (SHP) writing.
+-Fixed slow loading on VDA files due to bug in colour palette handling.
+
 v1.2.15: (10/07/2018 18:35)
 -Saving Mythos VDA no longer allows frames after 0 to have pixels of colour 255 on new locations.
 -Disallowed saving frame types as palettes since some types don't have a global palette.
@@ -240,7 +244,7 @@ v1.0: (04/04/2017 22:33)
 -Added code to correctly open paletted png images that contain transparency.
 -Added code to correctly open and save paletted png images with incomplete colour palettes.
 -Added theater detection for maps. If there's an ini, it'll read it from that.
--Added support for PC and N64 color palettes.
+-Added support for PC and N64 coluor palettes.
 -Added support for saving N64 IMG format, and specifically paletteless greyscale IMG.
 -Added read support for terrain tiles; the're triplets of DA4/ND4/PA4 or DA8/ND8/PA8 files.
 
@@ -257,7 +261,7 @@ v1.2.1: (20/11/2016 16:00)
 -Fixed a bug in the viewer that made it shift the image slightly up.
 
 v1.2: (19/11/2016 17:21)
--Identified last unknown value in the header as part of the "number of colors" value.
+-Identified last unknown value in the header as part of the "number of colours" value.
 -Added palette viewer.
 -Added icon.
 

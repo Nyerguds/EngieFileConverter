@@ -249,9 +249,7 @@ namespace Nyerguds.GameData.Mythos
                     UInt32 start = inPtr;
                     UInt32 end = Math.Min(inPtr + 0xFF, curLineEnd);
                     // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr] == transparentIndex; inPtr++)
-                    {
-                    }
+                    for (; inPtr < end && buffer[inPtr] == transparentIndex; inPtr++) { }
                     // write repeat value
                     bufferOut[outPtr++] = (Byte) (inPtr - start);
                 }

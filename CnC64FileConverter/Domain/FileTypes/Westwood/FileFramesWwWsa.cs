@@ -42,6 +42,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
 
         public override List<String> GetFilesToLoadMissingData(String originalPath)
@@ -289,7 +290,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Array.Copy(fileData, paletteOffset, pal, 0, 0x300);
                 try
                 {
-                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(pal));
+                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(pal));
                 }
                 catch (NotSupportedException e)
                 {
@@ -347,7 +348,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 try
                 {
-                    WWCompression.ApplyXorDelta(frameData, xorData, 0, uncLen);
+                    refOff = 0;
+                    WWCompression.ApplyXorDelta(frameData, xorData, ref refOff, uncLen);
                 }
                 catch (Exception ex)
                 {
@@ -549,11 +551,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] previousFrame = new Byte[width*height];
             for (Int32 i = 0; i < writeFrames; i++)
             {
-                Byte[] frameData = WWCompression.GenerateXorDelta(framesDataUnc[i], previousFrame);
+                Byte[] currentFrame = framesDataUnc[i];
+                Byte[] frameData = WWCompression.GenerateXorDelta(currentFrame, previousFrame);
                 deltaBufferSize = Math.Max(frameData.Length, deltaBufferSize);
                 frameData = WWCompression.LcwCompress(frameData);
                 framesData[i] = frameData;
-                previousFrame = framesDataUnc[i];
+                previousFrame = currentFrame;
             }
             // To ensure the file size is correct
             if (continues && framesData.Length > 0)

@@ -23,6 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return 16; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 256; } }
+        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
         {
