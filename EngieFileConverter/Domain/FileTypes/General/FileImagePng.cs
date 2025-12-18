@@ -62,7 +62,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             Color[] pal = fileToSave.GetColors();
             Bitmap bm = fileToSave.GetBitmap();
             Boolean noPalTransparency = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NTP"));

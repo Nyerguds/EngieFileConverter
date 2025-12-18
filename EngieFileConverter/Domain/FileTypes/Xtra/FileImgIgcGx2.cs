@@ -75,7 +75,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Bit mask decompression failed: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                throw new FileTypeLoadException("Bit mask decompression failed: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
             this.m_LoadedImage = ImageUtils.BuildImage(frameData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
         }
@@ -84,19 +84,26 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             if (fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 8);
             if (fileToSave.Width > 320 || fileToSave.Height > 200)
-                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
+                throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_LARGE);
 
             UInt16 width = (UInt16)fileToSave.Width;
             UInt16 height = (UInt16)fileToSave.Height;
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Byte[] palette = ColorUtils.GetEightBitPaletteData(fileToSave.GetColors(), true);
-            imageData = IgcBitMaskCompression.BitMaskCompress(imageData, stride, height);
-            imageData = RleCompressionHighBitRepeat.RleEncode(imageData);
+            try
+            {
+                imageData = IgcBitMaskCompression.BitMaskCompress(imageData, stride, height);
+                imageData = RleCompressionHighBitRepeat.RleEncode(imageData);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+            }
             Byte[] data = new Byte[imageData.Length + palette.Length + 0x1B];
             ArrayUtils.WriteInt32ToByteArrayLe(data, 0x00, 0x01325847); // magic
             ArrayUtils.WriteInt16ToByteArrayLe(data, 0x04, 0x19); // headsize

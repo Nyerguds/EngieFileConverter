@@ -106,9 +106,16 @@ https://moddingwiki.shikadi.net/wiki/Jazz_Jackrabbit_RLE_compression
 https://moddingwiki.shikadi.net/wiki/Executioners_Sprite_Format
 https://moddingwiki.shikadi.net/wiki/Executioners_RLE_Format
 
-The Treasure Mountain Panning Image Format was figured out by Trogdor, and posted on the Shikadi
-modding wiki at shikadi.net.
+The groundwork for the Treasure Mountain file formats was laid by Malvineous and Trogdor,
+and posted on the Shikadi modding wiki at shikadi.net.
 https://moddingwiki.shikadi.net/wiki/Treasure_Mountain_Panning_Image_Format
+https://moddingwiki.shikadi.net/wiki/PAK_Format_(The_Learning_Company)
+
+The HeroQuest quest format was reverse-engineered by TheRules and by me, on the
+OldGamesItalia forum, and documented on the Shikadi modding wiki at shikadi.net.
+https://moddingwiki.shikadi.net/wiki/HeroQuest_Quest_Format
+https://www.oldgamesitalia.net/forum/index.php?showtopic=27582
+
 
 
 Version history:
@@ -120,17 +127,21 @@ Engie File Converter.
 
 Engie File Converter versions:
 
-v1.5.13 (07/02/2025 18:30 CET)
+v1.5.14 (01/07/2022 23:40 CET)
+-Added fixes in palette detection system that could crash on the Mythos VDA format.
+-Added visualisation/analysis support for the levels of HeroQuest (1991).
+
+v1.5.13 (07/02/2023 18:30 CET)
 -Added better fail condition checks on Treasure Mountain .PAN format.
 -Added support for the Treasure Mountain .PAK sprites format.
 
-v1.5.12 (02/02/2025 10:30 CET)
+v1.5.12 (02/02/2023 10:30 CET)
 -Further optimised the Treasure Mountain .PAN format compression.
 
-v1.5.11 (01/02/2025 22:15 CET)
+v1.5.11 (01/02/2023 22:15 CET)
 -Added optimisation for the Treasure Mountain .PAN format.
 
-v1.5.10 (01/02/2025 14:35 CET)
+v1.5.10 (01/02/2023 14:35 CET)
 -Added support for the Treasure Mountain (DOS, 1990) .PAN format.
 -Fixed error causing palette selection to not propagate to all frames.
 

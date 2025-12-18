@@ -82,7 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
             if (image.Width != 320 || image.Height != 200)
                 throw new ArgumentException("This format can only save 320×200 images.", "fileToSave");
             return image;

@@ -171,14 +171,22 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 i = 0; i < frames; ++i)
                     {
                         Int32 bpp = eightBitFound ? 8 : 4;
-                        Byte[] decoded = DynamixCompression.ScnDecode(scnChunk.Data, scnOffsets[i], scnOffsets[i] + scnLengths[i], widths[i], heights[i], ref bpp);
+                        Byte[] decoded;
+                        try
+                        {
+                            decoded = DynamixCompression.ScnDecode(scnChunk.Data, scnOffsets[i], scnOffsets[i] + scnLengths[i], widths[i], heights[i], ref bpp);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+                        }
                         Array.Copy(decoded, 0, fullData, currOffsOut, decoded.Length);
                         currOffsOut += decoded.Length;
                     }
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
                 }
                 this.m_bpp = eightBitFound ? 8 : 4;
                 pf = eightBitFound ? PixelFormat.Format8bppIndexed : PixelFormat.Format4bppIndexed;
@@ -201,7 +209,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (compressionType >= CompressionTypes.Length)
                     throw new FileTypeLoadException("Unknown compression type " + compressionType + ".");
                 String compressionStr = "Compression: " + (this.InternalType == DynBmpInternalType.Ma8 ? "MA8" : "BIN") + ":" + CompressionTypes[compressionType];
-                Byte[] binData = DynamixCompression.DecodeChunk(binChunk.Data);
+                Byte[] binData;
+                try
+                {
+                    binData = DynamixCompression.DecodeChunk(binChunk.Data);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+                }
                 if (this.InternalType == DynBmpInternalType.Ma8) // MA8 seems to have indices 0 and FF switched
                     DynamixCompression.SwitchBackground(binData);
                 Byte[] vgaData = null;
@@ -222,7 +238,14 @@ namespace EngieFileConverter.Domain.FileTypes
                         compressionStr += ", VGA:" + CompressionTypes[compressionType];
                     else
                         throw new FileTypeLoadException("Unknown compression type " + compressionType);
-                    vgaData = DynamixCompression.DecodeChunk(vgaChunk.Data);
+                    try
+                    {
+                        vgaData = DynamixCompression.DecodeChunk(vgaChunk.Data);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+                    }
                     this.ExtraInfo = "Internal type: BIN+VGA";
                 }
                 if (vgaData == null)
@@ -399,7 +422,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }
-            List<DynamixChunk> basicChunks = this.SaveToChunks(fileToSave, saveType, compressionType);
+            List<DynamixChunk> basicChunks;
+            try
+            {
+                basicChunks = this.SaveToChunks(fileToSave, saveType, compressionType);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
+            }
             DynamixChunk bmpChunk = DynamixChunk.BuildChunk("BMP", basicChunks.ToArray());
             return bmpChunk.WriteChunk();
         }
@@ -414,13 +445,13 @@ namespace EngieFileConverter.Domain.FileTypes
         protected List<DynamixChunk> SaveToChunks(SupportedFileType fileToSave, DynBmpInternalType saveType, DynBmpInternalCompression compressionType)
         {
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             if (saveType == DynBmpInternalType.Unknown)
-                throw new ArgumentException(ERR_UNKN_COMPR, "saveType");
+                throw new FileTypeSaveException(ERR_UNKN_COMPR);
             // write save logic for frames
             PixelFormat pf = PixelFormat.Undefined;
             Int32 bpp = 0;
@@ -432,18 +463,18 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType frame = frames[i];
                 Bitmap bm = frame.GetBitmap();
                 if (bm == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if (bm.Width % 8 != 0)
-                    throw new ArgumentException("Dynamix image formats only support image widths divisible by 8.", "fileToSave");
+                    throw new FileTypeSaveException("Dynamix image formats only support image widths divisible by 8.");
                 if (pf == PixelFormat.Undefined)
                 {
                     pf = bm.PixelFormat;
                     if (pf != PixelFormat.Format4bppIndexed && pf != PixelFormat.Format8bppIndexed)
-                        throw new ArgumentException(ERR_INPUT_4BPP_8BPP, "fileToSave");
+                        throw new FileTypeSaveException(ERR_BPP_INPUT_4_8);
                     bpp = Image.GetPixelFormatSize(pf);
                 }
                 else if (pf != bm.PixelFormat)
-                    throw new ArgumentException(ERR_FRAMES_BPPDIFF, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_BPP_DIFF);
                 Int32 stride;
                 Int32 width = bm.Width;
                 Int32 height = bm.Height;
@@ -501,9 +532,9 @@ namespace EngieFileConverter.Domain.FileTypes
                             break;
                         case DynBmpInternalCompression.Lzw:
                         case DynBmpInternalCompression.Lzss:
-                            throw new ArgumentException(String.Format("Compression type \"{0}\" is not implemented.", CompressionTypes[(Int32)compressionType]), "compressionType");
+                            throw new FileTypeSaveException("Compression type \"{0}\" is not implemented.", CompressionTypes[(Int32)compressionType]);
                         default:
-                            throw new ArgumentException(String.Format(ERR_UNKN_COMPR_X, compressionType), "compressionType");
+                            throw new FileTypeSaveException(ERR_UNKN_COMPR_X, compressionType);
                     }
                     dataChunk = new DynamixChunk(isMa8 ? "MA8" : "BIN", binCompression, binDataLen, binData);
                     chunks.Add(dataChunk);
@@ -520,7 +551,15 @@ namespace EngieFileConverter.Domain.FileTypes
                         // Write start indices into the data for the OFF chunk
                         ArrayUtils.WriteInt32ToByteArrayLe(offsets, i << 2, curOffset);
                         // Compress frame
-                        Byte[] comprFrame = DynamixCompression.ScnEncode(frameBytes[i], frameWidths[i], frameHeights[i], bpp, addFinalLineWrap);
+                        Byte[] comprFrame;
+                        try
+                        {
+                           comprFrame = DynamixCompression.ScnEncode(frameBytes[i], frameWidths[i], frameHeights[i], bpp, addFinalLineWrap);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+                        }
                         frameBytesCompressed[i] = comprFrame;
                         // Increase index
                         curOffset += comprFrame.Length;
@@ -568,9 +607,9 @@ namespace EngieFileConverter.Domain.FileTypes
                             break;
                         case DynBmpInternalCompression.Lzw:
                         case DynBmpInternalCompression.Lzss:
-                            throw new ArgumentException(String.Format("Compression type \"{0}\" is not implemented.", CompressionTypes[(Int32)compressionType]), "compressionType");
+                            throw new FileTypeSaveException("Compression type \"{0}\" is not implemented.", CompressionTypes[(Int32)compressionType]);
                         default:
-                            throw new ArgumentException(String.Format(ERR_UNKN_COMPR_X, compressionType), "compressionType");
+                            throw new FileTypeSaveException(ERR_UNKN_COMPR_X, compressionType);
                     }
                     dataChunk = new DynamixChunk("BIN", binCompression, binDataLen, binData);
                     chunks.Add(dataChunk);

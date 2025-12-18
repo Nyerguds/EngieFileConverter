@@ -78,7 +78,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE, "fileToSave");
             Int32 bpp = fileToSave.BitsPerPixel;
             PixelFormat pf = image.PixelFormat;
             Color[] palette = fileToSave.GetColors();
@@ -93,26 +93,26 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 blockWidth;
             Int32 blockHeight;
             if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
-                throw new ArgumentException("Could not parse block width.", "saveOptions");
+                throw new FileTypeSaveException("Could not parse block width.");
             if (blockWidth <= 0)
-                throw new ArgumentException("Bad block height: needs to be more than 0.", "saveOptions");
+                throw new FileTypeSaveException("Bad block height: needs to be more than 0.");
             if (blockWidth % 8 != 0)
-                throw new ArgumentException("Bad block width: needs to be a multiple of 8.", "saveOptions");
+                throw new FileTypeSaveException("Bad block width: needs to be a multiple of 8.");
             if (width % blockWidth != 0)
-                throw new ArgumentException("Bad block width: not an exact part of the full image width.", "saveOptions");
+                throw new FileTypeSaveException("Bad block width: not an exact part of the full image width.");
             if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLH"), out blockHeight))
-                throw new ArgumentException("Could not parse block height.", "saveOptions");
+                throw new FileTypeSaveException("Could not parse block height.");
             if (blockHeight <= 0)
-                throw new ArgumentException("Bad block height: needs to be more than 0.", "saveOptions");
+                throw new FileTypeSaveException("Bad block height: needs to be more than 0.");
             if (height % blockHeight != 0)
-                throw new ArgumentException("Bad block height: not an exact part of the full image height.", "saveOptions");
+                throw new FileTypeSaveException("Bad block height: not an exact part of the full image height.");
             Int32 blockStride = ImageUtils.GetMinimumStride(blockWidth, bpp);
             // Cut into frames (from SaveOptions)
             Int32 matrixWidth = width / blockWidth;
             Int32 matrixHeight = height / blockHeight;
             Int32 nrOfFrames = matrixWidth * matrixHeight;
             if (nrOfFrames > Int16.MaxValue)
-                throw new ArgumentException("Blocks too small or image too large; cannot address more than " + Int16.MaxValue + " tiles.");
+                throw new FileTypeSaveException("Blocks too small or image too large; cannot address more than " + Int16.MaxValue + " tiles.");
             Int32 stride;
             Byte[] fullImageData = ImageUtils.GetImageData(image, out stride);
             Byte[][] allFrames = new Byte[nrOfFrames][];

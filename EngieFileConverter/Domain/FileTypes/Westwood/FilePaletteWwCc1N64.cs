@@ -41,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
             Byte[] imageData = Enumerable.Range(0, this.Width * this.Height).Select(x => (Byte) x).ToArray();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
@@ -65,7 +65,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            throw new ArgumentException("Use specific PA4 or PA8 type.");
+            throw new FileTypeSaveException("Use specific PA4 or PA8 type.");
         }
 
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
@@ -110,7 +110,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);

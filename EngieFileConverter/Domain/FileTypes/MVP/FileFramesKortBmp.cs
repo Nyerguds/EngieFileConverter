@@ -94,16 +94,16 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException("No frames found in source data.", "fileToSave");
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             if (nrOfFrames > 0xFFFF)
-                throw new ArgumentException("Too many frames in source data.", "fileToSave");
+                throw new FileTypeSaveException(ERR_FRAMES_OVERFLOW, 0xFFFF);
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null)
-                    throw new ArgumentException("KORT BMP can't handle empty frames.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException("Not all frames in input type are 8-bit images.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 8);
             }
             Byte[][] frameData = new Byte[nrOfFrames][];
             Int32[] widths = new Int32[nrOfFrames];

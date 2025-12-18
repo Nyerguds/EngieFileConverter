@@ -545,7 +545,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileVda != null)
             {
                 if (fileVda._noFirstFrame && !fileVda._isChained)
-                    throw new ArgumentException("A " + this.LongTypeName + " without initial frame cannot be re-saved correctly. Reload it with the missing start added (either as vda or as png) before saving it.");
+                    throw new FileTypeSaveException("A " + this.LongTypeName + " without initial frame cannot be re-saved correctly. Reload it with the missing start added (either as vda or as png) before saving it.");
                 noFirstFrame = fileVda._noFirstFrame;
             }
             return new Option[]
@@ -792,7 +792,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (ArgumentException ex)
                     {
-                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex, false), "fileToSave", ex);
+                        throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
                     }
                     if (compressedBytes != null && compressedBytes.Length < chunk.ImageData.Length)
                     {
@@ -836,20 +836,20 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             palette = fileToSave.GetColors();
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType sft = frames[i];
                 if (sft.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
                 if (sft.Width != 320 || sft.Height != 200)
-                    throw new ArgumentException(String.Format(ERR_INPUT_DIMENSIONS, 320, 200), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_DIMENSIONS_INPUT, 320, 200), "fileToSave");
                 if (palette == null || palette.Length == 0)
                     palette = sft.GetColors();
             }
             if (palette == null)
-                throw new ArgumentException(ERR_NO_COL, "fileToSave");
+                throw new ArgumentException(ERR_COLORS_NEEDED, "fileToSave");
             return frames;
         }
 

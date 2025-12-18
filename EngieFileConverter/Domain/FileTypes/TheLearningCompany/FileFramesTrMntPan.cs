@@ -41,7 +41,7 @@ namespace EngieFileConverter.Domain.FileTypes
         const string ERR_FRAMES_MUL8 = "Frames of this format need to be a multiple of 8×8 pixels.";
         const string ERR_FRAMES_DIV = "Full image dimensions need to be exactly divisible by the given frame size.";
         const string ERR_TILES_OVERFLOW = "The total amount of unique 8×8 tiles is too large. One file can only contain {0} tiles.";
-        const int TILES_MAX = 2047;
+        const int TILES_MAX = 0x7FF;
         const byte FLAG_VALUE = 0xA5;
 
         public override void LoadFile(byte[] fileData)
@@ -296,9 +296,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 int.TryParse(Option.GetSaveOptionValue(saveOptions, "WDT"), out frameWidth);
                 int.TryParse(Option.GetSaveOptionValue(saveOptions, "HGT"), out frameHeight);
                 if (frameWidth % 8 != 0 || frameHeight % 8 != 0)
-                    throw new ArgumentException(ERR_FRAMES_MUL8, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_MUL8);
                 if (width % frameWidth != 0 || height % frameHeight != 0)
-                    throw new ArgumentException(ERR_FRAMES_DIV, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_DIV);
                 Bitmap bm = frames[0].GetBitmap();
                 int stride;
                 byte[] data = ImageUtils.GetImageData(bm, out stride);
@@ -763,43 +763,43 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap bm;
                 if (frame == null || (bm = frame.GetBitmap()) == null)
                 {
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 }
                 if (frame.BitsPerPixel != 4 && frame.BitsPerPixel != 8)
                 {
-                    throw new ArgumentException(ERR_INPUT_4BPP_8BPP, "fileToSave");
+                    throw new FileTypeSaveException(ERR_BPP_INPUT_4_8);
                 }
                 if (width == -1)
                 {
                     width = frame.Width;
                     if (width % 8 != 0)
-                        throw new ArgumentException(ERR_FRAMES_MUL8, "fileToSave");
+                        throw new FileTypeSaveException(ERR_FRAMES_MUL8);
                 }
                 else if (width != frame.Width)
                 {
-                    throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_SIZE_DIFF);
                 }
                 if (height == -1)
                 {
                     height = frame.Height;
                     if (height % 8 != 0)
-                        throw new ArgumentException(ERR_FRAMES_MUL8, "fileToSave");
+                        throw new FileTypeSaveException(ERR_FRAMES_MUL8);
                 }
                 else if (height != frame.Height)
                 {
-                    throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_SIZE_DIFF);
                 }
-                TestFourBit(bm, i, "fileToSave");
+                TestFourBit(bm, i);
             }
             return frames;
         }
 
-        public static void TestFourBit(Bitmap bm, int i, string inputName)
+        public static void TestFourBit(Bitmap bm, int i)
         {
-            TestFourBit(bm, i, inputName, false, out _);
+            TestFourBit(bm, i, false, out _);
         }
 
-        public static byte[] TestFourBit(Bitmap bm, int i, string inputName, bool returnContent, out int stride)
+        public static byte[] TestFourBit(Bitmap bm, int i, bool returnContent, out int stride)
         {
             stride = 0;
             if (bm.PixelFormat == PixelFormat.Format8bppIndexed)
@@ -809,8 +809,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 for (int off = 0; off < dlen; ++off)
                 {
                     if (imgData[off] > 0x0F)
-                        throw new ArgumentException("Error in frame " + i + ": This is a 4-bit format." +
-                            " When using 8-bit input, the pixels can't contain colors indices higher than 15.", inputName);
+                        throw new FileTypeSaveException("Error in frame {2}: " + ERR_BPP_LOW_INPUT, 4, 15, i);
                 }
                 return returnContent ? ImageUtils.ConvertFrom8Bit(imgData, bm.Width, bm.Height, 4, false, ref stride) : null;
             }
@@ -820,7 +819,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else
             {
-                throw new ArgumentException("Error in frame " + i + ": " + ERR_INPUT_4BPP_8BPP, inputName);
+                throw new FileTypeSaveException("Error in frame {1}: " + ERR_BPP_INPUT_4_8, i);
             }
         }
 

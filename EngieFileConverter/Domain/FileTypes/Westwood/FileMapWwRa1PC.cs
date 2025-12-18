@@ -211,7 +211,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
             if (containsOldClear && ((double)(simplifiedMap.Length - (usableArea.Width * usableArea.Height)) / oldClearOutsideBounds) < 0.8)
             {

@@ -238,7 +238,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             palette = CheckForPalette<FilePalette8Bit>(sourcePath);
                         if (palette != null)
                         {
-                            PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, transMask);
+                            this.m_Palette = PaletteUtils.ApplyPalTransparencyMask(palette.GetColors(), transMask);
                             this.m_LoadedPalette = palette.LoadedFile;
                             this.ExtraInfo = "Palette loaded from \"" + Path.GetFileName(palette.LoadedFile) + "\".";
                         }
@@ -402,7 +402,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (ArgumentException ex)
                     {
-                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex, false), "fileToSave", ex);
+                        throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
                     }
                 }
                 frameData[i] = compressedBytes ?? frameBytes;
@@ -441,14 +441,14 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new ArgumentException(ERR_FRAMES_EMPTY, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
             }
             return frames;
         }

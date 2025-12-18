@@ -92,9 +92,22 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // General override in case an Image sub-type has no implementation of this.
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             String filename = "test." + this.FileExtensions[0];
-            return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);
+            try
+            {
+                return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
+            }
+            catch (Exception ex)
+            {
+                if (ex is FileTypeSaveException)
+                    throw;
+                throw new FileTypeSaveException(ex.Message, ex);
+            }
         }
     }
 }

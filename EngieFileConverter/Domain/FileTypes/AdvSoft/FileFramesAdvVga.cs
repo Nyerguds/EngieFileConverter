@@ -158,11 +158,9 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-                throw new ArgumentException("AdventureSoft VGA saving for single frame is not supported.", "fileToSave");
-            if (fileToSave.Frames.Length == 0)
-                throw new ArgumentException("No frames found in source data.", "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
+            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null || fileToSave.Frames.Length == 0)
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             Boolean noCompression = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NOCMP"));
             Int32 nrOfFr = fileToSave.Frames.Length;
             Byte[][] data = new Byte[nrOfFr][];
@@ -186,7 +184,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     offsets[i] = 0;
                 }
                 else if (frame.BitsPerPixel != 4)
-                    throw new ArgumentException("AdventureSoft VGA frames need to be 4 BPP images.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 4);
                 else
                 {
                     Int32 width = image.Width;

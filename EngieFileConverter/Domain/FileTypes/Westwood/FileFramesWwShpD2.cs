@@ -206,7 +206,15 @@ namespace EngieFileConverter.Domain.FileTypes
 
                 }
                 Int32 refOffs = 0;
-                Byte[] fullFrame = WestwoodRleZero.DecompressRleZeroD2(zeroDecompressData, ref refOffs, frmWidth, frmSlices);
+                Byte[] fullFrame;
+                try
+                {
+                    fullFrame = WestwoodRleZero.DecompressRleZeroD2(zeroDecompressData, ref refOffs, frmWidth, frmSlices);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR + " (frame {1})", GeneralUtils.RecoverArgExceptionMessage(ex, true), i), ex);
+                }
                 if (remapTable != null)
                 {
                     Byte[] remap = remapTable;
@@ -500,14 +508,14 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new ArgumentException(ERR_FRAMES_EMPTY, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
             }
             return frames;
         }

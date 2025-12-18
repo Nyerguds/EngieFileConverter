@@ -225,19 +225,26 @@ namespace EngieFileConverter.Domain.FileTypes
             // The character filter specifically disallows "-", so no actual ranges can be given.
             Int32[] sizes = GeneralUtils.GetRangedNumbers(includedSizesStr);
             if (sizes.Length == 0)
-                throw new ArgumentException("The icon needs to contain at least one image.", "fileToSave");
+                throw new FileTypeSaveException("The icon needs to contain at least one image.");
             for (Int32 i = 0; i < sizes.Length; ++i)
             {
                 if (sizes[i] == 0)
-                    throw new ArgumentException("0 is not a valid icon size.", "saveOptions");
+                    throw new FileTypeSaveException("0 is not a valid icon size.");
                 if (sizes[i] > 0x100)
-                    throw new ArgumentException("Icon sizes cannot be larger than 256.", "saveOptions");
+                    throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_HIGH_SIZE, 256);
             }
             Bitmap bm = fileToSave.GetBitmap();
-            using (MemoryStream ms = new MemoryStream())
+            try
             {
-                ConvertToIcon(bm, ms, makeSquare, upscale, pixelZoom, sizes);
-                return ms.ToArray();
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    ConvertToIcon(bm, ms, makeSquare, upscale, pixelZoom, sizes);
+                    return ms.ToArray();
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
         }
 
@@ -273,7 +280,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 size = sizes[i];
                 if (size > 0x100)
-                    throw new ArgumentException("Size cannot be larger than 256.", "sizes");
+                    throw new ArgumentException(String.Format(ERR_DIMENSIONS_TOO_HIGH_SIZE, 256));
 
                 if (!upscale && size > maxDim)
                     continue;

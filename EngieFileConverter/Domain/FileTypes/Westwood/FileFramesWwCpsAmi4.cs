@@ -187,7 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             if (frames == null || frames.Length == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames > 4)
                 throw new ArgumentException("This type can only save up to four frames.", "fileToSave");

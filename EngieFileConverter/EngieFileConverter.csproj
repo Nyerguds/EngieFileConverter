@@ -103,6 +103,7 @@
     <Compile Include="Domain\FileData\Westwood\OverlayTd.cs" />
     <Compile Include="Domain\FileData\Westwood\StructInfo.cs" />
     <Compile Include="Domain\FileTypeLoadException.cs" />
+    <Compile Include="Domain\FileTypeSaveException.cs" />
     <Compile Include="Domain\FileTypes\Bloodlust\FileFramesExec.cs" />
     <Compile Include="Domain\FileTypes\Bloodlust\FileImageExec.cs" />
     <Compile Include="Domain\FileTypes\Epic\FileFramesJazzFont.cs" />

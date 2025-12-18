@@ -177,15 +177,15 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             if (image.PixelFormat != PixelFormat.Format4bppIndexed)
-                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 4), "fileToSave");
+                throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 4);
             width = image.Width;
             height = image.Height;
             if (width * height / 2 > UInt16.MaxValue)
-                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
+                throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_LARGE);
             if (width > 320 || height > 200)
-                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
+                throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_LARGE);
             return image;
         }
     }

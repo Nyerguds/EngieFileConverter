@@ -411,7 +411,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             if (frames == null || frames.Length == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             int max = UInt16.MaxValue + 1;
             if (frames.Length > UInt16.MaxValue + 1)
                 throw new ArgumentException("This type can only handle up to "+ max + " frames.", "fileToSave");
@@ -425,7 +425,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     continue;
                 // Actual checks.
                 if (frame.BitsPerPixel != this.BitsPerPixel)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 1), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 1), "fileToSave");
                 height = Math.Max(height, frame.Height);
                 if (frame.Width> 255)
                     throw new ArgumentException("Frame width exceeds 255.", "fileToSave");

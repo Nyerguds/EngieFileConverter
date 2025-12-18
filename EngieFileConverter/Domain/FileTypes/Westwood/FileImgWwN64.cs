@@ -174,7 +174,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (image.Width > 0xFFFF || image.Height > 0xFFFF)
-                throw new ArgumentException(ERR_IMAGE_TOO_LARGE, "fileToSave");
+                throw new ArgumentException(ERR_DIMENSIONS_TOO_LARGE, "fileToSave");
             return image;
         }
 

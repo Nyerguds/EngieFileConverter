@@ -466,7 +466,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
             Color[] palette = GetTheaterPaletteFull(theater);
             Byte[] imageData = new Byte[CnCMap.LENGTH_TD];

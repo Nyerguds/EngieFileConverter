@@ -313,7 +313,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             if (frames == null || frames.Length == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             if (frames.Length > 256)
                 throw new ArgumentException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames.", "fileToSave");
             width = -1;
@@ -323,7 +323,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
                 width = Math.Max(width, frame.Width);
                 height = Math.Max(height, frame.Height);
                 if (width > 255 || height > 255)

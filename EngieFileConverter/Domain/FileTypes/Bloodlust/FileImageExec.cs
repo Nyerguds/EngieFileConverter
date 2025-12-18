@@ -124,42 +124,39 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Bitmap[] PerformPreliminaryChecks(SupportedFileType fileToSave)
         {            
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             Bitmap image;
             if (!fileToSave.IsFramesContainer)
             {
                 if ((image = fileToSave.GetBitmap()) == null)
-                    throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                    throw new FileTypeSaveException(ERR_EMPTY_FILE);
                 if (image.PixelFormat != PixelFormat.Format8bppIndexed)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 8);
                 if (image.Width > 255 || image.Height > 255)
-                    throw new ArgumentException("Image dimensions cannot exceed 255.", "fileToSave");
+                    throw new FileTypeSaveException("Image dimensions cannot exceed 255.");
                 return new Bitmap[] {image};
             }
             const String framesErr = "The only frame input accepted by this type is a single frame plus its mask.";
             if (fileToSave.Frames.Length != 2)
-                throw new ArgumentException(framesErr, "fileToSave");
+                throw new FileTypeSaveException(framesErr);
             SupportedFileType frame0 = fileToSave.Frames[0];
             SupportedFileType frame1 = fileToSave.Frames[1];
             if (frame0 == null || frame1 == null)
-                throw new ArgumentException(framesErr, "fileToSave");
+                throw new FileTypeSaveException(framesErr);
             Bitmap mask;
             if ((image = frame0.GetBitmap()) == null || (mask = frame1.GetBitmap()) == null)
-                throw new ArgumentException(framesErr, "fileToSave");
+                throw new FileTypeSaveException(framesErr);
             if (image.PixelFormat != PixelFormat.Format8bppIndexed || mask.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 8);
             if (image.Width > 255 || image.Height > 255)
-                throw new ArgumentException("Image dimensions cannot exceed 255.", "fileToSave");
+                throw new FileTypeSaveException("Image dimensions cannot exceed 255.");
             if (image.Width != mask.Width || image.Height != mask.Height)
-                throw new ArgumentException("The dimensions of the mask image and the frame must be identical.",
-                    "fileToSave");
+                throw new FileTypeSaveException("The dimensions of the mask image and the frame must be identical.");
             Byte[] maskBytes = ImageUtils.GetImageData(mask, true);
             Int32 len = maskBytes.Length;
             for (Int32 i = 0; i < len; ++i)
                 if (maskBytes[i] > 1)
-                    throw new ArgumentException(
-                        "Mask image should only contain 0 and 1 values, with 1 indicating masked pixels.",
-                        "fileToSave");
+                    throw new FileTypeSaveException("Mask image should only contain 0 and 1 values, with 1 indicating masked pixels.");
             return new Bitmap[] {image, mask};
         }
 
@@ -172,14 +169,28 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap mask = bms[1];
                 Byte[] maskBytes = ImageUtils.GetImageData(mask, true);
                 Byte[] imageBytes = ImageUtils.GetImageData(image, true);
-                return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, maskBytes, 1);
+                try
+                {
+                    return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, maskBytes, 1);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
+                }
             }
             else
             {
                 Int32 transIndex;
                 Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TID"), out transIndex);
                 Byte[] imageBytes = ImageUtils.GetImageData(image, true);
-                return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, (Byte)transIndex);
+                try
+                {
+                    return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, (Byte)transIndex);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
+                }
             }
         }
     }

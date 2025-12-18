@@ -180,8 +180,21 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
-            return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ImageFormat.Gif);
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
+            try
+            {
+                return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ImageFormat.Gif);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
+            }
+            catch (Exception ex)
+            {
+                if (ex is FileTypeSaveException)
+                    throw;
+                throw new FileTypeSaveException(ex.Message, ex);
+            }
         }
     }
 }

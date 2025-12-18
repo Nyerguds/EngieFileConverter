@@ -199,7 +199,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             this.LoadFromFileData(fileData, originalPath, this.m_Version, lastFrameData, lastFrameWidth, lastFrameHeight, false);
-            //String sizeInfo = (lastFrameWidth > this.Width || lastFrameHeight > this.Height) ? ("Original size: " + this.Width + "x" + this.Height) : String.Empty;
+            //String sizeInfo = (lastFrameWidth > this.Width || lastFrameHeight > this.Height) ? ("Original size: " + this.Width + "×" + this.Height) : String.Empty;
             this.ExtraInfo = (this.ExtraInfo + "\nData chained from " + Path.GetFileName(firstName)).TrimStart('\n');
         }
 
@@ -374,7 +374,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new HeaderParseException("Error loading color palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                    throw new HeaderParseException("Error loading color palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
                 }
             }
             if (this.m_Palette == null)
@@ -738,7 +738,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames;
             if (frames == null || (nrOfFrames = frames.Length) == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             width = -1;
             height = -1;
             palette = CheckInputForColors(fileToSave, 8, true);
@@ -746,16 +746,16 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new ArgumentException(ERR_FRAMES_EMPTY, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;
                     height = frame.Height;
                 }
                 else if (width != frame.Width || height != frame.Height)
-                    throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
+                    throw new ArgumentException(ERR_FRAMES_SIZE_DIFF, "fileToSave");
                 if (palette == null || palette.Length == 0)
                     palette = frame.GetColors();
             }

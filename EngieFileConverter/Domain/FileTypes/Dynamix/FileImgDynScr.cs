@@ -53,16 +53,16 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            this.LoadFile(fileData, null, false);
+            this.LoadFromFileData(fileData, null, false);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.SetFileNames(filename);
-            this.LoadFile(fileData, filename, false);
+            this.LoadFromFileData(fileData, filename, false);
         }
 
-        public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2)
+        public void LoadFromFileData(Byte[] fileData, String sourcePath, Boolean v2)
         {
             if (fileData.Length < 0x10)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
@@ -119,7 +119,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.ExtraInfo = "Compression: " + binChunk.Identifier + ":" + this.compressionTypes[compressionType];
             else
                 throw new FileTypeLoadException("Unknown compression type " + compressionType);
-            Byte[] bindata = DynamixCompression.DecodeChunk(binChunk.Data);
+            Byte[] bindata;
+            try
+            {
+                bindata = DynamixCompression.DecodeChunk(binChunk.Data);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+            }
             if (this.IsMa8) // MA8 seems to have indices 0 and FF switched
                 DynamixCompression.SwitchBackground(bindata);
             //save debug output
@@ -143,7 +151,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     this.ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
                 else
                     throw new FileTypeLoadException("Unknown compression type " + compressionType);
-                vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
+                try
+                {
+                    vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
+                }
             }
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "bin.bin", bindata);
@@ -223,22 +238,22 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions, Boolean v2)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             Int32 compressionType;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 saveType;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
             Bitmap image = fileToSave.GetBitmap();
             if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
-                throw new ArgumentException("This format needs 4bpp or 8bpp images.", "fileToSave");
+                throw new FileTypeSaveException("This format needs 4bpp or 8bpp images.");
 
             if (!v2 && (image.Width != 320 || image.Height != 200))
-                throw new ArgumentException("Dynamix SCR version 1 only supports 320×200 images.", "fileToSave");
+                throw new FileTypeSaveException("Dynamix SCR version 1 only supports 320×200 images.");
             List<DynamixChunk> chunks = new List<DynamixChunk>();
             if (v2)
             {
                 if (image.Width % 8 !=0)
-                    throw new ArgumentException("Dynamix image formats only support image widths divisible by 8.", "fileToSave");
+                    throw new FileTypeSaveException("Dynamix image formats only support image widths divisible by 8.");
                 Byte[] dimensions = new Byte[4];
                 ArrayUtils.WriteUInt16ToByteArrayLe(dimensions, 0, (UInt16)image.Width);
                 ArrayUtils.WriteUInt16ToByteArrayLe(dimensions, 2, (UInt16)image.Height);
@@ -249,11 +264,11 @@ namespace EngieFileConverter.Domain.FileTypes
             // collapse stride should not be needed since this type only handles widths divisible by 8, but whatevs.
             Byte[] data = ImageUtils.GetImageData(image, out stride, true);
             if (compressionType < 0 || compressionType > this.compressionTypes.Length)
-                throw new ArgumentException(String.Format(ERR_UNKN_COMPR_X, compressionType), "saveOptions");
+                throw new FileTypeSaveException(ERR_UNKN_COMPR_X, compressionType);
 
             // Remove this if LZW actually gets implemented
             if (compressionType == 2)
-                throw new ArgumentException("LZW compression is currently not supported.", "saveOptions");
+                throw new FileTypeSaveException("LZW compression is currently not supported.");
             Boolean asMa8 = saveType == 1;
             if (asMa8) // MA8 seems to have indices 0 and FF switched
                 DynamixCompression.SwitchBackground(data);
@@ -264,20 +279,27 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (compressionType != 0)
                 {
                     Byte[] dataCompr;
-                    switch (compressionType)
+                    try
                     {
-                        case 1:
-                            dataCompr = DynamixCompression.RleEncode(data);
-                            break;
-                        case 2:
-                            dataCompr = DynamixCompression.LzwEncode(data);
-                            break;
-                        case 3:
-                            dataCompr = DynamixCompression.LzssEncode(data);
-                            break;
-                        default:
-                            dataCompr = null;
-                            break;
+                        switch (compressionType)
+                        {
+                            case 1:
+                                dataCompr = DynamixCompression.RleEncode(data);
+                                break;
+                            case 2:
+                                dataCompr = DynamixCompression.LzwEncode(data);
+                                break;
+                            case 3:
+                                dataCompr = DynamixCompression.LzssEncode(data);
+                                break;
+                            default:
+                                dataCompr = null;
+                                break;
+                        }
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
                     }
                     if (dataCompr == null || dataCompr.Length < dataLen)
                     {
@@ -299,20 +321,27 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte compressionVga = 0;
                 Byte compressionBin = 0;
                 // optional: add compression
-                if (compressionType != 0)
+                try
                 {
-                    Byte[] dataHiCompr = compressionType == 1 ? DynamixCompression.RleEncode(dataVga) : DynamixCompression.LzwEncode(dataVga);
-                    if (dataHiCompr.Length < dataLenVga)
+                    if (compressionType != 0)
                     {
-                        dataVga = dataHiCompr;
-                        compressionVga = (Byte)compressionType;
+                        Byte[] dataHiCompr = compressionType == 1 ? DynamixCompression.RleEncode(dataVga) : DynamixCompression.LzwEncode(dataVga);
+                        if (dataHiCompr.Length < dataLenVga)
+                        {
+                            dataVga = dataHiCompr;
+                            compressionVga = (Byte)compressionType;
+                        }
+                        Byte[] dataLoCompr = compressionType == 1 ? DynamixCompression.RleEncode(dataBin) : DynamixCompression.LzwEncode(dataBin);
+                        if (dataLoCompr.Length < dataLenBin)
+                        {
+                            dataBin = dataLoCompr;
+                            compressionBin = (Byte)compressionType;
+                        }
                     }
-                    Byte[] dataLoCompr = compressionType == 1 ? DynamixCompression.RleEncode(dataBin) : DynamixCompression.LzwEncode(dataBin);
-                    if (dataLoCompr.Length < dataLenBin)
-                    {
-                        dataBin = dataLoCompr;
-                        compressionBin = (Byte)compressionType;
-                    }
+                }
+                catch (ArgumentException ex)
+                {
+                    throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
                 }
                 DynamixChunk binChunk = new DynamixChunk("BIN", compressionBin, dataLenBin, dataBin);
                 chunks.Add(binChunk);

@@ -327,7 +327,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             throw new NotImplementedException();
             if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             Color[] palEntries = fileToSave.GetColors();
             Int32 colors = palEntries.Length;
             if (colors == 0)
@@ -360,7 +360,7 @@ namespace EngieFileConverter.Domain.FileTypes
             throw new NotImplementedException();
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
 
         }
 

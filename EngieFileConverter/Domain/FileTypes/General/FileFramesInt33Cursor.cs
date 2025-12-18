@@ -146,7 +146,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType[] srcFrames = fileToSave.Frames;
                 Int32 len = srcFrames.Length;
                 if (len == 0)
-                    throw new ArgumentException("No frames in given source.");
+                    throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
                 frames = new Bitmap[len];
                 for (Int32 i = 0; i < len; ++i)
                     frames[i] = srcFrames[i].GetBitmap();
@@ -157,18 +157,18 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Bitmap bm = frames[i];
                 if (bm == null)
-                    throw new ArgumentException("All frames must contain data.");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if ((bm.PixelFormat & PixelFormat.Indexed) == 0)
-                    throw new ArgumentException("This format requires indexed frames.");
+                    throw new FileTypeSaveException(ERR_BPP_INPUT_INDEXED);
                 if (bm.Width != 16 || bm.Height != 16)
-                    throw new ArgumentException("This format requires 16x16 frames.");
+                    throw new FileTypeSaveException(String.Format(ERR_DIMENSIONS_INPUT, 16, 16));
                 Int32 stride;
                 Byte[] origData = ImageUtils.GetImageData(bm, out stride);
                 Byte[] eightBitData = ImageUtils.ConvertTo8Bit(origData, 16, 16, 0, Image.GetPixelFormatSize(bm.PixelFormat), true);
                 frameBytes[i] = eightBitData;
                 for (Int32 j = 0; j < eightBitData.Length; ++j)
                     if (eightBitData[i] > 3)
-                        throw new ArgumentException("This format can only handle images with indexed values from 0 up to 3.");
+                        throw new FileTypeSaveException(String.Format(ERR_BPP_LOW_INPUT, 2, 3));
             }
             Byte[] finalData8Bit = new Byte[512 * frLen];
             for (Int32 i = 0; i < frLen; ++i)

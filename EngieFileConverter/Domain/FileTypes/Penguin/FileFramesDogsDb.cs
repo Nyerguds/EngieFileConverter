@@ -116,7 +116,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, GeneralUtils.RecoverArgExceptionMessage(ex, false)) + " (frame " + i + ")", ex);
+                    throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR + " (frame {1})", GeneralUtils.RecoverArgExceptionMessage(ex, true), i), ex);
                 }
                 Int32 stride = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 0);
                 Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 2);
@@ -222,9 +222,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     continue;
                 }
                 if (frame.Width > 320)
-                    throw new ArgumentException("The images can't exceed a width of 320 pixels.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_WIDE_DIM, 320);
                 if (frame.Height > 200)
-                    throw new ArgumentException("The images can't exceed a height of 200 pixels.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_HIGH_DIM, 200);
                 if (frame.GetColors().Length == 4)
                 {
                     // Don't actually check 4 color images.
@@ -237,7 +237,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     maxCol = Math.Max(maxCol, pixels[p]);
                     if (maxCol >= 16)
-                        throw new ArgumentException("The images contain colors on indices higher than 15.", "fileToSave");
+                        throw new FileTypeSaveException(ERR_BPP_LOW_INPUT, "4bpp or 2", 15);
                     if (maxCol >= 4)
                         canBeCga = false;
 
@@ -301,13 +301,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         Int32 index = Int32.Parse(m.Groups[1].Value);
                         if (m.Groups[2].Value.Length == 0)
-                            throw new ArgumentException("Syntax for blank data is \"nr : size : text\".", "saveOptions");
+                            throw new FileTypeSaveException("Syntax for blank data is \"nr : size : text\".");
                         Int32 length = Int32.Parse(m.Groups[2].Value);
                         String text = m.Groups[3].Value;
                         if (length < text.Length)
-                            throw new ArgumentException("Text entry can't be longer than its entry length.", "saveOptions");
+                            throw new FileTypeSaveException("Text entry can't be longer than its entry length.");
                         if (emptyKeys.Contains(index))
-                            throw new ArgumentException("Duplicate detected in text entries.", "saveOptions");
+                            throw new FileTypeSaveException("Duplicate detected in text entries.");
                         emptyKeys.Add(index);
                         textEntries[index] = text;
                         textLengths[index] = length;
@@ -317,9 +317,9 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException("No frames found in source data.", "fileToSave");
+                throw new FileTypeSaveException("No frames found in source data.");
             if (nrOfFrames > 0xFFFF)
-                throw new ArgumentException("Too many frames in source data.", "fileToSave");
+                throw new FileTypeSaveException("Too many frames in source data.");
             Int32 targetBpp = isCga ? 2 : 4;
             Byte[][] frameData = new Byte[nrOfFrames][];
             Int32 dataOffset = 2 + (nrOfFrames*8);
@@ -356,7 +356,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 2, (UInt16) height);
                     ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 4, (UInt16)frameDataRaw.Length);
                     Array.Copy(frameDataRaw, 0, frameDataFinal, 6, frameDataRaw.Length);
-                    curFrameCompressed = PenguinCompression.CompressDogsFlagRle(frameDataFinal, FlagByte, true);
+                    try
+                    {
+                        curFrameCompressed = PenguinCompression.CompressDogsFlagRle(frameDataFinal, FlagByte, true);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
+                    }
                 }
                 frameData[i] = curFrameCompressed;
                 ArrayUtils.WriteUInt16ToByteArrayLe(header, offset, (UInt16)uncompressedSize);

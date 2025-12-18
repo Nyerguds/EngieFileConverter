@@ -34,25 +34,29 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_MAKING_IMG_ERR = ERR_MAKING_IMG_ + ": {0}";
         // Output
         protected const String ERR_EMPTY_FILE = "File to save is empty.";
-        protected const String ERR_NEEDS_FRAMES = "This format needs at least one frame.";
-        protected const String ERR_IMAGE_TOO_WIDE = "Image width is too large to be saved into this format.";
-        protected const String ERR_IMAGE_TOO_HIGH = "Image height is too large to be saved into this format.";
-        protected const String ERR_IMAGE_TOO_LARGE = "Image is too large to be saved into this format.";
-        protected const String ERR_IMAGE_TOO_LARGE_MAX_DIM = " The maximum is {0} pixels.";
-        protected const String ERR_IMAGE_TOO_LARGE_MAX_SIZE = " The maximum is {0}×{1} pixels.";
-        protected const String ERR_IMAGE_TOO_WIDE_DIM = ERR_IMAGE_TOO_WIDE + ERR_IMAGE_TOO_LARGE_MAX_DIM;
-        protected const String ERR_IMAGE_TOO_HIGH_DIM = ERR_IMAGE_TOO_HIGH + ERR_IMAGE_TOO_LARGE_MAX_DIM;
-        protected const String ERR_IMAGE_TOO_HIGH_SIZE = ERR_IMAGE_TOO_LARGE + ERR_IMAGE_TOO_LARGE_MAX_SIZE;
-        protected const String ERR_EMPTY_FRAMES = "This format can't handle empty frames.";
-        protected const String ERR_FRAMES_DIFF = "This format needs all its frames to be the same size.";
-        protected const String ERR_FRAMES_BPPDIFF = "All frames must have the same color depth.";
-        protected const String ERR_INPUT_XBPP = "This format needs {0}bpp input.";
-        protected const String ERR_INPUT_4BPP_8BPP = "This format needs 4bpp or 8bpp input.";
-        protected const String ERR_INPUT_DIMENSIONS = "This format needs {0}x{1} input.";
-        protected const String ERR_NO_COL = "The given input contains no colors.";
+        protected const String ERR_DIMENSIONS_INPUT = "This format needs {0}×{1} input.";
+        protected const String ERR_DIMENSIONS_TOO_WIDE = "Image width is too large to be saved into this format.";
+        protected const String ERR_DIMENSIONS_TOO_HIGH = "Image height is too large to be saved into this format.";
+        protected const String ERR_DIMENSIONS_TOO_LARGE = "Image is too large to be saved into this format.";
+        protected const String ERR_DIMENSIONS_TOO_LARGE_MAX_DIM = " The maximum is {0} pixels.";
+        protected const String ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE = " The maximum is {0}×{1} pixels.";
+        protected const String ERR_DIMENSIONS_TOO_WIDE_DIM = ERR_DIMENSIONS_TOO_WIDE + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
+        protected const String ERR_DIMENSIONS_TOO_HIGH_DIM = ERR_DIMENSIONS_TOO_HIGH + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
+        protected const String ERR_DIMENSIONS_TOO_HIGH_SIZE = ERR_DIMENSIONS_TOO_LARGE + ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE;
+        protected const String ERR_FRAMES_NEEDED = "This format needs at least one frame.";
+        protected const String ERR_FRAMES_OVERFLOW = "This format can't handle more than {0} frames.";
+        protected const String ERR_FRAMES_EMPTY = "This format can't handle empty frames.";
+        protected const String ERR_FRAMES_SIZE_DIFF = "This format needs all its frames to be the same size.";
+        protected const String ERR_FRAMES_BPP_DIFF = "All frames must have the same color depth.";
+        protected const String ERR_BPP_INPUT_EXACT = "This format needs {0}bpp input.";
+        protected const String ERR_BPP_INPUT_INDEXED = "This format needs indexed color input.";
+        protected const String ERR_BPP_INPUT_4_8 = "This format needs 4bpp or 8bpp input.";
+        protected const String ERR_BPP_LOW_INPUT = "This is a {0}bpp format. For higher bpp input, the values can only go from 0 to {1}.";
+        protected const String ERR_COLORS_NEEDED = "The given input contains no colors.";
         protected const String ERR_UNKN_COMPR = "Unknown compression type.";
         protected const String ERR_UNKN_COMPR_X = "Unknown compression type \"{0}\".";
-        protected String ErrFixedBppAndSize { get { return "Only " + this.BitsPerPixel + "-bit " + this.Width + "×" + this.Height + " images can be saved as " + ShortTypeName + "."; } }
+        protected const String ERR_BPP_DIMENSIONS = "Only {0}-bit {1}×{2} images can be saved as {3}.";
+        protected String ErrFixedBppAndSize { get { return String.Format(ERR_BPP_DIMENSIONS, this.BitsPerPixel, this.Width, this.Height, ShortTypeName); } }
 
         #endregion
         /// <summary>Main image in this loaded file. Can be left as null for an empty frame or the main entry of a frames container.</summary>
@@ -366,22 +370,24 @@ namespace EngieFileConverter.Domain.FileTypes
             String outputPath = Path.GetDirectoryName(inputPath);
             String palName = Path.GetFileNameWithoutExtension(inputPath) + ".pal";
             String[] files = Directory.GetFiles(outputPath, palName);
-            if (files.Length > 0)
+            if (files.Length == 0)
             {
-                try
-                {
-                    String palFile = files[0];
-                    palette = new T();
-                    Byte[] palData = File.ReadAllBytes(palFile);
-                    palette.LoadFile(palData, palFile);
-                    this.m_Palette = palette.GetColors();
-                    this.LoadedFileName += "/" + (Path.GetExtension(palFile) ?? String.Empty).TrimStart('.');
-                }
-                catch
-                {
-                    /* ignore */
-                }
+                return null;
+            }            
+            try
+            {
+                String palFile = files[0];
+                palette = new T();
+                Byte[] palData = File.ReadAllBytes(palFile);
+                palette.LoadFile(palData, palFile);
+                this.m_Palette = palette.GetColors();
+                this.LoadedFileName += "/" + (Path.GetExtension(palFile) ?? String.Empty).TrimStart('.');
+                return palette;
             }
+            catch
+            {
+                palette = null;
+            }            
             return palette;
         }
 

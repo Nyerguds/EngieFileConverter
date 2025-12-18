@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-
     /// <summary>
     /// PAK Sprite format from "Treasure Mountain" (1990).
     /// See the <see href="https://moddingwiki.shikadi.net/wiki/PAK_Format_(The_Learning_Company)">PAK Format (The Learning Company)</see>
@@ -23,7 +22,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override string IdCode { get { return "TrMountPan"; } }
+        public override string IdCode { get { return "TrMountPak"; } }
         /// <summary>Very short code name for this type.</summary>
         public override string ShortTypeName { get { return "Treasure Mountain Pak"; } }
         public override string[] FileExtensions { get { return new string[] { "pak" }; } }
@@ -163,11 +162,11 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE);
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             if (!fileToSave.IsFramesContainer)
-                throw new ArgumentException(ERR_NEEDS_FRAMES);
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             if(fileToSave.BitsPerPixel != 4 && fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(ERR_INPUT_4BPP_8BPP);
+                throw new FileTypeSaveException(ERR_BPP_INPUT_4_8);
             SupportedFileType[] frames = fileToSave.Frames;
             string frameOpts;
             if (fileToSave is FileFramesTrMntPak ffp)
@@ -183,10 +182,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     SupportedFileType frame = frames[i];
                     Bitmap bm;
                     if (frame == null || (bm = frame.GetBitmap()) == null)
-                        throw new ArgumentException(ERR_EMPTY_FRAMES);
+                        throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                     if (frame.Width > 254)
-                        throw new ArgumentException(String.Format(ERR_IMAGE_TOO_WIDE_DIM, 254), "fileToSave");
-                    FileFramesTrMntPan.TestFourBit(bm, i, "fileToSave");
+                        throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_WIDE_DIM, 254);
+                    FileFramesTrMntPan.TestFourBit(bm, i);
                 }
                 frameOpts = frOpts.ToString().TrimEnd('\r', '\n');
             }
@@ -200,11 +199,11 @@ namespace EngieFileConverter.Domain.FileTypes
         public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE);
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             if (!fileToSave.IsFramesContainer)
-                throw new ArgumentException(ERR_NEEDS_FRAMES);
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             if (fileToSave.BitsPerPixel != 4 && fileToSave.BitsPerPixel != 8)
-                throw new ArgumentException(ERR_INPUT_4BPP_8BPP);
+                throw new FileTypeSaveException(ERR_BPP_INPUT_4_8);
             SupportedFileType[] frames = fileToSave.Frames;
             // one frame: chop into sub-frames
             string opts = Option.GetSaveOptionValue(saveOptions, "FRO");
@@ -221,7 +220,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     int[] info = new int[5];
                     int frame = Int32.Parse(match.Groups[1].Value);
                     if (frameOptions.ContainsKey(frame))
-                        throw new ArgumentException("Duplicate key \"" + frame + "\" in frame options.");
+                        throw new FileTypeSaveException("Duplicate key \"" + frame + "\" in frame options.");
                     if (!string.IsNullOrEmpty(match.Groups[3].Value))
                     {
                         // x and y offset
@@ -247,9 +246,9 @@ namespace EngieFileConverter.Domain.FileTypes
                         info[4] = info[3];
                     }
                     if (info.Any(nr => nr > Int16.MaxValue))
-                        throw new ArgumentException("Value too large in frame options for frame \"" + frame + "\".");
+                        throw new FileTypeSaveException("Value too large in frame options for frame \"" + frame + "\".");
                     if (info.Any(nr => nr < Int16.MinValue))
-                        throw new ArgumentException("Value too small in frame options for frame \"" + frame + "\".");
+                        throw new FileTypeSaveException("Value too small in frame options for frame \"" + frame + "\".");
                     frameOptions.Add(frame, info);
                 }
             }
@@ -269,10 +268,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 SupportedFileType frame = frames[i];
                 Bitmap bm;
                 if (frame == null || (bm = frame.GetBitmap()) == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES);
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if (bm.Width > 254)
-                    throw new ArgumentException(String.Format(ERR_IMAGE_TOO_WIDE_DIM, 254), "fileToSave");
-                byte[] frameBytes = FileFramesTrMntPan.TestFourBit(bm, i, "fileToSave", true, out int frStride);
+                    throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_WIDE_DIM, 254);
+                byte[] frameBytes = FileFramesTrMntPan.TestFourBit(bm, i, true, out int frStride);
                 List<byte> curFrameData = new List<byte>();
                 int frHeight = bm.Height;
                 for (int y = 0; y < frHeight; y++) {

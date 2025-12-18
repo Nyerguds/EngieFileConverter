@@ -103,7 +103,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null || fileToSave.Frames.Length == 0)
             {
                 if (fileToSave.GetBitmap() == null)
-                    throw new ArgumentException("Image is empty.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 frames = new SupportedFileType[] { fileToSave };
             }
             else
@@ -116,10 +116,11 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 Bitmap frameImage = frame.GetBitmap();
+                // TODO allow this to support 8bpp input
                 if (frameImage.PixelFormat != PixelFormat.Format4bppIndexed)
-                    throw new ArgumentException("AdventureSoft icons require 4 bits per pixel input.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 4);
                 if (frameImage.Width != iconWidth || frameImage.Height != iconHeight)
-                    throw new ArgumentException("AdventureSoft icons format needs " + iconWidth + "×" + iconHeight + " pixel frames.", "fileToSave");
+                    throw new FileTypeSaveException(ERR_DIMENSIONS_INPUT, iconWidth, iconHeight);
                 Byte[] imageData4 = ImageUtils.GetImageData(frameImage, out stride);
                 Byte[] imageData8 = ImageUtils.ConvertTo8Bit(imageData4, iconWidth, iconHeight, 0, 4, true, ref stride);
                 Array.Copy(imageData8, 0, imageDataFull8, framePixSize * i, framePixSize);

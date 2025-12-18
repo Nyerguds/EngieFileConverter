@@ -101,7 +101,14 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (usesRle)
                     {
                         Int32 frameStart = (Int32) frmDataOffset;
-                        frame = WestwoodRleZero.DecompressRleZeroTs(fileData, ref frameStart, frmWidth, frmHeight);
+                        try
+                        {
+                            frame = WestwoodRleZero.DecompressRleZeroTs(fileData, ref frameStart, frmWidth, frmHeight);
+                        }
+                        catch (ArgumentException ex)
+                        {
+                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR + " (frame {1})", GeneralUtils.RecoverArgExceptionMessage(ex, true), i), ex);
+                        }
                         frameBytes = frameStart - (Int32) frmDataOffset;
                     }
                     else
@@ -335,7 +342,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES, "fileToSave");
+                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
             width = -1;
             height = -1;
             palette = null;
@@ -343,16 +350,16 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new ArgumentException(ERR_FRAMES_EMPTY, "fileToSave");
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;
                     height = frame.Height;
                 }
                 else if (width != frame.Width || height != frame.Height)
-                    throw new ArgumentException(ERR_FRAMES_DIFF, "fileToSave");
+                    throw new ArgumentException(ERR_FRAMES_SIZE_DIFF, "fileToSave");
                 if (palette == null)
                     palette = frame.GetColors();
             }

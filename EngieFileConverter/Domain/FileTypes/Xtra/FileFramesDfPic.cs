@@ -90,20 +90,20 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames;
             if (frames == null || (nrOfFrames = frames.Length) == 0)
-                throw new ArgumentException(ERR_NEEDS_FRAMES);
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException(ERR_EMPTY_FRAMES, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_INPUT_XBPP, 8), "fileToSave");
+                    throw new FileTypeSaveException(String.Format(ERR_BPP_INPUT_EXACT, 8));
                 if (frame.Width != 320 || frame.Height != 200)
-                    throw new ArgumentException(String.Format(ERR_INPUT_DIMENSIONS, 320, 200), "fileToSave");
+                    throw new FileTypeSaveException(String.Format(ERR_DIMENSIONS_INPUT, 320, 200));
             }
             const Int32 palSize = 0x300;
             Int32 frameSize = this.Width * this.Height;

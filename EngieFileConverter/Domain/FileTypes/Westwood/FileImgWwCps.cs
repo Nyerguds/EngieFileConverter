@@ -178,7 +178,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException("Could not load CPS palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
+                    throw new FileTypeLoadException("Could not load CPS palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
                 }
             }
             else
@@ -230,8 +230,14 @@ namespace EngieFileConverter.Domain.FileTypes
                         throw new FileTypeLoadException(String.Format(ERR_UNKN_COMPR_X, compression));
                 }
             }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, GeneralUtils.RecoverArgExceptionMessage(ex, true)), ex);
+            }
             catch (Exception e)
             {
+                if (e is FileTypeLoadException)
+                    throw;
                 throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, e.Message), e);
             }
             if (imageData == null)
@@ -372,27 +378,34 @@ namespace EngieFileConverter.Domain.FileTypes
                 imageData = imageDataPlanes;
             }
             Byte[] compressedData;
-            switch (compressionType)
+            try
             {
-                case 0:
-                    compressedData = imageData;
-                    break;
-                case 1:
-                    LzwCompression lzw12 = new LzwCompression(LzwSize.Size12Bit);
-                    compressedData = lzw12.Compress(imageData);
-                    break;
-                case 2:
-                    LzwCompression lzw14 = new LzwCompression(LzwSize.Size14Bit);
-                    compressedData = lzw14.Compress(imageData);
-                    break;
-                case 3:
-                    compressedData = WestwoodRle.RleEncode(imageData, !isAmiga);
-                    break;
-                case 4:
-                    compressedData = WWCompression.LcwCompress(imageData);
-                    break;
-                default:
-                    throw new ArgumentException(ERR_UNKN_COMPR, "compressionType");
+                switch (compressionType)
+                {
+                    case 0:
+                        compressedData = imageData;
+                        break;
+                    case 1:
+                        LzwCompression lzw12 = new LzwCompression(LzwSize.Size12Bit);
+                        compressedData = lzw12.Compress(imageData);
+                        break;
+                    case 2:
+                        LzwCompression lzw14 = new LzwCompression(LzwSize.Size14Bit);
+                        compressedData = lzw14.Compress(imageData);
+                        break;
+                    case 3:
+                        compressedData = WestwoodRle.RleEncode(imageData, !isAmiga);
+                        break;
+                    case 4:
+                        compressedData = WWCompression.LcwCompress(imageData);
+                        break;
+                    default:
+                        throw new FileTypeSaveException(ERR_UNKN_COMPR_X, compressionType);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
             }
             Int32 dataLength = 10 + compressedData.Length;
             Int32 paletteLength;

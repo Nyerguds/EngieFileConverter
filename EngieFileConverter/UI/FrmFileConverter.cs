@@ -16,14 +16,12 @@ using EngieFileConverter.Domain.HeightMap;
 using System.Text;
 using System.Text.RegularExpressions;
 using Nyerguds.Util.UI.SaveOptions;
+using EngieFileConverter.Domain;
 
 namespace EngieFileConverter.UI
 {
     public partial class FrmFileConverter : Form
     {
-        // General purpose function invoker to return data.
-        public delegate Object FunctionInvoker();
-
         private const String PROG_NAME = "Engie File Converter";
         private const String PROG_AUTHOR = "Created by Nyerguds";
         private const Int32 PALETTE_DIM = 226;
@@ -256,7 +254,8 @@ namespace EngieFileConverter.UI
                 String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
                 String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
                 String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(path), Path.GetFileName(firstPath), chainQuestion);
-                DialogResult dr = (DialogResult)this.Invoke((FunctionInvoker)(() => this.ShowMessageBox(loadQuestionFormat, MessageBoxButtons.YesNo, MessageBoxIcon.Question)));
+                DialogResult dr = (DialogResult)this.Invoke(
+                    new Func<DialogResult>(() => this.ShowMessageBox(loadQuestionFormat, MessageBoxButtons.YesNo, MessageBoxIcon.Question)));
                 if (dr != DialogResult.Yes)
                 {
                     // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.
@@ -316,7 +315,8 @@ namespace EngieFileConverter.UI
             if (hasEmptyFrames)
                 message.Append("\nSome of these frames are empty files. Not every save format supports empty frames.");
             message.Append("\n\nDo you wish to load the frames from all files?");
-            DialogResult dr = (DialogResult)this.Invoke((FunctionInvoker)(() => this.ShowMessageBox(message.ToString(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning)));
+            DialogResult dr = (DialogResult)this.Invoke(
+                new Func<DialogResult>(() => this.ShowMessageBox(message.ToString(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning)));
             if (dr == DialogResult.Yes)
             {
                 if (currentType != null)
@@ -739,6 +739,13 @@ namespace EngieFileConverter.UI
                     }
                 }
             }
+            catch (FileTypeSaveException ex)
+            {
+                String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
+                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
+                MessageBox.Show(this, message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             catch (ArgumentException ex)
             {
                 String msg = GeneralUtils.RecoverArgExceptionMessage(ex, false);
@@ -784,6 +791,15 @@ namespace EngieFileConverter.UI
                             File.WriteAllBytes(framePath, new Byte[0]);
                     }
                 }
+            }
+            catch (FileTypeSaveException ex)
+            {
+                String message = "Error saving " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
+                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
+#if DEBUG
+                message += "\n" + ex.StackTrace;
+#endif
+                this.Invoke(new Action(() => this.ShowMessageBox(message, MessageBoxButtons.OK, MessageBoxIcon.Warning)));
             }
             catch (ArgumentException ex)
             {

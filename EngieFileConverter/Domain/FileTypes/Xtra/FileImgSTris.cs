@@ -112,7 +112,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Not an " + this.ShortTypeName + ".");
             Int32 actualImageSize = height * width;
             if (actualImageSize > fileData.Length - start)
-                throw new FileTypeLoadException("Not enough data for a " + width + "x" + height + " image.");
+                throw new FileTypeLoadException("Not enough data for a " + width + "×" + height + " image.");
             Byte[] imageData = new Byte[actualImageSize];
             Array.Copy(fileData, start, imageData, 0, actualImageSize);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);

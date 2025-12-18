@@ -29,7 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            throw new ArgumentException("This is not a real file format to save. How did you even get here?", "fileToSave");
+            throw new FileTypeSaveException("This is not a real file format to save. How did you even get here?");
         }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
@@ -837,7 +837,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 frWidth = srcBm.Width;
                 Int32 frHeight = srcBm.Height;
                 if (frWidth != maskBm.Width || frHeight != maskBm.Height)
-                    throw new ArgumentException(String.Format("Dimensions don't math on frame {0}, mask frame {1}.", origImageFrames[i], origMaskFrames[i]), "input");
+                    throw new ArgumentException(String.Format("Dimensions don't match on frame {0}, mask frame {1}.", origImageFrames[i], origMaskFrames[i]), "input");
                 PixelFormat srcPf = srcBm.PixelFormat;
                 PixelFormat maskPf = maskBm.PixelFormat;
                 if (((srcPf | maskPf) & PixelFormat.Indexed) == 0)

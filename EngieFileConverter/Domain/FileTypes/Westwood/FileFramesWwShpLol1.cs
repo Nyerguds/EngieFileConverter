@@ -117,13 +117,21 @@ namespace EngieFileConverter.Domain.FileTypes
                         WWCompression.LcwDecompress(fileData, ref dataOffset, uncompressedData, 0);
                         break;
                     default:
-                        throw new FileTypeLoadException("Unsupported compression format \"" + hdrCompression + "\".");
+                        throw new FileTypeLoadException(String.Format(ERR_UNKN_COMPR_X, hdrCompression));
                 }
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, GeneralUtils.RecoverArgExceptionMessage(ex, true)), ex);
             }
             catch (Exception e)
             {
-                throw new FileTypeLoadException("Error decompressing image data.", e);
+                if (e is FileTypeLoadException)
+                    throw;
+                throw new FileTypeLoadException(ERR_DECOMPR, e);
             }
+            if (uncompressedData == null)
+                throw new FileTypeLoadException(ERR_DECOMPR);
             Boolean isVersion107;
             Int32[] remapFrames;
             Int32[] notCompressedFrames;
