@@ -23,13 +23,13 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
 
-        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass FileClass { get { return (this.m_FramesList != null && this.m_FramesList.Count > 0) ? FileClass.FrameSet : FrameInputFileClass; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos Visage"; } }
-        public override String[] FileExtensions { get { return new String[] { "vgs", "lbv" }; } }
+        public override String[] FileExtensions { get { return new String[] { "vgs", "lbv", "all" }; } }
         public override String ShortTypeDescription { get { return "Mythos Visage frames file"; } }
         public override Int32 ColorsInPalette { get { return this.m_PaletteSet? this.m_Palette.Length : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
@@ -53,50 +53,49 @@ namespace CnC64FileConverter.Domain.FileTypes
         //    return base.GetPostLoadInitOptions();
         //}
 
-        public override void PostLoadInit(SaveOption[] loadOptions)
-        {
-
-        }
+        //public override void PostLoadInit(SaveOption[] loadOptions)
+        //{
+        //
+        //}
 
         public override void LoadFile(Byte[] fileData)
         {
             List<Point> framesXY;
-            this.LoadFromFileData(fileData, null, false, false, false, false, out framesXY);
+            this.LoadFromFileData(fileData, null, false, false, false, out framesXY, false);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
             this.SetFileNames(filename);
             List<Point> framesXY;
-            this.LoadFromFileData(fileData, filename, false, false, false, false, out framesXY);
+            this.LoadFromFileData(fileData, filename, false, false, false, out framesXY, false);
         }
 
         /// <summary>
-        /// Loads the VGS/VDA file
+        /// Loads the VGS/VDA file.
         /// </summary>
-        /// <param name="fileData">File data in the main VGS/VDA image.</param>
+        /// <param name="fileData">File data in the VGS/VDA file.</param>
         /// <param name="sourcePath">Path of the source file.</param>
         /// <param name="asPalette">True to only read a single frame and treat it as just a palette. Will give load exceptions if the file does not start with a palettes, or is longer than just that palette.</param>
         /// <param name="paletteStrict">True if an exception should be thrown if loading as palette and the file contains more than a palette.</param>
-        /// <param name="asVideo">True to load the header bytes accoridng to VDA header.</param>
-        /// <param name="splitOffsets">True if a VDX file is present; this makes it fill in the X offset and Y offset lists instead of applying the offsets to the frame data.</param>
-        /// <param name="framesXY">List of frame X and Y offsets</param>
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath, Boolean asPalette, Boolean paletteStrict, Boolean asVideo, Boolean splitOffsets, out List<Point> framesXY)
+        /// <param name="asVideo">True to load the header bytes according to VDA header format, and store the X and Y offsets of all frames in the framesXY list instead of applying them to the images.</param>
+        /// <param name="framesXY">List of frame X and Y offsets. Only filled in when asVideo is set to true.</param>
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath, Boolean asPalette, Boolean paletteStrict, Boolean asVideo, out List<Point> framesXY, Boolean forFrameTest)
         {
-            // 01 00 06 00 00 00 00 01
-            // W-1   H-1      CM X? Y
             if (fileData.Length < 0x8)
                 throw new FileTypeLoadException("Not long enough for header.");
             Int32 offset = 0;
             Boolean[] transMask = this.CreateTransparencyMask();
             this.m_FramesList.Clear();
-            framesXY = splitOffsets ? new List<Point>() : null;
+            framesXY = asVideo ? new List<Point>() : null;
             this.m_PaletteSet = false;
             this.m_Palette = null;
             this.CompressionType = -1;
             // Read data
             while (offset < fileData.Length)
             {
+                if (forFrameTest && this.m_FramesList.Count > 0)
+                    return;
                 String extraInfo = String.Empty;
                 Int32 frameWidth = (Int16) ArrayUtils.ReadIntFromByteArray(fileData, offset + 0, 2, true) + 1;
                 Int32 frameHeight = (Int16) ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true) + 1;
@@ -166,20 +165,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                     {
                         throw new FileTypeLoadException("Cannot decompress VGS file!", e);
                     }
-                    /*/
-                    // Debug code for making dumps of failed frames
-                    if (imageData == null)
-                    {
-                        Byte[] test = new Byte[skipLen + 8];
-                        ArrayUtils.WriteIntToByteArray(test, 0, 0, true, (UInt32)frameWidth - 1);
-                        ArrayUtils.WriteIntToByteArray(test, 0, 2, true, (UInt32)frameHeight - 1);
-                        test[5] = 1;
-                        test[6] = (Byte)xOffset;
-                        test[7] = (Byte)yOffset;
-                        Array.Copy(fileData, offset, test, 8, skipLen);
-                        File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath) + "_" + m_FramesList.Count + Path.GetExtension(sourcePath)), test);
-                    }
-                    //*/
                     if (imageData == null)
                         throw new FileTypeLoadException("Cannot decompress VGS file!");
                 }
@@ -203,8 +188,13 @@ namespace CnC64FileConverter.Domain.FileTypes
                         this.m_PaletteSet = true;
                         this.ExtraInfo =  "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame";
                         offset += skipLen;
-                        if (asPalette && offset != fileData.Length && paletteStrict)
-                            throw new FileTypeLoadException("Not a single palette file!");
+                        if (asPalette)
+                        {
+                            if (offset != fileData.Length && paletteStrict)
+                                throw new FileTypeLoadException("Not a single palette file!");
+                            else
+                                return;
+                        }
                         continue;
                     }
                     if (asPalette)
@@ -213,11 +203,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 else if (asPalette)
                     throw new FileTypeLoadException("Not a palette file!");
                 // safe to execute this now the palette has been handled; otherwise there would be a ghost X and Y for the palette entry.
-                if (splitOffsets)
+                if (asVideo)
                 {
                     framesXY.Add(new Point(xOffset, yOffset));
                 }
-                else if (xOffset > 0 || yOffset > 0)
+                else if (xOffset > 0 || yOffset > 0 && !asVideo)
                 {
                     Int32 newWidth = frameWidth + xOffset;
                     Int32 newHeight = frameHeight + yOffset;
@@ -231,9 +221,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frameHeight = newHeight;
                 }
                 if (xOffset > 0)
-                    extraInfo += X_OFFSET + xOffset + (splitOffsets ? " (not applied)" : String.Empty) + "\n";
+                    extraInfo += X_OFFSET + xOffset + (asVideo ? " (not applied)" : String.Empty) + "\n";
                 if (yOffset > 0)
-                    extraInfo += Y_OFFSET + yOffset + (splitOffsets ? " (not applied)" : String.Empty) + "\n";
+                    extraInfo += Y_OFFSET + yOffset + (asVideo ? " (not applied)" : String.Empty) + "\n";
                 if (this.m_Palette == null)
                 {
                     if (sourcePath != null && !sourcePath.EndsWith(".pal", StringComparison.InvariantCultureIgnoreCase))
@@ -241,29 +231,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                         String palName = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath) + ".PAL");
                         if (File.Exists(palName))
                         {
-                            try
-                            {
-                                FileFramesMythosPal palFile = new FileFramesMythosPal();
-                                Byte[] palData = File.ReadAllBytes(palName);
-                                palFile.LoadFile(palData, palName);
-                                this.m_Palette = palFile.GetColors();
-                            }
-                            catch
-                            {
-                                // ignore. If it fails, er just use no palette.
-                            }
-                            if (this.m_Palette == null)
+                            Type[] paletteTypes = {typeof(FileFramesMythosPal), typeof(FilePalette6Bit), typeof(FilePalette8Bit)};
+                            for (Int32 i = 0; i < paletteTypes.Length && this.m_Palette == null; i++)
                             {
                                 try
                                 {
-                                    FilePaletteWwPc palFile = new FilePaletteWwPc();
+                                    SupportedFileType palFile = (SupportedFileType)Activator.CreateInstance(paletteTypes[i]);
                                     Byte[] palData = File.ReadAllBytes(palName);
                                     palFile.LoadFile(palData, palName);
                                     this.m_Palette = palFile.GetColors();
                                 }
                                 catch
                                 {
-                                    // ignore. If it fails, er just use no palette.
+                                    // ignore.
                                 }
                             }
                             if (this.m_Palette != null)
@@ -303,12 +283,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (offset != fileData.Length)
                 throw new FileTypeLoadException("Image load failed.");
             if (m_PaletteSet && m_FramesList.Count == 0)
+                throw new FileTypeLoadException("this is a palette-only VGS! Load it as palette.");
+            if (!asVideo && m_PaletteSet && m_FramesList.Count == 1 && m_FramesList[0].Width == 320 && m_FramesList[0].Height == 200)
             {
-                if (!asPalette)
-                    throw new FileTypeLoadException("this is a palette-only VGS! Load it as palette.");
-                Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-                Color[] pal = PaletteUtils.ApplyTransparencyGuide(this.m_Palette.ToArray(), null);
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, pal, Color.Black);
+                this.m_LoadedImage = m_FramesList[0].GetBitmap();
+                m_FramesList.Clear();
+                this.ExtraInfo += "\nTreated as single image.";
+
             }
         }
         
@@ -353,12 +334,16 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
+                if (fileToSave.BitsPerPixel != 8)
+                    throw new NotSupportedException("This format needs 8-bit images!");
                 FileFrames frameSave = new FileFrames();
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }
             if (fileToSave.Frames.Length == 0)
                 throw new NotSupportedException("No frames found in source data!");
+            if (fileToSave.Frames.Any(x => x.BitsPerPixel != 8))
+                throw new NotSupportedException("All frames in the target file must be 8-bit images!");
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Boolean optimiseX = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPX"));
             Boolean optimiseY = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPY"));
@@ -368,14 +353,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                 compressionType = 0;
 
             Boolean paletteOnly = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PALONLY"));
+            Color[] palette;
             if (paletteOnly)
             {
                 asPaletted = true;
                 compressionType = 0;
+                palette = CheckInputForColors(fileToSave, true);
             }
-            Color[] palette = fileToSave.GetColors();
-            if (palette != null && palette.Length == 0)
-                palette = null;
+            else
+            {
+                palette = fileToSave.GetColors();
+                if (palette != null && palette.Length == 0)
+                    palette = null;
+            }
             // Check all frames, and fetch the palette if needed.
             foreach (SupportedFileType frame in fileToSave.Frames)
             {

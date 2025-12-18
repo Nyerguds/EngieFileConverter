@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Nyerguds.ImageManipulation;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.Linq;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -30,8 +33,10 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             this.SetFileNames(filename);
             List<Point> framesXY;
-            this.LoadFromFileData(fileData, filename, true, true, false, false, out framesXY);
-            this.m_Palette = this.m_LoadedImage.Palette.Entries;
+            this.LoadFromFileData(fileData, filename, true, true, false, out framesXY, false);
+            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
+            PaletteUtils.ApplyTransparencyGuide(this.m_Palette, null);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_Palette, Color.Black);
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new SaveOption[0]; }

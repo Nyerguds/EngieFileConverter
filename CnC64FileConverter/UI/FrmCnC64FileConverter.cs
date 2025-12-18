@@ -119,36 +119,38 @@ namespace CnC64FileConverter.UI
             if (files.Length != 1)
                 return;
             String path = files[0];
-            SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
-            this.LoadFile(path, null, possibleTypes);
+            SupportedFileType[] preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
+            this.LoadFile(path, null, preferredTypes);
         }
 
-        private void LoadFile(String path, SupportedFileType selectedType, SupportedFileType[] possibleTypes)
+        private void LoadFile(String path, SupportedFileType selectedType, SupportedFileType[] preferredTypes)
         {
             SupportedFileType oldLoaded = this.m_LoadedFile;
             this.m_Loading = true;
+            Byte[] fileData = null;
             try
             {
                 FileTypeLoadException error = null;
-                Boolean isEmpty = false;
+                Boolean isEmptyFile = false;
                 try
                 {
                     try
                     {
-                        isEmpty = new FileInfo(path).Length == 0;
+                        fileData = File.ReadAllBytes(path);
+                        isEmptyFile = fileData.Length == 0;
                     }
                     catch (Exception e)
                     {
                         error = new FileTypeLoadException("Could not access file!\n\n" + e.Message, e);
                         this.m_LoadedFile = null;
                     }
-                    if (!isEmpty && error == null)
+                    if (!isEmptyFile && error == null)
                     {
+                        // Load from chosen type.
                         if (selectedType != null)
                         {
                             try
                             {
-                                Byte[] fileData = File.ReadAllBytes( path);
                                 selectedType.LoadFile(fileData, path);
                                 this.m_LoadedFile = selectedType;
                             }
@@ -157,14 +159,16 @@ namespace CnC64FileConverter.UI
                                 this.m_LoadedFile = null;
                                 e.AttemptedLoadedType = selectedType.ShortTypeName;
                                 error = e;
-                                if (possibleTypes != null && possibleTypes.Length > 1)
+                                // autodetect is possible. Set type to null.
+                                if (preferredTypes != null && preferredTypes.Length > 1)
                                     selectedType = null;
                             }
                         }
+                        //Autodetect logic.
                         if (selectedType == null)
                         {
                             List<FileTypeLoadException> loadErrors;
-                            this.m_LoadedFile = SupportedFileType.LoadFileAutodetect(path, possibleTypes, out loadErrors, error != null);
+                            this.m_LoadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, error != null);
                             if (this.m_LoadedFile != null)
                                 error = null;
                             else
@@ -186,13 +190,32 @@ namespace CnC64FileConverter.UI
                     error = new FileTypeLoadException(ex.Message, ex);
                     this.m_LoadedFile = null;
                 }
-                if (isEmpty || error == null)
+                List<String> filesChain = null;
+                if (!isEmptyFile && error == null && this.m_LoadedFile.IsFramesContainer && (filesChain = this.m_LoadedFile.GetFilesToLoadMissingData(path)) != null && filesChain.Count > 0)
+                {
+                    const String loadQuestion = "This file seems to be missing a starting point. Would you like to load it from \"{0}\"{1}?";
+                    const String loadQuestionChain = " (chained through {0})";
+                    String firstPath = filesChain.First();
+                    String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
+                    String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
+                    String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(firstPath), chainQuestion);
+                    if (MessageBox.Show(this, loadQuestionFormat, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    {
+                        // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.
+                        filesChain = null;
+                    }
+                    else
+                    {
+                        m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
+                    }
+                }
+                if (filesChain == null && isEmptyFile || error == null)
                 {
                     SupportedFileType detectSource = this.m_LoadedFile;
-                    if (isEmpty && possibleTypes.Length == 1)
-                        detectSource = possibleTypes[0];
+                    if (isEmptyFile && preferredTypes.Length == 1)
+                        detectSource = preferredTypes[0];
                     SupportedFileType frames = this.CheckForFrames(path, detectSource);
-                    if (ReferenceEquals(frames, detectSource) && isEmpty)
+                    if (ReferenceEquals(frames, detectSource) && isEmptyFile)
                     {
                         this.m_LoadedFile = null;
                         if (detectSource != null)
@@ -213,7 +236,7 @@ namespace CnC64FileConverter.UI
                 }
                 if (error != null)
                     MessageBox.Show(this, "File loading failed: " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                if (this.m_LoadedFile == null && isEmpty)
+                if (this.m_LoadedFile == null && isEmptyFile)
                     MessageBox.Show(this, "File loading failed: The file is empty!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
@@ -445,18 +468,16 @@ namespace CnC64FileConverter.UI
                 MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            saveTypes = filteredTypes.ToArray();
-            if (!saveTypes.Contains(selectType))
+            if (!filteredTypes.Contains(selectType))
             {
-                Type newSelectType = saveTypes.FirstOrDefault(x => selectType.IsSubclassOf(x));
+                Type newSelectType = filteredTypes.FirstOrDefault(x => selectType.IsSubclassOf(x));
                 if (newSelectType == null)
-                    newSelectType = saveTypes.FirstOrDefault(x => x.IsSubclassOf(selectType));
+                    newSelectType = filteredTypes.FirstOrDefault(x => x.IsSubclassOf(selectType));
                 if (newSelectType == null)
                     newSelectType = typeof(FileImagePng);
                 selectType = newSelectType;
             }
-            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, saveTypes, false, true, loadedFile.LoadedFile, out selectedItem);
+            String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, filteredTypes.ToArray(), false, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
             try
@@ -514,9 +535,9 @@ namespace CnC64FileConverter.UI
             String filename = FileDialogGenerator.ShowOpenFileFialog(this, null, SupportedFileType.SupportedOpenTypes, openPath, "images", null, out selectedItem);
             if (filename == null)
                 return;
-            SupportedFileType[] possibleTypes = null;
+            SupportedFileType[] preferredTypes = null;
             if (selectedItem == null)
-                possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filename);
+                preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, filename);
             else
             {
                 SupportedFileType curr = selectedItem;
@@ -531,10 +552,10 @@ namespace CnC64FileConverter.UI
                     subTypeObjs.RemoveAll(x => x.GetType() == selectedItem.GetType());
                     if (selectedItem.GetType() != currType && subTypeObjs.All(x => x.GetType() != currType))
                         subTypeObjs.Add(curr);
-                    possibleTypes = subTypeObjs.ToArray();
+                    preferredTypes = subTypeObjs.ToArray();
                 }
             }
-            this.LoadFile(filename, selectedItem, possibleTypes);
+            this.LoadFile(filename, selectedItem, preferredTypes);
         }
 
         private void NumZoom_ValueChanged(Object sender, EventArgs e)

@@ -84,6 +84,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Bitmap bmp;
                     Int32 frWidth = info.Width == 0 ? 0x100 : info.Width;
                     Int32 frHeight = info.Height == 0 ? 0x100 : info.Height;
+                    PixelFormat originalPixelFormat = PixelFormat.Undefined;
                     if (frWidth == 0 || frHeight == 0)
                         throw new HeaderParseException("Icon dimensions cannot be zero.");
                     if ("png".Equals(type))
@@ -92,9 +93,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                         bmp = this.GetBmp<FileImageBmp>(frameData);
                     else
                     {
-                        bmp = DibHandler.ImageFromDib(frameData);
-                        type = "dib";
+                        bmp = DibHandler.ImageFromDib(frameData, true, out originalPixelFormat);
+                        if (bmp != null)
+                            type = "dib";
                     }
+                    if (bmp == null)
+                        throw new HeaderParseException("Can't detect internal type!");
                     //throw new HeaderParseException("Unsupported image type " + ("dat".Equals(type) ? String.Empty : "\"" + type + "\" ") + "in frame " + i + ".");
                     if (bmp.Width != frWidth || bmp.Height != frHeight)
                         throw new HeaderParseException("Image " + i + " in icon does not match header information.");
@@ -102,7 +106,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     this.m_MaxWidth = Math.Max(this.m_MaxWidth, frWidth);
                     FileImageFrame framePic = new FileImageFrame();
                     framePic.LoadFileFrame(this, this.ShortTypeName, bmp, sourcePath, i);
-                    framePic.SetExtraInfo("Format: " + type.ToUpper());
+                    String extraInfo = "Format: " + type.ToUpper();
+                    if (originalPixelFormat != PixelFormat.Undefined)
+                        extraInfo += "\nOriginal pixel format: " + Image.GetPixelFormatSize(originalPixelFormat) + " bpp";
+                    framePic.SetExtraInfo(extraInfo);
                     this.m_FramesList[i] = framePic;
                     offset += indexItemSize;
                 }
@@ -143,10 +150,10 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         private Bitmap GetBmp<T>(Byte[] frameData) where T : FileImage, new()
         {
-            using (T frameImgPng = new T())
+            using (T frameImg = new T())
             {
-                frameImgPng.LoadFile(frameData);
-                return ImageUtils.CloneImage(frameImgPng.GetBitmap());
+                frameImg.LoadFile(frameData);
+                return ImageUtils.CloneImage(frameImg.GetBitmap());
             }
         }
 

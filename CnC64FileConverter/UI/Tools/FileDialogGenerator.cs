@@ -98,9 +98,13 @@ namespace Nyerguds.Util.UI
                 String fn = Path.GetFileName(currentPath);
                 String ext = Path.GetExtension(fn).TrimStart('.');
                 T selectedType = correspondingObjects[filterIndex-1];
-                if (selectedType != null && !selectedType.Equals(default(T))
-                    && selectedType.FileExtensions.Length > 0 && !ext.Equals(selectedType.FileExtensions[0]))
-                    fn = Path.GetFileNameWithoutExtension(currentPath) + "." + selectedType.FileExtensions[0];
+                if (selectedType != null && !selectedType.Equals(default(T)) && selectedType.FileExtensions.Length > 0)
+                {
+                    // makes sure the extension's case matches the one in the filter, so the dialog doesn't add an additional one.
+                    Int32 extIndex = Array.FindIndex(selectedType.FileExtensions, x => x.Equals(ext, StringComparison.OrdinalIgnoreCase));
+                    ext = selectedType.FileExtensions[extIndex == -1 ? 0 : extIndex];
+                    fn = Path.GetFileNameWithoutExtension(currentPath) + "." + ext;
+                }
                 sfd.FileName = fn;
             }
             DialogResult res = sfd.ShowDialog(owner);

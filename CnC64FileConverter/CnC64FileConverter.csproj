@@ -63,6 +63,7 @@
     <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
     <Compile Include="Domain\FileTypes\EA\FileImgKotBPak.cs" />
+    <Compile Include="Domain\FileTypes\General\FilePalette8Bit.cs" />
     <Compile Include="Domain\FileTypes\General\FileIcon.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVda.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosPal.cs" />
@@ -121,7 +122,7 @@
     <Compile Include="Domain\FileTypes\General\FileImageGif.cs" />
     <Compile Include="Domain\FileTypes\General\FileImagePng.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileMapWwCc1N64.cs" />
-    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwPc.cs" />
+    <Compile Include="Domain\FileTypes\General\FilePalette6Bit.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileMapWwCc1Pc.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ImageUtils.cs" />
     <Compile Include="Domain\FileTypes\General\FileImage.cs" />

@@ -7,15 +7,15 @@ using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public class FilePaletteWwPc : SupportedFileType
+    public class FilePalette8Bit : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood pal"; } }
+        public override String ShortTypeName { get { return "8-bit pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Westwood palette"; } }
+        public override String ShortTypeDescription { get { return "8-bit palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions {  get { return new String[]{ "pal" }; } }
 
@@ -28,19 +28,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileData.Length != 768)
                 throw new FileTypeLoadException("Incorrect file size.");
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            ColorSixBit[] palette = null;
-            Exception e = null;
-            try
-            {
-                palette = ColorUtils.ReadSixBitPalette(fileData);
-            }
-            catch (ArgumentException ex) { e = ex;}
-            catch (NotSupportedException ex2) { e = ex2;}
-            if (e != null)
-            {
-                throw new FileTypeLoadException("Failed to load file as palette: " + e.Message, e);
-            }
-            this.m_Palette = ColorUtils.GetEightBitColorPalette(palette);
+            this.m_Palette = ColorUtils.ReadEightBitPalette(fileData, true);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 
@@ -61,8 +49,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             Color[] cols = this.CheckInputForColors(fileToSave, true);
-            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(cols);
-            return ColorUtils.GetSixBitPaletteData(sbcp);
+            return ColorUtils.GetEightBitPaletteData(cols, true);
         }
 
     }

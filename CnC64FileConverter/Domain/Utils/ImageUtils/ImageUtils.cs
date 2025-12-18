@@ -205,18 +205,24 @@ namespace Nyerguds.ImageManipulation
                 throw new ArgumentException("Stride is smaller than one pixel line!", "stride");
             Int32 divvalue = 256 / (1 << bpp);
             Byte[] newImageData = new Byte[width * height];
+            Int32 inputOffsetLine = 0;
+            Int32 outputOffsetLine = 0;
             for (Int32 y = 0; y < height; y++)
             {
+                Int32 inputOffs = inputOffsetLine;
+                Int32 outputOffs = outputOffsetLine;
                 for (Int32 x = 0; x < width; x++)
                 {
-                    Int32 inputOffs = y * stride + x * 4;
-                    Int32 outputOffs = y * width + x;
                     Color c = Color.FromArgb(imageData[inputOffs + 3], imageData[inputOffs + 2], imageData[inputOffs + 1], imageData[inputOffs]);
                     if (c.A < 128)
                         newImageData[outputOffs] = 0;
                     else
-                        newImageData[outputOffs] = (Byte)((c.R + c.G + c.B) / (3 * divvalue));
+                        newImageData[outputOffs] = (Byte)(Math.Min((c.R * 0.3) + (c.G * 0.59) + (c.B * 0.11), 255) / divvalue);
+                    inputOffs += 4;
+                    outputOffs++;
                 }
+                inputOffsetLine += stride;
+                outputOffsetLine += width;
             }
             stride = width;
             if (bpp < 8)
@@ -1973,9 +1979,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Builds a list of all points adjacent to the current point, and adds it to the list of point collections.
-        /// If the point was already found in one of the collections, the function does nothing.
-        /// Loop this over every pixel of an image to detect all blobs.
+        /// Detects a list of all blobs in the image, and merges any with bounds that intersect with each other according to the 'mergeThreshold' parameter.
         /// </summary>
         /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
@@ -1987,14 +1991,84 @@ namespace Nyerguds.ImageManipulation
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
         public static List<List<Point>> FindBlobs<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Int32 mergeThreshold, Boolean getEdgesOnly)
         {
-            List<List<Point>> blobs = new List<List<Point>>();
             List<Boolean[,]> inBlobs = new List<Boolean[,]>();
+            List<List<Point>> blobs = FindBlobs(data, width, height, clearsThreshold, allEightEdges, getEdgesOnly, out inBlobs);
+            MergeBlobs(blobs, width, height, null, mergeThreshold);
+            return blobs;
+        }
+
+
+        /// <summary>
+        /// Detects a list of all blobs in the image, and merges any with bounds that intersect with each other according to the 'mergeThreshold' parameter.
+        /// Returns the result as Boolean[,] array.
+        /// </summary>
+        /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
+        /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
+        /// <param name="width">Image width.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
+        /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
+        /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
+        public static List<Boolean[,]> FindBlobsAsBooleans<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Int32 mergeThreshold, Boolean getEdgesOnly)
+        {
+            List<Boolean[,]> inBlobs = new List<Boolean[,]>();
+            List<List<Point>> blobs = FindBlobs(data, width, height, clearsThreshold, allEightEdges, getEdgesOnly, out inBlobs);
+            MergeBlobs(blobs, width, height, inBlobs, mergeThreshold);
+            return inBlobs;
+        }
+
+        /// <summary>
+        /// Detects a list of all blobs in the image.
+        /// </summary>
+        /// <typeparam name="T">Type of the list to detect equal neighbours in.</typeparam>
+        /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
+        /// <param name="width">Image width.</param>
+        /// <param name="height">Image height.</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
+        /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
+        /// <param name="inBlobs">Output parameter for receiving the blobs as boolean[,] arrays.</param>
+        public static List<List<Point>> FindBlobs<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Boolean getEdgesOnly, out List<Boolean[,]> inBlobs)
+        {
+            List<List<Point>> blobs = new List<List<Point>>();
+            inBlobs = new List<Boolean[,]>();
             for (Int32 y = 0; y < height; y++)
                 for (Int32 x = 0; x < width; x++)
                     BuildBlobsCollection(x, y, data, width, height, clearsThreshold, blobs, inBlobs, allEightEdges, getEdgesOnly);
+            return blobs;
+        }
 
-            // Merge any collections that fall in each other's square bounds to reduce the amount of stray pixels.
-            // Bounds are inflated by the amount of pixels specified in mergeThreshold.
+        /// <summary>
+        /// Merge any blobs that fall in each other's square bounds, to reduce the amount of stray pixels.
+        /// Bounds are inflated by the amount of pixels specified in mergeThreshold.
+        /// </summary>
+        /// <param name="blobs">Collection of blobs</param>
+        /// <param name="width">width of full image. Use -1 to detect from blob bounds.</param>
+        /// <param name="height">Height of full image. Use -1 to detect from blob bounds.</param>
+        /// <param name="inBlobs"></param>
+        /// <param name="mergeThreshold">The found blobs are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
+        /// <returns></returns>
+        public static void MergeBlobs(List<List<Point>> blobs, Int32 width, Int32 height, List<Boolean[,]> inBlobs, Int32 mergeThreshold)
+        {
+            if (width == -1 || height == -1)
+            {
+                width = -1;
+                height = -1;
+                foreach (List<Point> blob in blobs)
+                {
+                    foreach (Point point in blob)
+                    {
+                        if (width < point.X)
+                            width = point.X;
+                        if (height < point.Y)
+                            height = point.Y;
+                    }
+                }
+                // because width and height are sizes, not highest ccordinates.
+                width++;
+                height++;
+            }
             Boolean continueMerge = mergeThreshold >= 0;
             List<Rectangle> collBounds = new List<Rectangle>();
             List<Rectangle> collBoundsInfl = new List<Rectangle>();
@@ -2015,6 +2089,7 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 i = 0; i < blobs.Count; i++)
                 {
                     List<Point> blob1 = blobs[i];
+                    Boolean[,] inBlob1 = inBlobs == null ? null : inBlobs[i];
                     if (blob1.Count == 0)
                         continue;
                     Rectangle checkBounds = collBoundsInfl[i];
@@ -2023,6 +2098,7 @@ namespace Nyerguds.ImageManipulation
                         if (i == j)
                             continue;
                         List<Point> blob2 = blobs[j];
+                        Boolean[,] inBlob2 = inBlobs == null ? null : inBlobs[j];
                         if (blob2.Count == 0)
                             continue;
                         Rectangle bounds2 = collBounds[j];
@@ -2032,18 +2108,35 @@ namespace Nyerguds.ImageManipulation
                             // checks against duplicates in these collections.
                             continueMerge = true;
                             blob1.AddRange(blob2);
+                            if (inBlobs != null)
+                                foreach (Point p in blob2)
+                                    inBlob1[p.Y, p.X] = true;
                             Rectangle rect1New = GetBlobBounds(blob1);
                             collBounds[i] = rect1New;
                             Rectangle rect1NewInfl = Rectangle.Inflate(rect1New, mergeThreshold, mergeThreshold);
                             collBoundsInfl[i] = Rectangle.Intersect(imageBounds, rect1NewInfl);
                             blob2.Clear();
+                            // don't bother clearing inBlob2; it doesn't actually get referenced, and gets filtered out at the end.
                             collBounds[j] = new Rectangle(0, 0, 0, 0);
                         }
                     }
                 }
             }
             // Filter out removed entries.
-            return blobs.Where(x => x.Count > 0).ToList();
+            Int32[] nonEmptyIndices = Enumerable.Range(0, blobs.Count).Where(i => blobs[i].Count > 0).ToArray();
+            if (inBlobs != null)
+            {
+                List<Boolean[,]> trimmedInBlobs = new List<Boolean[,]>();
+                foreach (Int32 i in nonEmptyIndices)
+                    trimmedInBlobs.Add(inBlobs[i]);
+                inBlobs.Clear();
+                inBlobs.AddRange(trimmedInBlobs);
+            }
+            List<List<Point>> trimmedBlobs = new List<List<Point>>();
+            foreach (Int32 i in nonEmptyIndices)
+                trimmedBlobs.Add(blobs[i]);
+            blobs.Clear();
+            blobs.AddRange(trimmedBlobs);
         }
 
         public static Point GetBlobCenter(List<Point> blob)

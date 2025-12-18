@@ -61,6 +61,14 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.11: (24/06/2018 17:00)
+-Changed chunk merging on Mythos VDA format to a save option.
+-Improved multiple-extensions support in saving dialog.
+-Optimised Mythos animation VDX writing to avoid using expensive 'new offset' commands.
+-Fixed bug that made Mythos animations not save from loaded image file frames.
+-Added load chaining for Mythos VDA and Westwood WSA format.
+-Improved support for opening Windows icon files.
+
 v1.2.10: (23/06/2018 01:00)
 -Fixed transparency support in several supported types.
 -Added identical-tile optimising in C&C tileset saving.

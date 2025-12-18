@@ -124,8 +124,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             // No file or only one file; not a range. Abort.
             if (frameNames == null || frameNames.Length == 1)
                 return null;
+            // not used for now...
             Boolean framesType = currentType != null && currentType.IsFramesContainer;
-            SupportedFileType chainedFrames = framesType ? currentType.ChainLoadFiles(ref frameNames, path) : null;
+            SupportedFileType chainedFrames = null;//framesType ? currentType.ChainLoadFiles(ref frameNames, path) : null;
             isChainedFramesType = chainedFrames != null;
             minName = Path.GetFileName(frameNames[0]);
             maxName = Path.GetFileName(frameNames[frameNames.Length - 1]);
@@ -154,117 +155,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             framesContainer._commonPalette = pal != null && currentType.ColorsInPalette > 0;
             foreach (String currentFrame in frameNames)
             {
-                if (new FileInfo(currentFrame).Length == 0)
-                {
-                    hasEmptyFrames = true;
-                    FileImageFrame frame = new FileImageFrame();
-                    frame.LoadFileFrame(framesContainer, currentType.ShortTypeName, null, currentFrame, -1);
-                    frame.SetBitsPerColor(currentType.BitsPerPixel);
-                    frame.SetColorsInPalette(currentType.ColorsInPalette);
-                    framesContainer.AddFrame(frame);
-                    continue;
-                }
-                try
-                {
-                    SupportedFileType frameFile = (SupportedFileType)Activator.CreateInstance(currentType.GetType());
-                    Byte[] fileData = File.ReadAllBytes(currentFrame);
-                    frameFile.LoadFile(fileData, currentFrame);
-                    FileImageFrame frame = new FileImageFrame();
-                    frame.LoadFileFrame(framesContainer, frameFile.ShortTypeName, frameFile.GetBitmap(), currentFrame, -1);
-                    frame.SetBitsPerColor(frameFile.BitsPerPixel);
-                    frame.SetColorsInPalette(frameFile.ColorsInPalette);
-                    framesContainer.AddFrame(frame);
-                    if (framesContainer._commonPalette)
-                        framesContainer._commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
-                }
-                catch (FileTypeLoadException)
-                {
-                    // One of the files in the sequence cannot be loaded as the same type. Abort.
-                    return null;
-                }
-            }
-            return framesContainer;
-        }
-
-        public static FileFrames CheckForFrames1(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames)
-        {
-            minName = null;
-            maxName = null;
-            hasEmptyFrames = false;
-            // The type is a frames container, and is not guaranteed to have a bitmap
-            if (currentType != null && currentType.IsFramesContainer)
-                return null;
-            String ext = Path.GetExtension(path);
-            String folder = Path.GetDirectoryName(path);
-            String name = Path.GetFileName(path);
-            Regex framesCheck = new Regex("^(.*?)(\\d+)" + Regex.Escape(ext) + "$");
-            Match m = framesCheck.Match(name);
-            if (!m.Success)
-                return null;
-            String namepart = m.Groups[1].Value;
-            String numpart = m.Groups[2].Value;
-            String numpartFormat = "D" + numpart.Length;
-            UInt64 filenum = UInt64.Parse(numpart);
-            UInt64 num = filenum;
-            UInt64 minNum = filenum;
-            String curName;
-            while (File.Exists(Path.Combine(folder, curName = namepart + num.ToString(numpartFormat) + ext)))
-            {
-                minNum = num;
-                minName = curName;
-                if (num == 0)
-                    break;
-                num--;
-            }
-            num = filenum;
-            UInt64 maxNum = filenum;
-            while (File.Exists(Path.Combine(folder, curName = namepart + num.ToString(numpartFormat) + ext)))
-            {
-                maxNum = num;
-                maxName = curName;
-                if (num == UInt64.MaxValue)
-                    break;
-                num++;
-            }
-            // Only one frame; not a range. Abort.
-            if (maxNum == minNum)
-                return null;
-            FileFrames framesContainer = new FileFrames();
-            String frName = namepart;
-            if (frName.Length == 0)
-            {
-                String minNameStr = minNum.ToString(numpartFormat);
-                String maxNameStr = maxNum.ToString(numpartFormat);
-                Int32 index = 0;
-                while (index < minNameStr.Length && minNameStr[index] == maxNameStr[index])
-                    index++;
-                frName = minNameStr.Substring(0, index);
-            }
-            else if (frName.EndsWith("-") && frName.Length > 1)
-                frName = frName.Substring(0, frName.Length - 1);
-            framesContainer.SetFileNames(Path.Combine(folder, frName + ext));
-            if (currentType == null)
-            {
-                for (num = minNum; num <= maxNum; num++)
-                {
-                    String framePath = Path.Combine(folder, namepart + num.ToString(numpartFormat) + ext);
-                    if (new FileInfo(framePath).Length == 0)
-                        continue;
-                    SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, framePath);
-                    List<FileTypeLoadException> loadErrors;
-                    currentType = LoadFileAutodetect(framePath, possibleTypes, out loadErrors, false);
-                    break;
-                }
-                // All frames are empty. Not gonna support that.
-                if (currentType == null)
-                    return null;
-            }
-            framesContainer.BaseType = currentType.ShortTypeName;
-            Color[] pal = currentType.GetColors();
-            framesContainer._commonPalette = pal != null && currentType.ColorsInPalette > 0;
-            for (num = minNum; num <= maxNum; num++)
-            {
-                String currentFrame = Path.Combine(folder, namepart + num.ToString(numpartFormat) + ext);
                 if (new FileInfo(currentFrame).Length == 0)
                 {
                     hasEmptyFrames = true;

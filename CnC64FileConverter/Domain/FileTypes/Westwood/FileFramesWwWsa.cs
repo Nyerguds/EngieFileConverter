@@ -5,6 +5,8 @@ using System.Linq;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
+using System.Collections.Generic;
+using System.IO;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -40,39 +42,94 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
-        
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+
+
+        public override List<String> GetFilesToLoadMissingData(String originalPath)
         {
-            // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = fileToSave != null && !(fileToSave is FileImage) && fileToSave.ColorsInPalette != 0;
-            WsaVersion type = WsaVersion.Cnc;
-            Boolean loop = true;
-            Boolean trim = true;
-            Boolean continues = false;
-            Boolean ignoreLast = false;
-            FileFramesWwWsa toSave = fileToSave as FileFramesWwWsa;
-            if (toSave != null)
+            if (!m_Continues)
+                return null;
+            String baseNameDummy;
+            // check numeric ranges first; you never know
+            String[] frameNames = FileFrames.GetFrameFilesRange(originalPath, out baseNameDummy);
+            if (frameNames == null)
             {
-                type = toSave.m_Version;
-                loop = toSave.m_HasLoopFrame;
-                if (type == WsaVersion.Dune2 || type == WsaVersion.Dune2v1)
-                    trim = false;
-                if (type == WsaVersion.Dune2v1)
-                    hasColors = false;
-                continues = toSave.m_Continues;
-                ignoreLast = toSave.m_DamagedLoopFrame;
+                String dir = Path.GetDirectoryName(originalPath);
+                String nameNoExt = Path.GetFileNameWithoutExtension(originalPath);
+                String ext = Path.GetExtension(originalPath);
+                if (nameNoExt.Length == 0)
+                    return null;
+                Char endChar = nameNoExt.ToLower().Last();
+                // no alphabetic last character, or it is an 'A' and thus there can't be any previous chained files.
+                if (endChar <= 'a' || endChar > 'z')
+                    return null;
+                String baseName = nameNoExt.Substring(0, nameNoExt.Length - 1);
+                List<String> frameNamesList = new List<String>();
+                for (Char endch = endChar; endch >= 'a'; endch--)
+                {
+                    String curPath = Path.Combine(dir, baseName + endch + ext);
+                    if (File.Exists(curPath))
+                        frameNamesList.Add(curPath);
+                }
+                frameNamesList.Reverse();
+                frameNames = frameNamesList.ToArray();
             }
-            SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
-            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type", String.Join(",", this.formats), ((Int32)type).ToString());
-            opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette (not supported for Dune II v1)", hasColors ? "1" : "0");
-            opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
-            opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
-            opts[4] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets (C&C type only)", null, trim ? "1" : "0");
-            if (ignoreLast)
-                opts[5] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
-            return opts;
+            List<String> chain = new List<String>();
+            Int32 index = Array.FindIndex(frameNames.ToArray(), t => String.Equals(t, originalPath, StringComparison.InvariantCultureIgnoreCase));
+            for (Int32 i = index - 1; i >= 0; i--)
+            {
+                String curName = frameNames[i];
+                Byte[] testBytes = File.ReadAllBytes(curName);
+                FileFramesWwWsa testFrame;
+                try
+                {
+                    testFrame = new FileFramesWwWsa();
+                    testFrame.LoadFromFileData(testBytes, curName, m_Version, null, true);
+                }
+                catch (HeaderParseException) { return null; }
+                if (testFrame.Width != this.Width || testFrame.Height != this.Height)
+                    return null;
+                if (!testFrame.m_Continues)
+                {
+                    chain.Add(curName);
+                    chain.Reverse();
+                    return chain;
+                }
+                chain.Add(curName);
+            }
+            return null;
         }
 
+        public override void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain)
+        {
+            Byte[] lastFrameData = null;
+            foreach (String chainFilePath in loadChain)
+            {
+                Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
+                FileFramesWwWsa chainFile;
+                try
+                {                    
+                    chainFile = new FileFramesWwWsa();
+                    chainFile.LoadFromFileData(chainFileBytes, chainFilePath, m_Version, lastFrameData, false);
+                }
+                catch (HeaderParseException) { return; }
+                if (chainFile.Frames.Length == null)
+                    return;
+                Bitmap lastFrame = chainFile.Frames.Last().GetBitmap();
+                if (lastFrame == null)
+                    return;
+                Int32 stride;
+                Int32 width = lastFrame.Width;
+                Int32 height = lastFrame.Height;
+                if (width != this.Width || height != this.Height)
+                    return;
+                lastFrameData = ImageUtils.GetImageData(lastFrame, out stride);
+                lastFrameData = ImageUtils.CollapseStride(lastFrameData, width, height, 8, ref stride);
+            }
+            this.LoadFromFileData(fileData, originalPath, m_Version, lastFrameData, false);
+            this.ExtraInfo += "\nData chained from " + Path.GetFileName(loadChain.First());
+        }
+        
+        
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -93,7 +150,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 try
                 {
-                    this.LoadFromFileData(fileData, sourcePath, versions[i]);
+                    this.LoadFromFileData(fileData, sourcePath, versions[i], null, false);
                     break;
                 }
                 catch (HeaderParseException)
@@ -107,8 +164,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath, WsaVersion loadVersion)
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath, WsaVersion loadVersion, Byte[] continueData, Boolean testContinue)
         {
+            this.m_Continues = false;
             Int32 datalen = fileData.Length;
             if (datalen < 14)
                 throw new FileTypeLoadException("Bad header size.");
@@ -148,7 +206,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 default:
                     // Might need specific poly handling here... but then I first need
                     // accurate checks to distinguish c&c from poly.
-                    throw new FileTypeLoadException("Invalid image dimensions!");
+                    throw new FileTypeLoadException("Unknown WSA format!");
             }
             this.m_Version = loadVersion;
             String generalInfo = "Version: " + this.formats[(Int32) this.m_Version];
@@ -208,10 +266,21 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (i == 0 && frameOffset == 0)
                 {
                     this.m_Continues = true;
-                    Array.Clear(frameData, 0, frameData.Length);
-                    specificInfo = "\nContinues from a previous file";
+                    if (continueData != null)
+                    {
+                        if (continueData.Length != frameData.Length)
+                            throw new FileTypeLoadException("Invalid size on substituted initial frame!");
+                        Array.Copy(continueData, frameData, frameData.Length);
+                    }
+                    else
+                    {
+                        Array.Clear(frameData, 0, frameData.Length);
+                        specificInfo = "\nContinues from a previous file";
+                    }
                     this.ExtraInfo += specificInfo;                    
                 }
+                if (testContinue)
+                    return;
                 if (frameOffsetReal == fileData.Length)
                     break;
                 Int32 refOff = (Int32)frameOffsetReal;
@@ -273,6 +342,39 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (this.m_FramesList.Length == 1)
                 this.m_LoadedImage = this.m_FramesList[0].GetBitmap();
         }
+        
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            // If it is a non-image format which does contain colours, offer to save with palette
+            Boolean hasColors = fileToSave != null && !(fileToSave is FileImage) && fileToSave.ColorsInPalette != 0;
+            WsaVersion type = WsaVersion.Cnc;
+            Boolean loop = true;
+            Boolean trim = true;
+            Boolean continues = false;
+            Boolean ignoreLast = false;
+            FileFramesWwWsa toSave = fileToSave as FileFramesWwWsa;
+            if (toSave != null)
+            {
+                type = toSave.m_Version;
+                loop = toSave.m_HasLoopFrame;
+                if (type == WsaVersion.Dune2 || type == WsaVersion.Dune2v1)
+                    trim = false;
+                if (type == WsaVersion.Dune2v1)
+                    hasColors = false;
+                continues = toSave.m_Continues;
+                ignoreLast = toSave.m_DamagedLoopFrame;
+            }
+            SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
+            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type", String.Join(",", this.formats), ((Int32)type).ToString());
+            opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette (not supported for Dune II v1)", hasColors ? "1" : "0");
+            opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
+            opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
+            opts[4] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets (C&C type only)", null, trim ? "1" : "0");
+            if (ignoreLast)
+                opts[5] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
+            return opts;
+        }
+
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {

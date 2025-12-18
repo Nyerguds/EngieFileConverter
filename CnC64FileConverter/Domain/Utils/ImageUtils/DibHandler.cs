@@ -226,23 +226,66 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        public static Bitmap ImageFromDib(Byte[] dibBytes)
+        public static Bitmap ImageFromDib(Byte[] dibBytes) 
+        {
+            PixelFormat originalPixelFormat;
+            return ImageFromDib(dibBytes, false, out originalPixelFormat);
+        }
+        public static Bitmap ImageFromDib(Byte[] dibBytes, Boolean detectIconFormat, out PixelFormat originalPixelFormat)
         {
             Byte[] imageData;
             Byte[] bitMask;
             Color[] palette;
             BITMAPINFOHEADER header;
             BITFIELDS bitfields;
-
-            if (!GetDataFromDib(dibBytes, false, out imageData, out bitfields, out bitMask, out palette, out header))
+            originalPixelFormat = PixelFormat.Undefined;
+            if (!GetDataFromDib(dibBytes, detectIconFormat, out imageData, out bitfields, out bitMask, out palette, out header))
                 return null;
             Int32 width = header.biWidth;
             Int32 height = header.biHeight;
             Int32 stride = ImageUtils.GetClassicStride(width, header.biBitCount);
-            PixelFormat fmt = GetPixelFormat(header);
-                    Bitmap bitmap = ImageUtils.BuildImage(imageData, width, height, stride, fmt, palette, Color.Black);
-            // This is bmp; reverse image lines.
-            bitmap.RotateFlip(RotateFlipType.Rotate180FlipX);
+            originalPixelFormat = GetPixelFormat(header);
+            Bitmap bitmap = null;
+            if (bitMask != null)
+            {
+                height /= 2;
+                if (originalPixelFormat == PixelFormat.Format32bppRgb)
+                {
+                    originalPixelFormat = PixelFormat.Format32bppArgb;
+                }
+                else
+                {
+                    Int32 maskStride = ImageUtils.GetClassicStride(width, 1);
+                    Byte[] imageDataMask = ImageUtils.ConvertTo8Bit(bitMask, width, height, 0, 1, true, ref maskStride);
+                    Byte[] imageData32;
+                    using (Bitmap indexedBm = ImageUtils.BuildImage(imageData, width, height, stride, originalPixelFormat, palette, Color.Black))
+                        imageData32 = ImageUtils.GetImageData(indexedBm, out stride, PixelFormat.Format32bppArgb);
+                    Int32 inputOffsetLine = 0;
+                    Int32 outputOffsetLine = 0;
+                    for (Int32 y = 0; y < height; y++)
+                    {
+                        Int32 inputOffs = inputOffsetLine;
+                        Int32 outputOffs = outputOffsetLine;
+                        for (Int32 x = 0; x < width; x++)
+                        {
+                            imageData32[outputOffs + 3] = (Byte)(imageDataMask[inputOffs] == 0 ? 255 : 0);
+                            inputOffs++;
+                            outputOffs += 4;
+                        }
+                        inputOffsetLine += maskStride;
+                        outputOffsetLine += stride;
+                    }
+                    bitmap = ImageUtils.BuildImage(imageData32, width, height, stride, PixelFormat.Format32bppArgb, palette, Color.Black);
+                    // This is bmp; reverse image lines.
+                    bitmap.RotateFlip(RotateFlipType.Rotate180FlipX);
+                }
+            }
+            if (bitmap == null)
+            {
+                bitmap = ImageUtils.BuildImage(imageData, width, height, stride, originalPixelFormat, palette, Color.Black);
+                // This is bmp; reverse image lines.
+                bitmap.RotateFlip(RotateFlipType.Rotate180FlipX);
+            }
             return bitmap;
         }
 

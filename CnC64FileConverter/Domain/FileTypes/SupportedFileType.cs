@@ -60,12 +60,12 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected virtual void BuildFullImage() { }
 
-        public virtual SaveOption[] GetPostLoadInitOptions()
-        {
-            return new SaveOption[0];
-        }
+        //public virtual SaveOption[] GetPostLoadInitOptions()
+        //{
+        //    return new SaveOption[0];
+        //}
 
-        public virtual void PostLoadInit(SaveOption[] loadOptions) { }
+        //public virtual void PostLoadInit(SaveOption[] loadOptions) { }
         
         public abstract void LoadFile(Byte[] fileData);
 
@@ -81,10 +81,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.LoadFile(thisBytes);
         }
 
-        public virtual FileFrames ChainLoadFiles(ref String[] fileNames, String originalPath)
-        {
-            return null;
-        }
+        public virtual List<String> GetFilesToLoadMissingData(String originalPath) { return null; }
+        public virtual void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain) { }
+
+        // Annoyingly, chain loading and asking to load previous data are mutually exclusive...
+        //public virtual String[] ChainLoadFilenames(String originalPath, out String baseName) { return FileFrames.GetFrameFilesRange(originalPath, out baseName); }
+        //public virtual FileFrames ChainLoadFiles(ref String[] fileNames, String originalPath) { return null; }
 
         /// <summary>
         /// Get specific options for saving a file to this format. Can be made to depend on the input file and the output path.
@@ -211,24 +213,32 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         /// <summary>
         /// Palette types can use this to get the colour out of a SupportedFileType in their SaveToBytesAsThis routine.
+        /// Relies on the current type's bits per pixel setting to get the final palette size.
         /// </summary>
-        /// <param name="fileToSave"></param>
-        /// <param name="expandToFullSize"></param>
+        /// <param name="fileToSave">File to save.</param>
+        /// <param name="expandToFullSize">Expand to full size.</param>
         /// <returns></returns>
         protected Color[] CheckInputForColors(SupportedFileType fileToSave, Boolean expandToFullSize)
         {
             if (fileToSave == null)
                 throw new NotSupportedException("File to save is empty!");
-            if (fileToSave.BitsPerPixel != 8)
-                throw new NotSupportedException(String.Empty);
             Color[] palEntries = fileToSave.GetColors();
+            // check frames
+            if ((palEntries == null || palEntries.Length == 0) && fileToSave.IsFramesContainer && fileToSave.Frames != null)
+            {
+                SupportedFileType[] frames = fileToSave.Frames;
+                for (Int32 i = 0; i < frames.Length && (palEntries == null || palEntries.Length == 0); i++)
+                    palEntries = frames[i].GetColors();
+            }
             if (palEntries == null || palEntries.Length == 0)
                 throw new NotSupportedException("File to save has no colour palette!");
-            if (!expandToFullSize || palEntries.Length >= 256)
+            // Relies on the current type's BPP setting.
+            Int32 palSize = 1 << this.BitsPerPixel;
+            if (palEntries.Length == palSize || (!expandToFullSize && palEntries.Length < palSize))
                 return palEntries;
-            Color[] cols = new Color[256];
-            palEntries.CopyTo(cols, 0);
-            for (Int32 i = palEntries.Length; i < cols.Length; i++)
+            Color[] cols = new Color[palSize];
+            Array.Copy(palEntries, cols, Math.Min(palEntries.Length, palSize));
+            for (Int32 i = palEntries.Length; i < palSize; i++)
                 cols[i] = Color.Black;
             return cols;
         }
@@ -254,10 +264,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileTilesWwCc1N64Bpp4),
             typeof(FileTilesWwCc1N64Bpp8),
             typeof(FileTilesetWwCc1PC),
-            typeof(FilePaletteWwPc),
+            typeof(FilePalette6Bit),
             typeof(FilePaletteWwCc1N64Pa8),
             typeof(FilePaletteWwCc1N64Pa4),
-            typeof(FileTblWwPal),
             typeof(FileFramesAdvVga),
             typeof(FileImgKort),
             typeof(FileFramesKortBmp),
@@ -271,6 +280,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileFramesMythosVda),
             typeof(FileImgKotB),
             typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
+            typeof(FilePalette8Bit),
+            typeof(FileTblWwPal),
         };
 
         private static Type[] m_supportedOpenTypes =
@@ -288,7 +299,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileTilesWwCc1N64Bpp4),
             typeof(FileTilesWwCc1N64Bpp8),
             typeof(FileTilesetWwCc1PC),
-            typeof(FilePaletteWwPc),
+            typeof(FilePalette6Bit),
+            typeof(FilePalette8Bit),
             typeof(FilePaletteWwCc1N64),
             typeof(FileTblWwPal),
             typeof(FileFramesAdvVga),
@@ -310,7 +322,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             //typeof(FileImgN64Standard),
             //typeof(FileImgN64Jap),
             //typeof(FileImgN64Gray),
-            typeof(FileImgWwN64),
             typeof(FileMapWwCc1N64),
             typeof(FileMapWwCc1Pc),
             typeof(FileImagePng),
@@ -318,11 +329,14 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageGif),
             typeof(FileImageJpg),
             typeof(FileIcon),
+            typeof(FilePalette6Bit),
+            typeof(FilePalette8Bit),
             typeof(FileImgWwCps),
             typeof(FileFramesWwWsa),
             typeof(FileImgWwLcw),
+            //typeof(FileFramesWwShpCc),
             typeof(FileTilesetWwCc1PC),
-            typeof(FilePaletteWwPc),
+            typeof(FileImgWwN64),
             typeof(FilePaletteWwCc1N64Pa4),
             typeof(FilePaletteWwCc1N64Pa8),
             typeof(FileTblWwPal),
@@ -341,6 +355,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImgKotB),
         };
 
+#if DEBUG
         static SupportedFileType()
         {
             CheckTypes(SupportedOpenTypes);
@@ -350,32 +365,52 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         private static void CheckTypes(Type[] types)
         {
-            Type imgType = typeof(SupportedFileType);
+            // internal check for development.
+            Type sft = typeof(SupportedFileType);
             foreach (Type t in types)
-                if (!t.IsSubclassOf(imgType))
-                    throw new Exception("Entries in autoDetectTypes list must all be FontFile classes!");
+                if (!t.IsSubclassOf(sft))
+                    throw new Exception("Entries in types list must all be SupportedFileType classes!");
         }
-
+#endif
+        /// <summary>Lists all types that will appear in the Open File menu.</summary>
         public static Type[] SupportedOpenTypes { get { return m_supportedOpenTypes.ToArray(); } }
+        /// <summary>Lists all types that can appear in the Save File menu.</summary>
         public static Type[] SupportedSaveTypes { get { return m_supportedSaveTypes.ToArray(); } }
+        /// <summary
+        /// >Lists all types that can be autodetected, in the order they will be detected. Note that as a first step,
+        /// all types which contain the requested file's extension are filtered out and checked.
+        /// </summary>
         public static Type[] AutoDetectTypes { get { return m_autoDetectTypes.ToArray(); } }
 
         /// <summary>
         /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
         /// </summary>
         /// <param name="path">File path to load.</param>
-        /// <param name="possibleTypes">List of the most likely types it can be</param>
+        /// <param name="preferredTypes">List of the most likely types it can be</param>
         /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
         /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
         /// <returns>The detected type, or null if detection failed.</returns>
-        public static SupportedFileType LoadFileAutodetect(String path, SupportedFileType[] possibleTypes, out List<FileTypeLoadException> loadErrors, Boolean onlyGivenTypes)
+        public static SupportedFileType LoadFileAutodetect(String path, SupportedFileType[] preferredTypes, out List<FileTypeLoadException> loadErrors, Boolean onlyGivenTypes)
+        {
+            Byte[] fileData = File.ReadAllBytes(path);
+            return LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, onlyGivenTypes);
+        }
+
+        /// <summary>
+        /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
+        /// </summary>
+        /// <param name="path">File path to load.</param>
+        /// <param name="preferredTypes">List of the most likely types it can be</param>
+        /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
+        /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
+        /// <returns>The detected type, or null if detection failed.</returns>
+        public static SupportedFileType LoadFileAutodetect(Byte[] fileData, String path, SupportedFileType[] preferredTypes, out List<FileTypeLoadException> loadErrors, Boolean onlyGivenTypes)
         {
             loadErrors = new List<FileTypeLoadException>();
             // See which extensions match, and try those first.
-            if (possibleTypes == null)
-                possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, path);
-            Byte[] fileData = File.ReadAllBytes(path);
-            foreach (SupportedFileType typeObj in possibleTypes)
+            if (preferredTypes == null)
+                preferredTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, path);
+            foreach (SupportedFileType typeObj in preferredTypes)
             {
                 try
                 {
@@ -393,7 +428,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             foreach (Type type in AutoDetectTypes)
             {
                 // Skip entries on the already-tried list.
-                if (possibleTypes.Any(x => x.GetType() == type))
+                if (preferredTypes.Any(x => x.GetType() == type))
                     continue;
                 SupportedFileType objInstance = null;
                 try { objInstance = (SupportedFileType) Activator.CreateInstance(type); }
