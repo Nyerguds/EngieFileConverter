@@ -14,9 +14,7 @@ help in designing the palette manager.
 
 Features:
 --------
--Supports both opening and saving all classic image types (png/gif/bmp/jpg), the N64's IMG format,
- and game maps and colour palettes of both the PC and N64 versions of the game.
--Each type has a logical conversion target type set to save as with the "quick convert" option.
+-Supports opening and saving all classic image types (png/gif/bmp/jpg), and a load of game formats.
 -Gives a visual representation of the loaded file, with zoom and adjustable background colour.
 -Can display and edit the file's colour palette, if it has one.
 -Can save opened files as any supported format, though some conversions are obviously impossible;
@@ -27,7 +25,7 @@ Features:
     CnC64FileConverter.exe infile.img outfile.png
  This only works for file formats that can be identified purely by extension, though.
 -Has utilities to help generate height maps for missions.
--Offers save options
+-Offers save options for the types that need them.
 
 
 Acknowledgements:
@@ -58,6 +56,9 @@ At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file
 it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
+
+v1.2.3: (26/09/2017 19:05)
+-Fixed oversight in the KotB format. The written files now work correctly in the game.
 
 v1.2.2: (24/09/2017 16:50)
 -Fixed main chunks in Dynamix files not saving as container chunks.

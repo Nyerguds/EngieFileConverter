@@ -22,7 +22,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "pak" }; } }
         public override String ShortTypeDescription { get { return "Kings of the Beach PAK file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get{ return 4; } }
+        public override Int32 BitsPerColor { get { return 4; } }
+        public Boolean WasCutOff { get; private set; }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
@@ -36,7 +37,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             for (Int32 x = 0; x < image.Width; x++)
                 if (lastLine[x] != 0)
                     return new SaveOption[0];
-            return new SaveOption[] {new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "0") };
+            return new SaveOption[] {new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "1") };
         }
 
         public FileImgKotB() { }
@@ -55,28 +56,25 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            if (fileData.Length == 0)
+            if (fileData.Length < 2)
                 throw new FileTypeLoadException("File is empty.");
             // First RLE byte value is 0. Not allowed.
             if ((fileData[0] & 0x7F) == 0)
                 throw new FileTypeLoadException("Error decompressing file.");
-            if (fileData.Length < 3)
+            if (fileData.Length < 4)
                 throw new FileTypeLoadException("File too short to decompress header!");
-            // Decompress just the dimensions header, to define the final decompression array size.
-            Byte[] dimensions = new Byte[2];
-            if (EACompression.RleDecode(fileData, 0, null, dimensions, true) != 2)
-                throw new FileTypeLoadException("Error decompressing file.");
-            Int32 byteWidth = dimensions[0];
-            Int32 imgHeight = dimensions[1];
+            UInt32 dataLen = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fileData.Length - 2, 2, true);
+            Byte[] decompressed = new Byte[dataLen];
+            Int32 decompressedLength = EACompression.RleDecode(fileData, 0, (UInt32)(fileData.Length-2), decompressed, true);
+            if (decompressedLength != dataLen)
+                throw new FileTypeLoadException("Decompressed size does not match length in file.");
+            Int32 byteWidth = decompressed[0];
+            Int32 imgHeight = decompressed[1];
             if (byteWidth == 0 || imgHeight == 0)
                 throw new FileTypeLoadException("Image dimensions can't be 0.");
-            // Check on max of 320x200
-            if (byteWidth > 40 || imgHeight > 200)
-                throw new FileTypeLoadException("Image too large for KoTB.");
-            Byte[] decompressed = new Byte[2 + byteWidth * 4 * imgHeight];
-            Int32 decompressedLength = EACompression.RleDecode(fileData, 0, null, decompressed, true);
-            if (decompressedLength <= 0)
-                throw new FileTypeLoadException("Error decompressing file.");
+            Int32 expectedSize = byteWidth * 4 * imgHeight;
+            if (expectedSize > UInt16.MaxValue)
+                throw new FileTypeLoadException("Image dimensions too large.");
 
             // OVERALL PRINCIPLE:
             // Each full scanline is made up of four 1-bpp "lines" of the byte width found in the header.
@@ -91,13 +89,17 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Actual final image pixel width. One scanline is four 1-bpp lines of stride
             // interpreted as 4bpp image, so with 2 pixels per byte.
             Int32 imgWidth = fourLinesStride * 2;
-            // Some files seem cut off, but seem to end on an incomplete line of garbare which only contains some of the bits.
-            // The play court images are notorious for this; I suspect they have a hardcoded cutoff height in the game code.
-            // They all seem to use the Rio one (which is complete) for the court image itself.
+            // Some files seem cut off, but the data length at the end of the file accurately indicates this.
+            // The play court images do this: their cut-off height is always set at 85 lines.
+            // They use the Rio one (which is complete) for the court image itself.
+            if ((decompressedLength - 2) % fourLinesStride != 0)
+                throw new FileTypeLoadException("Data cutoff is not exactly on one line!");
             Int32 cutoffHeight = (decompressedLength - 2) / fourLinesStride;
             if (cutoffHeight < imgHeight)
+            {
                 this.ExtraInfo = "Data cut off at " + cutoffHeight + " lines";
-
+                this.WasCutOff = true;
+            }
             // Final 1-bit image is four times the image width. Convert to 1 byte per bit for editing convenience.
             Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, imgWidth * 4, cutoffHeight, 2, 1, true, ref fourLinesStride);
             // Array for 4-bit image where each byte is one pixel. Will be converted to true 4bpp later.
@@ -133,6 +135,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Boolean trimEnd = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
             Int32 imgWidth = image.Width;
             Int32 imgHeight = image.Height;
+            if (imgWidth * imgHeight / 2 > UInt16.MaxValue)
+                throw new NotSupportedException("Image too large to be saved into this format!");
             if (imgWidth > 320 || imgHeight > 200)
                 throw new NotSupportedException("Image too large to be saved into this format!");
             Int32 saveHeight = image.Height;
@@ -166,6 +170,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                         break;
                 }
             }
+            if (imgHeight == image.Height)
+                trimEnd = false;
             Byte[] oneBitQuadImage = new Byte[eightBitWidth * imgHeight];
             for (Int32 y = 0; y < imgHeight; y++)
             {
@@ -186,7 +192,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             Array.Copy(finalImageData, 0, finalData, 2, finalImageData.Length);
             //return finalData;
             Byte[] compressedData = EACompression.RleEncode(finalData);
-            return compressedData;
+            Int32 dataEnd = compressedData.Length;
+            Byte[] finalCompressedData = new Byte[dataEnd + 2];
+            Array.Copy(compressedData, finalCompressedData, dataEnd);
+            ArrayUtils.WriteIntToByteArray(finalCompressedData, dataEnd, 2, true, (UInt32)finalData.Length);
+            return finalCompressedData;
         }
     }
 }
