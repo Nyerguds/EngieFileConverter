@@ -6,22 +6,21 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
-    public abstract class SupportedFileType : FileTypeBroadcaster
+    public abstract class SupportedFileType : FileTypeBroadcaster, IDisposable
     {
         protected Bitmap m_LoadedImage;
-        protected Color[] m_Palette = null;
-        protected Color[] m_BackupPalette = null;
+        protected Color[] m_Palette;
+        protected Color[] m_BackupPalette;
         public SupportedFileType FrameParent { get; set; }
 
         /// <summary>General types applicable to this file type.</summary>
         public abstract FileClass FileClass { get; }
         /// <summary>Types that are accepted as save input by this file type.</summary>
         public abstract FileClass InputFileClass { get; }
-        /// <summary>Type to be accepted as frames. Override this fro frame types.</summary>
+        /// <summary>Type to be accepted as frames. Override this for frame types.</summary>
         public virtual FileClass FrameInputFileClass { get { return FileClass.None; } }
         /// <summary>Very short code name for this type.</summary>
         public virtual String ShortTypeName { get { return FileExtensions.Length > 0 ? FileExtensions[0].ToUpper() : this.GetType().Name; } }
@@ -41,11 +40,14 @@ namespace CnC64FileConverter.Domain.FileTypes
         public String LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
         public String LoadedFileName { get; protected set; }
-        public virtual Int32 BitsPerColor { get { return m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(m_LoadedImage.PixelFormat); } }
+        /// <summary>Colour depth of the file.</summary>
+        public virtual Int32 BitsPerPixel { get { return m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(m_LoadedImage.PixelFormat); } }
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public virtual SupportedFileType[] Frames { get { return null; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public virtual Boolean IsFramesContainer { get { return Frames != null; } }
+        /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
+        public virtual Boolean FramesHaveCommonPalette { get { return this.IsFramesContainer; } }
         /// <summary>
         /// This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source, and can normally also be saved from a single-image source.
         /// This setting should be ignored for types that are not set to IsFramesContainer.
@@ -53,10 +55,25 @@ namespace CnC64FileConverter.Domain.FileTypes
         public virtual Boolean HasCompositeFrame { get { return false; } }
         /// <summary>Extra info to be shown on the UI, like detected internal compression type in a loaded file.</summary>
         public virtual String ExtraInfo { get; protected set; }
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public virtual Boolean[] TransparencyMask { get { return null; } }
+
         protected virtual void BuildFullImage() { }
 
+        public virtual SaveOption[] GetPostLoadInitOptions()
+        {
+            return new SaveOption[0];
+        }
+
+        public virtual void PostLoadInit(SaveOption[] loadOptions) { }
+        
         public abstract void LoadFile(Byte[] fileData);
-        public abstract void LoadFile(String filename);
+
+        public virtual void LoadFile(Byte[] fileData, String filename)
+        {
+            LoadFile(fileData);
+            SetFileNames(filename);
+        }
 
         public virtual void LoadFile(SupportedFileType file)
         {
@@ -72,12 +89,24 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <returns>The list of options. Leave empty if no options are needed. Returning null will give a general "cannot save as this type" message.</returns>
         public virtual SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new SaveOption[0]; }
 
+        /// <summary>
+        /// Saves the given file as this type.
+        /// </summary>
+        /// <param name="fileToSave">The input file to convert.</param>
+        /// <param name="savePath">The path to save to.</param>
+        /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
         public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath, SaveOption[] saveOptions)
         {
             Byte[] data = this.SaveToBytesAsThis(fileToSave, saveOptions);
             File.WriteAllBytes(savePath, data);
         }
 
+        /// <summary>
+        /// Saves the given file as this type.
+        /// </summary>
+        /// <param name="fileToSave">The input file to convert.</param>
+        /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
+        /// <returns>The bytes of the file converted to this type.</returns>
         public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions);
 
         public virtual void SetFileNames(String path)
@@ -92,7 +121,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 return new Color[0];
             Color[] col1 = this.m_LoadedImage == null ? this.m_Palette : m_LoadedImage.Palette.Entries;
             Color[] col2 = new Color[col1.Length];
-            Array.Copy(col1, col2, col1.Length);
+            col1.CopyTo(col2, 0);
             return col2;
         }
 
@@ -101,35 +130,32 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.SetColors(palette, null);
         }
 
-        /// <summary>
-        /// Sets the colour palette for this object, its frames, or if it is a frame, all frames in its parent.
-        /// </summary>
-        /// <param name="palette">New colour palette</param>
-        /// <param name="updateSource">The object that requested the update. If this equals the current object's FrameParent, no request for a parent update will be done. If it equals this object, the operation aborts immediately. If it equals one of the frames contained inside this, that frame will be skipped.</param>
         public virtual void SetColors(Color[] palette, SupportedFileType updateSource)
         {
-            SetColors(palette, updateSource, true);
-        }
-
-        public void SetColors(Color[] palette, SupportedFileType updateSource, Boolean clearTransparency)
-        {
-            if (updateSource == this)
+            if (this.IsFramesContainer && !this.FramesHaveCommonPalette)
+                return;
+            if (ReferenceEquals(updateSource, this))
                 return;
             if (palette == null || palette.Length == 0)
                 return;
             // Override this in types that don't have a palette, like grayscale N64 images.
             // This function should only be called from UI "if (BitsPerColor != 0 && !FileHasPalette)"
-            if (this.BitsPerColor != 0)
+            if (this.BitsPerPixel != 0)
             {
-                Int32 paletteLength = 1 << this.BitsPerColor;
+                Boolean[] transMask = TransparencyMask;
+                Int32 transMaskLen = transMask == null ? 0 : transMask.Length;
+                Int32 paletteLength = Math.Max(1 << this.BitsPerPixel, this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Palette.Entries.Length);
                 Color[] pal = new Color[paletteLength];
                 for (Int32 i = 0; i < paletteLength; i++)
                 {
                     if (i < palette.Length)
-                        pal[i] = clearTransparency ? Color.FromArgb(0xFF, palette[i]) : palette[i];
+                        pal[i] = (i < transMaskLen && transMask[i]) ? Color.FromArgb(0x00, palette[i]) : Color.FromArgb(0xFF, palette[i]);
                     else
                         pal[i] = Color.Empty;
                 }
+                Color[] testpal;
+                if (this.m_BackupPalette == null && (testpal = this.GetColors()) != null && testpal.Length != 0 && this.ColorsInPalette != 0)
+                    this.m_BackupPalette = this.m_Palette == null ? (m_LoadedImage == null ? null : m_LoadedImage.Palette.Entries) : this.m_Palette.ToArray();
                 this.m_Palette = pal;
                 if (m_LoadedImage != null)
                 {
@@ -147,14 +173,14 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             // Logic if this is a frame: call for a colour replace in the parent so all frames get affected.
             // Skip this step if the FrameParent is the source, since that means some other frame already started this.
-            if (this.FrameParent != null && this.FrameParent != updateSource)
+            if (this.FrameParent != null && !ReferenceEquals(this.FrameParent, updateSource) && this.FrameParent.FramesHaveCommonPalette)
                 FrameParent.SetColors(palette, this);
-            // Logic for crame container: call a colour replace on all frames, giving the current object as source.
+            // Logic for frame container: call a colour replace on all frames, giving the current object as source.
             // Only execute this if the current object has frames. Skip the source frame.
-            if (this.Frames != null && this.Frames != null)
-                foreach (SupportedFileType frame in this.Frames)
-                    if (frame != null && frame != updateSource)
-                        frame.SetColors(palette, this);
+            if (this.Frames == null)
+                return;
+            foreach (SupportedFileType frame in this.Frames.Where(frame => frame != null && !ReferenceEquals(frame, updateSource)))
+                frame.SetColors(palette, this);
         }
 
         public virtual void ResetColors()
@@ -164,7 +190,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public virtual Boolean ColorsChanged()
         {
-            if (this.BitsPerColor == 0 || this.BitsPerColor > 8)
+            if (this.BitsPerPixel == 0 || this.BitsPerPixel > 8)
                 return false;
             if (this.m_BackupPalette == null)
                 return false;
@@ -178,6 +204,31 @@ namespace CnC64FileConverter.Domain.FileTypes
             return m_LoadedImage;
         }
 
+        /// <summary>
+        /// Palette types can use this to get the colour out of a SupportedFileType in their SaveToBytesAsThis routine.
+        /// </summary>
+        /// <param name="fileToSave"></param>
+        /// <param name="expandToFullSize"></param>
+        /// <returns></returns>
+        protected Color[] CheckInputForColors(SupportedFileType fileToSave, Boolean expandToFullSize)
+        {
+            if (fileToSave == null)
+                throw new NotSupportedException("File to save is empty!");
+            if (fileToSave.BitsPerPixel != 8)
+                throw new NotSupportedException(String.Empty);
+            Color[] palEntries = fileToSave.GetColors();
+            if (palEntries == null || palEntries.Length == 0)
+                throw new NotSupportedException("File to save has no colour palette!");
+            if (!expandToFullSize || palEntries.Length >= 256)
+                return palEntries;
+            Color[] cols = new Color[256];
+            palEntries.CopyTo(cols, 0);
+            for (Int32 i = palEntries.Length; i < cols.Length; i++)
+                cols[i] = Color.Black;
+            return cols;
+        }
+
+
         private static Type[] m_autoDetectTypes =
         {
             typeof(FileImagePng),
@@ -185,8 +236,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageGif),
             typeof(FileImageJpg),
             typeof(FileImage),
+            typeof(FileIcon),
             typeof(FileImgWwCps),
             typeof(FileFramesWwWsa),
+            typeof(FileFramesWwShpCc),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
             typeof(FileMapWwCc1Pc),
@@ -199,6 +252,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FilePaletteWwPc),
             typeof(FilePaletteWwCc1N64Pa8),
             typeof(FilePaletteWwCc1N64Pa4),
+            typeof(FileTblWwPal),
             typeof(FileFramesAdvVga),
             typeof(FileImgKort),
             typeof(FileFramesKortBmp),
@@ -208,17 +262,17 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImgDynBmpMtx),
             typeof(FilePaletteDyn),
             typeof(FileFramesMythosVgs),
-            typeof(FileFramesAdvIco),
-             // This one is terribly prone to bad detection. Practically any ascii text will identify as this.
-             // Since the original game contains files with errors, no tighter checks can be applied.
             typeof(FileImgKotB),
+            typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
         };
 
         private static Type[] m_supportedOpenTypes =
         {
             typeof(FileImage),
+            typeof(FileIcon),
             typeof(FileImgWwCps),
             typeof(FileFramesWwWsa),
+            typeof(FileFramesWwShpCc),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
             typeof(FileMapWwCc1N64),
@@ -229,6 +283,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileTilesetWwCc1PC),
             typeof(FilePaletteWwPc),
             typeof(FilePaletteWwCc1N64),
+            typeof(FileTblWwPal),
             typeof(FileFramesAdvVga),
             typeof(FileFramesAdvIco),
             typeof(FileFramesDynBmp),
@@ -253,6 +308,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FileImageBmp),
             typeof(FileImageGif),
             typeof(FileImageJpg),
+            typeof(FileIcon),
             typeof(FileImgWwCps),
             typeof(FileFramesWwWsa),
             typeof(FileImgWwLcw),
@@ -260,6 +316,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             typeof(FilePaletteWwPc),
             typeof(FilePaletteWwCc1N64Pa4),
             typeof(FilePaletteWwCc1N64Pa8),
+            typeof(FileTblWwPal),
             typeof(FileFramesAdvVga),
             typeof(FileFramesAdvIco),
             typeof(FileImgDynScr),
@@ -295,22 +352,23 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>
         /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
         /// </summary>
-        /// <param name="path"></param>
-        /// <param name="possibleTypes"></param>
-        /// <param name="loadErrors"></param>
-        /// <param name="onlyGivenTypes"></param>
-        /// <returns></returns>
+        /// <param name="path">File path to load.</param>
+        /// <param name="possibleTypes">List of the most likely types it can be</param>
+        /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
+        /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
+        /// <returns>The detected type, or null if detection failed.</returns>
         public static SupportedFileType LoadFileAutodetect(String path, SupportedFileType[] possibleTypes, out List<FileTypeLoadException> loadErrors, Boolean onlyGivenTypes)
         {
             loadErrors = new List<FileTypeLoadException>();
             // See which extensions match, and try those first.
             if (possibleTypes == null)
                 possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, path);
+            Byte[] fileData = File.ReadAllBytes(path);
             foreach (SupportedFileType typeObj in possibleTypes)
             {
                 try
                 {
-                    typeObj.LoadFile(path);
+                    typeObj.LoadFile(fileData, path);
                     return typeObj;
                 }
                 catch (FileTypeLoadException e)
@@ -323,42 +381,55 @@ namespace CnC64FileConverter.Domain.FileTypes
                 return null;
             foreach (Type type in SupportedFileType.AutoDetectTypes)
             {
-                if(possibleTypes.Any(x => x.GetType() == type))
+                // Skip entries on the already-tried list.
+                if (possibleTypes.Any(x => x.GetType() == type))
                     continue;
                 SupportedFileType objInstance = null;
-                try
-                {
-                    objInstance = (SupportedFileType)Activator.CreateInstance(type);
-                }
+                try { objInstance = (SupportedFileType) Activator.CreateInstance(type); }
                 catch { /* Ignore; programmer error. */ }
                 if (objInstance == null)
                     continue;
                 try
                 {
-                    objInstance.LoadFile(path);
+                    objInstance.LoadFile(fileData, path);
                     return objInstance;
                 }
                 catch (FileTypeLoadException e)
                 {
+                    // objInstance should not be disposed here since it never succeeded in initializing,
+                    // and should not contain any loaded images at that point.
                     e.AttemptedLoadedType = objInstance.ShortTypeName;
                     loadErrors.Add(e);
                 }
             }
             return null;
         }
+
+        public void Dispose()
+        {
+            if (IsFramesContainer)
+                foreach (SupportedFileType frame in Frames)
+                    frame.Dispose();
+            Bitmap bitmap = this.GetBitmap();
+            if (bitmap != null)
+            {
+                try { bitmap.Dispose(); }
+                catch (Exception) { /* Ignore */ }
+            }
+        }
     }
 
     [Flags]
     public enum FileClass
     {
-        None = 0,
-        Image1Bit = 1,
-        Image4Bit = 2,
-        Image8Bit = 4,
-        ImagePaletted = 7,
-        ImageHiCol = 8,
-        Image = 15,
-        FrameSet = 16,
-        CCMap = 64,
+        None = 0x00,
+        Image1Bit = 0x01,
+        Image4Bit = 0x02,
+        Image8Bit = 0x04,
+        ImageIndexed = 0x07,
+        ImageHiCol = 0x08,
+        Image = 0x0F,
+        FrameSet = 0x10,
+        CcMap = 0x20,
     }
 }

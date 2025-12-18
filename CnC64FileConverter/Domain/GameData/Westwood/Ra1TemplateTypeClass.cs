@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CnC64FileConverter.Domain.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public class Ra1TemplateTypeClass
     {

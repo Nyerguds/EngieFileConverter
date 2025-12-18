@@ -20,7 +20,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "C&C Tileset"; } }
         public override String ShortTypeDescription { get { return "Westwood C&C PC Tileset File"; } }
 
-        public override Int32 BitsPerColor { get { return 8; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         protected Int16 hdrTileWidth;
         protected Int16 hdrTileHeight;
@@ -60,10 +60,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
-        
-        public override void LoadFile(String filename)
+
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
@@ -75,8 +74,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            // TODO: add frames support?
-            if (fileToSave.BitsPerColor != 8)
+            if (fileToSave.BitsPerPixel != 8)
                 throw new NotSupportedException("Can only save 8 BPP images as this type.");
             Bitmap bitmap = fileToSave.GetBitmap();
             if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
@@ -189,7 +187,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 this.m_Tiles[i] = tileData;
                 Bitmap tileImage = ImageUtils.BuildImage(tileData, this.hdrTileWidth, this.hdrTileHeight, this.hdrTileWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
-                m_TilesList.Add(new FileTileCc1Pc(this, sourceFileName, tileImage, (Byte)i));
+                m_TilesList.Add(new FileTileCc1Pc(this, sourceFileName, tileImage, (Byte)i, used));
             }
             Int32 xDim = -1;
             if (sourceFileName != null)
@@ -250,12 +248,15 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     public class FileTileCc1Pc: FileTileCc1N64
     {
-        public override Int32 BitsPerColor { get { return 8; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
         public override Int32 ColorsInPalette { get { return 0; } }
 
-        public FileTileCc1Pc(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index)
+        public FileTileCc1Pc(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte index, Boolean used)
             : base(origin, sourceFileName, tileImage, null, index, 0)
-        { }
+        {
+            if (!used)
+                this.ExtraInfo = "Unused block";
+        }
 
         public override String ToString()
         {

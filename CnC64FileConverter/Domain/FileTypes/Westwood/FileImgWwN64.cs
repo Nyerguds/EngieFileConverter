@@ -31,8 +31,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
 
-        //bytes 84 21 ==> 8421 (BE) ==bin==> 1000 0100 0010 0001 ==split==> 10000 10000 10000 1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
-        private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 11, 5, 6, 5, 1, 1, 0, false);
+        //bytes 84 21 ==> 8421 (BE) ==bin==> 1000 0100 0010 0001 ==split==> R=10000 G=10000 B=10000 A=1 ==dec==> 16 16 16 1 ==x8==> 128 128 128 1
+        private static readonly PixelFormatter Format16BitRgba5551Be = new PixelFormatter(2, 0x0001, 0xF800, 0x07C0, 0x003E, false);
         public override Int32 Width { get { return hdrWidth; } }
         public override Int32 Height { get { return hdrHeight; } }
 
@@ -59,10 +59,10 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             // If it is a hi-colour image, return empty
-            if ((fileToSave.FileClass & FileClass.ImageHiCol) != 0)
+            if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
                 return new SaveOption[0];
             // If it is a non-image format which does contain colours, offer to save with palette
-            Boolean hasColors = fileToSave != null && (fileToSave is FileImage || fileToSave.ColorsInPalette != 0);
+            Boolean hasColors = (fileToSave is FileImage || fileToSave.ColorsInPalette != 0);
             return new SaveOption[]
             {
                 new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (hasColors ? 1 : 0).ToString()),
@@ -70,7 +70,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
 
 
-        public override Int32 BitsPerColor
+        public override Int32 BitsPerPixel
         {
             get
             {
@@ -95,25 +95,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData);
             SetFileNames(filename);
-        }
-
-        public override Color[] GetColors()
-        {
-            // ensures the UI can show the partial palette.
-            return this.m_Palette == null ? null : this.m_Palette.ToArray();
-        }
-
-        public override void SetColors(Color[] palette)
-        {
-            if (this.m_BackupPalette == null)
-                this.m_BackupPalette = GetColors();
-            this.m_Palette = palette;
-            base.SetColors(palette);
         }
 
         public override Boolean ColorsChanged()
@@ -147,12 +132,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (this.hdrDataOffset != 16)
                 throw new FileTypeLoadException("File does not have a valid IMG header.");
             // This doesn't support 4bpp with odd width at the moment. Should add code from the font editor to fix that.
-            if (this.BitsPerColor == -1)
+            if (this.BitsPerPixel == -1)
                 throw new FileTypeLoadException("File does not have a valid color depth in the header.");
 
             // WARNING! The hi-colour format is 16 BPP, but the image data is converted to 32 bpp for creating the actual image!
-            Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor);
-            Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor) * this.Height;
+            Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerPixel);
+            Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerPixel) * this.Height;
             Byte[] imageData;
             Int32 expectedSize = this.hdrDataOffset + imageDataSize;
             if ((this.hdrColorFormat == 0 || this.hdrColorFormat == 1) && this.hdrPaletteOffset != 0)
@@ -161,14 +146,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException(String.Format("File data is too short. Got {0} bytes, expected {1} bytes.", fileData.Length, expectedSize));
             try
             {
-                // Fill image data array. For 16-bit colour, convert to 32 bit. For 8 or lower, just copy.
-                if (this.hdrColorFormat != 2)
-                {
-                    imageData = new Byte[imageDataSize];
-                    Array.Copy(fileData, this.hdrDataOffset, imageData, 0, Math.Min(fileData.Length - this.hdrDataOffset, imageDataSize));
-                }
-                else
-                    imageData = Convert16bTo32b(fileData, this.hdrDataOffset, this.Width, this.Height, ref stride);
+                // Fill image data array. For 16-bit colour, convert to 32 bit. For 8 or lower, just copy.                
+                imageData = new Byte[imageDataSize];
+                Array.Copy(fileData, this.hdrDataOffset, imageData, 0, Math.Min(fileData.Length - this.hdrDataOffset, imageDataSize));
+                if (this.hdrColorFormat == 2)
+                    ImageUtils.ReorderBits(imageData, this.Width, this.Height, stride, Format16BitRgba5551Be, PixelFormatter.Format16BitArgb1555);
+                //imageData = Convert16bTo32b(fileData, this.hdrDataOffset, this.Width, this.Height, ref stride);
                 if (this.hdrPaletteOffset != 0)
                 {
                     Int32 palSize = this.hdrBytesPerColor * this.hdrColorsInPalette;
@@ -179,8 +162,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 else if (this.hdrColorFormat != 2)
                 {
                     // No palette in file, but paletted color format. Generate grayscale palette.
-                    Int32 bpp = this.BitsPerColor;
-
+                    Int32 bpp = this.BitsPerPixel;
+                    
                     this.m_Palette = PaletteUtils.GenerateGrayPalette(bpp, null, false);
                     // Ignore original value here.
                     this.hdrBytesPerColor = 4;
@@ -197,8 +180,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             try
             {
                 PixelFormat pf = this.GetPixelFormat();
-                //Int32 stride = ImageUtils.GetMinimumStride(this.Width, Image.GetPixelFormatSize(pf));
                 this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, pf, this.m_Palette, null);
+
                 if (this.m_Palette != null)
                     this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
             }
@@ -213,7 +196,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (image.Width > 0xFFFF || image.Height > 0xFFFF)
                 throw new NotSupportedException("Image is too large!");
             // 0 = 4bpp, 1 = 8bpp, 2 = 16bpp
-            Byte colorFormat;
+            Byte colorFormat = 2;
             Int32 width = image.Width;
             Int32 height = image.Height;
             Int32 bpp = Image.GetPixelFormatSize(image.PixelFormat);
@@ -225,21 +208,27 @@ namespace CnC64FileConverter.Domain.FileTypes
                 case 8:
                     colorFormat = 1;
                     break;
-                case 32:
-                    colorFormat = 2;
-                    break;
-                default:
-                    image = ImageUtils.PaintOn32bpp(image, Color.Transparent);
-                    colorFormat = 2;
-                    break;
             }
+            Byte[] imageData;
             Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride);
+            if (colorFormat == 2)
+            {
+                if (image.PixelFormat != PixelFormat.Format16bppArgb1555)
+                {
+                    using (Bitmap newImage = ImageUtils.PaintOn32bpp(image, null))
+                        imageData = ImageUtils.GetImageData(newImage, out stride, PixelFormat.Format16bppArgb1555);
+                    bpp = 16;
+                }
+                else
+                    imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppArgb1555);
+            }
+            else
+                imageData = ImageUtils.GetImageData(image, out stride);
+
             // Collapse stride
             imageData = ImageUtils.CollapseStride(imageData, width, height, bpp, ref stride);
             if (colorFormat == 2)
-                imageData = Convert32bTo16b(imageData, width, height, ref stride);
-            
+                ImageUtils.ReorderBits(imageData, width, height, stride, PixelFormatter.Format16BitArgb1555, Format16BitRgba5551Be);
             Byte[] paletteData;
             Int32 paletteColors;
             if (colorFormat == 2 || !savePalette)
@@ -254,7 +243,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 paletteData = new Byte[paletteColors * 2];
                 Int32 maxEntry = Math.Min(pal.Length, paletteColors);
                 for (Int32 i = 0; i < maxEntry; i++)
-                    SixteenBppFormatter.WriteColor(paletteData, i * 2, pal[i]);
+                    Format16BitRgba5551Be.WriteColor(paletteData, i * 2, pal[i]);
             }
             Int32 paletteOffset = paletteColors == 0 ? 0 : 16 + imageData.Length;
             Int32 palbpc = colorFormat > 1 ? 0 : (!savePalette ? 4 : 2);
@@ -284,43 +273,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             return fullData;
         }
 
-        protected static Byte[] Convert16bTo32b(Byte[] imageData, Int32 startOffset, Int32 width, Int32 height, ref Int32 stride)
-        {
-            Int32 newImageStride = width * 4; ;
-            Byte[] newImageData = new Byte[height * newImageStride];
-            for (Int32 y = 0; y < height; y++)
-            {
-                for (Int32 x = 0; x < width; x++)
-                {
-                    Int32 sourceOffset = y * stride + x * 2;
-                    Int32 targetOffset = y * newImageStride + x * 4;
-                    Color c = SixteenBppFormatter.GetColor(imageData, startOffset + sourceOffset);
-                    PixelFormatter.Format32BitArgb.WriteColor(newImageData, targetOffset, c);
-                }
-            }
-            stride = newImageStride;
-            return newImageData;
-        }
-
-        protected static Byte[] Convert32bTo16b(Byte[] imageData, Int32 width, Int32 height, ref Int32 stride)
-        {
-            Int32 newStride = width * 2;
-            Byte[] newImageData = new Byte[newStride * height];
-
-            for (Int32 y = 0; y < height; y++)
-            {
-                for (Int32 x = 0; x < width; x += 1)
-                {
-                    Int32 inputOffs = y * stride + x*4;
-                    Int32 outputOffs = y * newStride + x*2;
-                    Color c = PixelFormatter.Format32BitArgb.GetColor(imageData, inputOffs);
-                    SixteenBppFormatter.WriteColor(newImageData, outputOffs, c);
-                }
-            }
-            stride = newStride;
-            return newImageData;
-        }
-
         public void LoadGrayImage(Bitmap img, String displayFileName, String fullFilePath)
         {
             hdrBytesPerColor = 4;
@@ -331,7 +283,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.ConvertToPalettedGrayscale(img);
             this.LoadedFile = fullFilePath;
             this.LoadedFileName = displayFileName;
-            this.ExtraInfo = "Palette: No";
         }
 
         /// <summary>
@@ -347,11 +298,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                     pf = PixelFormat.Format4bppIndexed;
                     break;
                 case 1:
-                default: // Not sure if using this as default is a good idea...
                     pf = PixelFormat.Format8bppIndexed;
                     break;
+                default:
                 case 2:
-                    pf = PixelFormat.Format32bppArgb;
+                    pf = PixelFormat.Format16bppArgb1555;
                     break;
             }
             return pf;
@@ -361,7 +312,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (paletteData == null)
                 return null;
-            Int32 maxPalSize = (Int32)Math.Pow(2, this.BitsPerColor);
+            Int32 maxPalSize = (Int32)Math.Pow(2, this.BitsPerPixel);
             Int32 palSize = paletteLength;
             if (palSize == 0)
                 palSize = maxPalSize;
@@ -370,7 +321,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             for (Int32 i = 0; i < palLen; i++)
             {
                 if (i < palSize)
-                    entries[i] = SixteenBppFormatter.GetColor(paletteData, i * 2);
+                    entries[i] = Format16BitRgba5551Be.GetColor(paletteData, i * 2);
                 else
                     entries[i] = Color.Empty;
             }

@@ -7,7 +7,8 @@ namespace Nyerguds.ImageManipulation
 {
     public class ColorSixBit
     {
-        protected const String argError = "Color value can not be higher than 63!";
+        public const Byte MaxValue = 63;
+        protected readonly String argError = "Color value can not be higher than " + MaxValue + "!";
 
         protected Byte m_Red;
         protected Byte m_Green;
@@ -18,7 +19,7 @@ namespace Nyerguds.ImageManipulation
             get { return m_Red; }
             set
             {
-                if (value > 63)
+                if (value > MaxValue)
                     throw new ArgumentException(argError, "value");
                 this.m_Red = value;
             }
@@ -28,7 +29,7 @@ namespace Nyerguds.ImageManipulation
             get { return m_Green; }
             set
             {
-                if (value > 63)
+                if (value > MaxValue)
                     throw new ArgumentException(argError, "value");
                 this.m_Green = value;
             }
@@ -38,7 +39,7 @@ namespace Nyerguds.ImageManipulation
             get { return m_Blue; }
             set
             {
-                if (value > 63)
+                if (value > MaxValue)
                     throw new ArgumentException(argError, "value");
                 this.m_Blue = value;
             }
@@ -73,6 +74,11 @@ namespace Nyerguds.ImageManipulation
             array[offset + 0] = this.m_Red;
             array[offset + 1] = this.m_Green;
             array[offset + 2] = this.m_Blue;
+        }
+        
+        public static implicit operator Color(ColorSixBit hslColor)
+        {
+            return Color.FromArgb(hslColor.R * 4, hslColor.G * 4, hslColor.B * 4);
         }
 
         public override String ToString()

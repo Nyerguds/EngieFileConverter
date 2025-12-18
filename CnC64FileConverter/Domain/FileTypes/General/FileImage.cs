@@ -42,6 +42,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             get { return new String[] { "Portable Network Graphics", "Bitmap", "CompuServe GIF image", "JPEG", "JPEG" }; }
         }
 
+        protected virtual String MimeType { get { return null; } }
+
         public FileImage() { }
 
         public void LoadFile(Bitmap image, String filename)
@@ -62,12 +64,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            CheckSpecificFileType(filename);
             try
             {
-                m_LoadedImage = BitmapHandler.LoadBitmap(filename);
+                CheckSpecificFileType(fileData, filename);
+                m_LoadedImage = BitmapHandler.LoadBitmap(fileData);
                 SetFileNames(filename);
             }
             catch (Exception ex)
@@ -76,16 +78,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        protected virtual void CheckSpecificFileType(String filename)
+        protected void CheckSpecificFileType(Byte[] fileData, String filename)
         {
-
-        }
-
-        protected void CheckSpecificFileType(String filename, String type)
-        {
-            String mimeType = MimeTypeDetector.GetMimeTypeFromExtension(type)[1];
-            if (!mimeType.Equals(MimeTypeDetector.GetMimeType(filename)[1], StringComparison.InvariantCultureIgnoreCase))
-                throw new FileTypeLoadException("This is not a "+ type +" image!");
+            if(this.MimeType == null)
+                return;
+            String mimeType = MimeTypeDetector.GetMimeTypeFromExtension(this.MimeType)[1];
+            if (!mimeType.Equals(MimeTypeDetector.GetMimeType(fileData)[1], StringComparison.InvariantCultureIgnoreCase))
+                throw new FileTypeLoadException("This is not a " + this.ShortTypeName + " image!");
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)

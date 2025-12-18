@@ -29,7 +29,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "wsa" }; } }
         public override String ShortTypeDescription { get { return "Westwood Animation File"; } }
         public override Int32 ColorsInPalette { get { return this.m_HasPalette? 0x100 : 0; } }
-        public override Int32 BitsPerColor { get { return 8; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_HasPalette;
         protected WsaVersion m_Version = WsaVersion.Cnc;
         protected Boolean m_HasLoopFrame;
@@ -52,9 +52,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             Boolean trim = true;
             Boolean continues = false;
             Boolean ignoreLast = false;
-            if (fileToSave is FileFramesWwWsa)
+            FileFramesWwWsa toSave = fileToSave as FileFramesWwWsa;
+            if (toSave != null)
             {
-                FileFramesWwWsa toSave = (FileFramesWwWsa)fileToSave;
                 type = toSave.m_Version;
                 loop = toSave.m_HasLoopFrame;
                 if (type == WsaVersion.Dune2 || type == WsaVersion.Dune2v1)
@@ -80,9 +80,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
@@ -116,14 +115,15 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (datalen < 14)
                 throw new FileTypeLoadException("Bad header size.");
             UInt16 nrOfFrames = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+            // Default for v3 (C&C). This is missing and shifted down 4 bytes for the D2 formats.
+            // The D2-specific code corrects this later.
             UInt16 xPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
             UInt16 yPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
             UInt16 width = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
             UInt16 height = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
-            Int32 hdrOffset = 10;
-            Int32 deltaLen = 2;
+            Int32 deltaOffs = 0x0A;
             UInt32 deltaBufferSize;
-            UInt16 flags;
+            UInt16 flags = 0;
             // If the type is Dune 2, the "width" value actually contains the buffer size, so it's practically impossible this is below 320.
             switch (loadVersion)
             {
@@ -133,16 +133,19 @@ namespace CnC64FileConverter.Domain.FileTypes
                     height = yPos;
                     xPos=0;
                     yPos=0;
-                    hdrOffset -= 4;
+                    // Compensate for missing X and Y offsets
+                    deltaOffs -= 4;
                     this.m_Version = WsaVersion.Dune2;
-                    deltaBufferSize = ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset, deltaLen, true);
-                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset + deltaLen, 2, true);
+                    deltaBufferSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs, 2, true);
+                    // d2v1 has no flags, and can thus never contain a palette.
                     if (loadVersion == WsaVersion.Dune2v1)
-                        hdrOffset -= 2;
+                        deltaOffs -= 2;  // Decrease this to have data index offset correct later.
+                    else
+                        flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs + 2, 2, true);
                     break;
                 case WsaVersion.Cnc:
-                    deltaBufferSize = ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset, deltaLen, true);
-                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset + deltaLen, 2, true);
+                    deltaBufferSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs, 2, true);
+                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs + 2, 2, true);
                     break;
                 default:
                     // Might need specific poly handling here... but then I first need
@@ -154,7 +157,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (m_Version != WsaVersion.Dune2 && m_Version != WsaVersion.Dune2v1)
                 generalInfo += "\nX-offset = " + xPos + "\nY-offset = " + yPos;
             this.ExtraInfo = generalInfo;
-            Int32 dataIndexOffset = hdrOffset + 2 + deltaLen;
+            Int32 dataIndexOffset = deltaOffs + 4;
             Int32 paletteOffset = dataIndexOffset + (nrOfFrames + 2) * 4;
             this.m_HasPalette = (flags & 1) == 1;
             UInt32[] frameOffsets = new UInt32[nrOfFrames + 2];
@@ -162,7 +165,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 if (fileData.Length <= dataIndexOffset + 4)
                     throw new HeaderParseException("Data too short to contain frames info!");
-                frameOffsets[i] = ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
+                frameOffsets[i] = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
                 dataIndexOffset += 4;
             }
             m_HasLoopFrame = frameOffsets[nrOfFrames + 1] != 0;
@@ -225,7 +228,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 try
                 {
-                    WWCompression.ApplyXorDelta(frameData, xorData, uncLen);
+                    WWCompression.ApplyXorDelta(frameData, xorData, 0, uncLen);
                 }
                 catch (Exception ex)
                 {
@@ -244,9 +247,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Bitmap curFrImg = ImageUtils.BuildImage(finalFrameData, finalWidth, finalHeight, finalWidth, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, curFrImg, sourcePath, i);
-                frame.SetBitsPerColor(this.BitsPerColor);
+                frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(this.ColorsInPalette);
                 frame.SetExtraInfo(generalInfo + specificInfo);
+                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
             m_DamagedLoopFrame = false;
@@ -290,7 +294,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 if (frame == null)
                     throw new NotSupportedException("WSA can't handle empty frames!");
-                if (frame.BitsPerColor != 8)
+                if (frame.BitsPerPixel != 8)
                     throw new NotSupportedException("Not all frames in input type are 8-bit images!");
                 if (width == -1 && height == -1)
                 {

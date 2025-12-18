@@ -23,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return this.width; } }
         public override Int32 Height { get { return this.height; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get { return 0; } }
+        public override Int32 BitsPerPixel { get { return 0; } }
 
         protected Int32 width;
         protected Int32 height;

@@ -8,8 +8,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileMapWwCc1N64 : FileMapWwCc1Pc
     {
-        public override FileClass FileClass { get { return FileClass.CCMap; } }
-        public override FileClass InputFileClass { get { return FileClass.CCMap; } }
+        public override FileClass FileClass { get { return FileClass.CcMap; } }
+        public override FileClass InputFileClass { get { return FileClass.CcMap; } }
 
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Map"; } }
@@ -27,23 +27,28 @@ namespace CnC64FileConverter.Domain.FileTypes
             m_LoadedImage = ReadN64MapAsImage(fileData, (Theater)0xFF, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            m_LoadedImage = ReadN64MapAsImage(filename);
+            m_LoadedImage = ReadN64MapAsImage(fileData, filename, null);
             SetFileNames(filename);
         }
 
+        public void LoadFile(Byte[] fileData, String filename, Byte[] iniData)
+        {
+            m_LoadedImage = ReadN64MapAsImage(fileData, filename, iniData);
+            SetFileNames(filename);
+        }
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (!(fileToSave is FileMapWwCc1Pc))
+            FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
+            if (mapPc == null)
                 throw new NotSupportedException(String.Empty);
-            return ((FileMapWwCc1Pc)fileToSave).N64MapData;
+            return mapPc.N64MapData;
         }
 
-        protected Bitmap ReadN64MapAsImage(String filename)
+        protected Bitmap ReadN64MapAsImage(Byte[] fileData, String filename, Byte[] iniData)
         {
-            Theater theater = GetTheaterFromIni(filename, (Theater)0xFF);
-            Byte[] fileData = File.ReadAllBytes(filename);
+            Theater theater = GetTheaterFromIni(filename, (Theater)0xFF, iniData);
             return ReadN64MapAsImage(fileData, theater, filename);
         }
 
@@ -72,7 +77,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Map ini"; } }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
             String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".map";
             if (!File.Exists(mapFilename))
@@ -81,7 +86,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".map");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            base.LoadFile(mapFilename);
+            Byte[] mapData = File.ReadAllBytes(mapFilename);
+            base.LoadFile(mapData, mapFilename, fileData);
         }
     }
 }

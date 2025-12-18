@@ -60,6 +60,9 @@
             this.tsmiTilesets = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiTilesetsToFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiTilesetsToTilesetFiles = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiShadowSplit = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiCombineShadows = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiSplitShadows = new System.Windows.Forms.ToolStripMenuItem();
             this.lblFrame = new System.Windows.Forms.Label();
             this.lblNrOfFrames = new System.Windows.Forms.Label();
             this.btnResetPalette = new System.Windows.Forms.Button();
@@ -72,7 +75,7 @@
             this.palColorViewer = new Nyerguds.Util.UI.PalettePanel();
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
-            this.picImage = new RedCell.UI.Controls.PixelBox();
+            this.picImage = new Nyerguds.Util.UI.PixelBox();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numZoom)).BeginInit();
@@ -289,7 +292,8 @@
             this.tsmiEdit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiCopy,
             this.tsmiHeightMapTools,
-            this.tsmiTilesets});
+            this.tsmiTilesets,
+            this.tsmiShadowSplit});
             this.tsmiEdit.Name = "tsmiEdit";
             this.tsmiEdit.Size = new System.Drawing.Size(39, 20);
             this.tsmiEdit.Text = "Edit";
@@ -367,6 +371,30 @@
             this.tsmiTilesetsToTilesetFiles.Name = "tsmiTilesetsToTilesetFiles";
             this.tsmiTilesetsToTilesetFiles.Size = new System.Drawing.Size(202, 22);
             this.tsmiTilesetsToTilesetFiles.Text = "Tilesets to tileset files";
+            // 
+            // tsmiShadowSplit
+            // 
+            this.tsmiShadowSplit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiCombineShadows,
+            this.tsmiSplitShadows});
+            this.tsmiShadowSplit.Name = "tsmiShadowSplit";
+            this.tsmiShadowSplit.Size = new System.Drawing.Size(197, 22);
+            this.tsmiShadowSplit.Text = "Shadow splitting";
+            // 
+            // tsmiCombineShadows
+            // 
+            this.tsmiCombineShadows.Name = "tsmiCombineShadows";
+            this.tsmiCombineShadows.Size = new System.Drawing.Size(172, 22);
+            this.tsmiCombineShadows.Text = "Combine shadows";
+            this.tsmiCombineShadows.Visible = false;
+            this.tsmiCombineShadows.Click += new System.EventHandler(this.tsmiCombineShadows_Click);
+            // 
+            // tsmiSplitShadows
+            // 
+            this.tsmiSplitShadows.Name = "tsmiSplitShadows";
+            this.tsmiSplitShadows.Size = new System.Drawing.Size(172, 22);
+            this.tsmiSplitShadows.Text = "Split shadows";
+            this.tsmiSplitShadows.Click += new System.EventHandler(this.TsmiSplitShadows_Click);
             // 
             // lblFrame
             // 
@@ -591,7 +619,7 @@
 
         #endregion
 
-        private RedCell.UI.Controls.PixelBox picImage;
+        private Nyerguds.Util.UI.PixelBox picImage;
         private Nyerguds.Util.UI.SelectablePanel pnlImageScroll;
         private System.Windows.Forms.Label lblFilename;
         private System.Windows.Forms.Label lblWidth;
@@ -635,6 +663,9 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiSaveFrames;
         private System.Windows.Forms.Label lblInfo;
         private System.Windows.Forms.Label lblValInfo;
+        private System.Windows.Forms.ToolStripMenuItem tsmiShadowSplit;
+        private System.Windows.Forms.ToolStripMenuItem tsmiCombineShadows;
+        private System.Windows.Forms.ToolStripMenuItem tsmiSplitShadows;
     }
 }
 

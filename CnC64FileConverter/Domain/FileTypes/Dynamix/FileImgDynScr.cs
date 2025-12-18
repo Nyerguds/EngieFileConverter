@@ -22,11 +22,14 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW" };
         protected String[] savecompressionTypes = new String[] { "None", "RLE" };
-        public override Int32 BitsPerColor { get { return this.m_bpp; } }
-        public override Int32 ColorsInPalette { get { return m_loadedPalette ? this.m_Palette.Length : 0; } }
+        public override Int32 BitsPerPixel { get { return this.m_bpp; } }
+        public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
+        // The SetColors function takes care of this. Return true to negate the automatic effect of IsFramescontainer.
+        public override Boolean FramesHaveCommonPalette { get { return true; } }
+
         /// <summary>
         /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
         /// Dynamix SCR is one of the rare cases where the frames visualisation is completely extra. 
@@ -47,7 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
                 opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
             }
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString());
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
         }
 
@@ -57,19 +60,11 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override void SetColors(Color[] palette, SupportedFileType updateSource)
         {
-            palette = palette.ToArray();
-            if (this.BitsPerColor == 4)
-                palette = Make4BitPalette(palette);
-            else if (palette.Length == 16)
+            if (palette.Length == 16)
                 return; // Don't propagate reduced palette to lower level.
+            if (this.BitsPerPixel == 4)
+                palette = this.Make4BitPalette(palette);
             base.SetColors(palette, updateSource);
-        }
-
-        public override void LoadFile(String filename)
-        {
-            Byte[] fileData = File.ReadAllBytes(filename);
-            SetFileNames(filename);
-            LoadFile(fileData, filename, false, false);
         }
 
         public override void LoadFile(Byte[] fileData)
@@ -77,6 +72,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFile(fileData, null, false, false);
         }
 
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            SetFileNames(filename);
+            LoadFile(fileData, filename, false, false);
+        }
+        
         public void LoadFile(Byte[] fileData, String sourcePath, Boolean v2, Boolean asFrame)
         {
             if (fileData.Length < 0x10)
@@ -106,9 +107,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     try
                     {
                         FilePaletteDyn palDyn = new FilePaletteDyn();
-                        palDyn.LoadFile(palName);
-                        m_Palette = palDyn.GetColors();
-                        m_loadedPalette = true;
+                        Byte[] palData = File.ReadAllBytes(palName);
+                        palDyn.LoadFile(palData, palName);
+                        this.m_Palette = palDyn.GetColors();
+                        this.m_loadedPalette = true;
                         this.LoadedFileName += "/PAL";
                     }
                     catch
@@ -161,7 +163,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_bpp = 8;
                 compressionType = vgaChunk.Data[0];
                 if (compressionType < 3)
-                    ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
+                    this.ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
                 else
                     throw new FileTypeLoadException("Unknown compression type, " + compressionType);
                 vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
@@ -177,10 +179,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (!this.IsMa8)
                 {
                     pf = PixelFormat.Format4bppIndexed;
-                    if (m_Palette != null)
+                    if (this.m_Palette != null)
                     {
                         if (asFrame)
-                            this.m_Palette = Make4BitPalette(this.m_Palette);
+                            this.m_Palette = this.Make4BitPalette(this.m_Palette);
                         else
                             this.m_Palette = this.m_Palette.Take(Math.Min(this.m_Palette.Length, 16)).ToArray();
                     }
@@ -207,7 +209,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 fourbitFrame.FrameParent = this;
                 eightbitFrame.SetFileNames(sourcePath);
                 eightbitFrame.LoadFile(fileData, sourcePath, v2, true);
-                if (m_loadedPalette)
+                if (this.m_loadedPalette)
                     this.LoadedFileName += "/PAL";
                 eightbitFrame.FrameParent = this;
                 this.m_FramesList[0] = eightbitFrame;
@@ -220,10 +222,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 pf = PixelFormat.Format8bppIndexed;
                 fullData = DynamixCompression.EnrichFourBit(vgadata, bindata);
             }
-            if (m_Palette == null)
-                m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
+            if (this.m_Palette == null)
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
             if (fullData != null)
-                this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, m_Palette, null);
+                this.m_LoadedImage = ImageUtils.BuildImage(fullData, width, height, ImageUtils.GetMinimumStride(width, this.m_bpp), pf, this.m_Palette, null);
             //save debug output
             //File.WriteAllBytes((output ?? "scrimage") + "_image.bin", fullData);
         }
@@ -240,7 +242,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            return SaveToBytesAsThis(fileToSave, saveOptions, false);
+            return this.SaveToBytesAsThis(fileToSave, saveOptions, false);
         }
 
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean v2)

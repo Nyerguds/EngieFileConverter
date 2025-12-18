@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using Nyerguds.GameData.Dynamix;
 
@@ -28,45 +27,46 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW" };
         protected String[] savecompressionTypes = new String[] { "None", "RLE" };
         //protected String[] endchunks = new String[] { "None", "OFF (trims X and Y)" };
-        public override Int32 ColorsInPalette { get { return m_loadedPalette ? this.m_Palette.Length : 0; } }
-        public override Int32 BitsPerColor { get { return m_bpp; } }
+        public override Int32 ColorsInPalette { get { return this.m_loadedPalette ? this.m_Palette.Length : 0; } }
+
+        public override Int32 BitsPerPixel { get { return this.m_bpp; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
-        protected Boolean m_loadedPalette = false;
+        protected Boolean m_loadedPalette;
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
 
-        protected Boolean m_IsMatrixImage = false;
+        protected Boolean m_IsMatrixImage;
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return m_IsMatrixImage; } }
+        public override Boolean HasCompositeFrame { get { return this.m_IsMatrixImage; } }
         public Boolean IsMa8 { get; private set; }
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            Boolean is4bpp = fileToSave.BitsPerColor == 4;
+            Boolean is4bpp = fileToSave.BitsPerPixel == 4;
             SaveOption[] opts = new SaveOption[is4bpp ? 1 : 2];
             Int32 opt = 0;
             if (!is4bpp)
             {
-                Int32 saveType = fileToSave is FileFramesDynBmp && ((FileFramesDynBmp)fileToSave).IsMa8 ? 1 : 0;
+                FileFramesDynBmp bmp = fileToSave as FileFramesDynBmp;
+                Int32 saveType = bmp != null && bmp.IsMa8 ? 1 : 0;
                 opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
             }
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString());
+            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
         }
-
+        
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData, null, false);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
-            SetFileNames(filename);
             LoadFromFileData(fileData, filename, false);
+            SetFileNames(filename);
         }
 
         public override Boolean ColorsChanged()
@@ -87,7 +87,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 frames = (Int32)ArrayUtils.ReadIntFromByteArray(frameInfo, 0, 2, true);
             if (frameInfo.Length != 2 + frames * 4)
                 throw new FileTypeLoadException("Bad header size: INF chunk is not long enough.");
-
             if (sourcePath != null)
             {
                 String output = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
@@ -97,9 +96,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     try
                     {
                         FilePaletteDyn palDyn = new FilePaletteDyn();
-                        palDyn.LoadFile(palName);
-                        m_Palette = palDyn.GetColors();
-                        m_loadedPalette = true;
+                        Byte[] palData = File.ReadAllBytes(palName);
+                        palDyn.LoadFile(palData, palName);
+                        this.m_Palette = palDyn.GetColors();
+                        this.m_loadedPalette = true;
                         this.LoadedFileName += "/PAL";
                     }
                     catch
@@ -130,7 +130,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("This is not a matrix-type image.");
             if (matrix == null && asMatrixImage)
                 throw new FileTypeLoadException("This is a matrix-type image.");
-            Byte[] fullData = null;
+            Byte[] fullData;
             PixelFormat pf;
             if (vqt || scn)
             {
@@ -177,7 +177,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     this.m_bpp = 8;
                     compressionType = vgaChunk.Data[0];
                     if (compressionType < 3)
-                        ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
+                        this.ExtraInfo += ", VGA:" + this.compressionTypes[compressionType];
                     else
                         throw new FileTypeLoadException("Unknown compression type, " + compressionType);
                     vgadata = DynamixCompression.DecodeChunk(vgaChunk.Data);
@@ -196,7 +196,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     fullData = DynamixCompression.EnrichFourBit(vgadata, bindata);
                 }
             }
-            if (!m_loadedPalette || this.m_bpp == 4)
+            if (!this.m_loadedPalette || this.m_bpp == 4)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
 
             Int32 offset = 0;
@@ -216,8 +216,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Bitmap frameImage = ImageUtils.BuildImage(image, widths[i], heights[i], stride, pf, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
-                frame.SetBitsPerColor(this.BitsPerColor);
+                frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(this.m_loadedPalette ? this.m_Palette.Length : 0);
+                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
             if (matrix != null && frames > 0)
@@ -245,11 +246,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 Int32 blockStride = ImageUtils.GetMinimumStride(blockWidth, this.m_bpp);
                 this.m_LoadedImage = ImageUtils.Tile8BitImages(matrixFrames, blockWidth, blockHeight, blockStride, matrixLen, this.m_Palette, matrixWidth);
-                m_IsMatrixImage = true;
-                ExtraInfo += "\nMatrix size: " + matrixWidth + " x " + matrixHeight
+                this.m_IsMatrixImage = true;
+                this.ExtraInfo += "\nMatrix size: " + matrixWidth + " x " + matrixHeight
                              + "\nBlock size: " + blockWidth + " x " + blockHeight
                              + "\nMatrix ratio: " + frames + " / " + matrixLen + " = " + (frames * 100 / matrixLen) + "%";
-                ExtraInfo = ExtraInfo.Trim('\n');                             
+                this.ExtraInfo = this.ExtraInfo.Trim('\n');                             
             }
         }
 
@@ -265,7 +266,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameSave.AddFrame(fileToSave);
                 fileToSave = frameSave;
             }
-            List<DynamixChunk> basicChunks = SaveToChunks(fileToSave, compressionType, saveType);
+            List<DynamixChunk> basicChunks = this.SaveToChunks(fileToSave, compressionType, saveType);
             DynamixChunk bmpChunk = DynamixChunk.BuildChunk("BMP", basicChunks.ToArray());
             return bmpChunk.WriteChunk();
         }
@@ -353,7 +354,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (dataCompr.Length < dataLenBin)
                     {
                         binData = dataCompr;
-                        compressionBin = (Byte)compressionType; ;
+                        compressionBin = (Byte)compressionType;
                     }
                 }
                 DynamixChunk binChunk = new DynamixChunk(isMa8 ? "MA8" : "BIN", compressionBin, dataLenBin, binData);
@@ -375,13 +376,13 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (dataHiCompr.Length < dataLenVga)
                     {
                         vgaData = dataHiCompr;
-                        compressionVga = (Byte)compressionType; ;
+                        compressionVga = (Byte)compressionType;
                     }
                     Byte[] dataLoCompr = compressionType == 1 ? DynamixCompression.RleEncode(binData) : DynamixCompression.LzwEncode(binData);
                     if (dataLoCompr.Length < dataLenBin)
                     {
                         binData = dataLoCompr;
-                        compressionBin = (Byte)compressionType; ;
+                        compressionBin = (Byte)compressionType;
                     }
                 }
                 DynamixChunk binChunk = new DynamixChunk("BIN", compressionBin, dataLenBin, binData);

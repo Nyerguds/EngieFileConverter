@@ -12,27 +12,12 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override String ShortTypeName { get { return "JPEG"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription
-        {
-            get { return "JPEG"; }
-        }
-
+        public override String ShortTypeDescription { get { return "JPEG"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions
-        {
-            get { return new String[] { "jpg", "jpeg" }; }
-        }
-
+        public override String[] FileExtensions { get { return new String[] { "jpg", "jpeg" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions
-        {
-            get { return new String[] { ShortTypeDescription, ShortTypeDescription }; }
-        }
-
-        protected override void CheckSpecificFileType(String filename)
-        {
-            this.CheckSpecificFileType(filename, "jpg");
-        }
+        public override String[] DescriptionsForExtensions { get { return new String[] { ShortTypeDescription, ShortTypeDescription }; } }
+        protected override String MimeType { get { return "jpg"; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {

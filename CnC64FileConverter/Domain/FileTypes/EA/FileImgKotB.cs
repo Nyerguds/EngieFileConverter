@@ -6,7 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.Util.GameData;
+using Nyerguds.GameData.Compression;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -22,7 +22,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "pak" }; } }
         public override String ShortTypeDescription { get { return "Kings of the Beach PAK file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get { return 4; } }
+        public override Int32 BitsPerPixel { get { return 4; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
@@ -47,22 +47,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            if (fileData.Length < 2)
-                throw new FileTypeLoadException("File is empty.");
+            if (fileData.Length < 4)
+                throw new FileTypeLoadException("File too short to decompress header!");
             // First RLE byte value is 0. Not allowed.
             if ((fileData[0] & 0x7F) == 0)
                 throw new FileTypeLoadException("Error decompressing file.");
-            if (fileData.Length < 4)
-                throw new FileTypeLoadException("File too short to decompress header!");
             Int32 dataEnd = fileData.Length - 2;
             UInt32 dataLen = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, dataEnd, 2, true);
             if (dataLen < 2)
@@ -99,21 +96,22 @@ namespace CnC64FileConverter.Domain.FileTypes
             // They use the Rio one (which is complete) for the court image itself.
             if ((decompressedLength - 2) % fourLinesStride != 0)
                 throw new FileTypeLoadException("Data cutoff is not exactly on one line!");
-            Int32 cutoffHeight = (decompressedLength - 2) / fourLinesStride;
-            if (cutoffHeight < imgHeight)
-                this.ExtraInfo = "Data cut off at " + cutoffHeight + " lines";
+            Int32 endHeight = (decompressedLength - 2) / fourLinesStride;
+            if (endHeight < imgHeight)
+                this.ExtraInfo = "Data cut off at " + endHeight + " lines";
             // Final 1-bit image is four times the image width. Convert to 1 byte per bit for editing convenience.
-            Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, imgWidth * 4, cutoffHeight, 2, 1, true, ref fourLinesStride);
+            Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, imgWidth * 4, endHeight, 2, 1, true, ref fourLinesStride);
             // Array for 4-bit image where each byte is one pixel. Will be converted to true 4bpp later.
             Byte[] pixelImage = new Byte[imgWidth * imgHeight];
             // Combine the bits into the new array.
-            for (Int32 y = 0; y < cutoffHeight; y++)
+            Int32 lineOffset = 0;
+            for (Int32 y = 0; y < endHeight; y++)
             {
                 Int32 offset1 = fourLinesStride * y;
                 Int32 offset2 = offset1 + imgWidth;
                 Int32 offset3 = offset2 + imgWidth;
                 Int32 offset4 = offset3 + imgWidth;
-                Int32 finalOffset = imgWidth * y;
+                Int32 realOffset = lineOffset;
                 for (Int32 x = 0; x < imgWidth; x++)
                 {
                     // Take the 4 bits by skipping imgWidth bytes for each next one.
@@ -121,8 +119,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Byte bit2 = (Byte)(oneBitQuadImage[offset2 + x] << 1);
                     Byte bit3 = (Byte)(oneBitQuadImage[offset3 + x] << 2);
                     Byte bit4 = (Byte)(oneBitQuadImage[offset4 + x] << 3);
-                    pixelImage[finalOffset + x] = (Byte)(bit1 | bit2 | bit3 | bit4);
+                    pixelImage[realOffset] = (Byte)(bit1 | bit2 | bit3 | bit4);
+                    realOffset++;
                 }
+                lineOffset += imgWidth;
             }
             Int32 stride = imgWidth;
             Byte[] fourbitImage = ImageUtils.ConvertFrom8Bit(pixelImage, imgWidth, imgHeight, 4, true, ref stride);
@@ -155,7 +155,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] eightbitImage = ImageUtils.ConvertTo8Bit(imageData, imgWidth, imgHeight, 0, 4, true, ref stride);
             if (alignedWidth > imgWidth)
                 eightbitImage = ImageUtils.ChangeStride(eightbitImage, stride, imgHeight, alignedWidth, false, 0);
-            // Trim end, creating "broken" images like the original court ones.
+            // Trim end, creating cut-off images like the original court ones. The original height is saved,
+            // and the decompressed data value at the end will be used to calculate the true height.
             if (trimEnd)
             {
                 for (Int32 y = saveHeight-1; y > 0; y--)

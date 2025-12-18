@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Nyerguds Industries")]
 [assembly: AssemblyProduct("CnC64FileConverter")]
-[assembly: AssemblyCopyright("Copyright © 2016-2017 Nyerguds")]
+[assembly: AssemblyCopyright("Copyright © 2016-2018 Nyerguds")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -33,4 +33,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.2.8.0")]
+[assembly: AssemblyFileVersion("1.2.9.0")]

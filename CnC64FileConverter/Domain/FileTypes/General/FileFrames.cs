@@ -32,6 +32,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override SupportedFileType[] Frames { get { return FramesList.ToArray(); } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
+        /// <summary>True if all frames in this frames container have a common palette.</summary>
+        public override Boolean FramesHaveCommonPalette { get { return _commonPalette; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
         
@@ -42,6 +44,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public String BaseType { get; private set; }
 
+        protected Boolean _commonPalette;
         /// <summary>
         /// Adds a frame to the list, setting its FrameParent property to this object.
         /// </summary>
@@ -58,7 +61,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             maxName = null;
             hasEmptyFrames = false;
             // The type is a frames container, and is not guaranteed to have a bitmap
-            if (currentType != null && currentType.IsFramesContainer && !currentType.HasCompositeFrame)
+            if (currentType != null && currentType.IsFramesContainer)
                 return null;
             String ext = Path.GetExtension(path);
             String folder = Path.GetDirectoryName(path);
@@ -126,6 +129,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     return null;
             }
             framesContainer.BaseType = currentType.ShortTypeName;
+            Color[] pal = currentType.GetColors();
+            framesContainer._commonPalette = pal != null && currentType.ColorsInPalette > 0;
             for (num = minNum; num <= maxNum; num++)
             {
                 String currentFrame = Path.Combine(folder, namepart + num.ToString(numpartFormat) + ext);
@@ -134,7 +139,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     hasEmptyFrames = true;
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(framesContainer, currentType.ShortTypeName, null, currentFrame, -1);
-                    frame.SetBitsPerColor(currentType.BitsPerColor);
+                    frame.SetBitsPerColor(currentType.BitsPerPixel);
                     frame.SetColorsInPalette(currentType.ColorsInPalette);
                     framesContainer.AddFrame(frame);
                     continue;
@@ -142,12 +147,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                 try
                 {
                     SupportedFileType frameFile = (SupportedFileType)Activator.CreateInstance(currentType.GetType());
-                    frameFile.LoadFile(currentFrame);
+                    Byte[] fileData = File.ReadAllBytes(currentFrame);
+                    frameFile.LoadFile(fileData, currentFrame);
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(framesContainer, frameFile.ShortTypeName, frameFile.GetBitmap(), currentFrame, -1);
-                    frame.SetBitsPerColor(frameFile.BitsPerColor);
+                    frame.SetBitsPerColor(frameFile.BitsPerPixel);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);
+                    if (framesContainer._commonPalette)
+                        framesContainer._commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
                 }
                 catch (FileTypeLoadException)
                 {

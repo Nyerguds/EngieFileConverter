@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using Nyerguds.GameData.Compression;
 using Nyerguds.Util;
-using Nyerguds.Util.GameData;
 
 namespace Nyerguds.GameData.Dynamix
 {
@@ -149,7 +149,7 @@ namespace Nyerguds.GameData.Dynamix
             return rle.RleEncodeData(buffer);
         }
 
-        /// <summary>Siwtches index 00 and FF on indexed image data, to compensate for this oddity in the MA8 chunks.</summary>
+        /// <summary>Switches index 00 and FF on indexed image data, to compensate for this oddity in the MA8 chunks.</summary>
         /// <param name="imageData">Image data to process.</param>
         public static void SwitchBackground(Byte[] imageData)
         {

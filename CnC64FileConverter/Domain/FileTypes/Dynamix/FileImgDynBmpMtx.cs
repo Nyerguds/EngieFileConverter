@@ -24,11 +24,17 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null, true);
         }
 
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            LoadFromFileData(fileData, filename, true);
+            SetFileNames(filename);
+        }
+
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 fullWidth = fileToSave.Width;
             Int32 fullHeight = fileToSave.Height;
-            Int32 bpp = fileToSave.BitsPerColor;
+            Int32 bpp = fileToSave.BitsPerPixel;
             Int32 blockWidth;
             Int32 blockHeight;
             if (fileToSave is FileImgDynBmpMtx && fileToSave.Frames != null && fileToSave.Frames.Length > 0)
@@ -44,9 +50,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     if (fullWidth % blockWidth == 0 && (fullWidth % 8 == 0))
                         matchingWidths.Add(blockWidth);
-                    blockWidth --;
+                    blockWidth--;
                 }
-                blockWidth = matchingWidths.Count == 0? 8 : matchingWidths.Min();
+                blockWidth = matchingWidths.Count == 0 ? 8 : matchingWidths.Min();
                 List<Int32> matchingHeights = new List<Int32>();
                 blockHeight = fullHeight;
                 while (blockHeight > 5)
@@ -67,15 +73,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             opts[opt++] = new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString());
             opts[opt++] = new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString());
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", savecompressionTypes), 1.ToString());
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
-        }
-
-        public override void LoadFile(String filename)
-        {
-            Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData, filename, true);
-            SetFileNames(filename);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
@@ -85,7 +84,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Bitmap image = fileToSave.GetBitmap();
             if(image == null)
                 throw new NotSupportedException("File to save is empty!");
-            Int32 bpp = fileToSave.BitsPerColor;
+            Int32 bpp = fileToSave.BitsPerPixel;
             PixelFormat pf = image.PixelFormat;
             Color[] palette = fileToSave.GetColors();
             Int32 width = image.Width;
@@ -96,9 +95,19 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 blockWidth;
             Int32 blockHeight;
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth) || width % blockWidth != 0)
+            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
+                throw new NotSupportedException("Could not parse block width!");
+            if (blockWidth <= 0)
+                throw new NotSupportedException("Bad block height: needs to be more than 0!");
+            if (blockWidth % 8 != 0)
+                throw new NotSupportedException("Bad block width: needs to be a multiple of 8!");
+            if (width % blockWidth != 0)
                 throw new NotSupportedException("Bad block width: not an exact part of the full image width!");
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLH"), out blockHeight) || height % blockHeight != 0)
+            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLH"), out blockHeight))
+                throw new NotSupportedException("Could not parse block height!");
+            if (blockHeight <= 0)
+                throw new NotSupportedException("Bad block height: needs to be more than 0!");
+            if (height % blockHeight != 0)
                 throw new NotSupportedException("Bad block height: not an exact part of the full image height!");
             Int32 blockStride = ImageUtils.GetMinimumStride(blockWidth, bpp);
             // Cut into frames (from SaveOptions)
@@ -165,9 +174,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 0, 2, true, (UInt32)matrixWidth);
             ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 2, 2, true, (UInt32)matrixHeight);
 
-            //Int32 matrixStride = matrixWidth * 2;
-            //for (Int32 i = 0; i < nrOfFrames; i++)
-            //    ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 4 + (i % matrixHeight * matrixStride + (i / matrixHeight)*2), 2, true, (UInt32)frameMatrix[i] + 0);
             for (Int32 i = 0; i < nrOfFrames; i++)
                 ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 4 + i * 2, 2, true, (UInt32)frameMatrix[i] + 0);
             
@@ -181,10 +187,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 fr.SetColorsInPalette(palette.Length);
                 fr.SetColors(this.m_Palette);
                 fr.SetBitsPerColor(bpp);
+                fr.SetTransparencyMask(this.TransparencyMask);
                 frs.AddFrame(fr);
             }
             // Call SaveToBmpChunk to turn into normal bmp
-            List<DynamixChunk> imageChunks = SaveToChunks(frs, compressionType, saveType);
+            List<DynamixChunk> imageChunks = this.SaveToChunks(frs, compressionType, saveType);
             // Fill matrix data
             DynamixChunk mtxChunk = new DynamixChunk("MTX", frameMatrixFinal);
             imageChunks.Add(mtxChunk);

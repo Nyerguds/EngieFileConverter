@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Nyerguds.Util.GameData
+namespace Nyerguds.GameData.Compression
 {
     /// <summary>
     /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website: http://marknelson.us

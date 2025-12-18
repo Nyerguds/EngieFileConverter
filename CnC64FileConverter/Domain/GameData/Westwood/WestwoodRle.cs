@@ -1,7 +1,7 @@
 ﻿using System;
-using Nyerguds.Util.GameData;
+using Nyerguds.GameData.Compression;
 
-namespace CnC64FileConverter.Domain.GameData.Westwood
+namespace Nyerguds.GameData.Westwood
 {
     /// <summary>
     /// Westwood RLE implementation:

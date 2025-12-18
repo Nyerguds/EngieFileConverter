@@ -43,7 +43,7 @@ namespace Nyerguds.Util.UI
             get { return this.Constrain(_EnteredValue);  }
             set
             {
-                this.Value = value;
+                this.Value = this.Constrain(value);
                 ValidateValue();
             }
         }

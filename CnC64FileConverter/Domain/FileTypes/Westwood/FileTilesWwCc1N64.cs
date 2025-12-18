@@ -33,23 +33,17 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
-
-
-
         public override Int32 ColorsInPalette { get { return this.m_Palette == null ? 0 : this.m_Palette.Length; } }
-        public override Int32 BitsPerColor { get { return 8; } }
-
-        public override Color[] GetColors()
-        {
-            return this.m_Palette == null ? new Color[0] : this.m_Palette.ToArray();
-        }
+        public override Int32 BitsPerPixel { get { return 8; } }
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         public override void LoadFile(Byte[] fileData)
         {
             throw new FileTypeLoadException("Tilesets cannot be loaded from byte array; they require file names.");
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
             String ext = Path.GetExtension(filename).TrimStart('.');
             if (!String.Equals(ext, ExtData, StringComparison.InvariantCultureIgnoreCase))
@@ -62,11 +56,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             String tileIDsFileNamesFileName = filePathBase + this.ExtTileIds;
             if (!File.Exists(dataFileName) || !File.Exists(palIndexFileName) || !File.Exists(palFileName) || !File.Exists(tileIDsFileNamesFileName))
                 throw new FileTypeLoadException("Tileset load failed: Can not load the " + ExtData + "/" + ExtPalIndex + "/" + ExtPalFile + "/" + this.ExtTileIds + " files collection.");
-            Byte[] m_dataFile = File.ReadAllBytes(dataFileName);
             // Actually 24*24*Bpp/8, but 24*24/8 is of course 72.
             Int32 tileSize = 72 * Bpp;
-            Int32 entries = m_dataFile.Length / tileSize;
-            if (m_dataFile.Length % tileSize != 0)
+            Int32 entries = fileData.Length / tileSize;
+            if (fileData.Length % tileSize != 0)
                 throw new FileTypeLoadException("Tileset load failed: " + ExtData + "file is not a multiple of " + tileSize + " bytes.");
             m_palIndexFile = File.ReadAllBytes(palIndexFileName);
             if (m_palIndexFile.Length != entries)
@@ -77,7 +70,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             FilePaletteWwCc1N64 palette = PaletteType;
             try
             {
-                palette.LoadFile(palFileName);
+                Byte[] palFileData = File.ReadAllBytes(palFileName);
+                palette.LoadFile(palFileData, palFileName);
             }
             catch(FileTypeLoadException ex)
             {
@@ -89,7 +83,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Byte[] tileIdsFile = File.ReadAllBytes(tileIDsFileNamesFileName);
             if (tileIdsFile.Length != entries * 2)
                 throw new FileTypeLoadException("Tileset load failed: amount of entries in " + ExtTileIds + "file does not match those in " + ExtData + " file.");
-            this.MakeTilesList(filename, m_dataFile, m_palIndexFile, tileIdsFile, palette);
+            this.MakeTilesList(filename, fileData, m_palIndexFile, tileIdsFile, palette);
             this.m_Palette = palette.GetColors();
             this.BuildFullImage();
             this.LoadedFile = filename;
@@ -218,6 +212,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         public Int32 PaletteIndex { get; private set; }
         public TileInfo TileInfo { get; private set; }
         public Int32 Bpp { get { return Image.GetPixelFormatSize((m_LoadedImage.PixelFormat)); } }
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
 
         public FileTileCc1N64(SupportedFileType origin, String sourceFileName, Bitmap tileImage, Byte? highByte, Byte lowByte, Int32 paletteIndex)
         {
@@ -245,7 +241,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             throw new NotSupportedException("Loading as this type is not supported.");
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
             throw new NotSupportedException("Loading as this type is not supported.");
         }

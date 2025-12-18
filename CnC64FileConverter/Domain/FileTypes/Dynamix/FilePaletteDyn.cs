@@ -27,6 +27,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return 16; } }
         public override Int32 ColorsInPalette { get { return 256; } }
 
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            LoadFile(fileData);
+            SetFileNames(filename);
+        }
+
         public override void LoadFile(Byte[] fileData)
         {
             if (fileData.Length < 0x10)
@@ -55,28 +61,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_Palette = ColorUtils.GetEightBitColorPalette(palette);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
-
-        public override void LoadFile(String filename)
-        {
-            Byte[] fileData = File.ReadAllBytes(filename);
-            this.LoadFile(fileData);
-            SetFileNames(filename);
-        }
-
-        public override Color[] GetColors()
-        {
-            return this.m_Palette.ToArray();
-        }
-
-        public override void SetColors(Color[] palette)
-        {
-            if (this.m_BackupPalette == null)
-                this.m_BackupPalette = GetColors();
-            this.m_Palette = palette;
-            // update image
-            base.SetColors(palette);
-        }
-
+        
         public override Boolean ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made
@@ -89,7 +74,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
-            if (fileToSave.BitsPerColor != 8)
+            if (fileToSave.BitsPerPixel != 8)
                 throw new NotSupportedException(String.Empty);
             Color[] palEntries = fileToSave.GetColors();
             if (palEntries == null || palEntries.Length == 0)

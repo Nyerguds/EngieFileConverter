@@ -28,7 +28,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "dat" }; } }
         public override String ShortTypeDescription { get { return "AdventureSoft icons file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get { return 4; } }
+        public override Int32 BitsPerPixel { get { return 4; } }
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
@@ -42,14 +42,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        public void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             if (fileData.Length < 0x120)
                 throw new FileTypeLoadException("Not long enough.");
@@ -78,8 +77,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Bitmap frameImage = ImageUtils.BuildImage(frame4bit, 24, 24, stride, PixelFormat.Format4bppIndexed, m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
-                frame.SetBitsPerColor(this.BitsPerColor);
+                frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(0);
+                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
             m_LoadedImage = TileImages(framesList, frames, this.m_Palette);

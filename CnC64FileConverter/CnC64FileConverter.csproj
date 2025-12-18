@@ -13,25 +13,6 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x86\Debug\</OutputPath>
@@ -82,16 +63,20 @@
     <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
     <Compile Include="Domain\FileTypes\EA\FileImgKotB.cs" />
+    <Compile Include="Domain\FileTypes\General\FileIcon.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileTblWwPal.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpCc.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwWsa.cs" />
     <Compile Include="Domain\GameData\Agos\AgosCompression.cs" />
     <Compile Include="Domain\GameData\LzwCompression.cs" />
+    <Compile Include="Domain\GameData\Mythos\MythosCompression.cs" />
     <Compile Include="Domain\GameData\RleCompression.cs" />
-    <Compile Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
+    <Content Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\GameData\Westwood\WWCompression.cs" />
-    <Compile Include="Domain\FileTypes\FileImageFrame.cs" />
-    <Compile Include="Domain\FileTypes\FileFrames.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImageFrame.cs" />
+    <Compile Include="Domain\FileTypes\General\FileFrames.cs" />
     <Compile Include="Domain\FileTypes\MVP\FileFramesKortBmp.cs" />
     <Compile Include="Domain\FileTypes\MVP\FileImgKort.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScrV2.cs" />
@@ -102,7 +87,7 @@
     <Compile Include="Domain\FileTypes\Dynamix\FileFramesDynBmp.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwCps.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwLcw.cs" />
-    <Compile Include="Domain\FileTypes\Westwood\FileMapWwRa1PC.cs" />
+    <Content Include="Domain\FileTypes\Westwood\FileMapWwRa1PC.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScr.cs" />
     <Compile Include="Domain\GameData\Westwood\HeightTerrainType.cs" />
     <Compile Include="Domain\GameData\Westwood\TerrainType.cs" />
@@ -112,6 +97,8 @@
     <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
     <Compile Include="Domain\GameData\Westwood\WestwoodRle.cs" />
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\WindowsGraphics2d.cs" />
     <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
     <Compile Include="HeightMap\HeightMapGenerator.cs" />
     <Compile Include="HeightMap\TerrainHeight.cs" />
@@ -121,39 +108,6 @@
     <Compile Include="Domain\GameData\Dynamix\DynamixLzwDecoder.cs" />
     <Compile Include="Domain\GameData\Dynamix\DynamixLzwEncoder.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorHSL.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\ColorCaches\Common\ColorModel.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.IEnumerable.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.Image.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Extensions\Extend.PixelFormat.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\ColorModelHelper.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\FastRandom.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Guard.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\ImageBuffer.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixel.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\IIndexedPixel.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\Indexed\PixelData1Indexed.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\Indexed\PixelData4Indexed.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\Indexed\PixelData8Indexed.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\INonIndexedPixel.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataArgb1555.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataArgb64.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataArgb8888.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataGray16.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb48.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb555.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb565.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb888.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\Pixels\NonIndexed\PixelDataRgb8888.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\PixelTransform.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Helpers\QuantizationHelper.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\IPathProvider.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\ReversedPathProvider.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\SerpentinePathProvider.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\PathProviders\StandardPathProvider.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\BaseColorQuantizer.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\IColorQuantizer.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\XiaolinWu\WuColorCube.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\ColorQuantizer\Quantizers\XiaolinWu\WuColorQuantizer.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorUtils.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorSixBit.cs" />
     <Compile Include="Domain\FileTypeBroadcaster.cs" />
@@ -173,7 +127,6 @@
     <Compile Include="Domain\GameData\Westwood\CnCMap.cs" />
     <Compile Include="Domain\GameData\Westwood\MapConversion.cs" />
     <Compile Include="Domain\GameData\Westwood\TileInfo.cs" />
-    <Compile Include="Domain\Utils\ImageUtils\KMeansPalettedTiles.cs" />
     <Compile Include="Domain\Utils\ImageUtils\PaletteUtils.cs" />
     <Compile Include="Domain\Utils\ImageUtils\PixelFormatter.cs" />
     <Compile Include="Domain\Utils\KMeans.cs" />

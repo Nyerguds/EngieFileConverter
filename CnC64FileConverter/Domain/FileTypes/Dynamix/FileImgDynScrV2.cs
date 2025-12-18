@@ -11,27 +11,20 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Dynamix SCR v2"; } }
         public override String ShortTypeDescription { get { return "Dynamix Screen file v2"; } }
 
-        public override void SetColors(Color[] palette)
-        {
-            m_Palette = palette.ToArray();
-            base.SetColors(palette);
-        }
-
-        public override void LoadFile(String filename)
-        {
-            Byte[] fileData = File.ReadAllBytes(filename);
-            SetFileNames(filename);
-            LoadFile(fileData, filename, true, false);
-        }
-
         public override void LoadFile(Byte[] fileData)
         {
             LoadFile(fileData, null, true, false);
         }
 
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            SetFileNames(filename);
+            LoadFile(fileData, filename, true, false);
+        }
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            return SaveToBytesAsThis(fileToSave, saveOptions, true);
+            return this.SaveToBytesAsThis(fileToSave, saveOptions, true);
         }
 
     }

@@ -23,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
         public override String ShortTypeDescription { get { return "KORT frames file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get { return 8; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return m_FramesList; } }
@@ -37,9 +37,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
@@ -83,8 +82,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Bitmap frameImage = ImageUtils.BuildImage(flippedData, frWidth, frHeight, ImageUtils.GetMinimumStride(frWidth, 8), PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
-                frame.SetBitsPerColor(this.BitsPerColor);
+                frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(0);
+                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
                 offset += dataSize;
             }
@@ -105,7 +105,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 if (frame == null)
                     throw new NotSupportedException("KORT BMP can't handle empty frames!");
-                if (frame.BitsPerColor != 8)
+                if (frame.BitsPerPixel != 8)
                     throw new NotSupportedException("Not all frames in input type are 8-bit images!");
             }
             Int32 frames = fileToSave.Frames.Length;

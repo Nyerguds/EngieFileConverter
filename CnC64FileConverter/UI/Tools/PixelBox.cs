@@ -1,10 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace RedCell.UI.Controls
+namespace Nyerguds.Util.UI
 {
     /// <summary>
     /// A PictureBox with configurable interpolation mode.
@@ -19,21 +18,6 @@ namespace RedCell.UI.Controls
         {
             // Set default.
             InterpolationMode = InterpolationMode.NearestNeighbor;
-        }
-
-        void PixelBox_Paint(object sender, PaintEventArgs e)
-        {
-
-            /*/
-            using (Brush brush = new SolidBrush(this.BackColor))
-            {
-                switch 
-                Double scaleFactor = Math.Min(this.Width / this.Image.Width, this.Height / this.Image.Height);
-
-                e.Graphics.DrawRectangle(
-            }
-            //e.Graphics.DrawImage(BMP, New Rectangle(0, 0, BMP.Width * PScale, BMP.Height * PScale), New Rectangle(0, 0, BMP.Width, BMP.Height), GraphicsUnit.Pixel)
-            //*/
         }
         #endregion
 
@@ -55,8 +39,11 @@ namespace RedCell.UI.Controls
         protected override void OnPaint (PaintEventArgs pe)
         {
             pe.Graphics.InterpolationMode = InterpolationMode;
-            // docs on this are wrong; putting it to Half makes it not shift the whole thing up and to the left by half a (zoomed) pixel.
-            pe.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+            // docs on this are wrong; if the interpolation mode is NearestNeighbor, putting it on
+            // Half makes it NOT shift the whole thing up and to the left by half a (zoomed) pixel.
+            // I'm frankly baffled they didn't just make this an automatic part of the interpolation modes.
+            if (InterpolationMode == InterpolationMode.NearestNeighbor)
+                pe.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
             base.OnPaint(pe);
         }
         #endregion

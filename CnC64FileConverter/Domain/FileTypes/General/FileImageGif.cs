@@ -10,23 +10,13 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImageGif : FileImage
     {
-        public override FileClass InputFileClass { get { return FileClass.ImagePaletted; } }
+        public override FileClass InputFileClass { get { return FileClass.ImageIndexed; } }
         public override String ShortTypeName { get { return "GIF"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription
-        {
-            get { return "CompuServe GIF image"; }
-        }
+        public override String ShortTypeDescription { get { return "CompuServe GIF image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions
-        {
-            get { return new String[] { "gif" }; }
-        }
-
-        protected override void CheckSpecificFileType(String filename)
-        {
-            this.CheckSpecificFileType(filename, "gif");
-        }
+        public override String[] FileExtensions { get { return new String[] { "gif" }; } }
+        protected override String MimeType { get { return "gif"; } }
 
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
@@ -58,13 +48,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.LoadedFileName = filename;
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] data = File.ReadAllBytes(filename);
             this.LoadedFileName = Path.GetFileName(filename);
             String partName = Path.GetFileNameWithoutExtension(filename);
             String ext = Path.GetExtension(filename);
-            using (MemoryStream ms = new MemoryStream(data))
+            using (MemoryStream ms = new MemoryStream(fileData))
             using (Bitmap loadedImage = new Bitmap(ms))
             {
                 m_Palette = loadedImage.Palette.Entries;

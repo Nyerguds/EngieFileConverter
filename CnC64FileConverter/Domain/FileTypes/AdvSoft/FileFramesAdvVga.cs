@@ -26,7 +26,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "vga" }; } }
         public override String ShortTypeDescription { get { return "AdventureSoft VGA file"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get { return 4; } }
+        public override Int32 BitsPerPixel { get { return 4; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
@@ -43,16 +43,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                 new SaveOption("NOCMP", SaveOptionType.Boolean, "Don't use compression", null)
             };
         }
-        //public FileFramesElv() { }
 
         public override void LoadFile(Byte[] fileData)
         {
             LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData, filename);
             SetFileNames(filename);
         }
@@ -140,6 +138,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
                 frame.SetColorsInPalette(0);
                 frame.SetBitsPerColor(4);
+                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
         }
@@ -174,7 +173,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     compressed[i] = false;
                     offsets[i] = 0;
                 }
-                else if (frame.BitsPerColor != 4)
+                else if (frame.BitsPerPixel != 4)
                     throw new NotSupportedException("AdventureSoft VGA frames need to be 4 BPP images!");
                 else
                 {

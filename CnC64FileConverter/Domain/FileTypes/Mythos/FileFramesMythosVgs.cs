@@ -7,26 +7,33 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Nyerguds.GameData.Mythos;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileFramesMythosVgs: SupportedFileType
     {
-        public const String PAL_IDENTIFIER = "VGA palette";
+        public const Byte TransparentIndex = 0xFF;
+        protected const String PAL_IDENTIFIER = "VGA palette";
+        protected const String X_OFFSET = "X-offset: ";
+        protected const String Y_OFFSET = "Y-offset: ";
+        protected const String COMPRESSION = "Compression: ";
+
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
-
 
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Mythos VGS"; } }
-        public override String[] FileExtensions { get { return new String[] { "vgs" }; } }
-        public override String ShortTypeDescription { get { return "Mythos frames file"; } }
+        public override String ShortTypeName { get { return "Mythos Visage"; } }
+        public override String[] FileExtensions { get { return new String[] { "vgs", "lbv" }; } }
+        public override String ShortTypeDescription { get { return "Mythos Visage frames file"; } }
         public override Int32 ColorsInPalette { get { return m_PaletteSet? this.m_Palette.Length : 0; } }
-        public override Int32 BitsPerColor { get { return 8; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
+        protected Int32 CompressionType { get; set; }
+        protected String[] compressionTypes = new String[] { "No compression", "Flag-based RLE", "Collapsed transparency" };
         protected List<SupportedFileType> m_FramesList = new List<SupportedFileType>();
         protected Boolean m_PaletteSet = false;
 
@@ -36,26 +43,18 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
+        public override Boolean[] TransparencyMask { get { return CreateTransparencyMask(); } }
+        
+        // template.
+        public override SaveOption[] GetPostLoadInitOptions()
         {
-            return new SaveOption[]
-            {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file", "0"),
-                //new SaveOption("CMP", SaveOptionType.Boolean, "Use compression", "0"),
-                new SaveOption("OPX", SaveOptionType.Boolean, "Optimize empty horizontal space to X-offsets", "0"),
-                new SaveOption("OPY", SaveOptionType.Boolean, "Optimize empty vertical space to Y-offsets", "0"),
-                new SaveOption("BG", SaveOptionType.Number, "Background color to cut for optimisations","0,255", "255")
-            };
+            return base.GetPostLoadInitOptions();
         }
 
-        public override void SetColors(Color[] palette, SupportedFileType updateSource)
+        public override void PostLoadInit(SaveOption[] loadOptions)
         {
-            Color[] palette2 = new Color[256];
-            Array.Copy(palette, palette2, Math.Min(256, palette.Length));
-            for (Int32 i = palette.Length; i < 256; i++)
-                palette2[i] = Color.Empty;
-            palette2[255] = Color.FromArgb(0, palette[255]);
-            base.SetColors(palette2, updateSource);
+
         }
 
         public override void LoadFile(Byte[] fileData)
@@ -63,28 +62,28 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
-            LoadFromFileData(fileData, filename);
             SetFileNames(filename);
+            LoadFromFileData(fileData, filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        public void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
             // 01 00 06 00 00 00 00 01
             // W-1   H-1      CM X? Y
             if (fileData.Length < 0x8)
                 throw new FileTypeLoadException("Not long enough for header.");
             Int32 offset = 0;
-            m_FramesList.Clear();
-            m_PaletteSet = false;
-            m_Palette = null;
+            this.m_FramesList.Clear();
+            this.m_PaletteSet = false;
+            this.m_Palette = null;
+            this.CompressionType = -1;
             // Read data
             while (offset < fileData.Length)
             {
-                Int32 frameWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 0, 2, true) + 1;
-                Int32 frameHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true) + 1;
+                Int32 frameWidth = (Int16) ArrayUtils.ReadIntFromByteArray(fileData, offset + 0, 2, true) + 1;
+                Int32 frameHeight = (Int16) ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true) + 1;
                 if ((frameWidth < 0 || frameHeight < 0) || (!(frameWidth == 0 && frameHeight == 0) && (frameWidth == 0 || frameHeight == 0)))
                     throw new FileTypeLoadException("Bad header data.");
                 Int32 skipLen;
@@ -99,10 +98,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     if (comprByte != 1)
                         throw new FileTypeLoadException("Unknown compression type: " + comprByte);
-                    skipLen = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true) - 8;
-                    if (skipLen < 0)
-                        throw new FileTypeLoadException("Invalid compressed size.");
-
+                    skipLen = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true) - 8;
                 }
                 else
                 {
@@ -110,112 +106,167 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 if (fileData.Length < offset + skipLen)
                     throw new FileTypeLoadException("header references offset outside file data.");
-
+                Int32 frameCompression = 0;
                 if (compressed)
                 {
-                    // Is compressed. Doesn't actually work...
-
-                    Byte[] compressedData = new Byte[skipLen - 2];
-                    Array.Copy(fileData, offset + 2, compressedData, 0, compressedData.Length);
+                    UInt32 endOffset = (UInt32)(offset + skipLen);
                     try
                     {
-                        // Nothing seems to work so far.
-                        //LzwCompression lzw = new LzwCompression(LzwSize.Size14Bit);
-                        //imageData = lzw.Decompress(compressedData, 0, dataLen);
-                        //DynamixCompression.RleDecode(compressedData, null, null, dataLen);
-                        
-                        // Just clear it with transparent colour for now...
-                        for (int i = 0; i < imageData.Length; i++)
-                            imageData[i] = 0xFF;
+                        MythosCompression mc = new MythosCompression();
+                        imageData = mc.FlagRleDecode(fileData, (UInt32)offset, endOffset, dataLen, true);
+                        if (imageData != null)
+                        {
+                            frameCompression = 1;
+                            if (this.CompressionType == -1)
+                                CompressionType = 1;
+                        }
+                        else
+                        {
+                            imageData = mc.CollapsedTransparencyDecode(fileData, (UInt32)offset, endOffset, dataLen, frameWidth, TransparentIndex, true);
+                            if (imageData != null)
+                            {
+                                frameCompression = 2;
+                                if (this.CompressionType == -1)
+                                    CompressionType = 2;
+                            }
+                        }
                     }
                     catch (Exception e)
                     {
                         throw new FileTypeLoadException("Cannot decompress VGS file!", e);
                     }
-                    /*/
-                    // Draw a nice little "Nope" box instead:
-                    Byte[] imageData2 = new Byte[dataLen];
-                    for (int i = 0; i < imageData2.Length; i++)
-                        imageData2[i] = 0xFF;
-                    Byte drawColor = 0x00;
-                    Int32 crossDim = Math.Min(frameHeight, frameWidth);
-                    Int32 skipW = (frameWidth - crossDim) / 2;
-                    Int32 skipH = (frameHeight - crossDim) / 2;
-                    for (Int32 y = 0; y < frameHeight; y++)
-                    {
-                        for (Int32 x = 0; x < frameWidth; x++)
-                            if (
-                                (x - skipW == y - skipH) || // diagonal '\'
-                                (crossDim - x + skipW - 1 == y - skipH) || // diagonal '/'
-                                (x == 0) || // line left
-                                (y == 0) || // line top
-                                (x == frameWidth - 1) || // line right
-                                (y == frameHeight - 1) // line bottom
-                                )
-                                imageData2[y * frameWidth + x] = drawColor;
-                    }
-                    imageData = imageData2;
-                    //*/
+                    if (imageData == null)
+                        throw new FileTypeLoadException("Cannot decompress VGS file!");
                 }
                 else
                 {
                     Array.Copy(fileData, offset, imageData, 0, dataLen);
-                    // Detect palette on first frame
-                    if (!this.m_PaletteSet && this.m_FramesList.Count == 0 && (imageData.Length == PAL_IDENTIFIER.Length + 0x301))
+                }
+                // Detect palette on first frame
+                if (!this.m_PaletteSet && this.m_FramesList.Count == 0 && (imageData.Length == PAL_IDENTIFIER.Length + 0x301))
+                {
+                    Byte[] compare = new Byte[PAL_IDENTIFIER.Length];
+                    Array.Copy(fileData, offset, compare, 0, PAL_IDENTIFIER.Length);
+                    // "VGA palette" followed by byte 0x1A identifies as palette.
+                    if (compare.SequenceEqual(Encoding.ASCII.GetBytes(PAL_IDENTIFIER)) && imageData[PAL_IDENTIFIER.Length] == 0x1A)
                     {
-                        Byte[] compare = new Byte[PAL_IDENTIFIER.Length];
-                        Array.Copy(fileData, offset, compare, 0, PAL_IDENTIFIER.Length);
-                        // "VGA palette" followed by byte 0x1A identifies as palette.
-                        if (compare.SequenceEqual(Encoding.ASCII.GetBytes(PAL_IDENTIFIER)) && imageData[PAL_IDENTIFIER.Length] == 0x1A)
-                        {
-                            // Palette found! Extract palette and skip frame so it doesn't get added to the list.
-                            Byte[] paletteData = new Byte[0x300];
-                            Array.Copy(imageData, PAL_IDENTIFIER.Length + 1, paletteData, 0, 0x300);
-                            this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(paletteData));
-                            this.m_PaletteSet = true;
-                            offset += skipLen;
-                            continue;
-                        }
-                    }
-                    if (xOffset > 0 || yOffset > 0)
-                    {
-                        Int32 newWidth = frameWidth + xOffset;
-                        Int32 newHeight = frameHeight + yOffset;
-                        Byte[] adjustedData = new Byte[newWidth * newHeight];
-                        for (Int32 i = 0; i < adjustedData.Length; i++)
-                            adjustedData[i] = 0xFF;
-                        // Last color is seen as transparent on these images.
-                        Color[] transparencyGuide = Enumerable.Repeat(Color.White, 256).ToArray();
-                        transparencyGuide[255] = Color.Transparent;
-                        ImageUtils.PasteOn8bpp(adjustedData, newWidth, newHeight, newWidth,
-                            imageData, frameWidth, frameHeight, frameWidth,
-                            new Rectangle(xOffset, yOffset, frameWidth, frameHeight), transparencyGuide, true);
-                        imageData = adjustedData;
-                        frameWidth = newWidth;
-                        frameHeight = newHeight;
+                        // Palette found! Extract palette and skip frame so it doesn't get added to the list.
+                        Byte[] paletteData = new Byte[0x300];
+                        Array.Copy(imageData, PAL_IDENTIFIER.Length + 1, paletteData, 0, 0x300);
+                        this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(paletteData));
+                        PaletteUtils.ApplyTransparencyGuide(m_Palette, this.TransparencyMask);
+                        this.m_PaletteSet = true;
+                        this.ExtraInfo = (this.ExtraInfo ?? String.Empty) + "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame";
+                        offset += skipLen;
+                        continue;
                     }
                 }
+                if (xOffset > 0 || yOffset > 0)
+                {
+                    Int32 newWidth = frameWidth + xOffset;
+                    Int32 newHeight = frameHeight + yOffset;
+                    Byte[] adjustedData = new Byte[newWidth * newHeight];
+                    for (Int32 i = 0; i < adjustedData.Length; i++)
+                        adjustedData[i] = TransparentIndex;
+                    // Last color is seen as transparent on these images.
+                    Color[] transparencyGuide = Enumerable.Repeat(Color.White, 256).ToArray();
+                    transparencyGuide[255] = Color.Transparent;
+                    ImageUtils.PasteOn8bpp(adjustedData, newWidth, newHeight, newWidth,
+                        imageData, frameWidth, frameHeight, frameWidth,
+                        new Rectangle(xOffset, yOffset, frameWidth, frameHeight), transparencyGuide, true);
+                    imageData = adjustedData;
+                    frameWidth = newWidth;
+                    frameHeight = newHeight;
+                }
                 if (this.m_Palette == null)
-                    this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
+                {
+                    if (sourcePath != null)
+                    {
+                        String output = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath));
+                        String palName = output + ".PAL";
+                        if (File.Exists(palName))
+                        {
+                            try
+                            {
+                                FilePaletteWwPc palFile = new FilePaletteWwPc();
+                                Byte[] palData = File.ReadAllBytes(palName);
+                                palFile.LoadFile(palData, palName);
+                                this.m_Palette = palFile.GetColors();
+                                PaletteUtils.ApplyTransparencyGuide(m_Palette, this.TransparencyMask);
+                                this.m_PaletteSet = true;
+                                this.ExtraInfo = (this.ExtraInfo ?? String.Empty) + "Palette loaded from \"" + Path.GetFileName(palName) + "\"";
+                                this.LoadedFileName += "/PAL";
+                            }
+                            catch
+                            {
+                                /* ignore */
+                            }
+                        }
+                    }
+                    if (this.m_Palette == null)
+                    {
+                        this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
+                        PaletteUtils.ApplyTransparencyGuide(m_Palette, this.TransparencyMask);
+                    }
+                }
                 Bitmap curImage = ImageUtils.BuildImage(imageData, frameWidth, frameHeight, frameWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
-                FileImageFrameMythosVgs frame = new FileImageFrameMythosVgs();
+                FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this.ShortTypeName, curImage, sourcePath, this.m_FramesList.Count);
                 frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
-                frame.SetColors(this.m_Palette);
+                frame.SetTransparencyMask(this.TransparencyMask);
+                frame.SetColors(this.m_Palette, this);
                 String extraInfo = String.Empty;
                 if (xOffset > 0)
-                    extraInfo += "X-offset: " + xOffset + "\n";
-                if(yOffset > 0)
-                    extraInfo += "Y-offset: " + yOffset + "\n";
-                if(compressed)
-                    extraInfo += "Compressed (Unsupported)\n";
-
+                    extraInfo += X_OFFSET + xOffset + "\n";
+                if (yOffset > 0)
+                    extraInfo += Y_OFFSET + yOffset + "\n";
+                extraInfo += COMPRESSION + compressionTypes[frameCompression];
                 frame.SetExtraInfo(extraInfo.TrimEnd('\n'));
                 this.m_FramesList.Add(frame);
                 offset += skipLen;
             }
+            if (this.CompressionType == -1)
+                this.CompressionType = 0;
+
             if (offset != fileData.Length)
                 throw new FileTypeLoadException("Image load failed.");
+        }
+        
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            Int32 compression = 0;
+            Boolean hasXOpt = false;
+            Boolean hasYOpt = false;
+            FileFramesMythosVgs fileVgs = fileToSave as FileFramesMythosVgs;
+            if (fileVgs != null)
+            {
+                compression = fileVgs.CompressionType;
+                foreach (SupportedFileType frame in fileVgs.Frames)
+                {
+                    String[] extraInfo = frame.ExtraInfo.Split(new Char[] {'\n', '\r'}, StringSplitOptions.RemoveEmptyEntries);
+                    // Kind of dirty but whatev.
+                    foreach (String info in extraInfo)
+                    {
+                        if (info.StartsWith(X_OFFSET))
+                            hasXOpt = true;
+                        else if (info.StartsWith(Y_OFFSET))
+                            hasYOpt = true;
+                        if (hasXOpt && hasYOpt)
+                            break;
+                    }
+                    if (hasXOpt && hasYOpt)
+                        break;
+                }
+            }
+            if (compression < 0 || compression > compressionTypes.Length)
+                compression = 0;
+            return new SaveOption[]
+            {
+                new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file as first frame", "0"),
+                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", compressionTypes), compression.ToString()),
+                new SaveOption("OPX", SaveOptionType.Boolean, "Optimize empty horizontal space to X-offsets", hasXOpt ? "1" : "0"),
+                new SaveOption("OPY", SaveOptionType.Boolean, "Optimize empty vertical space to Y-offsets", hasYOpt ? "1" : "0"),
+            };
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
@@ -229,12 +280,13 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileToSave.Frames.Length == 0)
                 throw new NotSupportedException("No frames found in source data!");
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
-            Boolean compress = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CMP"));
             Boolean optimiseX = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPX"));
             Boolean optimiseY = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPY"));
-            Int32 bgCol;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BG"), out bgCol);
-            bgCol = Math.Max(0, Math.Min(255, bgCol));
+            Int32 compressionType;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            if (compressionType < 0 || compressionType > 2)
+                compressionType = 0;
+
             Color[] palette = null;
             // Check all frames, and fetch the palette if needed.
             foreach (SupportedFileType frame in fileToSave.Frames)
@@ -252,6 +304,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (asPaletted)
                 actualLen++;
             Byte[][] frameData = new Byte[actualLen][];
+            Boolean[] compressed = new Boolean[actualLen];
             Int32[] widths = new Int32[actualLen];
             Int32[] heighths = new Int32[actualLen];
             Byte[] xOffsets = new Byte[actualLen];
@@ -268,6 +321,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Byte[] colorBytes = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(palette));
                 Array.Copy(colorBytes, 0, frameBytes, PAL_IDENTIFIER.Length + 1, colorBytes.Length);
                 frameData[0] = frameBytes;
+                compressed[0] = false;
                 widths[0] = 390;
                 heighths[0] = 2;
                 xOffsets[0] = 0;
@@ -286,16 +340,21 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 yOffset = 0;
                 widths[i] = frame.Width;
                 heighths[i] = frame.Height;
-                // TODO Optimise X and Y offset here
                 if (optimiseX)
-                    frameBytes = ImageUtils.OptimizeXWidth(frameBytes, ref width, height, ref xOffset, true, bgCol, 0xFF, true);
+                    frameBytes = ImageUtils.OptimizeXWidth(frameBytes, ref width, height, ref xOffset, true, TransparentIndex, 0xFF, true);
                 if (optimiseY)
-                    frameBytes = ImageUtils.OptimizeYHeight(frameBytes, width, ref height, ref yOffset, true, bgCol, 0xFF, true);
-                if (compress)
+                    frameBytes = ImageUtils.OptimizeYHeight(frameBytes, width, ref height, ref yOffset, true, TransparentIndex, 0xFF, true);
+                Byte[] compressedBytes = null;
+                if (compressionType > 0)
                 {
-                    // TODO figure out compression
+                    MythosCompression mc = new MythosCompression();
+                    if (compressionType == 1)
+                        compressedBytes = mc.FlagRleEncode(frameBytes, 0xFE, width, 8);
+                    else if (compressionType == 2)
+                        compressedBytes = mc.CollapsedTransparencyEncode(frameBytes, TransparentIndex, width, 8);
                 }
-                frameData[i] = frameBytes;
+                frameData[i] = compressedBytes ?? frameBytes;
+                compressed[i] = compressedBytes != null;
                 widths[i] = width;
                 heighths[i] = height;
                 xOffsets[i] = (Byte)xOffset;
@@ -307,6 +366,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 ArrayUtils.WriteIntToByteArray(finalData, offset + 0, 2, true, (UInt32)(widths[i] - 1));
                 ArrayUtils.WriteIntToByteArray(finalData, offset + 2, 2, true, (UInt32)(heighths[i]-1));
+                //finalData[offset + 4] = 0x00;
+                finalData[offset + 5] = (Byte)(compressed[i] ? 1 : 0);
                 finalData[offset + 6] = xOffsets[i];
                 finalData[offset + 7] = yOffsets[i];
                 offset += 8;
@@ -316,19 +377,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             return finalData;
         }
-    }
 
-    public class FileImageFrameMythosVgs: FileImageFrame
-    {
-
-        public override void SetColors(Color[] palette, SupportedFileType updateSource)
+        internal static Boolean[] CreateTransparencyMask()
         {
-            Color[] palette2 = new Color[256];
-            Array.Copy(palette, palette2, Math.Min(256, palette.Length));
-            for (Int32 i = palette.Length; i < 256; i++)
-                palette2[i] = Color.Empty;
-            palette2[255] = Color.FromArgb(0, palette[255]);
-            base.SetColors(palette2, updateSource, false);
+            Boolean[] mask = new Boolean[0x100];
+            mask[TransparentIndex] = true;
+            return mask;
         }
     }
 }

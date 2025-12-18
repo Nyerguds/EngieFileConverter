@@ -9,19 +9,16 @@ namespace Nyerguds.ImageManipulation
 {
     public static class PaletteUtils
     {
-
-        public static PixelFormat GetPalettedFormat(Int32 bitsPerPixel)
+        public static Boolean[] MakeTransparencyGuide(Int32 bpp, Int32[] transparentIndices)
         {
-            switch (bitsPerPixel)
+            Int32 palLen = bpp > 8 ? 0 : 1 << bpp;
+            Boolean[] tranGuide = new Boolean[palLen];
+            foreach (Int32 b in transparentIndices)
             {
-                case 1:
-                    return PixelFormat.Format1bppIndexed;
-                case 4:
-                    return PixelFormat.Format4bppIndexed;
-                case 8:
-                    return PixelFormat.Format8bppIndexed;
+                if (b < tranGuide.Length)
+                    tranGuide[b] = true;
             }
-            throw new NotSupportedException("No indexed PixelFormat available for " + bitsPerPixel + " bpp.");
+            return tranGuide;
         }
 
         public static Boolean[] MakeTransparencyGuide(Int32 bpp, Int32 transparentColor)

@@ -50,7 +50,7 @@ namespace CnC64FileConverter
             {
                 if (readPaletteFile)
                 {
-                    paletteFile = GeneralUtils.GetAbsolutePath(args[i], null);
+                    paletteFile = GeneralUtils.GetAbsolutePath(args[i]);
                     readPaletteFile = false;
                     continue;
                 }
@@ -80,8 +80,8 @@ namespace CnC64FileConverter
             }
             String input = args[i];
             String output = args[i+1];
-            String inputFull = GeneralUtils.GetAbsolutePath(input, null);
-            String outputFull = GeneralUtils.GetAbsolutePath(output, null);
+            String inputFull = GeneralUtils.GetAbsolutePath(input);
+            String outputFull = GeneralUtils.GetAbsolutePath(output);
             String feedback = String.Format("Converting file \"{0}\" to \"{1}\"... ", Path.GetFileName(inputFull), Path.GetFileName(outputFull));
             if (showFeedback)
                 Console.Write(feedback);
@@ -246,10 +246,10 @@ namespace CnC64FileConverter
                     SupportedFileType[] possibleTypesTile = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, file.Name);
                     List<FileTypeLoadException> loadErrors;
                     SupportedFileType tileFile = SupportedFileType.LoadFileAutodetect(file.FullName, possibleTypesTile, out loadErrors, false);
-                    if (tileFile == null || tileFile.BitsPerColor == 0 || tileFile.Width % 24 != 0 || tileFile.Height % 24 != 0)
+                    if (tileFile == null || tileFile.BitsPerPixel == 0 || tileFile.Width % 24 != 0 || tileFile.Height % 24 != 0)
                         continue;
                     readFiles[id] = tileFile;
-                    if (tileFile.ColorsInPalette > 0 && tileFile.BitsPerColor == 8)
+                    if (tileFile.ColorsInPalette > 0 && tileFile.BitsPerPixel == 8)
                         needsPal[id] = 0;
                     else
                     {

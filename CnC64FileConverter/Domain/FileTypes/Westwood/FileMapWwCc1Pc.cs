@@ -60,8 +60,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color.FromArgb(0xC8, 0xC8, 0xC8), //Snow = 9
         };
 
-        public override FileClass FileClass { get { return FileClass.CCMap; } }
-        public override FileClass InputFileClass { get { return FileClass.CCMap; } }
+        public override FileClass FileClass { get { return FileClass.CcMap; } }
+        public override FileClass InputFileClass { get { return FileClass.CcMap; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -71,12 +71,12 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 64; } }
         public override Int32 Height { get { return 64; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get { return 0; } }
+        public override Int32 BitsPerPixel { get { return 0; } }
 
         public Byte[] PCMapData { get; protected set; }
         public Byte[] N64MapData { get; protected set; }
 
-        public CnCMap Map { get { return new CnCMap(PCMapData);} }
+        public CnCMap Map { get { return new CnCMap(this.PCMapData);} }
 
 
         public FileMapWwCc1Pc() { }
@@ -85,14 +85,20 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             this.PCMapData = fileData;
             Theater theater = (Theater)0xFF;
-            N64MapData = IdentifyTheaterAndConvert(fileData, ref theater, true, null);
-            m_LoadedImage = ReadMapAsImage(fileData, theater);
+            this.N64MapData = this.IdentifyTheaterAndConvert(fileData, ref theater, true, null);
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, theater);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            m_LoadedImage = ReadMapAsImage(filename, (Theater)0xFF);
-            SetFileNames(filename);
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, filename, (Theater)0xFF, null);
+            this.SetFileNames(filename);
+        }
+
+        public void LoadFile(Byte[] fileData, String filename, Byte[] iniContents)
+        {
+            this.m_LoadedImage = this.ReadMapAsImage(fileData, filename, (Theater)0xFF, iniContents);
+            this.SetFileNames(filename);
         }
 
         public override Color[] GetColors()
@@ -102,30 +108,41 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave is FileMapWwCc1Pc)
+            FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
+            if (mapPc == null)
                 throw new NotSupportedException(String.Empty);
-            return ((FileMapWwCc1Pc)fileToSave).PCMapData;
+            return mapPc.PCMapData;
         }
 
-        protected Bitmap ReadMapAsImage(String filename, Theater theater)
+        protected Bitmap ReadMapAsImage(Byte[] fileData, String filename, Theater theater, Byte[] iniContents)
         {
-            theater = GetTheaterFromIni(filename, theater);
-            PCMapData = File.ReadAllBytes(filename);
-            if (PCMapData.Length != 8192)
+            theater = this.GetTheaterFromIni(filename, theater, iniContents);
+            this.PCMapData = fileData;
+            if (this.PCMapData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
-            N64MapData = IdentifyTheaterAndConvert(PCMapData, ref theater, false, filename);
-            return ReadMapAsImage(PCMapData, theater);
+            this.N64MapData = this.IdentifyTheaterAndConvert(this.PCMapData, ref theater, false, filename);
+            return this.ReadMapAsImage(this.PCMapData, theater);
         }
 
-        protected Theater GetTheaterFromIni(String filename, Theater defaultTheater)
+        protected Theater GetTheaterFromIni(String filename, Theater defaultTheater, Byte[] iniData)
         {
             Theater theater = defaultTheater;
             try
             {
                 String inipath = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".ini";
-                if (File.Exists(inipath))
+                IniFile inifile = null;
+                if (iniData != null)
                 {
-                    IniFile inifile = new IniFile(inipath);
+                    String iniStr = IniFile.ENCODING_DOS_US.GetString(iniData);
+                    inifile = new IniFile(inipath, iniStr, IniFile.ENCODING_DOS_US);
+                    
+                }
+                else if (File.Exists(inipath))
+                {
+                    inifile = new IniFile(inipath, IniFile.ENCODING_DOS_US);
+                }
+                if (inifile != null)
+                {
                     String th = inifile.GetStringValue("Map", "Theater", null);
                     theater = GeneralUtils.TryParseEnum(th, Theater.Desert, true);
                 }
@@ -197,7 +214,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (mapping != null)
                 {
                     List<CnCMapCell> errorcells;
-                    fileData = ConvertMap(fileData, mapping, toPC, out errorcells);
+                    fileData = this.ConvertMap(fileData, mapping, toPC, out errorcells);
                 }
                 else
                     theater = (Theater)0xFF;
@@ -205,9 +222,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (theater == (Theater)0xFF)
             {
                 List<CnCMapCell> errorcellsTemperate;
-                Byte[] dataTemperate = ConvertMap(fileData, mappingTem, toPC, out errorcellsTemperate);
+                Byte[] dataTemperate = this.ConvertMap(fileData, mappingTem, toPC, out errorcellsTemperate);
                 List<CnCMapCell> errorcellsDesert;
-                Byte[] dataDesert = ConvertMap(fileData, mappingDes, toPC, out errorcellsDesert);
+                Byte[] dataDesert = this.ConvertMap(fileData, mappingDes, toPC, out errorcellsDesert);
                 // Technically maps have more chance of being desert when they're Nod maps, so if the number of errors
                 // is the same on each, and a filename is given, check the SC[G/B]##EA format of the filename.
                 if (errorcellsTemperate.Count > errorcellsDesert.Count
@@ -241,7 +258,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C Map ini"; } }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
             String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".bin";
             if (!File.Exists(mapFilename))
@@ -250,7 +267,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".bin");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            base.LoadFile(mapFilename);
+            Byte[] mapFileData = File.ReadAllBytes(mapFilename);
+            base.LoadFile(mapFileData, mapFilename, fileData);
         }
 
     }

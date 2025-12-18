@@ -12,7 +12,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteWwPc : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
-        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -45,25 +46,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             this.LoadFile(fileData);
             SetFileNames(filename);
-        }
-
-        public override Color[] GetColors()
-        {
-            return this.m_Palette.ToArray();
-        }
-
-        public override void SetColors(Color[] palette)
-        {
-            if (this.m_BackupPalette == null)
-                this.m_BackupPalette = GetColors();
-            this.m_Palette = palette;
-            // update image
-            base.SetColors(palette);
         }
 
         public override Boolean ColorsChanged()
@@ -76,22 +62,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
-            if (fileToSave.BitsPerColor != 8)
-                throw new NotSupportedException(String.Empty);
-            Color[] palEntries = fileToSave.GetColors();
-            if (palEntries == null || palEntries.Length == 0)
-                throw new NotSupportedException(String.Empty);
-            Color[] cols = new Color[256];
-            for (Int32 i = 0; i < cols.Length; i++)
-            {
-                if (i < palEntries.Length)
-                    cols[i] = palEntries[i];
-                else
-                    cols[i] = Color.Black;
-            }
-            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(palEntries);
+            Color[] cols = this.CheckInputForColors(fileToSave, true);
+            ColorSixBit[] sbcp = ColorUtils.GetSixBitColorPalette(cols);
             return ColorUtils.GetSixBitPaletteData(sbcp);
         }
 

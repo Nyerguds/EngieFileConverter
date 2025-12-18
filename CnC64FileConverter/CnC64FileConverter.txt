@@ -48,6 +48,10 @@ http://www.2good.nu/projekt/korted
 The code of ScummVM helped a lot to figure out the compression on the Elvira VGA format.
 https://www.scummvm.org/
 
+The Mythos Visage format's RLE compression formats were figured out by user Ceiwad of the
+shikadi.net modding wiki, who posted his findings here:
+http://www.shikadi.net/moddingwiki/Visage_Format
+
 
 Version history:
 ---------------
@@ -57,10 +61,19 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.9: (06/06/2018 14:40)
+-Added Westwood palette stretch tables as new supported type.
+-When zooming in, the image panel will stay centered on one point.
+-Unloaded images are now properly cleaned up and removed from memory.
+-Upgraded the general pixel format converter used for N64 16-bit images.
+-Changed name of "Mythos VGS format" to "Mythos Visage format".
+-Fixed bug that removed transparency from the last frame in Mythos Visage format.
+-Implemented full compression loading and saving support for Mythos Visage format.
+
 v1.2.8: (25/01/2018 18:50)
 -Added vertical image scrolling with shift + scrollwheel.
--Image types that can natevely be opened by the .Net framework bu are not specifically supported
- (like .tif) will now open as general type "Image".
+-Image types that can natively be opened by the .Net framework but are not specifically
+ supported in the editor (like .tif) will now open as general type "Image".
 -The disabled palette dropdown will now correctly display the reason why it is disabled.
 -When loading a file, the zoom factor will automatically adjust to the loaded image.
 

@@ -15,7 +15,6 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override FileClass FileClass { get { return FileClass.ImageHiCol; } }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
-        private static PixelFormatter SixteenBppFormatter = new PixelFormatter(2, 5, 10, 5, 5, 5, 0, 0, 0, true);
         public override Int32 Width { get { return hdrWidth; } }
         public override Int32 Height { get { return hdrHeight; } }
         protected const Int32 DATAOFFSET = 11;
@@ -28,7 +27,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
         public override String ShortTypeDescription { get { return "Westwood LCW image (Blade Runner)"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
-        public override Int32 BitsPerColor { get{ return 16; } }
+        public override Int32 BitsPerPixel { get{ return 16; } }
 
         public FileImgWwLcw() { }
 
@@ -37,9 +36,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             LoadFromFileData(fileData);
             SetFileNames(filename);
         }
@@ -68,18 +66,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Error loading header data: " + e.Message);
             }
-            if (!this.hdrId.SequenceEqual(Encoding.ASCII.GetBytes("LCW")))
+            if (!Encoding.ASCII.GetBytes("LCW").SequenceEqual(this.hdrId))
                 throw new FileTypeLoadException("File does not start with signature \"LCW\".");
-            Image.FromFile("file..path");
             // WARNING! The hi-colour format is 16 BPP, but the image data is converted to 32 bpp for creating the actual image!
-            Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor);
-            Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerColor) * this.Height;
+            Int32 stride = ImageUtils.GetMinimumStride(this.Width, this.BitsPerPixel);
+            Int32 imageDataSize = ImageUtils.GetMinimumStride(this.Width, this.BitsPerPixel) * this.Height;
             Byte[] imageData = new Byte[imageDataSize];
             try
             {
                 Int32 offset = DATAOFFSET;
                 WWCompression.LcwUncompress(fileData, ref offset, imageData);
-                imageData = Convert16bTo32b(imageData, 0, this.Width, this.hdrHeight, ref stride);
             }
             catch (Exception e)
             {
@@ -87,8 +83,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             try
             {
-                //Int32 stride = ImageUtils.GetMinimumStride(this.Width, Image.GetPixelFormatSize(pf));
-                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, PixelFormat.Format32bppArgb, null, Color.Black);
+                this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, stride, PixelFormat.Format16bppRgb555, null, Color.Black);
             }
             catch (IndexOutOfRangeException)
             {
@@ -98,57 +93,22 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected Byte[] SaveImg(Bitmap image)
         {
-            if (image.PixelFormat != PixelFormat.Format32bppArgb)
-                image = ImageUtils.PaintOn32bpp(image, Color.Black);
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride);
-            imageData = Convert32bTo16b(imageData, image.Width, image.Height,ref stride);
-            Byte[] compressedData = Nyerguds.GameData.Westwood.WWCompression.LcwCompress(imageData);
+            Byte[] imageData;
+            //using (Bitmap hiColImage = ImageUtils.PaintOn32bpp(image, Color.Black))
+            {
+                Int32 stride;
+                imageData = ImageUtils.GetImageData(image, out stride, PixelFormat.Format16bppRgb555);
+                imageData = ImageUtils.CollapseStride(imageData, image.Width, image.Height, 16, ref stride);
+            }
+            Byte[] compressedData = WWCompression.LcwCompress(imageData);
             Byte[] fullData = new Byte[compressedData.Length + DATAOFFSET];
             fullData[0] = (Byte)'L';
             fullData[1] = (Byte)'C';
             fullData[2] = (Byte)'W';
             ArrayUtils.WriteIntToByteArray(fullData, 3, 4, true, (UInt32)image.Width);
             ArrayUtils.WriteIntToByteArray(fullData, 7, 4, true, (UInt32)image.Height);
-            Array.Copy(compressedData, 0, fullData, DATAOFFSET, compressedData.Length);
+            compressedData.CopyTo(fullData, DATAOFFSET);
             return fullData;
-        }
-
-        protected static Byte[] Convert16bTo32b(Byte[] imageData, Int32 startOffset, Int32 width, Int32 height, ref Int32 stride)
-        {
-            Int32 newImageStride = width * 4;
-            Byte[] newImageData = new Byte[height * newImageStride];
-            for (Int32 y = 0; y < height; y++)
-            {
-                for (Int32 x = 0; x < width; x++)
-                {
-                    Int32 sourceOffset = y * stride + x * 2;
-                    Int32 targetOffset = y * newImageStride + x * 4;
-                    Color c = SixteenBppFormatter.GetColor(imageData, startOffset + sourceOffset);
-                    PixelFormatter.Format32BitArgb.WriteColor(newImageData, targetOffset, c);
-                }
-            }
-            stride = newImageStride;
-            return newImageData;
-        }
-
-        protected static Byte[] Convert32bTo16b(Byte[] imageData, Int32 width, Int32 height, ref Int32 stride)
-        {
-            Int32 newStride = width * 2;
-            Byte[] newImageData = new Byte[newStride * height];
-
-            for (Int32 y = 0; y < height; y++)
-            {
-                for (Int32 x = 0; x < width; x += 1)
-                {
-                    Int32 inputOffs = y * stride + x*4;
-                    Int32 outputOffs = y * newStride + x*2;
-                    Color c = PixelFormatter.Format32BitArgb.GetColor(imageData, inputOffs);
-                    SixteenBppFormatter.WriteColor(newImageData, outputOffs, c);
-                }
-            }
-            stride = newStride;
-            return newImageData;
         }
 
         protected void ReadHeader(Byte[] headerBytes)

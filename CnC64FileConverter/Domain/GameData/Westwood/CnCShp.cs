@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CnC64FileConverter.Domain.CCTypes
+namespace Nyerguds.GameData.Westwood
 {
     public class CnCShp
     {

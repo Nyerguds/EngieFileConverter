@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Nyerguds.Util.GameData;
+using Nyerguds.GameData.Compression;
 
 namespace Nyerguds.GameData.Agos
 {

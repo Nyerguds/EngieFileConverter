@@ -42,12 +42,13 @@ namespace Nyerguds.Util.UI
 
         public static void InitPaletteControl(Int32 bitsPerPixel, PalettePanel palPanel, Color[] palette, Int32 maxDimension)
         {
-            Int32 colors = 1 << bitsPerPixel;
-            palPanel.MaxColors = colors;
+            Boolean disable = bitsPerPixel <= 0 || bitsPerPixel > 8;
+            Int32 colors = disable ? 1 : 1 << bitsPerPixel;
+            palPanel.MaxColors = disable ? 0 : colors;
             Int32 squaresPerRow = (Int32)Math.Sqrt(colors);
-            Int32 squaresPerCol = colors / squaresPerRow + ((colors % squaresPerRow) > 0 ? 1 : 0);
+            Int32 squaresPerCol = colors == 0 ? 0 : colors/squaresPerRow + ((colors%squaresPerRow) > 0 ? 1 : 0);
             squaresPerRow = Math.Max(squaresPerRow, squaresPerCol);
-            Int32 sqrWidth = (Int32)Math.Ceiling(maxDimension * 7.5 / 8.5 / squaresPerRow);
+            Int32 sqrWidth = (Int32) Math.Ceiling(maxDimension*7.5/8.5/squaresPerRow);
             Int32 padding = (Int32)Math.Max(1, Math.Round(sqrWidth / 8.5));
             while (maxDimension < squaresPerRow * sqrWidth + (squaresPerRow - 1) * padding)
             {
@@ -191,7 +192,7 @@ namespace Nyerguds.Util.UI
                         break;
                     case ColorSelMode.Multi:
                         foreach (Int32 i in value)
-                            if (!m_SelectedIndicesList.Contains(i) && i >= 0 && i < MaxColors)
+                            if (!m_SelectedIndicesList.Contains(i) && i >= 0 && i < m_MaxColors)
                                 m_SelectedIndicesList.Add(i);
                         break;
                 }

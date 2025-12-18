@@ -731,11 +731,11 @@ namespace Nyerguds.GameData.Westwood
         /// </summary>
         /// <param name="data">The data to apply the xor to</param>
         /// <param name="xorSource">The the delta data to apply</param>
-        public static void ApplyXorDelta(Byte[] data, Byte[] xorSource, Int32 xorEnd)
+        public static void ApplyXorDelta(Byte[] data, Byte[] xorSource, Int32 xorStart, Int32 xorEnd)
         {
             // Nyer's C# conversion: replacements for write and read for pointers.
             Int32 putp = 0;
-            Int32 getp = 0;
+            Int32 getp = xorStart;
             Byte value = 0;
             Int32 dataEnd = data.Length;
             if(xorEnd == 0)

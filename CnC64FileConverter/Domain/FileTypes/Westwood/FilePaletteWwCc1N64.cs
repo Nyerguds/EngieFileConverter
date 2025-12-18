@@ -11,7 +11,8 @@ namespace CnC64FileConverter.Domain.FileTypes
     public class FilePaletteWwCc1N64 : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
-        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -47,25 +48,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
         }
 
-        public override void LoadFile(String filename)
+        public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] fileData = File.ReadAllBytes(filename);
             this.LoadFile(fileData);
             SetFileNames(filename);
-        }
-
-        public override Color[] GetColors()
-        {
-            return this.m_Palette.ToArray();
-        }
-
-        public override void SetColors(Color[] palette)
-        {
-            if (this.m_BackupPalette == null)
-                this.m_BackupPalette = GetColors();
-            this.m_Palette = palette;
-            // update image
-            base.SetColors(palette);
         }
 
         public override Boolean ColorsChanged()
@@ -83,16 +69,15 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
         {
-            Color[] palEntries = fileToSave.GetColors();
-            if (palEntries == null || palEntries.Length == 0)
-                throw new NotSupportedException("Cannot save 32-bit images as " + this.ShortTypeName);
-            return ColorUtils.GetEightBitPaletteData(palEntries, expandToFullSize);
+            Color[] cols = this.CheckInputForColors(fileToSave, expandToFullSize);
+            return ColorUtils.GetEightBitPaletteData(cols, expandToFullSize);
         }
     }
 
     public class FilePaletteWwCc1N64Pa4 : FilePaletteWwCc1N64
     {
-        public override FileClass InputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit | FileClass.FrameSet; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Pal 4-bit"; } }
         public override String ShortTypeDescription { get { return "Westwood C&C N64 4-bit palettes file"; } }
@@ -100,8 +85,6 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
             return this.SaveToBytesAsThis(fileToSave, false);
         }
     }
@@ -132,8 +115,6 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new NotSupportedException("File to save is empty!");
             return this.SaveToBytesAsThis(fileToSave, true);
         }
 

@@ -28,7 +28,10 @@ namespace Nyerguds.Util.UI
 
         protected override Boolean IsInputKey(Keys keyData)
         {
-            if (keyData == Keys.Up || keyData == Keys.Down || keyData == Keys.Left || keyData == Keys.Right)
+            if (keyData == Keys.Up || keyData == Keys.Down
+                || keyData == Keys.PageUp || keyData == Keys.PageDown
+                || keyData == Keys.Home || keyData == Keys.End
+                || keyData == Keys.Left || keyData == Keys.Right)
                 return true;
             return base.IsInputKey(keyData);
         }
@@ -36,52 +39,67 @@ namespace Nyerguds.Util.UI
         protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
         {
             Boolean handled = false;
-            if (!e.Shift && !e.Control && !e.Alt)
+            if (!e.Control && !e.Alt)
             {
-                handled = true;
-                switch (e.KeyValue)
+                if (!e.Shift)
                 {
-                    case (Int32)Keys.Down:
-                        this.ScrollVertical(50);
-                        break;
-                    case (Int32)Keys.PageDown:
-                        this.ScrollVertical(this.ClientRectangle.Height);
-                        break;
-                    case (Int32)Keys.Up:
-                        this.ScrollVertical(-50);
-                        break;
-                    case (Int32)Keys.PageUp:
-                        this.ScrollVertical(-this.ClientRectangle.Height);
-                        break;
-                    case (Int32)Keys.Right:
-                        this.ScrollHorizontal(50);
-                        break;
-                    case (Int32)Keys.Left:
-                        this.ScrollHorizontal(-50);
-                        break;
-                    default:
-                        handled = false;
-                        break;
+                    handled = true;
+                    switch (e.KeyValue)
+                    {
+                        case (Int32) Keys.Down:
+                            this.ScrollVertical(50);
+                            break;
+                        case (Int32) Keys.PageDown:
+                            this.ScrollVertical(this.ClientRectangle.Height);
+                            break;
+                        case (Int32) Keys.Up:
+                            this.ScrollVertical(-50);
+                            break;
+                        case (Int32) Keys.PageUp:
+                            this.ScrollVertical(-this.ClientRectangle.Height);
+                            break;
+                        case (Int32) Keys.Right:
+                            this.ScrollHorizontal(50);
+                            break;
+                        case (Int32) Keys.Left:
+                            this.ScrollHorizontal(-50);
+                            break;
+                        case (Int32) Keys.Home:
+                            this.ScrollVertical(Int32.MinValue);
+                            break;
+                        case (Int32) Keys.End:
+                            this.ScrollVertical(Int32.MaxValue);
+                            break;
+                        default:
+                            handled = false;
+                            break;
+                    }
                 }
-            }
-            else if (e.Shift)
-            {
-                handled = true;
-                // Shift+pgup/pgdn to scroll vertically.
-                switch (e.KeyValue)
+                else
                 {
-                    case (Int32)Keys.PageDown:
-                        this.ScrollHorizontal(this.ClientRectangle.Height);
-                        break;
-                    case (Int32)Keys.PageUp:
-                        this.ScrollHorizontal(-this.ClientRectangle.Height);
-                        break;
-                    default:
-                        handled = false;
-                        break;
+                    handled = true;
+                    // Shift+pgup/pgdn to scroll vertically.
+                    switch (e.KeyValue)
+                    {
+                        case (Int32) Keys.PageDown:
+                            this.ScrollHorizontal(this.ClientRectangle.Height);
+                            break;
+                        case (Int32) Keys.PageUp:
+                            this.ScrollHorizontal(-this.ClientRectangle.Height);
+                            break;
+                        case (Int32) Keys.Home:
+                            this.ScrollHorizontal(Int32.MinValue);
+                            break;
+                        case (Int32) Keys.End:
+                            this.ScrollHorizontal(Int32.MaxValue);
+                            break;
+                        default:
+                            handled = false;
+                            break;
+                    }
+                    this.PerformLayout();
+                    this.Invalidate();
                 }
-                this.PerformLayout();
-                this.Invalidate();
             }
             if (handled)
             {
@@ -119,26 +137,32 @@ namespace Nyerguds.Util.UI
             
         }
 
-        protected void ScrollVertical(Int32 delta)
+        public void ScrollVertical(Int32 delta)
         {
             if (!this.VScroll)
                 return;
             Rectangle clientRectangle = this.ClientRectangle;
             Int32 num = -this.DisplayRectangle.Y;
             Int32 val2 = -(clientRectangle.Height - this.DisplayRectangle.Height);
-            this.SetDisplayRectLocation(this.DisplayRectangle.X, -Math.Min(Math.Max(num + delta, 0), val2));
+            Int32 yLoc = delta == Int32.MaxValue ? val2 : Math.Min(Math.Max(num + delta, 0), val2);
+            this.SetDisplayRectLocation(this.DisplayRectangle.X, -yLoc);
         }
 
-        protected void ScrollHorizontal(Int32 delta)
+        public void ScrollHorizontal(Int32 delta)
         {
             if (!this.HScroll)
                 return;
             Rectangle clientRectangle = this.ClientRectangle;
             Int32 num = -this.DisplayRectangle.X;
             Int32 val2 = -(clientRectangle.Width - this.DisplayRectangle.Width);
-            this.SetDisplayRectLocation(-Math.Min(Math.Max(num + delta, 0), val2), this.DisplayRectangle.Y);
+            Int32 xLoc = delta == Int32.MaxValue ? val2 : Math.Min(Math.Max(num + delta, 0), val2);
+            this.SetDisplayRectLocation(-xLoc, this.DisplayRectangle.Y);
         }
 
+        public void SetDisplayRectLoc(Int32 x, Int32 y)
+        {
+            this.SetDisplayRectLocation(x, y);
+        }
 
         protected override void OnResize(EventArgs eventargs)
         {

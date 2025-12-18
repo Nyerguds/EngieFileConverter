@@ -4,7 +4,6 @@ using System.Text;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -17,17 +16,10 @@ namespace Nyerguds.ImageManipulation
 
         public static Color GetVisibleBorderColor(Color color)
         {
-            float sat = color.GetSaturation();
-            float bri = color.GetBrightness();
-            if (color.GetSaturation() < .16)
-            {
-                // this color is gray
-                if (color.GetBrightness() < .5)
-                    return Color.White;
-                else
-                    return Color.Black;
-            }
-            else return GetInvertedColor(color);
+            if (!(color.GetSaturation() < .16))
+                return GetInvertedColor(color);
+            // this color is gray
+            return color.GetBrightness() < .5 ? Color.White : Color.Black;
         }
 
         public static Color GetInvertedColor(Color color)
@@ -53,6 +45,47 @@ namespace Nyerguds.ImageManipulation
                     return false;
             }
             return true;
+        }
+
+        public static Byte[] GenerateInterlaceTable(Color[] colorPalette, List<Int32> exclIndSrc, Boolean dupOnExcluded, List<Int32> exclIndTrg)
+        {
+            if (colorPalette.Length > 0x100)
+                return null;
+            Color[] palette = new Color[0x100];
+            colorPalette.CopyTo(palette, 0);
+
+            Boolean[] excludedFrom = new Boolean[0x100];
+            foreach (Byte index in exclIndSrc)
+                excludedFrom[index] = true;
+            Byte[] interlaceTable = new Byte[0x10000];
+            for (Int32 y = 0; y < 0x100; y++)
+            {
+                for (Int32 x = y; x < 0x100; x++)
+                {
+                    Byte value;
+                    Boolean equal = y == x;
+                    Boolean exclX = excludedFrom[x];
+                    Boolean exclY = excludedFrom[y];
+                    if (equal)
+                        value = (Byte)y;
+                    else if (exclX || exclY)
+                        value = dupOnExcluded ? (exclX ? (Byte)x : (Byte)y) : (Byte)0;
+                    else
+                        value = (Byte)GetClosestPaletteIndexMatch(GetAverageColor(colorPalette[x], colorPalette[y]), palette, exclIndTrg);
+                    interlaceTable[y * 0x100 + x] = value;
+                    if (!equal)
+                        interlaceTable[x * 0x100 + y] = value;
+                }
+            }
+            return interlaceTable;
+        }
+
+        public static Color GetAverageColor(Color col1, Color col2)
+        {
+            Byte averageR = (Byte)Math.Max(0, Math.Min(255, Math.Min(col1.R, col2.R) + Math.Abs(col1.R - col2.R) / 2));
+            Byte averageG = (Byte)Math.Max(0, Math.Min(255, Math.Min(col1.G, col2.G) + Math.Abs(col1.G - col2.G) / 2));
+            Byte averageB = (Byte)Math.Max(0, Math.Min(255, Math.Min(col1.B, col2.B) + Math.Abs(col1.B - col2.B) / 2));
+            return Color.FromArgb(averageR, averageG, averageB);
         }
 
         public static Color[] GetEightBitColorPalette(ColorSixBit[] sixbitpalette)
@@ -160,7 +193,7 @@ namespace Nyerguds.ImageManipulation
         public static Color[] ReadEightBitPalette(Byte[] paletteData, Boolean readFull)
         {
             Int32 dataLength = paletteData.Length;
-            if (dataLength %3 != 0)
+            if (dataLength % 3 != 0)
                 throw new ArgumentException("This is not a valid palette file.");
             Color[] pal = new Color[readFull ? 256 : dataLength / 3];
             for (Int32 i = 0; i < pal.Length; i++)
@@ -174,7 +207,7 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
-        public static Int32 GetClosestPaletteIndexMatch(Color col, Color[] colorPalette, List<Int32> excludedindexes)
+        public static Int32 GetClosestPaletteIndexMatch(Color col, Color[] colorPalette, List<Int32> excludedindices)
         {
             Int32 colorMatch = 0;
             Int32 leastDistance = Int32.MaxValue;
@@ -183,7 +216,7 @@ namespace Nyerguds.ImageManipulation
             Int32 blue = col.B;
             for (Int32 i = 0; i < colorPalette.Length; i++)
             {
-                if (excludedindexes != null && excludedindexes.Contains(i))
+                if (excludedindices != null && excludedindices.Contains(i))
                     continue;
                 Color paletteColor = colorPalette[i];
                 Int32 redDistance = paletteColor.R - red;
@@ -198,6 +231,26 @@ namespace Nyerguds.ImageManipulation
                     return i;
             }
             return colorMatch;
+        }
+
+        public static Color GetGreyColor(Color color)
+        {
+            Byte grey = GetGreyValue(color.R, color.G, color.B);
+            return Color.FromArgb(grey, grey, grey);
+        }
+
+        public static Byte GetGreyValue(Color color)
+        {
+            return GetGreyValue(color.R, color.G, color.B);
+        }
+
+        public static Byte GetGreyValue(Byte red, Byte green, Byte blue)
+        {
+            Double redFactor = 0.2126d * Math.Pow(red, 2.2d);
+            Double grnFactor = 0.7152d * Math.Pow(green, 2.2d);
+            Double bluFactor = 0.0722d * Math.Pow(blue, 2.2d);
+            Double grey = Math.Pow(redFactor + grnFactor + bluFactor, 1d / 2.2);
+            return (Byte)Math.Max(0, Math.Min(255, Math.Round(grey, MidpointRounding.AwayFromZero)));
         }
 
     }

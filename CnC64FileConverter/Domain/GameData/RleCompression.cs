@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nyerguds.Util.GameData
+namespace Nyerguds.GameData.Compression
 {
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Repeat code.
