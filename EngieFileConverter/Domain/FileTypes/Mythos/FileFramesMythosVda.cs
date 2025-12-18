@@ -614,7 +614,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 VideoChunk chunk = new VideoChunk(previousImageData, new Rectangle(0, 0, origWidth, origHeight));
                 saveFrames.Add(new List<VideoChunk>() { chunk });
             }
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (Int32 i = 1; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Int32 stride;

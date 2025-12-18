@@ -85,6 +85,9 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.1: (28/02/2020 12:11)
+-Fixed an error in the save logic for Mythos VDA that made it add an extra frame at the start.
+
 v1.5.0: (26/02/2020 14:19)
 -Cleaned up loads of obsolete internals related to color palette handling.
 -Six-bit colors now correctly scale up to 0-255, rather than the simple *4 that gave 0-252.

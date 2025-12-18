@@ -50,9 +50,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 datalen = fileData.Length;
             if (datalen < 4)
                 throw new FileTypeLoadException("Bad header size.");
-            Int32 nrOfFrames = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0);
-            if (nrOfFrames < 0)
-                throw new FileTypeLoadException("Bad number of frames.");
+            Int32 nrOfFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             Int32 fixed0016 = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 2);
             if (fixed0016 != 0x0016)
                 throw new FileTypeLoadException("Bad value in header.");
@@ -97,6 +95,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
                 throw new ArgumentException("No frames found in source data!", "fileToSave");
+            if (nrOfFrames > 0xFFFF)
+                throw new ArgumentException("Too many frames in source data!", "fileToSave");
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
