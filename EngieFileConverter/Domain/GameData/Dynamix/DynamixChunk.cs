@@ -78,8 +78,8 @@ namespace Nyerguds.GameData.Dynamix
         /// <summary>
         /// Writes this chunk into a target array.
         /// </summary>
-        /// <param name="target">Target array</param>
-        /// <param name="offset">Offset in the target array</param>
+        /// <param name="target">Target array.</param>
+        /// <param name="offset">Offset in the target array.</param>
         /// <returns>The offset right behind the written data in the target array.</returns>
         public Int32 WriteChunk(Byte[] target, Int32 offset)
         {
@@ -97,9 +97,9 @@ namespace Nyerguds.GameData.Dynamix
         /// Builds a chunk container which has other chunks as its data. The other chunk
         /// objects are not preserved in this operation; they are just saved as bytes.
         /// </summary>
-        /// <param name="chunkName">Chunk name</param>
-        /// <param name="contents">Chunk contents</param>
-        /// <returns>The new chunk</returns>
+        /// <param name="chunkName">Chunk name.</param>
+        /// <param name="contents">Chunk contents.</param>
+        /// <returns>The new chunk.</returns>
         public static DynamixChunk BuildChunk(String chunkName, params DynamixChunk[] contents)
         {
             DynamixChunk mainChunk = new DynamixChunk(chunkName);
@@ -135,7 +135,7 @@ namespace Nyerguds.GameData.Dynamix
         /// Finds the start of a chunk.
         /// It does not go over the first 8 bytes, but starts at the start of the header chunk.
         /// </summary>
-        /// <param name="data">The bytes of the Dynamix file</param>
+        /// <param name="data">The bytes of the Dynamix file.</param>
         /// <param name="chunkName">The name of the chunk to find.</param>
         /// <returns>The index of the start of the chunk, or -1 if the chunk was not found.</returns>
         public static Int32 FindChunk(Byte[] data, String chunkName)

@@ -27,7 +27,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Westwood CPS File"; } }
         public override Int32 ColorsInPalette { get { return this.hasPalette ? 256 : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
-        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -102,7 +101,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         break;
                     case 4:
                         imageData = new Byte[bufferSize];
-                        WWCompression.LcwDecompress(fileData, ref dataOffset, imageData);
+                        WWCompression.LcwDecompress(fileData, ref dataOffset, imageData, 0);
                         break;
                     default:
                         throw new FileTypeLoadException("Unsupported compression format, " + compression);

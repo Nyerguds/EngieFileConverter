@@ -63,34 +63,45 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length < 2 + (hdrFrames + 1) * 2)
                 throw new FileTypeLoadException("Not long enough for frames index.");
             // Length. Done -2 because everything that follows is relative to the location after the header
-            UInt32 dataLen = (UInt32) fileData.Length;
+            UInt32 endoffset = (UInt32) fileData.Length;
 
-            if (fileData.Length >= 2 + (hdrFrames + 1) * 4 && ArrayUtils.ReadIntFromByteArray(fileData, 2 + hdrFrames * 4, 4, true) == dataLen - 2)
-                this.IsVersion107 = true;
-            else if (fileData.Length >= 2 + (hdrFrames + 1) * 2 && ArrayUtils.ReadIntFromByteArray(fileData, 2 + hdrFrames * 2, 2, true) == dataLen)
+            // test v1.00 first, since it might accidentally be possible that the offset 2x as far happens to contain data matching the file end address.
+            // However, in 32-bit addressing, it is impossible for even partial addresses halfway down the array to ever match the file end value.
+            if (endoffset < UInt16.MaxValue && (endoffset >= 2 + (hdrFrames + 1) * 2 && ArrayUtils.ReadIntFromByteArray(fileData, 2 + hdrFrames * 2, 2, true) == endoffset))
                 this.IsVersion107 = false;
+            else if (endoffset >= 2 + (hdrFrames + 1) * 4 && ArrayUtils.ReadIntFromByteArray(fileData, 2 + hdrFrames * 4, 4, true) == endoffset - 2)
+                this.IsVersion107 = true;
             else
-                throw new FileTypeLoadException("File size in header does not match.");
+                throw new FileTypeLoadException("File size in header does not match; cannot detect version.");
+            // v1.07 is relative to offsets array start, so the found end offset will be 2 lower.
             if (IsVersion107)
-                dataLen -= 2;
+                endoffset -= 2;
 
             this.m_FramesList = new SupportedFileType[hdrFrames];
             Boolean[] remapped = new Boolean[hdrFrames];
             this.m_Width = 0;
             this.m_Height = 0;
-            Boolean[] transMask = this.TransparencyMask;
-            this.m_Palette = PaletteUtils.GenerateGrayPalette(8, transMask, false);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             // Frames
             Int32 curOffs = 2;
             Int32 readLen = this.IsVersion107 ? 4 : 2;
+            Int32 nextOFfset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
             for (Int32 i = 0; i < hdrFrames; i++)
             {
-                Int32 readOffset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
-                if (dataLen == readOffset)
+                // Set current read address to previously-fetched "next entry" address
+                Int32 readOffset = nextOFfset;
+                // Reached end; process completed.
+                if (endoffset == readOffset)
                     break;
-                if (readOffset <= 0 || readOffset + 0x0A > dataLen)
+                // Check illegal values.
+                if (readOffset <= 0 || readOffset + 0x0A > endoffset)
                     throw new FileTypeLoadException("Illegal address in frame indices.");
-                
+
+                // Set header ptr to next address
+                curOffs += readLen;
+                // Read next entry address, to act as end of current entry.
+                nextOFfset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
+
                 // Compensate for header size
                 Int32 realReadOffset = readOffset;
                 if (IsVersion107)
@@ -103,8 +114,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 // Size of all frame data: header, lookup table, and compressed data.
                 UInt16 frmDataSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, realReadOffset + 0x06, 2, true);
                 UInt16 frmZeroCompressedSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, realReadOffset + 0x08, 2, true);
-                // Set header ptr to next address
-                curOffs += readLen;
                 realReadOffset += 0x0A;
                 // Bit 1: Contains remap palette
                 // Bit 2: Don't decompress with LCW
@@ -113,7 +122,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 Boolean noLcw = (frmFlags & Dune2ShpFrameFlags.NoLcw) != 0;
                 Boolean customRemap = (frmFlags & Dune2ShpFrameFlags.CustomSizeRemap) != 0;
                 remapped[i] = hasRemap;
-                if (readOffset + frmDataSize > dataLen)
+                Int32 curEndOffset = readOffset + frmDataSize;
+                if (curEndOffset > nextOFfset || curEndOffset > endoffset)
                     throw new FileTypeLoadException("Illegal address in frame indices.");
                 // I assume this is illegal...?
                 if (frmWidth == 0 || frmHeight == 0)
@@ -153,7 +163,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 predictedEndOff = realReadOffset + frmDataSize - remapSize;
                     if (customRemap)
                         predictedEndOff--;
-                    Int32 decompressedSize = WWCompression.LcwDecompress(fileData, ref realReadOffset, lcwDecompressData);
+                    Int32 decompressedSize = WWCompression.LcwDecompress(fileData, ref realReadOffset, lcwDecompressData, 0);
                     if (decompressedSize != frmZeroCompressedSize)
                         throw new FileTypeLoadException("LCW decompression failed.");
                     if (realReadOffset > predictedEndOff)
@@ -183,7 +193,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.SetBitsPerColor(this.BitsPerPixel);
                 framePic.SetFileClass(this.FrameInputFileClass);
                 framePic.SetColorsInPalette(this.ColorsInPalette);
-                framePic.SetTransparencyMask(this.TransparencyMask);
                 StringBuilder extraInfo = new StringBuilder();
                 extraInfo.Append("Flags: ");
                 extraInfo.Append(Convert.ToString((Int32)frmFlags & 0xFF, 2).PadLeft(8, '0')).Append(" (");
@@ -217,7 +226,7 @@ namespace EngieFileConverter.Domain.FileTypes
             StringBuilder extraInfoGlobal = new StringBuilder();
             extraInfoGlobal.Append("Game version: ").Append(this.IsVersion107 ? "v1.07" : "v1.00");
             extraInfoGlobal.Append("\nRemapped indices: ");
-            Int32[] remapFrames = Enumerable.Range(0, remapped.Length).Where(i => remapped[i]).ToArray();
+            Int32[] remapFrames = Enumerable.Range(0, hdrFrames).Where(i => remapped[i]).ToArray();
             this.RemappedIndices = remapFrames;
             if (remapFrames.Length == 0)
                 extraInfoGlobal.Append("None");
@@ -239,8 +248,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 new SaveOption("VER", SaveOptionType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape? "0" : "1"),
                 // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colours.", hasRemap ? "1" : "0"),
-                new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of colour indices 144-150.", null, "0", "RMT", "1", false),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, "RMA", "1", true),
+                new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of colour indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
+                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, new SaveEnableFilter("RMA", true, "1")),
             };
         }
 
@@ -268,7 +277,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else if (remappedIndices != null)
                 {
-                    foreach (Int32 remappedIndex in remappedIndices.Where(remappedIndex => remappedIndex < frames))
+                    foreach (Int32 remappedIndex in remappedIndices.Where(remappedIndex => remappedIndex >= 0 && remappedIndex < frames))
                         remapIndex[remappedIndex] = true;
                 }
             }
@@ -395,7 +404,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("No frames found in source data!");
             foreach (SupportedFileType frame in fileToSave.Frames)
             {
-                if (frame == null)
+                if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("SHP can't handle empty frames!");
                 if (frame.BitsPerPixel != 8)
                     throw new NotSupportedException("Not all frames in input type are 8-bit images!");

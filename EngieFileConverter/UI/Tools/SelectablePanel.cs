@@ -145,7 +145,7 @@ namespace Nyerguds.Util.UI
             Int32 num = -this.DisplayRectangle.Y;
             Int32 val2 = -(clientRectangle.Height - this.DisplayRectangle.Height);
             Int32 yLoc = delta == Int32.MaxValue ? val2 : Math.Min(Math.Max(num + delta, 0), val2);
-            this.SetDisplayRectLocation(this.DisplayRectangle.X, -yLoc);
+            base.SetDisplayRectLocation(this.DisplayRectangle.X, -yLoc);
         }
 
         public void ScrollHorizontal(Int32 delta)
@@ -156,12 +156,17 @@ namespace Nyerguds.Util.UI
             Int32 num = -this.DisplayRectangle.X;
             Int32 val2 = -(clientRectangle.Width - this.DisplayRectangle.Width);
             Int32 xLoc = delta == Int32.MaxValue ? val2 : Math.Min(Math.Max(num + delta, 0), val2);
-            this.SetDisplayRectLocation(-xLoc, this.DisplayRectangle.Y);
+            base.SetDisplayRectLocation(-xLoc, this.DisplayRectangle.Y);
         }
 
-        public void SetDisplayRectLoc(Int32 x, Int32 y)
+        /// <summary>
+        /// Exposes access to the protected function SetDisplayRectLocation.
+        /// </summary>
+        /// <param name="x">The horizontal offset at which to position the ScrollableControl.</param>
+        /// <param name="y">The vertical offset at which to position the ScrollableControl.</param>
+        public new void SetDisplayRectLocation(Int32 x, Int32 y)
         {
-            this.SetDisplayRectLocation(x, y);
+            base.SetDisplayRectLocation(x, y);
         }
 
         protected override void OnResize(EventArgs eventargs)

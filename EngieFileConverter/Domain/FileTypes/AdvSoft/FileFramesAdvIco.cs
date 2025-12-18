@@ -77,7 +77,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetFileClass(this.FrameInputFileClass);
                 frame.SetColorsInPalette(0);
-                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
             this.m_LoadedImage = TileImages(framesList, frames, this.m_Palette);

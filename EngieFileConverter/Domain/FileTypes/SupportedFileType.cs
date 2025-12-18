@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using Nyerguds.Util.UI;
 
@@ -147,15 +148,15 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.BitsPerPixel != 0)
             {
                 Int32 maxLen = 1 << this.BitsPerPixel;
-                Boolean[] transMask = this.TransparencyMask;
-                Int32 transMaskLen = transMask == null ? 0 : transMask.Length;
+                //Boolean[] transMask = this.TransparencyMask;
+                //Int32 transMaskLen = transMask == null ? 0 : transMask.Length;
                 // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
                 Int32 paletteLength = Math.Min(maxLen, this.m_LoadedImage == null ? maxLen : this.m_LoadedImage.Palette.Entries.Length);
                 Color[] pal = new Color[paletteLength];
                 for (Int32 i = 0; i < paletteLength; i++)
                 {
                     if (i < palette.Length)
-                        pal[i] = transMask == null || isInternal ? palette[i] : (i < transMaskLen && transMask[i]) ? Color.FromArgb(0x00, palette[i]) : Color.FromArgb(0xFF, palette[i]);
+                        pal[i] = palette[i];
                     else
                         pal[i] = Color.Empty;
                 }
@@ -191,6 +192,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public virtual void ResetColors()
         {
+            // Should already be applied.
+            //Color[] backup = this.m_BackupPalette.ToArray();
+            //PaletteUtils.ApplyTransparencyGuide(backup, TransparencyMask);
             this.SetColors(this.m_BackupPalette, null);
         }
 
@@ -200,9 +204,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 return false;
             if (this.m_BackupPalette == null)
                 return false;
-            if (this.m_Palette == null)
-                return true;
-            return !this.GetColors().SequenceEqual(this.m_BackupPalette);
+            Color[] colors = this.GetColors();
+            if (colors == null)
+                return false;
+            return !this.m_BackupPalette.SequenceEqual(colors);
         }
 
         public virtual Bitmap GetBitmap()
@@ -216,7 +221,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// </summary>
         /// <param name="fileToSave">File to save.</param>
         /// <param name="expandToFullSize">Expand to full size.</param>
-        /// <returns></returns>
+        /// <returns>The found colours in the input frames.</returns>
         protected Color[] CheckInputForColors(SupportedFileType fileToSave, Boolean expandToFullSize)
         {
             if (fileToSave == null)
@@ -392,7 +397,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
         /// </summary>
         /// <param name="path">File path to load.</param>
-        /// <param name="preferredTypes">List of the most likely types it can be</param>
+        /// <param name="preferredTypes">List of the most likely types it can be.</param>
         /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
         /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
         /// <returns>The detected type, or null if detection failed.</returns>

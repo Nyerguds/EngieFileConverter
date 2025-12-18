@@ -27,8 +27,8 @@ namespace Nyerguds.Util
         /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is 1
         /// If the value is null or the parse fails, the default is False.
         /// </summary>
-        /// <param name="value">String to parse</param>
-        /// <returns>True if the string's first letter matches J, Y, O, 1 or T</returns>
+        /// <param name="value">String to parse.</param>
+        /// <returns>True if the string's first letter matches J, Y, O, 1 or T.</returns>
         public static Boolean IsTrueValue(String value)
         {
             return IsTrueValue(value, false);
@@ -37,9 +37,9 @@ namespace Nyerguds.Util
         /// <summary>
         /// Checks if the given value starts with T, J, Y, O (TRUE, JA, YES, OUI) or is 1
         /// </summary>
-        /// <param name="value">String to parse</param>
-        /// <param name="defaultVal">Default value to return in case parse fails</param>
-        /// <returns>True if the string's first letter matches J, Y, O, 1 or T</returns>
+        /// <param name="value">String to parse.</param>
+        /// <param name="defaultVal">Default value to return in case parse fails.</param>
+        /// <returns>True if the string's first letter matches J, Y, O, 1 or T.</returns>
         public static Boolean IsTrueValue(String value, Boolean defaultVal)
         {
             if (String.IsNullOrEmpty(value))
@@ -130,9 +130,7 @@ namespace Nyerguds.Util
         /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
         public static String GroupNumbers<T>(IEnumerable<T> numbers) where T : IComparable, IConvertible
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendNumbersGrouped(numbers);
-            return sb.ToString();
+            return new StringBuilder().AppendNumbersGrouped(numbers).ToString();
         }
 
         /// <summary>
@@ -142,8 +140,25 @@ namespace Nyerguds.Util
         /// <param name="sb">String builder to write the result to.</param>
         /// <param name="numbers">The array of numbers.</param>
         /// <returns>The given string builder arg, for convenience for further appending.</returns>
-        /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
+        /// <remarks>
+        /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
         public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers) where T : IComparable, IConvertible
+        {
+            return AppendNumbersGrouped(sb, numbers, "-", ", ");
+        }
+
+        /// <summary>
+        /// Groups numbers into ranges and writes the result to a given StringBuilder. Example: [1,2,3,5,7,8,9] becomes "1-3, 5, 7-9".
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="sb">String builder to write the result to.</param>
+        /// <param name="numbers">The array of numbers.</param>
+        /// <param name="rangeSeparator">String to put between two numbers in a range, like the '-' in "1-3".</param>
+        /// <param name="groupsSeparator">String to put between two groups, like the ', ' in "1-5, 9-10".</param>
+        /// <returns>The given string builder arg, for convenience for further appending.</returns>
+        /// <remarks>
+        /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
+        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, String rangeSeparator, String groupsSeparator) where T : IComparable, IConvertible
         {
             T[] numbersArr = numbers.Distinct().OrderBy(x => x).ToArray();
             Int64 len = numbersArr.LongLength;
@@ -151,47 +166,63 @@ namespace Nyerguds.Util
             while (index < len)
             {
                 if (index > 0)
-                    sb.Append(", ");
+                    sb.Append(groupsSeparator);
                 T cur = numbersArr[index];
                 Int64 curIndex = index;
                 sb.Append(cur);
                 while (index + 1 < len && numbersArr[index].ToInt64(CultureInfo.InvariantCulture) + 1 == numbersArr[index + 1].ToInt64(CultureInfo.InvariantCulture))
                     index++;
                 if (index > curIndex)
-                    sb.Append("-").Append(numbersArr[index]);
+                    sb.Append(rangeSeparator).Append(numbersArr[index]);
                 index++;
             }
             return sb;
         }
 
+        /// <summary>
+        /// Converts grouped positive numbers into an array of integers. Example: "1-3, 5, 7-9" becomes [1,2,3,5,7,8,9].
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
+        /// <returns>An array of distinct integers.</returns>
         public static Int32[] GetRangedNumbers(String input)
+        {
+            return GetRangedNumbers(input, "-", ",");
+        }
+
+        /// <summary>
+        /// Converts grouped positive numbers into an array of integers. Example: "1-3, 5, 7-9" becomes [1,2,3,5,7,8,9].
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
+        /// <param name="rangeSeparator">String put between two numbers in a range, like the '-' in "1-3".</param>
+        /// <param name="groupsSeparator">String put between two groups, like the ',' in "1-5, 9-10". Spaces are trimmed off both this string and the split results.</param>
+        /// <returns>An array of integers.</returns>
+        public static Int32[] GetRangedNumbers(String input, String rangeSeparator, String groupsSeparator)
         {
             if (String.IsNullOrEmpty(input))
                 return new Int32[0];
-            Char[] trimVals = ",- \t\r\n".ToCharArray();
+            Char[] trimVals = " \t\r\n".ToCharArray();
             input = input.Trim(trimVals);
             if (input.Length == 0)
                 return new Int32[0];
-            String[] parts = input.Split(new Char[] {','}, StringSplitOptions.RemoveEmptyEntries);
+            groupsSeparator = groupsSeparator.Trim();
+            String[] parts = input.Split(new String[] { groupsSeparator }, StringSplitOptions.RemoveEmptyEntries);
             List<Int32> numbers = new List<Int32>();
             foreach (String part in parts)
             {
                 String edPart = part.Trim(trimVals);
                 if (edPart.Length == 0)
                     continue;
-                String[] range = edPart.Split(new Char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
-                List<Int32> rangeNumbers = new List<Int32>();
-                foreach (String rangePart in range)
+                // Unlike a simple Split, the use of regex allows the use of negative values if the range splitter is "-".
+                Regex split = new Regex("^(-?\\d+)\\s*" + Regex.Escape(rangeSeparator) + "\\s*(-?\\d+)$");
+                Match m = split.Match(edPart);
+                if (m.Success)
                 {
-                    String edRangePart = rangePart.Trim(trimVals);
-                    Int32 num;
-                    if (Int32.TryParse(edRangePart, out num))
-                        rangeNumbers.Add(num);
-                }
-                if (rangeNumbers.Count > 0)
-                {
-                    Int32 lowest = rangeNumbers.Min();
-                    Int32 highest = rangeNumbers.Max();
+                    Int32 val1 = Int32.Parse(m.Groups[1].Value);
+                    Int32 val2 = Int32.Parse(m.Groups[2].Value);
+                    Int32 lowest = Math.Min(val1, val2);
+                    Int32 highest = Math.Max(val1, val2);
                     numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
                 }
             }
@@ -216,49 +247,6 @@ namespace Nyerguds.Util
             return value;
         }
 
-        /// <summary>
-        /// For https://stackoverflow.com/q/50407661/395685
-        /// </summary>
-        /// <param name="degrees"></param>
-        /// <returns></returns>
-        public static Int32 DegreesToInt24(Double degrees)
-        {
-            if(degrees > 180.0 || degrees < -180.0)
-                throw new ArgumentOutOfRangeException("degrees");
-            const Int32 bottom = 0x058730;
-            const Int32 range = 0x4F1A0;
-            return (Int32)((degrees + 180.0) / 360.0 * range) + bottom;
-        }
-
-    }
-
-    /// <summary>
-    ///  Helper class for fetching data from custom attributes on properties.
-    ///  Inspired by https://stackoverflow.com/a/50247942/395685
-    /// </summary>
-    /// <typeparam name="T">Class in which the property is located</typeparam>
-    /// <typeparam name="TAttr">Attribute type to fetch</typeparam>
-    public static class PropertyCustomAttributeUtil<T, TAttr> where TAttr : Attribute
-    {
-        /// <summary>
-        ///  Get an attribute value from a specific property of a class
-        /// </summary>
-        /// <typeparam name="TProp">Result type of the property.</typeparam>
-        /// <typeparam name="TRes">Result type of the attrExpression.</typeparam>
-        /// <param name="expression">Expression specifying the class property.</param>
-        /// <param name="attrExpression">Expression specifying the property to return from the attribute.</param>
-        /// <returns></returns>
-        public static TRes GetValue<TProp, TRes>(Expression<Func<T, TProp>> expression, Func<TAttr, TRes> attrExpression)
-        {
-            // example: AttrPropertyType attrProp = PropertyCustomAttributeUtil<MyClass, MyAttribute>.GetValue(cl => cl.MyProperty, attr => attr.AttrProperty);
-            MemberExpression memberExpression = expression.Body as MemberExpression;
-            if (memberExpression == null)
-                throw new ArgumentNullException();
-            Object[] attrs = memberExpression.Member.GetCustomAttributes(typeof(TAttr), true);
-            if (attrs.Length == 0)
-                return default(TRes);
-            return attrExpression((TAttr)attrs[0]);
-        }
     }
 
 }

@@ -63,7 +63,7 @@ namespace Nyerguds.GameData.Dynamix
         /// Decompresses Dynamix chunk data. The chunk data should start with the compression
         /// type byte, followed by a 32-bit integer specifying the uncompressed length.
         /// </summary>
-        /// <param name="chunkData">Chunk data to decompress. </param>
+        /// <param name="chunkData">Chunk data to decompress.</param>
         /// <returns>The uncompressed data.</returns>
         public static Byte[] DecodeChunk(Byte[] chunkData)
         {
@@ -77,10 +77,10 @@ namespace Nyerguds.GameData.Dynamix
         /// <summary>
         /// Decompresses Dynamix data.
         /// </summary>
-        /// <param name="buffer">Buffer to decompress</param>
-        /// <param name="startOffset">Start offset of the data in the buffer</param>
-        /// <param name="endOffset">End offset of the data in the buffer</param>
-        /// <param name="compression">Compression type: 0 for uncompressed, 1 for RLE, 2 for LZA</param>
+        /// <param name="buffer">Buffer to decompress.</param>
+        /// <param name="startOffset">Start offset of the data in the buffer.</param>
+        /// <param name="endOffset">End offset of the data in the buffer.</param>
+        /// <param name="compression">Compression type: 0 for uncompressed, 1 for RLE, 2 for LZA.</param>
         /// <param name="decompressedSize">Decompressed size.</param>
         /// <returns>The uncompressed data.</returns>
         public static Byte[] Decode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 compression, Int32 decompressedSize)
@@ -146,8 +146,8 @@ namespace Nyerguds.GameData.Dynamix
         /// <summary>
         /// Applies LZW Encoding to the given data.
         /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <returns>The run-length encoded data</returns>
+        /// <param name="buffer">Input buffer.</param>
+        /// <returns>The run-length encoded data.</returns>
         public static Byte[] LzssEncode(Byte[] buffer)
         {
             DynamixLzHuffDecoder enc = new DynamixLzHuffDecoder();
@@ -157,8 +157,8 @@ namespace Nyerguds.GameData.Dynamix
         /// <summary>
         /// Applies LZW Encoding to the given data.
         /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <returns>The run-length encoded data</returns>
+        /// <param name="buffer">Input buffer.</param>
+        /// <returns>The run-length encoded data.</returns>
         public static Byte[] LzwEncode(Byte[] buffer)
         {
             DynamixLzwEncoder enc= new DynamixLzwEncoder();
@@ -168,8 +168,8 @@ namespace Nyerguds.GameData.Dynamix
         /// <summary>
         /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <returns>The run-length encoded data</returns>
+        /// <param name="buffer">Input buffer.</param>
+        /// <returns>The run-length encoded data.</returns>
         public static Byte[] RleEncode(Byte[] buffer)
         {
             // Uses standard RLE implementation.

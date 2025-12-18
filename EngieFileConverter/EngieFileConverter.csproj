@@ -105,12 +105,19 @@
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BlobDetection.cs" />
     <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionColor.resx">
+      <DependentUpon>SaveOptionColor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Tools\FrmPalette.resx">
+      <DependentUpon>FrmPalette.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\Tools\PixelZoomPanel.resx">
       <DependentUpon>PixelZoomPanel.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Domain\Utils\ImageUtils\ImageUtilsSO.cs" />
     <Compile Include="Domain\Utils\ImageUtils\WindowsGraphics2d.cs" />
     <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
+    <None Include="Domain\Utils\UtilsSO.cs" />
     <Compile Include="HeightMap\HeightMapGenerator.cs" />
     <Compile Include="HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
@@ -172,6 +179,12 @@
     <Compile Include="UI\FrmSetAlpha.Designer.cs">
       <DependentUpon>FrmSetAlpha.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionColor.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionColor.Designer.cs">
+      <DependentUpon>SaveOptionColor.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\SaveOptions\SaveOptionChoices.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -218,6 +231,15 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="UI\Tools\FileDialogGenerator.cs" />
+    <Compile Include="UI\Tools\FrmPalette.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\Tools\FrmPalette.designer.cs">
+      <DependentUpon>FrmPalette.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Tools\ImageButtonCheckBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="UI\Tools\InputBox.cs">
       <SubType>Form</SubType>
     </Compile>

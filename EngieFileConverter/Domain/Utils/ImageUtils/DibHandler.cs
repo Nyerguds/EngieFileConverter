@@ -15,7 +15,7 @@ namespace Nyerguds.ImageManipulation
         /// This is (wrongly) accepted by many applications as containing transparency,
         /// so I'm abusing it for that.
         /// </summary>
-        /// <param name="image">Image to convert to DIB</param>
+        /// <param name="image">Image to convert to DIB.</param>
         /// <returns>The image converted to DIB, in bytes.</returns>
         public static Byte[] ConvertToDib(Image image)
         {
@@ -60,7 +60,8 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Converts the image to Device Independent Bitmap format of version 5, of type BI_BITFIELDS.
         /// </summary>
-        /// <param name="image">Image to convert to DIB</param>
+        /// <param name="image">Image to convert to DIB.</param>
+        /// <param name="addExtraBitfields">True to add extra bit fields part to the header (normally not done, but Chrome does it).</param>
         /// <returns>The image converted to DIB, in bytes.</returns>
         public static Byte[] ConvertToDib5(Image image, Boolean addExtraBitfields)
         {

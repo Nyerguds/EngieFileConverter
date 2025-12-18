@@ -137,7 +137,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetColorsInPalette(0);
                 frame.SetBitsPerColor(4);
                 frame.SetFileClass(FileClass.Image4Bit);
-                frame.SetTransparencyMask(this.TransparencyMask);
+                if (compressed)
+                    frame.SetExtraInfo("Compressed with vertical RLE");
+                else if (frameImage == null)
+                    frame.SetExtraInfo("Empty frame");
                 this.m_FramesList[i] = frame;
             }
         }

@@ -99,7 +99,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         Byte[] palData = File.ReadAllBytes(palName);
                         palDyn.LoadFile(palData, palName);
                         this.m_Palette = palDyn.GetColors();
-                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, TransparencyMask);
+                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
                         this.m_loadedPalette = true;
                         this.LoadedFileName += "/PAL";
                     }
@@ -198,7 +198,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             if (!this.m_loadedPalette || this.m_bpp == 4)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, null, false);
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.m_bpp, this.TransparencyMask, false);
 
             Int32 offset = 0;
             this.m_FramesList = new SupportedFileType[frames];
@@ -220,7 +220,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetFileClass(m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
                 frame.SetColorsInPalette(this.m_loadedPalette ? this.m_Palette.Length : 0);
-                frame.SetTransparencyMask(this.TransparencyMask);
                 this.m_FramesList[i] = frame;
             }
             if (matrix != null && frames > 0)

@@ -28,9 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.lblTransparentColorVal = new System.Windows.Forms.Label();
             this.lblTransparentColor = new System.Windows.Forms.Label();
             this.lblZoom = new System.Windows.Forms.Label();
+            this.lblTransparentColorVal = new Nyerguds.Util.UI.ImageButtonCheckBox();
             this.numZoom = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.pnlImageScroll = new Nyerguds.Util.UI.SelectablePanel();
             this.picImage = new Nyerguds.Util.UI.PixelBox();
@@ -39,23 +39,13 @@
             ((System.ComponentModel.ISupportInitialize)(this.picImage)).BeginInit();
             this.SuspendLayout();
             // 
-            // lblTransparentColorVal
-            // 
-            this.lblTransparentColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblTransparentColorVal.BackColor = System.Drawing.Color.Fuchsia;
-            this.lblTransparentColorVal.Location = new System.Drawing.Point(158, 207);
-            this.lblTransparentColorVal.Name = "lblTransparentColorVal";
-            this.lblTransparentColorVal.Size = new System.Drawing.Size(20, 20);
-            this.lblTransparentColorVal.TabIndex = 123;
-            this.lblTransparentColorVal.Click += new System.EventHandler(this.LblTransparentColorValClick);
-            // 
             // lblTransparentColor
             // 
             this.lblTransparentColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTransparentColor.Location = new System.Drawing.Point(77, 207);
             this.lblTransparentColor.Name = "lblTransparentColor";
             this.lblTransparentColor.Size = new System.Drawing.Size(75, 20);
-            this.lblTransparentColor.TabIndex = 121;
+            this.lblTransparentColor.TabIndex = 1;
             this.lblTransparentColor.Text = "Background:";
             this.lblTransparentColor.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
@@ -65,9 +55,23 @@
             this.lblZoom.Location = new System.Drawing.Point(173, 207);
             this.lblZoom.Name = "lblZoom";
             this.lblZoom.Size = new System.Drawing.Size(72, 20);
-            this.lblZoom.TabIndex = 122;
+            this.lblZoom.TabIndex = 3;
             this.lblZoom.Text = "Zoom factor:";
             this.lblZoom.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // lblTransparentColorVal
+            // 
+            this.lblTransparentColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblTransparentColorVal.BackColor = System.Drawing.Color.Fuchsia;
+            this.lblTransparentColorVal.Checked = true;
+            this.lblTransparentColorVal.Location = new System.Drawing.Point(158, 207);
+            this.lblTransparentColorVal.Name = "lblTransparentColorVal";
+            this.lblTransparentColorVal.Size = new System.Drawing.Size(20, 20);
+            this.lblTransparentColorVal.TabIndex = 2;
+            this.lblTransparentColorVal.Toggle = false;
+            this.lblTransparentColorVal.TrueBackColor = System.Drawing.Color.Fuchsia;
+            this.lblTransparentColorVal.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.LblTransparentColorValKeyPress);
+            this.lblTransparentColorVal.MouseClick += new System.Windows.Forms.MouseEventHandler(this.lblTransparentColorVal_MouseClick);
             // 
             // numZoom
             // 
@@ -88,7 +92,7 @@
             this.numZoom.SelectionLength = 0;
             this.numZoom.SelectionStart = 0;
             this.numZoom.Size = new System.Drawing.Size(68, 20);
-            this.numZoom.TabIndex = 120;
+            this.numZoom.TabIndex = 4;
             this.numZoom.Value = new decimal(new int[] {
             1,
             0,
@@ -109,7 +113,7 @@
             this.pnlImageScroll.Margin = new System.Windows.Forms.Padding(0);
             this.pnlImageScroll.Name = "pnlImageScroll";
             this.pnlImageScroll.Size = new System.Drawing.Size(322, 202);
-            this.pnlImageScroll.TabIndex = 119;
+            this.pnlImageScroll.TabIndex = 0;
             this.pnlImageScroll.TabStop = true;
             this.pnlImageScroll.MouseScroll += new System.Windows.Forms.MouseEventHandler(this.PnlImageScrollMouseScroll);
             // 
@@ -146,7 +150,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Label lblTransparentColorVal;
+        private Nyerguds.Util.UI.ImageButtonCheckBox lblTransparentColorVal;
         private System.Windows.Forms.Label lblTransparentColor;
         private System.Windows.Forms.Label lblZoom;
         private Nyerguds.Util.UI.EnhNumericUpDown numZoom;

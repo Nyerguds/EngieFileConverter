@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -49,6 +51,14 @@ namespace Nyerguds.ImageManipulation
             return true;
         }
 
+        /// <summary>
+        /// Generates a table of best in-between values for all possible colour pairs on a 256-colour palette.
+        /// </summary>
+        /// <param name="colorPalette"></param>
+        /// <param name="exclIndSrc"></param>
+        /// <param name="dupOnExcluded"></param>
+        /// <param name="exclIndTrg"></param>
+        /// <returns></returns>
         public static Byte[] GenerateInterlaceTable(Color[] colorPalette, List<Int32> exclIndSrc, Boolean dupOnExcluded, List<Int32> exclIndTrg)
         {
             if (colorPalette.Length > 0x100)
@@ -57,8 +67,9 @@ namespace Nyerguds.ImageManipulation
             colorPalette.CopyTo(palette, 0);
 
             Boolean[] excludedFrom = new Boolean[0x100];
-            foreach (Byte index in exclIndSrc)
-                excludedFrom[index] = true;
+            foreach (Int32 index in exclIndSrc)
+                if (index >= 0 && index < 0x100)
+                    excludedFrom[index] = true;
             Byte[] interlaceTable = new Byte[0x10000];
             for (Int32 y = 0; y < 0x100; y++)
             {
@@ -240,24 +251,46 @@ namespace Nyerguds.ImageManipulation
             return colorMatch;
         }
 
-        public static Color GetGreyColor(Color color)
+        public static Color ColorFromHexString(String colorStr)
         {
-            Byte grey = GetGreyValue(color.R, color.G, color.B);
-            return Color.FromArgb(grey, grey, grey);
+            if (String.IsNullOrEmpty(colorStr))
+                return Color.Empty;
+            colorStr = colorStr.TrimStart('#').ToUpperInvariant();
+            if (!Regex.IsMatch(colorStr, "[0-9A-F]+"))
+                return Color.Empty;
+            Int32 len = colorStr.Length;
+            if (len != 3 && len != 4 && len != 6 && len != 8)
+                return Color.Empty;
+            Int32 red;
+            Int32 green;
+            Int32 blue;
+            Int32 alpha;
+            if (len <= 4)
+            {
+                Int32 startIndex = len == 3 ? 0 : 1;
+                red = Int32.Parse(colorStr.Substring(startIndex, startIndex + 1), NumberStyles.HexNumber);
+                green = Int32.Parse(colorStr.Substring(startIndex + 1, startIndex + 2), NumberStyles.HexNumber);
+                blue = Int32.Parse(colorStr.Substring(startIndex + 2, startIndex + 3), NumberStyles.HexNumber);
+                alpha = len == 3 ? 0xF : Int32.Parse(colorStr.Substring(0, 1), NumberStyles.HexNumber);
+                // double the digits
+                red = red << 8 | red;
+                green = green << 8 | green;
+                blue = blue << 8 | blue;
+                alpha = alpha << 8 | alpha;
+                return Color.FromArgb(alpha, red, green, blue);
+            }
+            else
+            {
+                UInt32 argb = UInt32.Parse(colorStr, NumberStyles.HexNumber);
+                if (len == 6)
+                    argb += 0xFF000000;
+                return Color.FromArgb((Int32)argb);
+            }
         }
 
-        public static Byte GetGreyValue(Color color)
+        public static String HexStringFromColor(Color color)
         {
-            return GetGreyValue(color.R, color.G, color.B);
-        }
-
-        public static Byte GetGreyValue(Byte red, Byte green, Byte blue)
-        {
-            Double redFactor = 0.2126d * Math.Pow(red, 2.2d);
-            Double grnFactor = 0.7152d * Math.Pow(green, 2.2d);
-            Double bluFactor = 0.0722d * Math.Pow(blue, 2.2d);
-            Double grey = Math.Pow(redFactor + grnFactor + bluFactor, 1d / 2.2);
-            return (Byte)Math.Max(0, Math.Min(255, Math.Round(grey, MidpointRounding.AwayFromZero)));
+            return "#" + ((UInt32)color.ToArgb()).ToString("X8");
         }
 
     }

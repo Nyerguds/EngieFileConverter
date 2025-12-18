@@ -6,6 +6,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using EngieFileConverter.Domain.FileTypes;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -25,8 +26,8 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Loads an image without locking the underlying file.
         /// </summary>
-        /// <param name="path">Path of the image to load</param>
-        /// <returns>The image</returns>
+        /// <param name="path">Path of the image to load.</param>
+        /// <returns>The image.</returns>
         public static Bitmap LoadImageSafe(String path)
         {
             Byte[] fileData = File.ReadAllBytes(path);
@@ -96,7 +97,7 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Gets the minimum stride required for containing an image of the given width and bits per pixel.
         /// </summary>
-        /// <param name="width">Image width</param>
+        /// <param name="width">Image width.</param>
         /// <param name="bitsLength">bits length of each pixel.</param>
         /// <returns>The minimum stride required for containing an image of the given width and bits per pixel.</returns>
         public static Int32 GetMinimumStride(Int32 width, Int32 bitsLength)
@@ -246,8 +247,8 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Converts an image to paletted format.
         /// </summary>
-        /// <param name="originalImage">Original image</param>
-        /// <param name="bpp">Desired bits per pixel for the paletted image (should be less than or equal to 8)</param>
+        /// <param name="originalImage">Original image.</param>
+        /// <param name="bpp">Desired bits per pixel for the paletted image (should be less than or equal to 8).</param>
         /// <param name="palette">The colour palette.</param>
         /// <returns>A bitmap of the desired colour depth matched to the given palette.</returns>
         public static Bitmap ConvertToPalette(Bitmap originalImage, Int32 bpp, Color[] palette)
@@ -262,7 +263,7 @@ namespace Nyerguds.ImageManipulation
             }
             else
                 imageData = GetImageData(originalImage, out stride);
-            Byte[] palettedData = Convert32BitToPaletted(imageData, originalImage.Width, originalImage.Height, bpp, bpp == 1, palette, ref stride);
+            Byte[] palettedData = Convert32BitToPaletted(imageData, originalImage.Width, originalImage.Height, bpp, true, palette, ref stride);
             return BuildImage(palettedData, originalImage.Width, originalImage.Height, stride, pf, palette, Color.Black);
         }
 
@@ -276,7 +277,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="bigEndianBits">True to use big endian ordered data in the indexed array if <paramref name="bpp "/> is less than 8.</param>
         /// <param name="palette">Colour palette to match to.</param>
         /// <param name="stride">Stride. Will be adjusted by the function.</param>
-        /// <returns></returns>
+        /// <returns>The converted indexed data.</returns>
         public static Byte[] Convert32BitToPaletted(Byte[] imageData, Int32 width, Int32 height, Int32 bpp, Boolean bigEndianBits, Color[] palette, ref Int32 stride)
         {
             if (stride < width * 4)
@@ -424,14 +425,14 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Creates a bitmap based on data, width, height, stride and pixel format.
         /// </summary>
-        /// <param name="sourceData">Byte array of raw source data</param>
-        /// <param name="width">Width of the image</param>
-        /// <param name="height">Height of the image</param>
+        /// <param name="sourceData">Byte array of raw source data.</param>
+        /// <param name="width">Width of the image.</param>
+        /// <param name="height">Height of the image.</param>
         /// <param name="stride">Scanline length inside the data. If this is negative, the image is built from the bottom up (BMP format).</param>
-        /// <param name="pixelFormat">Pixel format</param>
-        /// <param name="palette">Color palette</param>
+        /// <param name="pixelFormat">Pixel format.</param>
+        /// <param name="palette">Color palette.</param>
         /// <param name="defaultColor">Default color to fill in on the palette if the given colors don't fully fill it.</param>
-        /// <returns>The new image</returns>
+        /// <returns>The new image.</returns>
         public static Bitmap BuildImage(Byte[] sourceData, Int32 width, Int32 height, Int32 stride, PixelFormat pixelFormat, Color[] palette, Color? defaultColor)
         {
             Bitmap newImage = new Bitmap(width, height, pixelFormat);
@@ -490,10 +491,10 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Generates a grid image to put over a pixel-zoomed image. Created for the font editor.
         /// </summary>
-        /// <param name="origWidth">Original width of the shown image</param>
-        /// <param name="origHeight">Original height of the shown image</param>
+        /// <param name="origWidth">Original width of the shown image.</param>
+        /// <param name="origHeight">Original height of the shown image.</param>
         /// <param name="zoomFactor">Zoom factor of the shown image.</param>
-        /// <param name="colors">Color palette</param>
+        /// <param name="colors">Color palette.</param>
         /// <param name="bgColor">Background color of the grid. Usually just 0.</param>
         /// <param name="gridcolor">Main color of the grid.</param>
         /// <param name="outLineColor">Outline color of the grid.</param>
@@ -530,7 +531,7 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         ///     Gets an 8-bit image's internal byte array for editing, executes a given function with that data, and writes the edited array back to the image afterwards.
         /// </summary>
-        /// <param name="source">The source image</param>
+        /// <param name="source">The source image.</param>
         /// <param name="editDelegate">A delegate to edit the resulting byte array, with the byte array's stride as second argument.</param>
         public static void EditRawImageBytes(Bitmap source, Action<Byte[], Int32> editDelegate)
         {
@@ -658,7 +659,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="height">Height of the image.</param>
         /// <param name="stride">Stride of the image.</param>
         /// <param name="copyArea">The area to copy.</param>
-        /// <returns></returns>
+        /// <returns>The requested piece of the image.</returns>
         public static Byte[] CopyFrom8bpp(Byte[] imageData, Int32 width, Int32 height, Int32 stride, Rectangle copyArea)
         {
             Byte[] copiedPicture = new Byte[copyArea.Width * copyArea.Height];
@@ -713,9 +714,10 @@ namespace Nyerguds.ImageManipulation
         /// <param name="pasteHeight">Height of the image to paste.</param>
         /// <param name="pasteStride">Stride of the image to paste.</param>
         /// <param name="targetPos">Position at which to paste the image.</param>
-        /// <param name="transparencyGuide">Colour palette of the images, to determine which colours should be treated as transparent. Use null for no transparency.</param>
+        /// <param name="transparencyGuide">Boolean array determining which offsets on the colour palette will be treated as transparent. Use null for no transparency.</param>
         /// <param name="modifyOrig">True to modify the original array rather than returning a copy.</param>
-        /// <param name="transparencyMask">For transparency masking; true is transparent. If given, should have a size of transparencyMaskStride * pasteHeight.</param>
+        /// <param name="transparencyMask">For image-based transparency masking rather than palette based. Values in the array set to true are treated as transparent.
+        /// If given, should have a size of exactly <see cref="pasteWidth"/> * <see cref="pasteHeight"/>.</param>
         /// <returns>A new Byte array with the combined data, and the same stride as the source image.</returns>
         public static Byte[] PasteOn8bpp(Byte[] destData, Int32 destWidth, Int32 destHeight, Int32 destStride,
             Byte[] pasteData, Int32 pasteWidth, Int32 pasteHeight, Int32 pasteStride,
@@ -765,11 +767,11 @@ namespace Nyerguds.ImageManipulation
         /// minimum, the data will still be copied to a new array, so the input array is never referenced as result.
         /// If you want to avoid this, use the overload with the "unsafe" parameter.
         /// </summary>
-        /// <param name="data">Image data</param>
-        /// <param name="width">Width of the image</param>
-        /// <param name="height">Height of the image</param>
-        /// <param name="bitsLength">Bits per pixel</param>
-        /// <param name="stride">Stride of the image</param>
+        /// <param name="data">Image data.</param>
+        /// <param name="width">Width of the image.</param>
+        /// <param name="height">Height of the image.</param>
+        /// <param name="bitsLength">Bits per pixel.</param>
+        /// <param name="stride">Stride of the image.</param>
         /// <returns>The data, collapsed to the minimum stride.</returns>
         public static Byte[] CollapseStride(Byte[] data, Int32 width, Int32 height, Int32 bitsLength, ref Int32 stride)
         {
@@ -779,11 +781,11 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Collapse stride to the minimum required, for any image type.
         /// </summary>
-        /// <param name="data">Image data</param>
-        /// <param name="width">Width of the image</param>
-        /// <param name="height">Height of the image</param>
-        /// <param name="bitsLength">Bits per pixel</param>
-        /// <param name="stride">Stride of the image</param>
+        /// <param name="data">Image data.</param>
+        /// <param name="width">Width of the image.</param>
+        /// <param name="height">Height of the image.</param>
+        /// <param name="bitsLength">Bits per pixel.</param>
+        /// <param name="stride">Stride of the image.</param>
         /// <param name="unsafe">If true, and the minimum stride equals the given <paramref name="stride"/>, simply return the original reference to the <paramref name="data"/> array without making a copy.</param>
         /// <returns>The data, collapsed to the minimum stride.</returns>
         public static Byte[] CollapseStride(Byte[] data, Int32 width, Int32 height, Int32 bitsLength, ref Int32 stride, Boolean @unsafe)
@@ -865,10 +867,10 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Converts given raw image data for a paletted 8-bit image to lower amount of bits per pixel.
         /// </summary>
-        /// <param name="data8bit">The eight bit per pixel image data</param>
-        /// <param name="width">The width of the image</param>
-        /// <param name="height">The height of the image</param>
-        /// <param name="bitsLength">The new amount of bits per pixel</param>
+        /// <param name="data8bit">The eight bit per pixel image data.</param>
+        /// <param name="width">The width of the image.</param>
+        /// <param name="height">The height of the image.</param>
+        /// <param name="bitsLength">The new amount of bits per pixel.</param>
         /// <param name="bigEndian">True if the bits in the new image data are to be stored as big-endian.</param>
         /// <param name="stride">Stride used in the original image data. Will be adjusted to the new stride value.</param>
         /// <returns>The image data converted to the requested amount of bits per pixel.</returns>
@@ -951,7 +953,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>Trims empty lines off the bottom of an image buffer.</summary>
-        /// <param name="buffer">Image data buffer</param>
+        /// <param name="buffer">Image data buffer.</param>
         /// <param name="width">Image width (technically stride).</param>
         /// <param name="height">Image height. Will be adjusted by this function.</param>
         /// <param name="valueToTrim">Value to trim.</param>
@@ -985,7 +987,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>Calculate the amount an image can be cropped in Y-dimension, and adjust the given height and Y offset to compensate.</summary>
-        /// <param name="buffer">Image data buffer</param>
+        /// <param name="buffer">Image data buffer.</param>
         /// <param name="width">Image width (technically stride).</param>
         /// <param name="height">Image height. Will be adjusted by this function.</param>
         /// <param name="yOffset">Current Y-offset to increase.</param>
@@ -1172,9 +1174,9 @@ namespace Nyerguds.ImageManipulation
         /// Changes the stride of the given image data.
         /// </summary>
         /// <param name="buffer">Source byte array.</param>
-        /// <param name="origStride">Original stride</param>
-        /// <param name="height">Height of the image</param>
-        /// <param name="targetStride">Target stride</param>
+        /// <param name="origStride">Original stride.</param>
+        /// <param name="height">Height of the image.</param>
+        /// <param name="targetStride">Target stride.</param>
         /// <param name="fromLeft">True to add/remove bytes at the left side instead of the right.</param>
         /// <param name="fillValue">Byte value used to fill any added space.</param>
         /// <returns>The adjusted array, with the target stride.</returns>
@@ -1247,7 +1249,7 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Find the most common colour in an image.
         /// </summary>
-        /// <param name="image">Input image</param>
+        /// <param name="image">Input image.</param>
         /// <returns>The most common colour found in the image. If there are multiple with the same frequency, the first one that was encountered is returned.</returns>
         public static Color FindMostCommonColor(Image image)
         {
@@ -1290,15 +1292,15 @@ namespace Nyerguds.ImageManipulation
             // Get the first colour that matches that maximum.
             return colorFreq.FirstOrDefault(x => x.Value == max).Key;
         }
-
+        
         /// <summary>
         /// Detects the bounds to crop an image. This treats the image as 32bppARGB.
         /// </summary>
-        /// <param name="image">ISource image.</param>
+        /// <param name="image">Source image.</param>
         /// <param name="blankPixel">Blank color to crop off.</param>
         /// <param name="borderSizePixels">Leave border of this many pixels around cropped area.</param>
         /// <param name="searchArea">Original area of the image to perform the algorithm on.</param>
-        /// <returns></returns>
+        /// <returns>The minimum bounds the image can have with the blank pixel value trimmed off from all sides.</returns>
         public static Rectangle GetCropBounds(Bitmap image, Color blankPixel, Int32 borderSizePixels, Rectangle? searchArea)
         {
             // Not too worried about the other boundaries; the "for" loops will exclude those anyway.
@@ -1314,13 +1316,21 @@ namespace Nyerguds.ImageManipulation
             // Convert to 32bppARGB and get bytes and stride out.
             Byte[] data;
             Int32 stride;
-            using (Bitmap bm = new Bitmap(image))
+            Boolean newImage = image.PixelFormat != PixelFormat.Format32bppArgb;
+            Bitmap bm = null;
+            try
             {
+                bm = newImage ? new Bitmap(image) : image;
                 BitmapData sourceData = bm.LockBits(new Rectangle(0, 0, bm.Width, bm.Height), ImageLockMode.ReadOnly, bm.PixelFormat);
                 stride = sourceData.Stride;
                 data = new Byte[stride * bm.Height];
                 Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
                 bm.UnlockBits(sourceData);
+            }
+            finally
+            {
+                if (newImage && bm != null)
+                    bm.Dispose();
             }
             // ============= Y =============
             // Top = first found row which contains data
@@ -1446,50 +1456,136 @@ namespace Nyerguds.ImageManipulation
                 }
             }
         }
-        
-        public static Bitmap[] CutImageIntoFrames(Bitmap image, Int32 frameWidth, Int32 frameHeight, Int32 framesLimit)
-        {
-            PixelFormat pf = image.PixelFormat;
-            Int32 bpp = Image.GetPixelFormatSize(pf);
-            ColorPalette imPal = image.Palette;
-            Color[] imPalette = bpp > 8 ? null : imPal.Entries;
-            Int32 colorsInPal = imPalette == null ? 0 : imPalette.Length;
-            Boolean incompletePalette = bpp <= 8 && colorsInPal < (1 << bpp);
-            Int32 multiplier = bpp < 8 ? 1 : bpp / 8;
 
+        public static Bitmap[] ImageToFrames(Bitmap image, Int32 width, Int32 height, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette, Int32[] matchExcludeIndices, Int32 framesRangeMin, Int32 framesRangeMax)
+        {
+            if (image == null)
+                return new Bitmap[0];
+            PixelFormat origPf = image.PixelFormat;
+            ColorPalette origPalette = image.Palette;
+            Int32 bpp = Image.GetPixelFormatSize(origPf);
+            Boolean indexed = bpp <= 8;
+            Boolean convertTo32 = !indexed && origPf != PixelFormat.Format32bppArgb;
             Int32 fullWidth = image.Width;
             Int32 fullHeight = image.Height;
-            Int32 framesX = fullWidth / frameWidth;
-            Int32 framesY = fullHeight / frameHeight;
-            Int32 nrOfFrames = Math.Min(framesLimit, framesX * framesY);
-            Byte[] imageData = null;
-            Int32 stride = fullWidth;
-            Boolean indexed = bpp <= 8;
-            imageData = ImageUtils.GetImageData(image, out stride);
-            if (bpp < 8)
-                imageData = ImageUtils.ConvertTo8Bit(imageData, fullWidth, fullHeight, 0, bpp, true, ref stride);
-
-            Bitmap[] frames = new Bitmap[nrOfFrames];
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            Int32 framesX = fullWidth / width;
+            Int32 framesY = fullHeight / height;
+            Int32 frames = framesX * framesY;
+            Int32 min = Math.Min(Math.Max(0, Math.Min(framesRangeMin, framesRangeMax)), frames);
+            Int32 max = Math.Min(Math.Max(0, Math.Max(framesRangeMin, framesRangeMax)), frames);
+            Int32 nrOfFrames = max - min + 1;
+            Bitmap[] bmpFrames = new Bitmap[nrOfFrames];
+            Boolean doMatching = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
+            Bitmap edImage = null;
+            Int32 edImageStride = 0;
+            Byte[] edImageData = null;
+            Byte[] remapTable = null;
+            if (indexed)
             {
-                Int32 rectY = i / framesX;
-                Int32 rectX = i % framesX;
-                Rectangle section = new Rectangle(rectX * frameWidth * multiplier, rectY * frameHeight, frameWidth * multiplier, frameHeight);
-                Bitmap frameImage;
-                Byte[] frameData = ImageUtils.CopyFrom8bpp(imageData, fullWidth * multiplier, fullHeight, stride, section);
-                Int32 frameStride = frameWidth * multiplier;
-                if (bpp < 8)
-                    frameData = ImageUtils.ConvertFrom8Bit(frameData, frameWidth, frameHeight, bpp, true, ref frameStride);
-                frameImage = ImageUtils.BuildImage(frameData, frameWidth, frameHeight, frameStride, pf, imPalette, null);
-                if (incompletePalette)
-                    frameImage.Palette = imPal;
-                frames[i] = frameImage;
+                edImageData = GetImageData(image, out edImageStride);
+                edImageData = ConvertTo8Bit(edImageData, fullWidth, fullHeight, 0, bpp, true, ref edImageStride);
+                if (doMatching)
+                {
+                    Int32 palLen = 1 << matchBpp;
+                    remapTable = new Byte[palLen];
+                    Color[] orig = origPalette.Entries;
+                    for (Int32 i = 0; i < palLen; i++)
+                    {
+                        if (i >= orig.Length)
+                            break;
+                        remapTable[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(orig[i], matchPalette, matchExcludeIndices.ToList());
+                    }
+                }
             }
-            return frames;
+            else
+            {
+                edImage = convertTo32 ? new Bitmap(image) : image;
+            }
+            for (Int32 frameNr = min; frameNr <= max; frameNr++)
+            {
+                Int32 rectY = frameNr / framesX;
+                Int32 rectX = frameNr % framesX;
+                Rectangle section = new Rectangle(rectX * width, rectY * height, width, height);
+                Bitmap bmp;
+                if (indexed)
+                    bmp = GetCutFrameIndexed(edImageData, fullWidth, fullHeight, section, origPf, origPalette, trimIndex, matchBpp, remapTable, matchPalette);
+                else
+                    bmp = GetCutFrameHiCol(edImage, section, origPf, trimColor, matchBpp, matchPalette);
+                bmpFrames[frameNr - min] = bmp;
+            }
+            if (convertTo32 && edImage != null)
+                edImage.Dispose();
+            return bmpFrames;
         }
 
+        private static Bitmap GetCutFrameIndexed(Byte[] edImageData, Int32 width, Int32 height, Rectangle section, PixelFormat origPf, ColorPalette origPalette, Int32? trimIndex, Int32 matchBpp, Byte[] remapTable, Color[] matchPalette)
+        {
+            Bitmap bmp = null;
+            Int32 origBpp = Image.GetPixelFormatSize(origPf);
+            Boolean doMatching = matchBpp > 0 && matchBpp <= 8 && remapTable != null;
+            Byte[] frameImageData = CopyFrom8bpp(edImageData, width, height, width, section);
+            Int32 frameWidth = section.Width;
+            Int32 frameHeight = section.Height;
+            Int32 stride = frameWidth;
+            if (trimIndex.HasValue && trimIndex.Value >= 0 && trimIndex.Value < origPalette.Entries.Length)
+            {
+                Int32 xOffset = 0;
+                Int32 yOffset = 0;
+                frameImageData = ImageUtils.OptimizeYHeight(frameImageData, frameWidth, ref frameHeight, ref yOffset, true, trimIndex.Value, 0, true);
+                frameImageData = ImageUtils.OptimizeXWidth(frameImageData, ref frameWidth, frameHeight, ref xOffset, true, trimIndex.Value, 0, true);
+                stride = frameWidth;
+            }
+            if (frameWidth > 0 && frameHeight > 0)
+            {
+                Color[] palette = origPalette.Entries;
+                if (doMatching)
+                {
+                    for (Int32 i = 0; i < frameImageData.Length; i++)
+                        frameImageData[i] = remapTable[frameImageData[i]];
+                    origBpp = matchBpp;
+                    palette = matchPalette;
+                }
+                if (origBpp < 8)
+                    frameImageData = ImageUtils.ConvertFrom8Bit(frameImageData, frameWidth, frameHeight, origBpp, true, ref stride);
+                bmp = BuildImage(frameImageData, frameWidth, frameHeight, stride, origPf, palette, Color.Black);
+                if (!doMatching && origPalette.Entries.Length < palette.Length)
+                    bmp.Palette = origPalette;
+            }
+            return bmp;
+        }
 
-        public static Bitmap BuildImageFromFrames(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Int32 framesPerLine)
+        private static Bitmap GetCutFrameHiCol(Bitmap edImage, Rectangle section, PixelFormat origPf, Color? trimColor, Int32 matchBpp, Color[] matchPalette)
+        {
+            Bitmap bmp = null;
+            Boolean doMatching = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
+            if (trimColor.HasValue)
+            {
+                section = ImageUtils.GetCropBounds(edImage, trimColor.Value, 0, section);
+            }
+            if (section.Width > 0 && section.Height > 0)
+            {
+                bmp = new Bitmap(section.Width, section.Height);
+                using (Graphics g = Graphics.FromImage(bmp))
+                    g.DrawImage(edImage, 0, 0, section, GraphicsUnit.Pixel);
+                if (doMatching)
+                {
+                    Bitmap newBmp = ImageUtils.ConvertToPalette(bmp, matchBpp, matchPalette);
+                    bmp.Dispose();
+                    bmp = newBmp;
+                }
+                else if (Image.GetPixelFormatSize(origPf) > 8 && origPf != PixelFormat.Format32bppArgb)
+                {
+                    Int32 stride;
+                    Byte[] frameData = GetImageData(bmp, out stride);
+                    Bitmap newBmp = BuildImage(frameData, section.Width, section.Height, stride, origPf, null, null);
+                    bmp.Dispose();
+                    bmp = newBmp;
+                }
+            }
+            return bmp;
+        }
+        
+        public static Bitmap BuildImageFromFrames(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Int32 framesPerLine, Byte backFillPalIndex, Color backFillColor)
         {
             PixelFormat highestPf = PixelFormat.Undefined;
             Int32 highestBpp = 0;
@@ -1514,7 +1610,7 @@ namespace Nyerguds.ImageManipulation
                     palette = paletteRaw.Entries;
                 }
             }
-            Boolean useRaw = highestBpp <= 8 && palette.Length < (1 << highestBpp);
+            Boolean useRaw = highestBpp <= 8 && palette != null && palette.Length < (1 << highestBpp);
             Int32 frames = images.Length;
             Int32 lines = (frames + framesPerLine - 1) / framesPerLine;
             Int32 fullWidth = framesWidth * framesPerLine;
@@ -1525,6 +1621,11 @@ namespace Nyerguds.ImageManipulation
                 bp = new Bitmap(fullWidth, fullHeight, PixelFormat.Format32bppArgb);
                 using (Graphics g = Graphics.FromImage(bp))
                 {
+                    // allows painting with transparency.
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    if (backFillColor.ToArgb() != 0)
+                        using (SolidBrush myBrush = new SolidBrush(Color.FromArgb(255, backFillColor)))
+                            g.FillRectangle(myBrush, new Rectangle(0, 0, fullWidth, fullHeight));
                     for (Int32 i = 0; i < frames; i++)
                     {
                         Bitmap cur = images[i];
@@ -1533,6 +1634,8 @@ namespace Nyerguds.ImageManipulation
                         Int32 rectY = i / framesPerLine;
                         Int32 rectX = i % framesPerLine;
                         Rectangle section = new Rectangle(rectX * framesWidth, rectY * framesHeight, cur.Width, cur.Height);
+                        
+
                         using (Bitmap tempImg = new Bitmap(cur))
                             g.DrawImage(tempImg, section);
                     }
@@ -1540,7 +1643,7 @@ namespace Nyerguds.ImageManipulation
                 if (highestBpp < 32 || highestPf != PixelFormat.Format32bppArgb)
                 {
                     Int32 stride;
-                    Byte[] imageData = ImageUtils.GetImageData(bp, out stride, highestPf);
+                    Byte[] imageData = GetImageData(bp, out stride, highestPf);
                     bp.Dispose();
                     bp = BuildImage(imageData, fullWidth, fullHeight, stride, highestPf, null, null);
                 }
@@ -1548,6 +1651,9 @@ namespace Nyerguds.ImageManipulation
             else
             {
                 Byte[] bpData = new Byte[fullWidth * fullHeight];
+                if (backFillPalIndex > 0)
+                    for (Int32 i = 0; i < bpData.Length; i++)
+                        bpData[i] = backFillPalIndex;
                 for (Int32 i = 0; i < frames; i++)
                 {
                     Bitmap cur = images[i];

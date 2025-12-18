@@ -55,11 +55,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 fixed0016 = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
             if (fixed0016 != 0x0016)
                 throw new FileTypeLoadException("Bad value in header.");
-            if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             Int32 offset = 4;
-            Boolean[] mask = this.TransparencyMask;
-            this.m_Palette = PaletteUtils.ApplyTransparencyGuide(this.m_Palette, mask);
             this.m_FramesList = new SupportedFileType[nrOfFrames];
             for (Int32 i = 0; i < nrOfFrames; i++)
             {
@@ -87,7 +84,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(0);
-                frame.SetTransparencyMask(mask);
                 this.m_FramesList[i] = frame;
                 offset += dataSize;
             }

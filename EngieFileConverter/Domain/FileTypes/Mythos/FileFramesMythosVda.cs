@@ -375,7 +375,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
                 frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
-                frame.SetTransparencyMask(imageTransMask);
                 // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                 frame.SetColors(this.m_Palette, this);
                 frame.SetFileClass(this.FrameInputFileClass);
@@ -412,7 +411,6 @@ namespace EngieFileConverter.Domain.FileTypes
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
                     frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
-                    frame.SetTransparencyMask(imageTransMask);
                     // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
                     frame.SetColors(this.m_Palette, this);
                     frame.SetFileClass(this.FrameInputFileClass);
@@ -543,8 +541,8 @@ namespace EngieFileConverter.Domain.FileTypes
             return new SaveOption[]
             {
                 new SaveOption("OPT", SaveOptionType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks", "1"),
-                new SaveOption("CH8", SaveOptionType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", null, "1", "OPT", "1", false),
-                new SaveOption("CHR", SaveOptionType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", null, "1", "OPT", "1", false),
+                new SaveOption("CH8", SaveOptionType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", null, "1", new SaveEnableFilter("OPT", false, "1")),
+                new SaveOption("CHR", SaveOptionType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", null, "1", new SaveEnableFilter("OPT", false, "1")),
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
                 new SaveOption("CUT", SaveOptionType.Boolean, "Leave off the first frame (save differences without initial state)", noFirstFrame? "1" : "0"),
             };

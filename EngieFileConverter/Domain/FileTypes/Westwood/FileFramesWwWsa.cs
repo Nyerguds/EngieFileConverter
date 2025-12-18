@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
@@ -23,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
-        protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "Command & Conquer"}; //, "Monopoly" };
+        protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "Command & Conquer", "Monopoly" };
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood WSA"; } }
         public override String[] FileExtensions { get { return new String[] { "wsa" }; } }
@@ -219,15 +220,15 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Continues = false;
             Int32 datalen = fileData.Length;
             if (datalen < 14)
-                throw new FileTypeLoadException("Bad header size.");
+                throw new FileTypeLoadException("File is too small to contain header.");
             UInt16 nrOfFrames = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            // Default for v3 (C&C). This is missing and shifted down 4 bytes for the D2 formats.
-            // The D2-specific code corrects this later.
-            UInt16 xPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-            UInt16 yPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-            UInt16 width = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
-            UInt16 height = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
-            Int32 deltaOffs = 0x0A;
+            if (nrOfFrames == 0)
+                throw new FileTypeLoadException("WSA cannot contain 0 frames.");
+            UInt16 xPos;
+            UInt16 yPos;
+            UInt16 width;
+            UInt16 height;
+            Int32 headerSize;
             UInt32 deltaBufferSize;
             UInt16 flags = 0;
             // If the type is Dune 2, the "width" value actually contains the buffer size, so it's practically impossible this is below 320.
@@ -235,43 +236,59 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 case WsaVersion.Dune2:
                 case WsaVersion.Dune2v1:
-                    width = xPos;
-                    height = yPos;
-                    xPos=0;
-                    yPos=0;
-                    // Compensate for missing X and Y offsets
-                    deltaOffs -= 4;
-                    this.m_Version = WsaVersion.Dune2;
-                    deltaBufferSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs, 2, true);
+                    headerSize = 0x0A;
+                    xPos = 0;
+                    yPos = 0;
+                    width = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+                    height = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
+                    deltaBufferSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
                     // d2v1 has no flags, and can thus never contain a palette.
                     if (loadVersion == WsaVersion.Dune2v1)
-                        deltaOffs -= 2;  // Decrease this to have data index offset correct later.
+                        headerSize -= 2;
                     else
-                        flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs + 2, 2, true);
+                        flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
                     break;
                 case WsaVersion.Cnc:
-                    deltaBufferSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs, 2, true);
-                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, deltaOffs + 2, 2, true);
+                case WsaVersion.Poly:
+                    xPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+                    yPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
+                    width = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
+                    height = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
+                    Int32 buffSize = 2;
+                    if (loadVersion == WsaVersion.Poly)
+                        buffSize += 2;
+                    deltaBufferSize = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, buffSize, true);
+                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A + buffSize, 2, true);
+                    headerSize = 0x0C + buffSize;
                     break;
                 default:
-                    // Might need specific poly handling here... but then I first need
-                    // accurate checks to distinguish c&c from poly.
                     throw new FileTypeLoadException("Unknown WSA format!");
             }
+            if (width == 0 || height == 0)
+                throw new HeaderParseException("Invalid image dimensions!");
             this.m_Version = loadVersion;
-            String generalInfo = "Version: " + this.formats[(Int32) this.m_Version];
-            if (this.m_Version != WsaVersion.Dune2 && this.m_Version != WsaVersion.Dune2v1)
-                generalInfo += "\nX-offset = " + xPos + "\nY-offset = " + yPos;
-            this.ExtraInfo = generalInfo;
-            Int32 dataIndexOffset = deltaOffs + 4;
+            StringBuilder generalInfo = new StringBuilder("Version: ").Append(this.formats[(Int32)loadVersion]);
+            if (loadVersion != WsaVersion.Dune2 && loadVersion != WsaVersion.Dune2v1)
+            {
+                generalInfo.Append("\nFrame dimensions: ").Append(width).Append("x").Append(height);
+                generalInfo.Append("\nFrame position: [").Append(xPos).Append(", ").Append(yPos).Append("]");
+            }
+            String extraInfo = generalInfo.ToString();
+            Int32 dataIndexOffset = headerSize;
             Int32 paletteOffset = dataIndexOffset + (nrOfFrames + 2) * 4;
-            this.m_HasPalette = (flags & 1) == 1;
+            this.m_HasPalette = (flags & 1) != 0;
+            Boolean forceSixBitPal = loadVersion == WsaVersion.Poly && (flags & 2) != 0;
             UInt32[] frameOffsets = new UInt32[nrOfFrames + 2];
             for (Int32 i = 0; i < nrOfFrames + 2; i++)
             {
                 if (fileData.Length <= dataIndexOffset + 4)
                     throw new HeaderParseException("Data too short to contain frames info!");
-                frameOffsets[i] = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
+                UInt32 curOffs = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
+                frameOffsets[i] = curOffs;
+                if (m_HasPalette)
+                    curOffs +=300;
+                if (curOffs > fileData.Length)
+                    throw new HeaderParseException("Data too short to contain frames info!");
                 dataIndexOffset += 4;
             }
             this.m_HasLoopFrame = frameOffsets[nrOfFrames + 1] != 0;
@@ -283,36 +300,44 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.m_HasPalette)
             {
                 if (fileData.Length < paletteOffset + 0x300)
-                    throw new FileTypeLoadException("File is not long enough for color palette!");
+                    throw new HeaderParseException("File is not long enough for color palette!");
                 Byte[] pal = new Byte[0x300];
                 Array.Copy(fileData, paletteOffset, pal, 0, 0x300);
                 try
                 {
-                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(pal));
+                    if (loadVersion != WsaVersion.Poly || forceSixBitPal)
+                        this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(pal));
+                    else
+                        this.m_Palette = ColorUtils.ReadEightBitPalette(pal, true);
+                    PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
                 }
                 catch (NotSupportedException e)
                 {
-                    throw new FileTypeLoadException("Error loading color palette: " + e.Message, e);
+                    throw new HeaderParseException("Error loading color palette: " + e.Message, e);
                 }
             }
             if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
-            if (width == 0 || height == 0)
-                throw new FileTypeLoadException("Invalid image dimensions!");
-            this.m_Width = width;
-            this.m_Height = height;
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
+            this.m_Width = width + xPos;
+            this.m_Height = height + yPos;
             this.m_FramesList = new SupportedFileType[nrOfFrames + 1];
             Byte[] frameData = new Byte[width * height];
             Byte[] frame0Data = new Byte[width * height];
-            Byte[] xorData = new Byte[deltaBufferSize + 37];
+            deltaBufferSize += 37;
+            // all nice for detecting bad files, but some GOOD files manage to have a delta buffer larger than the XORWorstCase.
+            Int32 xorWorstCase = Math.Max((Int32)deltaBufferSize, WWCompression.XORWorstCase(width * height));
+            Byte[] xorData = new Byte[xorWorstCase];
             for (Int32 i = 0; i < nrOfFrames + 1; i++)
             {
                 String specificInfo = String.Empty;
                 UInt32 frameOffset = frameOffsets[i];
                 UInt32 frameOffsetReal = frameOffset;
+                UInt32 frameEndOffset = frameOffsets[i + 1];
                 if (this.m_HasPalette)
+                {
                     frameOffsetReal += 0x300;
-
+                    frameEndOffset += 0x300;
+                }
                 if (i == 0 && frameOffset == 0)
                 {
                     this.m_Continues = true;
@@ -327,7 +352,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         Array.Clear(frameData, 0, frameData.Length);
                         specificInfo = "\nContinues from a previous file";
-                        this.ExtraInfo += specificInfo;   
+                        extraInfo += specificInfo;   
                     }                 
                 }
                 if (testContinue)
@@ -336,14 +361,19 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
                 Int32 refOff = (Int32)frameOffsetReal;
                 Int32 uncLen;
+                Boolean bufferOverrun;
                 try
                 {
-                    uncLen = WWCompression.LcwDecompress(fileData, ref refOff, xorData);
+                    uncLen = WWCompression.LcwDecompress(fileData, ref refOff, xorData, (Int32)frameEndOffset);
+                    bufferOverrun = uncLen > deltaBufferSize;
                 }
                 catch (Exception ex)
                 {
-                    throw new FileTypeLoadException("LCW Decompression failed: " + ex.Message, ex);
+                    throw new HeaderParseException("LCW Decompression failed: " + ex.Message, ex);
                 }
+                specificInfo += "\nData: " + (refOff - frameOffsetReal) + (" bytes @ 0x") + frameOffsetReal.ToString("X");
+                if (bufferOverrun)
+                    specificInfo += "\nFrame has buffer overrun";
                 try
                 {
                     refOff = 0;
@@ -351,7 +381,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (Exception ex)
                 {
-                    throw new FileTypeLoadException("XOR Delta merge failed: " + ex.Message, ex);
+                    throw new HeaderParseException("XOR Delta merge failed: " + ex.Message, ex);
                 }
                 if (i == 0)
                     Array.Copy(frameData, frame0Data, frameData.Length);
@@ -369,17 +399,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetFileClass(this.FrameInputFileClass);
                 frame.SetColorsInPalette(this.ColorsInPalette);
-                frame.SetExtraInfo(generalInfo + specificInfo);
-                frame.SetTransparencyMask(this.TransparencyMask);
+                frame.SetExtraInfo(specificInfo.TrimStart('\n'));
                 this.m_FramesList[i] = frame;
             }
             this.m_DamagedLoopFrame = false;
             if (this.m_HasLoopFrame)
             {
                 this.m_DamagedLoopFrame = !frameData.SequenceEqual(frame0Data);
-                this.ExtraInfo += "\nHas loop frame";
+                extraInfo += "\nHas loop frame";
                 if (this.m_DamagedLoopFrame)
-                    this.ExtraInfo += " (but doesn't match)";
+                    extraInfo += " (but doesn't match)";
             }
             if (!this.m_DamagedLoopFrame)
             {
@@ -394,6 +423,8 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (this.m_FramesList.Length == 1)
                 this.m_LoadedImage = this.m_FramesList[0].GetBitmap();
+            this.m_Version = loadVersion;
+            this.ExtraInfo = extraInfo;
         }
         
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
@@ -417,14 +448,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 continues = toSave.m_Continues;
                 ignoreLast = toSave.m_DamagedLoopFrame;
             }
-            SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
+            SaveOption[] opts = new SaveOption[ignoreLast ? 7 : 6];
             opts[0] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type:", String.Join(",", this.formats), ((Int32)type).ToString());
-            opts[1] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", null, hasColors ? "1" : "0", "TYPE", "0", true);
-            opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
-            opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
-            opts[4] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets", null, trim ? "1" : "0", "TYPE", "2", false);
+            opts[1] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", null, hasColors ? "1" : "0", new SaveEnableFilter("TYPE", true, "0"));
+            opts[2] = new SaveOption("PAL6", SaveOptionType.Boolean, "Force 6-bit palette", null, "0", new SaveEnableFilter("TYPE", true, "1", "2"), new SaveEnableFilter("PAL", false, "1"));
+            opts[3] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
+            opts[4] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
+            opts[5] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets", null, trim ? "1" : "0", new SaveEnableFilter("TYPE", true, "0" ,"1"));
             if (ignoreLast)
-                opts[5] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
+                opts[6] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
             return opts;
         }
 
@@ -468,6 +500,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 saveType = (WsaVersion)type;
 
             Boolean asPaletted = saveType != WsaVersion.Dune2v1 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean saveSixBitPal = saveType != WsaVersion.Poly || GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL6"));
+
             Boolean loop = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "LOOP"));
             Boolean crop = saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CROP"));
             Boolean cut = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
@@ -564,6 +598,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 headerSize = 14;
             if (saveType == WsaVersion.Dune2)
                 headerSize -= 4;
+            else if (saveType == WsaVersion.Poly)
+                headerSize += 2;
+
             Int32 indexSize = (readFrames + 2) * 4;
             Int32 paletteSize = asPaletted ? 0x300 : 0;
             Int32 dataSize = framesData.Sum(x => x.Length);
@@ -582,7 +619,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 offset = 0;
             ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)readFrames);
             offset += 2;
-            if (saveType == WsaVersion.Cnc)
+            if (saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2)
             {
                 ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)xOffset);
                 offset += 2;
@@ -593,11 +630,14 @@ namespace EngieFileConverter.Domain.FileTypes
             offset += 2;
             ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)height);
             offset += 2;
-            ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)deltaBufferSize);
-            offset += 2;
+            ArrayUtils.WriteIntToByteArray(fileData, offset, saveType == WsaVersion.Poly ? 4 : 2, true, (UInt32)deltaBufferSize);
+            offset += saveType == WsaVersion.Poly ? 4 : 2;
             if (saveType != WsaVersion.Dune2v1)
             {
-                ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)(asPaletted ? 1 : 0));
+                Int32 flags = asPaletted ? 1 : 0;
+                if (asPaletted & saveSixBitPal)
+                    flags |= 2;
+                ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)flags);
                 offset += 2;
             }
             foreach (Int32 frOffs in frameOffsets)
@@ -607,9 +647,12 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (asPaletted)
             {
-                ColorSixBit[] sixBitPal = ColorUtils.GetSixBitColorPalette(palette);
-                Byte[] sixBitPalBytes = ColorUtils.GetSixBitPaletteData(sixBitPal);
-                Array.Copy(sixBitPalBytes, 0, fileData, offset, Math.Min(0x300, sixBitPalBytes.Length));
+                Byte[] palBytes;
+                if (saveSixBitPal)
+                    palBytes = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(palette));
+                else
+                    palBytes = ColorUtils.GetEightBitPaletteData(palette, false);
+                Array.Copy(palBytes, 0, fileData, offset, Math.Min(0x300, palBytes.Length));
                 offset += 0x300;
             }
             foreach (Byte[] frame in framesData)
@@ -626,6 +669,6 @@ namespace EngieFileConverter.Domain.FileTypes
         Dune2v1 = 0,
         Dune2 = 1,
         Cnc = 2,
-        //Poly=3,
+        Poly = 3,
     }
 }

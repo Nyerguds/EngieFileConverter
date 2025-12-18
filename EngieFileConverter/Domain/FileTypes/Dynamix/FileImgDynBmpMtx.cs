@@ -187,7 +187,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 fr.SetColors(this.m_Palette);
                 fr.SetBitsPerColor(bpp);
                 fr.SetFileClass(m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit);
-                fr.SetTransparencyMask(this.TransparencyMask);
                 frs.AddFrame(fr);
             }
             // Call SaveToBmpChunk to turn into normal bmp

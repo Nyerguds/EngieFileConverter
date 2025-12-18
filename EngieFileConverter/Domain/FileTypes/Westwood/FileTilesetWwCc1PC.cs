@@ -105,10 +105,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imagesIndex = new Byte[actualImages];
             Array.Copy(fileData, this.hdrIndexImages, imagesIndex, 0, actualImages);
             this.m_TilesList = new List<FileTileCc1Pc>();
-            if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
-            // ONly way to set a palette is through SetPaletre, and that ensures 256 colours.
-            this.m_Palette[0] = Color.FromArgb(0, this.m_Palette[0]);
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             this.m_Tiles = new Byte[this.hdrNrOfTiles][];
             this.m_TileUseList = new Boolean[imagesList.Length];
             Byte[] extraInfoList = new Byte[imagesList.Length];

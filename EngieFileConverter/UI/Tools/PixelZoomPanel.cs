@@ -1,24 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
 
 namespace Nyerguds.Util.UI
 {
     public partial class PixelZoomPanel : UserControl
     {
-        private Color m_BackgroundFillColor = Color.Fuchsia;
-        
+        [RefreshProperties(RefreshProperties.Repaint)]
+        [DefaultValue(typeof(Color), "Fuchsia")]
         public Color BackgroundFillColor
         {
-            get { return m_BackgroundFillColor; }
-            set { m_BackgroundFillColor = value; }
+            get { return this.lblTransparentColorVal.TrueBackColor; }
+            set
+            {
+                this.lblTransparentColorVal.TrueBackColor = value;
+                this.picImage.BackColor = value;
+                this.OnBackgroundFillColorChanged(new EventArgs());
+            }
+        }
+
+        [Description("Occurs when the user changes the background fill color"), Category("Action")]
+        public event EventHandler BackgroundFillColorChanged;
+        
+        protected virtual void OnBackgroundFillColorChanged(EventArgs e)
+        {
+            EventHandler handler = BackgroundFillColorChanged;
+            if (handler != null)
+                handler(this, e);
         }
 
         public Int32[] CustomColors { get; set; }
@@ -36,7 +46,7 @@ namespace Nyerguds.Util.UI
         public Int32 ZoomFactor
         {
             get { return (Int32)this.numZoom.Value; }
-            set { this.numZoom.Value = (Decimal)value; }
+            set { this.numZoom.EnteredValue = value; }
         }
 
         public Boolean ImageVisible
@@ -65,22 +75,17 @@ namespace Nyerguds.Util.UI
             this.CopyToClipboard();
         }
 
-        private void tsmiCopy_Click(Object sender, EventArgs e)
-        {
-            this.CopyToClipboard();
-        }
-
         public void CopyToClipboard()
         {
             Image image = this.picImage.Image;
             if (image == null)
                 return;
             using (Bitmap bm = new Bitmap(image))
-            using (Bitmap bmnt = ImageUtils.PaintOn32bpp(image, this.m_BackgroundFillColor))
+            using (Bitmap bmnt = ImageUtils.PaintOn32bpp(image, this.BackgroundFillColor))
                 ClipboardImage.SetClipboardImage(bm, bmnt, null);
         }
 
-        private void NumZoomValueChanged(object sender, EventArgs e)
+        private void NumZoomValueChanged(Object sender, EventArgs e)
         {
             this.RefreshImage(true);
         }
@@ -103,6 +108,7 @@ namespace Nyerguds.Util.UI
             Int32 newHeight = loadOk ? bm.Height * currentZoom : 100;
             Int32 frameLeftVal = pnlImageScroll.DisplayRectangle.X;
             Int32 frameUpVal = pnlImageScroll.DisplayRectangle.Y;
+            // Get previous zoom factor from current image size on the control.
             Int32 prevZoom = oldWidth * currentZoom / newWidth;
             Int32 visibleCenterXOld = Math.Min(oldWidth, pnlImageScroll.ClientRectangle.Width) / 2;
             Int32 visibleCenterYOld = Math.Min(oldHeight, pnlImageScroll.ClientRectangle.Height) / 2;
@@ -121,16 +127,29 @@ namespace Nyerguds.Util.UI
             Int32 viewCenterActualY = (-frameUpVal + visibleCenterYOld) / prevZoom;
             Int32 frameLeftValNew = visibleCenterXNew - (viewCenterActualX * currentZoom);
             Int32 frameUpValNew = visibleCenterYNew - (viewCenterActualY * currentZoom);
-            pnlImageScroll.SetDisplayRectLoc(frameLeftValNew, frameUpValNew);
+            pnlImageScroll.SetDisplayRectLocation(frameLeftValNew, frameUpValNew);
             pnlImageScroll.PerformLayout();
         }
 
-        private void PicImageClick(object sender, EventArgs e)
+        private void PicImageClick(Object sender, EventArgs e)
         {
             this.pnlImageScroll.Focus();
         }
         
-        private void LblTransparentColorValClick(object sender, EventArgs e)
+
+        private void LblTransparentColorValKeyPress(Object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == ' ' || e.KeyChar == '\r' || e.KeyChar == '\n')
+                this.AdjustColor();
+        }
+
+        private void lblTransparentColorVal_MouseClick(Object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+                this.AdjustColor();
+        }
+
+        private void AdjustColor()
         {
             ColorDialog cdl = new ColorDialog();
             cdl.Color = this.BackgroundFillColor;
@@ -138,16 +157,14 @@ namespace Nyerguds.Util.UI
             cdl.CustomColors = this.CustomColors;
             DialogResult res = cdl.ShowDialog(this);
             this.CustomColors = cdl.CustomColors;
-            if (res == DialogResult.OK || res == DialogResult.Yes)
-            {
-                this.m_BackgroundFillColor = cdl.Color;
-                this.lblTransparentColorVal.BackColor = this.m_BackgroundFillColor;
-                this.picImage.BackColor = this.m_BackgroundFillColor;
-                this.RefreshImage(false);
-            }
+            if (res != DialogResult.OK && res != DialogResult.Yes)
+                return;
+            Color col = cdl.Color;
+            BackgroundFillColor = col;
+            this.RefreshImage(false);
         }
 
-        private void PnlImageScrollMouseScroll(object sender, MouseEventArgs e)
+        private void PnlImageScrollMouseScroll(Object sender, MouseEventArgs e)
         {
             Keys k = ModifierKeys;
             if ((k & Keys.Control) != 0)
@@ -158,6 +175,5 @@ namespace Nyerguds.Util.UI
                     args.Handled = true;
             }
         }
-
     }
 }

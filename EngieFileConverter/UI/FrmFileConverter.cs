@@ -157,21 +157,6 @@ namespace EngieFileConverter.UI
                             MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             return;
                         }
-                        // Test code. Ignore.
-                        /*/
-                            Bitmap bmp = m_LoadedFile.GetBitmap();
-                            if (bmp != null)
-                            {
-                                Int32 stride;
-                                Byte[] blackAndWhite = ImageUtils.GetImageData(bmp, out stride, PixelFormat.Format1bppIndexed);
-                                Bitmap bwBitmap = ImageUtils.BuildImage(blackAndWhite, bmp.Width, bmp.Height, stride, PixelFormat.Format1bppIndexed, new[] { Color.Black, Color.White }, null);
-                                FileImagePng png = new FileImagePng();
-                                png.LoadFile(bwBitmap, path);
-                                SupportedFileType oldFile = m_LoadedFile;
-                                m_LoadedFile = png;
-                                //oldFile.Dispose();
-                            }
-                            //*/
                     }
                 }
             }
@@ -377,7 +362,7 @@ namespace EngieFileConverter.UI
             this.cmbPalettes.Enabled = needsPalette;
             Bitmap image = loadedFile.GetBitmap();
             this.pzpImage.Image = image;
-            this.RefreshPalettes(false, false);
+            this.RefreshPalettes(true, fromNewFile);
             if (needsPalette && fromNewFile)
                 this.CmbPalettes_SelectedIndexChanged(null, null);
             else
@@ -400,12 +385,14 @@ namespace EngieFileConverter.UI
             return ColorStatus.Internal;
         }
 
-        public List<PaletteDropDownInfo> GetPalettes(Int32 bpp, Boolean reloadFiles)
+        public List<PaletteDropDownInfo> GetPalettes(Int32 bpp, Boolean reloadFiles, Boolean[] typeTransModifier)
         {
             List<PaletteDropDownInfo> allPalettes = this.m_DefaultPalettes.Where(p => p.BitsPerPixel == bpp).ToList();
             if (reloadFiles)
                 this.m_ReadPalettes = this.LoadExtraPalettes();
             allPalettes.AddRange(this.m_ReadPalettes.Where(p => p.BitsPerPixel == bpp));
+            foreach (PaletteDropDownInfo info in allPalettes)
+                info.Colors = PaletteUtils.ApplyTransparencyGuide(info.Colors, typeTransModifier);
             return allPalettes;
         }
 
@@ -560,6 +547,11 @@ namespace EngieFileConverter.UI
             this.LoadFile(filename, selectedItem, preferredTypes);
         }
 
+        private Boolean[] GetCurrentTypeTransparencyMask()
+        {
+            return this.m_LoadedFile == null ? null : this.m_LoadedFile.TransparencyMask;
+        }
+
         private void RefreshColorControls()
         {
             SupportedFileType loadedFile = this.GetShownFile();
@@ -578,7 +570,7 @@ namespace EngieFileConverter.UI
                     break;
                 case ColorStatus.External:
                     PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
-                    resetEnabled = currentPal != null && currentPal.IsChanged();
+                    resetEnabled = currentPal != null && currentPal.IsChanged(GetCurrentTypeTransparencyMask());
                     if (fileLoaded) // && currentPal.Colors.Length != loadedFile.GetColors().Length)
                         pal = loadedFile.GetColors();
                     else
@@ -620,6 +612,7 @@ namespace EngieFileConverter.UI
                 return;
             PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
             Color[] targetPal;
+            SupportedFileType loadedFile = this.GetShownFile();
             if (currentPal == null)
             {
                 if (!this.btnSavePalette.Enabled)
@@ -634,9 +627,8 @@ namespace EngieFileConverter.UI
                     this.btnSavePalette.Enabled = false;
                 else if (!this.btnSavePalette.Enabled && bpp != 1)
                     this.btnSavePalette.Enabled = true;
-                this.btnResetPalette.Enabled = currentPal.IsChanged();
+                this.btnResetPalette.Enabled = currentPal.IsChanged(GetCurrentTypeTransparencyMask());
             }
-            SupportedFileType loadedFile = this.GetShownFile();
             if (loadedFile == null)
                 this.pzpImage.Image = null;
             else
@@ -653,7 +645,6 @@ namespace EngieFileConverter.UI
             ColorStatus cs = this.GetColorStatus();
             if (cs == ColorStatus.None)
                 return;
-            Color[] colors;
             switch (cs)
             {
                 case ColorStatus.Internal:
@@ -669,8 +660,8 @@ namespace EngieFileConverter.UI
                         if (dr != DialogResult.Yes)
                             return;
                     }
-                    currentPal.Revert();
-                    colors = currentPal.Colors;
+                    currentPal.Revert(GetCurrentTypeTransparencyMask());
+                    Color[] colors = currentPal.Colors;
                     this.GetShownFile().SetColors(colors);
                     break;
                 default:
@@ -708,6 +699,7 @@ namespace EngieFileConverter.UI
             palSave.Icon = this.Icon;
             palSave.Title = GetTitle(false);
             palSave.PaletteToSave = currentPal;
+            palSave.SuggestedSaveName = m_LoadedFile.LoadedFile ?? m_LoadedFile.LoadedFileName;
             palSave.StartPosition = FormStartPosition.CenterParent;
             DialogResult dr = palSave.ShowDialog(this);
             if (dr != DialogResult.OK || cs == ColorStatus.Internal)
@@ -757,7 +749,7 @@ namespace EngieFileConverter.UI
             if (oldBpp != -1 && oldBpp == bpp && !forced)
                 return;
             Int32 index = -1;
-            List<PaletteDropDownInfo> bppPalettes = this.GetPalettes(bpp, reloadFiles);
+            List<PaletteDropDownInfo> bppPalettes = this.GetPalettes(bpp, reloadFiles, GetCurrentTypeTransparencyMask());
             if (forced && oldBpp != -1 && oldBpp == bpp && currentPal != null)
                 index = bppPalettes.FindIndex(x => x.Name == currentPal.Name);
             if (bppPalettes.Count == 0)
@@ -974,7 +966,12 @@ namespace EngieFileConverter.UI
                 return;
             Bitmap image = shownFile.GetBitmap();
 
-            FrmFramesCutter frameCutter = new FrmFramesCutter(image, pzpImage.CustomColors);
+            List<PaletteDropDownInfo> allPalettes = new List<PaletteDropDownInfo>();
+            allPalettes.AddRange(this.m_DefaultPalettes);
+            allPalettes.AddRange(this.m_ReadPalettes);
+
+            FrmFramesCutter frameCutter = new FrmFramesCutter(image, pzpImage.CustomColors, allPalettes.ToArray());
+            frameCutter.CustomColors = pzpImage.CustomColors;
             DialogResult dr = frameCutter.ShowDialog();
             pzpImage.CustomColors = frameCutter.CustomColors;
 
@@ -986,7 +983,11 @@ namespace EngieFileConverter.UI
             Int32 frameWidth = frameCutter.FrameWidth;
             Int32 frameHeight = frameCutter.FrameHeight;
             Int32 maxFrames = frameCutter.Frames;
-            FileFrames frames = FileFrames.CutImageIntoFrames(image, imagePath, frameWidth, frameHeight, maxFrames);
+            Color? trimColor = frameCutter.TrimColor;
+            Int32? trimIndex = frameCutter.TrimIndex;
+            Int32 matchBpp = frameCutter.MatchBpp;
+            Color[] matchPalette = frameCutter.MatchPalette;
+            FileFrames frames = FileFrames.CutImageIntoFrames(image, imagePath, frameWidth, frameHeight, maxFrames, trimColor, trimIndex, matchBpp, matchPalette, null);
             SupportedFileType oldFile = this.m_LoadedFile;
             this.m_LoadedFile = frames;
             this.AutoSetZoom();
@@ -999,15 +1000,50 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
             Bitmap[] frameImages = m_LoadedFile.Frames.Select(fr => fr.GetBitmap()).ToArray();
+
+
+            PixelFormat highestPf = PixelFormat.Undefined;
+            Int32 highestBpp = 0;
+            foreach (Bitmap img in frameImages)
+            {
+                if (img == null)
+                    continue;
+                PixelFormat curPf = img.PixelFormat;
+                Int32 curBpp = Image.GetPixelFormatSize(curPf);
+                if (curBpp > highestBpp)
+                {
+                    highestPf = curPf;
+                    highestBpp = curBpp;
+                }
+            }
+            if (highestBpp == 0)
+                return;
             Int32 maxWidth = frameImages.Select(p => p == null ? 0 : p.Width).Max();
             Int32 maxHeight = frameImages.Select(p => p == null ? 0 : p.Height).Max();
+
             Int32 frames = frameImages.Length;
-            SaveOption[] so = new SaveOption[]
+            
+            SaveOption[] so = new SaveOption[4];
+            Boolean hasAlpha = true;
+            Boolean hasSimpleTrans = false;
+            if (highestBpp == 16)
             {
-                new SaveOption("FRW", SaveOptionType.Number, "Frame width",maxWidth + ",", maxWidth.ToString()),
-                new SaveOption("FRH", SaveOptionType.Number, "Frame height",maxHeight + ",", maxHeight.ToString()),
-                new SaveOption("FPL", SaveOptionType.Number, "Frames per line","1," + frames, ((Int32)Math.Sqrt(frames)).ToString()),
-            };
+                hasAlpha = false;
+                hasSimpleTrans = (highestPf & PixelFormat.Alpha) != 0;
+            }
+            else if (highestBpp > 8 && (highestPf & PixelFormat.Alpha) == 0)
+            {
+                hasAlpha = false;
+            }
+
+            so[0] = new SaveOption("FRW", SaveOptionType.Number, "Frame width",maxWidth + ",", maxWidth.ToString());
+            so[1] =     new SaveOption("FRH", SaveOptionType.Number, "Frame height",maxHeight + ",", maxHeight.ToString());
+            so[2] =     new SaveOption("FPL", SaveOptionType.Number, "Frames per line","1," + frames, ((Int32)Math.Sqrt(frames)).ToString());
+            if (highestBpp <= 8)
+                so[3] = new SaveOption("BGI", SaveOptionType.Number, "Background colour around frames", "0," + ((1 << highestBpp) - 1), "0");
+            else
+                so[3] = new SaveOption("BGC", SaveOptionType.Color, "Background colour around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
+
             SaveOptionInfo soi = new SaveOptionInfo();
             soi.Name = "Frames to single image";
             soi.Properties = so;
@@ -1023,7 +1059,14 @@ namespace EngieFileConverter.UI
             Int32.TryParse(SaveOption.GetSaveOptionValue(so, "FRH"), out frameHeight);
             Int32 framesPerLine;
             Int32.TryParse(SaveOption.GetSaveOptionValue(so, "FPL"), out framesPerLine);
-            Bitmap bm = ImageUtils.BuildImageFromFrames(frameImages, frameWidth, frameHeight, framesPerLine);
+            Byte fillPalIndex = 0;
+            Color fillColor = Color.Empty;
+            if (highestBpp <= 8)
+                Byte.TryParse(SaveOption.GetSaveOptionValue(so, "BGI"), out fillPalIndex);
+            else
+                fillColor = ColorUtils.ColorFromHexString(SaveOption.GetSaveOptionValue(so, "BGC"));
+
+            Bitmap bm = ImageUtils.BuildImageFromFrames(frameImages, frameWidth, frameHeight, framesPerLine, fillPalIndex, fillColor);
             SupportedFileType oldFile = this.m_LoadedFile;
             FileImagePng returnImg = new FileImagePng();
             returnImg.LoadFile(bm, m_LoadedFile.LoadedFile);

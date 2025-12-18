@@ -35,7 +35,7 @@ namespace Nyerguds.Util.UI
         /// <summary>
         /// Raises the <see cref="E:System.Windows.Forms.Control.Paint"/> event.
         /// </summary>
-        /// <param name="pe">A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data. </param>
+        /// <param name="pe">A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data.</param>
         protected override void OnPaint (PaintEventArgs pe)
         {
             pe.Graphics.InterpolationMode = this.InterpolationMode;

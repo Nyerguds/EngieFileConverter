@@ -49,6 +49,8 @@
             this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiEdit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiCopy = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiImageToFrames = new System.Windows.Forms.ToolStripMenuItem();
+            this.tsmiFramesToSingleImage = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiHeightMapTools = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiToHeightMap = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiToPlateaus = new System.Windows.Forms.ToolStripMenuItem();
@@ -71,8 +73,6 @@
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorViewer = new Nyerguds.Util.UI.PalettePanel();
             this.pzpImage = new Nyerguds.Util.UI.PixelZoomPanel();
-            this.tsmiImageToFrames = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiFramesToSingleImage = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numFrame)).BeginInit();
             this.SuspendLayout();
@@ -272,6 +272,22 @@
             this.tsmiCopy.Size = new System.Drawing.Size(246, 22);
             this.tsmiCopy.Text = "Copy";
             this.tsmiCopy.Click += new System.EventHandler(this.tsmiCopy_Click);
+            // 
+            // tsmiImageToFrames
+            // 
+            this.tsmiImageToFrames.Name = "tsmiImageToFrames";
+            this.tsmiImageToFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
+            this.tsmiImageToFrames.Size = new System.Drawing.Size(246, 22);
+            this.tsmiImageToFrames.Text = "&Image to frames...";
+            this.tsmiImageToFrames.Click += new System.EventHandler(this.TsmiImageToFramesClick);
+            // 
+            // tsmiFramesToSingleImage
+            // 
+            this.tsmiFramesToSingleImage.Name = "tsmiFramesToSingleImage";
+            this.tsmiFramesToSingleImage.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
+            this.tsmiFramesToSingleImage.Size = new System.Drawing.Size(246, 22);
+            this.tsmiFramesToSingleImage.Text = "F&rames to single image...";
+            this.tsmiFramesToSingleImage.Click += new System.EventHandler(this.TsmiFramesToSingleImageClick);
             // 
             // tsmiHeightMapTools
             // 
@@ -488,7 +504,6 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pzpImage.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.pzpImage.BackgroundFillColor = System.Drawing.Color.Empty;
             this.pzpImage.CustomColors = null;
             this.pzpImage.Image = null;
             this.pzpImage.ImageVisible = false;
@@ -498,22 +513,6 @@
             this.pzpImage.Size = new System.Drawing.Size(646, 522);
             this.pzpImage.TabIndex = 316;
             this.pzpImage.ZoomFactor = 1;
-            // 
-            // tsmiImageToFrames
-            // 
-            this.tsmiImageToFrames.Name = "tsmiImageToFrames";
-            this.tsmiImageToFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
-            this.tsmiImageToFrames.Size = new System.Drawing.Size(246, 22);
-            this.tsmiImageToFrames.Text = "&Image to frames...";
-            this.tsmiImageToFrames.Click += new System.EventHandler(this.TsmiImageToFramesClick);
-            // 
-            // tsmiFramesToSingleImage
-            // 
-            this.tsmiFramesToSingleImage.Name = "tsmiFramesToSingleImage";
-            this.tsmiFramesToSingleImage.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.R)));
-            this.tsmiFramesToSingleImage.Size = new System.Drawing.Size(246, 22);
-            this.tsmiFramesToSingleImage.Text = "F&rames to single image...";
-            this.tsmiFramesToSingleImage.Click += new System.EventHandler(this.TsmiFramesToSingleImageClick);
             // 
             // FrmFileConverter
             // 

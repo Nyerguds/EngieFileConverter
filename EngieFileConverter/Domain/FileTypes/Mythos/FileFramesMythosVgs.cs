@@ -32,12 +32,12 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Mythos Visage"; } }
         public override String[] FileExtensions { get { return new String[] { "vgs", "lbv", "all" }; } }
         public override String ShortTypeDescription { get { return "Mythos Visage frames file"; } }
-        public override Int32 ColorsInPalette { get { return this.m_PaletteSet? this.m_Palette.Length : 0; } }
+        public override Int32 ColorsInPalette { get { return this.m_PaletteSet ? this.m_Palette.Length : 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public Int32 CompressionType { get; set; }
         protected String[] compressionTypes = new String[] { "No compression", "Flag-based RLE", "Collapsed transparency" };
         protected List<SupportedFileType> m_FramesList = new List<SupportedFileType>();
-        protected Boolean m_PaletteSet = false;
+        protected Boolean m_PaletteSet;
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
@@ -259,16 +259,13 @@ namespace EngieFileConverter.Domain.FileTypes
                         }
                     }
                     if (this.m_Palette == null)
-                    {
-                        this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
-                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, transMask);
-                    }
+                        this.m_Palette = PaletteUtils.GenerateGrayPalette(8, transMask, false);
+                    
                 }
                 Bitmap curImage = ImageUtils.BuildImage(imageData, frameWidth, frameHeight, frameWidth, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, curImage, sourcePath, this.m_FramesList.Count);
                 frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
-                frame.SetTransparencyMask(transMask);
                 frame.SetColors(this.m_Palette, this);
                 extraInfo += COMPRESSION + this.compressionTypes[frameCompression];
                 frame.SetExtraInfo(extraInfo.TrimEnd('\n'));

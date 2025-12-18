@@ -60,10 +60,10 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours</param>
-        /// <param name="pixelFormat">Pixel format for which to generate the new palette</param>
+        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="pixelFormat">Pixel format for which to generate the new palette.</param>
         /// <param name="transparencyGuide">Array of booleans specifying which indices to make transparent.</param>
-        /// <returns>The new palette</returns>
+        /// <returns>The new palette.</returns>
         public static Color[] MakePalette(Color[] sourcePalette, PixelFormat pixelFormat, Boolean[] transparencyGuide)
         {
             return MakePalette(sourcePalette, pixelFormat, transparencyGuide, null);
@@ -72,11 +72,11 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours</param>
-        /// <param name="pixelFormat">Pixel format for which to generate the new palette</param>
+        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="pixelFormat">Pixel format for which to generate the new palette.</param>
         /// <param name="transparencyGuide">Array of booleans specifying which indices to make transparent.</param>
-        /// <param name="defaultColor">Default colour if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty</param>
-        /// <returns>The new palette</returns>
+        /// <param name="defaultColor">Default colour if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty.</param>
+        /// <returns>The new palette.</returns>
         public static Color[] MakePalette(Color[] sourcePalette, PixelFormat pixelFormat, Boolean[] transparencyGuide, Color? defaultColor)
         {
             Int32 bpp = Image.GetPixelFormatSize(pixelFormat);
@@ -86,10 +86,10 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours</param>
-        /// <param name="bpp">Bits per pixel for which to generate the new palette</param>
+        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="bpp">Bits per pixel for which to generate the new palette.</param>
         /// <param name="transparencyGuide">Array of booleans specifying which indices to make transparent.</param>
-        /// <returns>The new palette</returns>
+        /// <returns>The new palette.</returns>
         public static Color[] MakePalette(Color[] sourcePalette, Int32 bpp, Boolean[] transparencyGuide)
         {
             return MakePalette(sourcePalette, bpp, transparencyGuide, null);
@@ -98,11 +98,11 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Creates a new palette with the full amount of colour for the given bits per pixel value, and pours the given colours into it.
         /// </summary>
-        /// <param name="sourcePalette">Source colours</param>
-        /// <param name="bpp">Bits per pixel for which to generate the new palette</param>
+        /// <param name="sourcePalette">Source colours.</param>
+        /// <param name="bpp">Bits per pixel for which to generate the new palette.</param>
         /// <param name="transparencyGuide">Array of booleans specifying which indices to make transparent.</param>
-        /// <param name="defaultColor">Default colour if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty</param>
-        /// <returns>The new palette</returns>
+        /// <param name="defaultColor">Default colour if the source palette is smaller than the returned palette. If not filled in, leftover colors will be Color.Empty.</param>
+        /// <returns>The new palette.</returns>
         public static Color[] MakePalette(Color[] sourcePalette, Int32 bpp, Boolean[] transparencyGuide, Color? defaultColor)
         {
             Int32 palLen = bpp > 8 ? 0 : 1 << bpp;
@@ -178,7 +178,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="bpp">Bits per pixel of the image the palette is for.</param>
         /// <param name="blackIndex">Index on the palette to replace with black.</param>
         /// <param name="transparencyGuide">Array with booleans indicating which indices should become transparent.</param>
-        /// <param name="reverseGenerated">Reverse the generated range. This happens after the generating, and before the operations on the first index/</param>
+        /// <param name="reverseGenerated">Reverse the generated range. This happens after the generating, and before the operations on the first index/.</param>
         /// <param name="startHue">Start hue range. Value from 0 to 240.</param>
         /// <param name="endHue">End hue range. Value from 0 to 240. Must be higher then startHue.</param>
         /// <param name="inclusiveEnd">True to include the end hue in the palette. If you generate a full hue range, this can be set to False to avoid getting a duplicate red colour on it.</param>

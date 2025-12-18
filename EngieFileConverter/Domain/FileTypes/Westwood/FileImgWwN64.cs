@@ -54,7 +54,6 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
 
         public override Int32 ColorsInPalette { get { return this.hdrPaletteOffset == 0 ? 0 : this.hdrColorsInPalette; } }
-        public override Boolean[] TransparencyMask { get { return this.hdrColorFormat == 2 ? null : new Boolean[0]; } }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
@@ -284,9 +283,9 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Only for internal use; this assumes that 16 bit images are processed as 32 bit.
+        /// Returns the pixel format corresponding to the N64 IMG header value.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The pixel format.</returns>
         protected PixelFormat GetPixelFormat()
         {
             PixelFormat pf;

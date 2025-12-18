@@ -7,7 +7,7 @@ namespace Nyerguds.GameData.Mythos
         /// <summary>
         /// Decodes the Mythos Software flag-based RLE compression.
         /// </summary>
-        /// <param name="buffer">Inut buffer</param>
+        /// <param name="buffer">Input buffer.</param>
         /// <param name="startOffset">Start offset. Leave null to start at the start.</param>
         /// <param name="endOffset">End offset. Leave null to take the length of the buffer.</param>
         /// <param name="decompressedSize">Decompressed size. If given, the initial output buffer will be initialised to this.</param>
@@ -140,7 +140,7 @@ namespace Nyerguds.GameData.Mythos
         /// <summary>
         /// Decodes the Mythos Software transparency-collapsing RLE compression.
         /// </summary>
-        /// <param name="buffer">Inut buffer</param>
+        /// <param name="buffer">Input buffer.</param>
         /// <param name="startOffset">Start offset. Leave null to start at the start.</param>
         /// <param name="endOffset">End offset. Leave null to take the length of the buffer.</param>
         /// <param name="decompressedSize">Decompressed size. If given, the initial output buffer will be initialised to this.</param>
@@ -322,9 +322,9 @@ namespace Nyerguds.GameData.Mythos
         /// <summary>
         /// Expands the buffer by copying its contents into a new, larger byte array.
         /// </summary>
-        /// <param name="buffer">Buffer to expand</param>
+        /// <param name="buffer">Buffer to expand.</param>
         /// <param name="expandSize">amount of bytes to add to the buffer.</param>
-        /// <returns></returns>
+        /// <returns>The expanded buffer.</returns>
         private Byte[] ExpandBuffer(Byte[] buffer, UInt32 expandSize)
         {
             Byte[] newBuf = new Byte[buffer.Length + expandSize];

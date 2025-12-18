@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -22,7 +23,7 @@ namespace Nyerguds.ImageManipulation
         /// https://stackoverflow.com/a/49057879/395685
         /// </summary>
         /// <param name="data">Two-dimensional Int32 array containing colours.</param>
-        /// <returns>Image</returns>
+        /// <returns>Image.</returns>
         public static Bitmap FromTwoDimIntArray(Int32[,] data)
         {
             Int32 width = data.GetLength(0);
@@ -54,7 +55,7 @@ namespace Nyerguds.ImageManipulation
         /// https://stackoverflow.com/a/49057879/395685
         /// </summary>
         /// <param name="data">Two-dimensional Int32 array containing colour data of a greyscale image.</param>
-        /// <returns>Image</returns>
+        /// <returns>Image.</returns>
         public static Bitmap FromTwoDimIntArrayGray(Int32[,] data)
         {
             Int32 width = data.GetLength(0);
@@ -83,7 +84,7 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/39013496/395685
         /// </summary>
-        /// <param name="bitmap">Input bitmap</param>
+        /// <param name="bitmap">Input bitmap.</param>
         /// <returns>True if pixels were found with an alpha value of less than 255.</returns>
         public static Boolean HasTransparency(Bitmap bitmap)
         {
@@ -159,12 +160,12 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/50024853/395685
         /// </summary>
-        /// <param name="width">Width</param>
-        /// <param name="height">Height</param>
-        /// <param name="colors">color palette</param>
-        /// <param name="color1">Index for color 1</param>
-        /// <param name="color2">Index for color 2</param>
-        /// <returns></returns>
+        /// <param name="width">The width of the generated image.</param>
+        /// <param name="height">The height of the generated image.</param>
+        /// <param name="colors">Color palette.</param>
+        /// <param name="color1">Index for color 1.</param>
+        /// <param name="color2">Index for color 2.</param>
+        /// <returns>The checkerboard pattern image.</returns>
         public static Bitmap GenerateCheckerboardImage(Int32 width, Int32 height, Color[] colors, Byte color1, Byte color2)
         {
             if (width == 0 || height == 0)
@@ -186,10 +187,10 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/49377762/395685
         /// </summary>
-        /// <param name="lines"></param>
-        /// <param name="startColumn"></param>
-        /// <param name="maxValue"></param>
-        /// <returns></returns>
+        /// <param name="lines">The CSV lines.</param>
+        /// <param name="startColumn">Start column.</param>
+        /// <param name="maxValue">Maximum value to stretch out to 255.</param>
+        /// <returns>The image.</returns>
         public static Bitmap GrayImageFromCsv(String[] lines, Int32 startColumn, Int32 maxValue)
         {
             // maxValue cannot exceed 255
@@ -250,14 +251,14 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/49441191/395685
         /// </summary>
-        /// <param name="img"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
-        public static Bitmap GetGrayImage(Image img, Int32 width, Int32 height)
+        /// <param name="image">Input image.</param>
+        /// <param name="width">Scaling width.</param>
+        /// <param name="height">Scaling height.</param>
+        /// <returns>The new image.</returns>
+        public static Bitmap GetGrayImage(Image image, Int32 width, Int32 height)
         {
             // get image data
-            Bitmap b = new Bitmap(img, width, height);
+            Bitmap b = new Bitmap(image, width, height);
             BitmapData sourceData = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
             Int32 stride = sourceData.Stride;
             Byte[] data = new Byte[stride * b.Height];
@@ -272,7 +273,7 @@ namespace Nyerguds.ImageManipulation
                     Byte colG = data[offset + 1]; // G
                     Byte colR = data[offset + 2]; // R
                     //Int32 ColA = data[offset + 3]; // A
-                    Byte grayValue = ColorUtils.GetGreyValue(colR, colG, colB);
+                    Byte grayValue = GetGreyValue(colR, colG, colB);
                     data[offset + 0] = grayValue; // B
                     data[offset + 1] = grayValue; // G
                     data[offset + 2] = grayValue; // R
@@ -284,6 +285,27 @@ namespace Nyerguds.ImageManipulation
             b.UnlockBits(sourceData);
             return b;
         }
+
+        public static Color GetGreyColor(Color color)
+        {
+            Byte grey = GetGreyValue(color.R, color.G, color.B);
+            return Color.FromArgb(grey, grey, grey);
+        }
+
+        public static Byte GetGreyValue(Color color)
+        {
+            return GetGreyValue(color.R, color.G, color.B);
+        }
+
+        public static Byte GetGreyValue(Byte red, Byte green, Byte blue)
+        {
+            Double redFactor = 0.2126d * Math.Pow(red, 2.2d);
+            Double grnFactor = 0.7152d * Math.Pow(green, 2.2d);
+            Double bluFactor = 0.0722d * Math.Pow(blue, 2.2d);
+            Double grey = Math.Pow(redFactor + grnFactor + bluFactor, 1d / 2.2);
+            return (Byte)Math.Max(0, Math.Min(255, Math.Round(grey, MidpointRounding.AwayFromZero)));
+        }
+
 
         /// <summary>
         /// Build Bayer image from 8-bit sensor array. This function lacks end-of-row compensation
@@ -487,7 +509,7 @@ namespace Nyerguds.ImageManipulation
         /// Processing function for Bayer decoding.
         /// </summary>
         /// <param name="cols">Bytes to take the average from.</param>
-        /// <returns>The average value, or 0x80 if no values were given?</returns>
+        /// <returns>The average value, or 0x80 if no values were given.</returns>
         private static Byte GetAverageCol(params Byte?[] cols)
         {
             Int32 colsCount = 0;
@@ -504,9 +526,9 @@ namespace Nyerguds.ImageManipulation
         /// Written for a StackOverflow question.
         /// https://stackoverflow.com/a/50077006/395685
         /// </summary>
-        /// <param name="image">Input image</param>
-        /// <param name="channelNr">0 = B, 1 = G, 2 = R</param>
-        /// <returns></returns>
+        /// <param name="image">Input image.</param>
+        /// <param name="channelNr">0 = B, 1 = G, 2 = R.</param>
+        /// <returns>The requested channel, as two-dimensional Int32 array.</returns>
         public static Int32[,] GetChannel(Bitmap image, Int32 channelNr)
         {
             if (channelNr >= 3 || channelNr < 0)
@@ -644,5 +666,92 @@ namespace Nyerguds.ImageManipulation
             source.UnlockBits(sourceData);
             return dest;
         }
+
+        /// <summary>
+        /// Detects darker or brighter spots on the image by brightness threshold, and returns their center points.
+        /// </summary>
+        /// <param name="image">Input image.</param>
+        /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
+        /// <param name="brightnessThreshold">Brightness threshold needed to see a pixel as "bright".</param>
+        /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
+        /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
+        /// <returns>A list of points indicating the centers of all found spots.</returns>
+        public static List<Point> FindPoints(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold, Boolean getEdgesOnly)
+        {
+            List<List<Point>> blobs = FindBlobs(image, detectDark, brightnessThreshold, mergeThreshold, getEdgesOnly);
+            return blobs.Select(BlobDetection.GetBlobCenter).ToList();
+        }
+
+        /// <summary>
+        /// Detects darker or brighter spots on the image by brightness threshold, and returns their list of points.
+        /// </summary>
+        /// <param name="image">Input image.</param>
+        /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
+        /// <param name="brightnessThreshold">Brightness threshold. Use -1 to attempt automatic levelling.</param>
+        /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
+        /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
+        /// <returns>A list of points indicating the centers of all found spots.</returns>
+        public static List<List<Point>> FindBlobs(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold, Boolean getEdgesOnly)
+        {
+            Boolean detectVal = !detectDark;
+            Int32 width = image.Width;
+            Int32 height = image.Height;
+            // Binarization: get 32-bit data
+            Int32 stride;
+            Byte[] data = ImageUtils.GetImageData(image, out stride, PixelFormat.Format32bppArgb);
+            // Binarization: get brightness
+            Single[,] brightness = new Single[height, width];
+            Int32 offset = 0;
+            Byte groups = 255;
+            for (Int32 y = 0; y < height; y++)
+            {
+                // use stride to get the start offset of each line
+                Int32 usedOffset = offset;
+                for (Int32 x = 0; x < width; x++)
+                {
+                    // get colour
+                    Byte blu = data[usedOffset + 0];
+                    Byte grn = data[usedOffset + 1];
+                    Byte red = data[usedOffset + 2];
+                    Color c = Color.FromArgb(red, grn, blu);
+                    brightness[y, x] = c.GetBrightness();
+                    usedOffset += 4;
+                }
+                offset += stride;
+            }
+            if (brightnessThreshold < 0)
+            {
+                Dictionary<Byte, Int32> histogram = new Dictionary<Byte, Int32>();
+                for (Int32 y = 0; y < height; y++)
+                {
+                    for (Int32 x = 0; x < width; x++)
+                    {
+                        Byte val = (Byte)(brightness[y, x] * groups);
+                        Int32 num;
+                        histogram.TryGetValue(val, out num);
+                        histogram[val] = num + 1;
+                    }
+                }
+                List<KeyValuePair<Byte, Int32>> sortedHistogram = histogram.OrderBy(x => x.Value).ToList();
+                sortedHistogram.Reverse();
+                sortedHistogram = sortedHistogram.Take(groups * 9 / 10).ToList();
+                Byte maxBrightness = sortedHistogram.Max(x => x.Key);
+                Byte minBrightness = sortedHistogram.Min(x => x.Key);
+                // [............m.............T.............M............]
+                // still not very good... need to find some way to detect image highlights. Probably needs K-means clustering...
+                brightnessThreshold = (minBrightness + (maxBrightness - minBrightness) * .5f) / groups;
+            }
+            // Binarization: convert to 1-byte-per-pixel array of 1/0 values based on a brightness threshold
+            Boolean[,] dataBw = new Boolean[height, width];
+            for (Int32 y = 0; y < height; y++)
+                for (Int32 x = 0; x < width; x++)
+                    dataBw[y, x] = brightness[y, x] > brightnessThreshold;
+
+            // Detect blobs.
+            // Coult technically simplify the required Func<> to remove the imgData and directly reference dataBw, but meh.
+            Func<Boolean[,], Int32, Int32, Boolean> clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] == detectVal;
+            return BlobDetection.FindBlobs(dataBw, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
+        }
+
     }
 }

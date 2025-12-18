@@ -7,30 +7,11 @@ using System.Data;
 
 namespace Nyerguds.Util.UI
 {
-	/// <summary>
-	/// The InputBox class is used to show a prompt in a dialog box using the static method Show().
-	/// </summary>
-	/// <remarks>
-	/// Copyright © 2003 Reflection IT
-	/// 
-	/// This software is provided 'as-is', without any express or implied warranty.
-	/// In no event will the authors be held liable for any damages arising from the
-	/// use of this software.
-	/// 
-	/// Permission is granted to anyone to use this software for any purpose,
-	/// including commercial applications, subject to the following restrictions:
-	/// 
-	/// 1. The origin of this software must not be misrepresented; you must not claim
-	/// that you wrote the original software. 
-	/// 
-	/// 2. No substantial portion of the source code of this library may be redistributed
-	/// without the express written permission of the copyright holders, where
-	/// "substantial" is defined as enough code to be recognizably from this library. 
-	/// 
-	/// </remarks>
-	partial class InputBox
+    /// <summary>
+    /// Shows a prompt in a dialog box using the static method Show().
+    /// </summary>
+    partial class InputBox
 	{
-
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>

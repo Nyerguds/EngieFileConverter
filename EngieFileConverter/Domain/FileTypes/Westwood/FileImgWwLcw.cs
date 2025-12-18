@@ -74,7 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
             try
             {
                 Int32 offset = DATAOFFSET;
-                WWCompression.LcwDecompress(fileData, ref offset, imageData);
+                WWCompression.LcwDecompress(fileData, ref offset, imageData, 0);
             }
             catch (Exception e)
             {

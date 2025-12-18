@@ -64,7 +64,7 @@ namespace Nyerguds.Util.UI
         }
 
         [Description("Frame size. This is completely determined by the padding, label size, and padding between the labels, and can't be modified."), Category("Palette panel")]
-        [DefaultValue(typeof (Size), "320, 320")]
+        [DefaultValue(typeof(Size), "320, 320")]
         public new Size Size
         {
             get { return base.Size; }
@@ -91,7 +91,7 @@ namespace Nyerguds.Util.UI
         }
 
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (Padding), "2, 2, 2, 2")]
+        [DefaultValue(typeof(Padding), "2, 2, 2, 2")]
         public new Padding Padding
         {
             get { return base.Padding; }
@@ -104,7 +104,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Determines the size of the color labels."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (Size), "16, 16")]
+        [DefaultValue(typeof(Size), "16, 16")]
         public Size LabelSize
         {
             get { return this.m_LabelSize; }
@@ -117,7 +117,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Padding between the labels."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (Point), "4, 4")]
+        [DefaultValue(typeof(Point), "4, 4")]
         public Point PadBetween
         {
             get { return this.m_PadBetween; }
@@ -215,7 +215,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Color used to indicate entries not filled in on the palette."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (Color), "0x000000")]
+        [DefaultValue(typeof(Color), "Black")]
         public Color EmptyItemBackColor
         {
             get { return this.m_EmptyItemBackColor; }
@@ -241,7 +241,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Color of the character put on entries not filled in on the palette. Setting this to Color.Empty causes the character not to be drawn."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (Color), "0xFF0000")]
+        [DefaultValue(typeof(Color), "Red")]
         public Color EmptyItemCharColor
         {
             get { return this.m_EmptyItemCharColor; }
@@ -292,7 +292,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Color of the character put on labels to indicate entries that are transparent on the palette. Not used if TransItemBackColor is set to Color.Empty. Setting this to Color.Empty causes the character not to be drawn, regardless of the TransItemBackColor overriding its value."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (Color), "0x0000FF")]
+        [DefaultValue(typeof(Color), "Blue")]
         public Color TransItemCharColor
         {
             get { return this.m_TransItemCharColor; }
@@ -341,7 +341,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Change the way colors can be selected on the palette."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        [DefaultValue(typeof (ColorSelMode), "Single")]
+        [DefaultValue(typeof(ColorSelMode), "Single")]
         public ColorSelMode ColorSelectMode
         {
             get { return this.m_ColorSelectMode; }

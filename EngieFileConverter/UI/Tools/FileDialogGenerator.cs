@@ -18,7 +18,7 @@ namespace Nyerguds.Util.UI
         /// The output parameter "selectedItem" will contain a (blank) object of the chosen type, or null if "all files" or "all supported types" was selected.
         /// </summary>
         /// <typeparam name="T">The basic type of which subtypes populate the typesList. Needs to inherit from FileTypeBroadcaster.</typeparam>
-        /// <param name="owner">Owner window for the dialog</param>
+        /// <param name="owner">Owner window for the dialog.</param>
         /// <param name="title">Title of the dialog.</param>
         /// <param name="typesList">List of types to show.</param>
         /// <param name="currentPath">Path to open.</param>
@@ -50,7 +50,7 @@ namespace Nyerguds.Util.UI
         /// The output parameter "selectedItem" will contain a (blank) object of the chosen type that can be used to determine how to save the data.
         /// </summary>
         /// <typeparam name="T">The basic type of which subtypes populate the typesList. Needs to inherit from FileTypeBroadcaster.</typeparam>
-        /// <param name="owner">Owner window for the dialog</param>
+        /// <param name="owner">Owner window for the dialog.</param>
         /// <param name="selectType">Type to select in the dropdown as default.</param>
         /// <param name="typesList">List of class types that inherit from T.</param>
         /// <param name="currentPath">Path and filename to set as default in the save dialog.</param>

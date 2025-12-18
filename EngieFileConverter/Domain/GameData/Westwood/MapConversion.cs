@@ -232,8 +232,8 @@ namespace Nyerguds.GameData.Westwood
         /// <summary>
         /// Simplifies a map to an array of terrain types. This uses the enhanced terrain types which show to which side cliffs are facing.
         /// </summary>
-        /// <param name="mapData"></param>
-        /// <returns></returns>
+        /// <param name="mapData">Map data.</param>
+        /// <returns>The map data simplified to terrain types.</returns>
         public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData)
         {
             TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[64 * 64];
@@ -261,7 +261,7 @@ namespace Nyerguds.GameData.Westwood
         /// Cleans up wrongly saved blank terrain cells (either as 00XX or as FFFF)
         /// by replacing them by the real default FF00 terrain.
         /// </summary>
-        /// <param name="map">The map to fix</param>
+        /// <param name="map">The map to fix.</param>
         public static void CleanUpMapClearTerrain(CnCMap map)
         {
             foreach (CnCMapCell cell in map.Cells)
@@ -278,7 +278,7 @@ namespace Nyerguds.GameData.Westwood
         /// <summary>
         /// Replaces snow with clear terrain.
         /// </summary>
-        /// <param name="map"></param>
+        /// <param name="map">Removes snow from a map, since the N64 version can't handle it.</param>
         public static void RemoveSnow(CnCMap map)
         {
             foreach (CnCMapCell cell in map.Cells)

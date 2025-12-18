@@ -24,6 +24,8 @@ namespace Nyerguds.Util.UI
 
         public String Title { get; set; }
 
+        public String SuggestedSaveName { get; set; }
+
         public PaletteDropDownInfo PaletteToSave
         {
             get { return this.paletteToSave; }
@@ -104,19 +106,34 @@ namespace Nyerguds.Util.UI
                 this.lbSubPalettes.Items.Clear();
                 // "Create new" item was selected.
                 // Give "save as" dialog? Maybe not, it only works from the program's folder. Just name + existence check, then?
-                String newPaletteName = InputBox.Show("Palette name:", this.Title, "newpal.pal", FormStartPosition.CenterParent);
-                if (String.IsNullOrEmpty(newPaletteName))
+                String saveName = "newpal.pal";
+                if (this.SuggestedSaveName != null)
+                    saveName = Path.GetFileNameWithoutExtension(this.SuggestedSaveName) + ".pal";
+                String newPaletteName = InputBox.Show("Palette name:", this.Title, saveName, FormStartPosition.CenterParent);
+                Char[] invalid = Path.GetInvalidFileNameChars();
+                Boolean isNull = newPaletteName == null;
+                Boolean isEmpty = !isNull && newPaletteName.Length == 0;
+                Boolean illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
+                while (isEmpty || illegalChars)
                 {
-                    if (newPaletteName != null)
-                        MessageBox.Show(this, "Palette needs a name!", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    String message;
+                    if (isEmpty)
+                        message = "Palette needs a name!";
+                    else
+                        message = "Invalid characters in given file name!";
+                    MessageBox.Show(this, message , this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    if (isEmpty)
+                        newPaletteName = saveName;
+                    newPaletteName = InputBox.Show("Palette name:", this.Title, newPaletteName, FormStartPosition.CenterParent);
+                    isNull = newPaletteName == null;
+                    isEmpty = !isNull && newPaletteName.Length == 0;
+                    illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
+                }
+                if (isNull)
+                {
                     this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
                     return;
                 }
-                if (newPaletteName.Contains(Path.DirectorySeparatorChar))
-                {
-                    this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
-                    return;
-                } 
                 if (!newPaletteName.EndsWith(".pal"))
                     newPaletteName += ".pal";
                 String newPath = Path.Combine(this.appPath, newPaletteName);
@@ -256,7 +273,10 @@ namespace Nyerguds.Util.UI
         {
             if (this.lbSubPalettes.Items.Count >= this.nrOfSubPalettes)
             {
-                MessageBox.Show(this, "Can't add more than " + this.nrOfSubPalettes + " sub-palette" + (this.nrOfSubPalettes == 1 ? String.Empty : "s") + " in a " + this.bpp + " BPP palette.", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                String message = "Can't add more than " + this.nrOfSubPalettes + " sub-palette" + (this.nrOfSubPalettes == 1 ? String.Empty : "s")
+                                 + " in a" + (this.bpp == 8 ? "n" : String.Empty) + " " + this.bpp + " BPP palette.\n\nTo create a new palette file, select \""
+                                 + CREATENEW + "\" from the end of the palettes dropdown list.";
+                MessageBox.Show(this, message, this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             String selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();

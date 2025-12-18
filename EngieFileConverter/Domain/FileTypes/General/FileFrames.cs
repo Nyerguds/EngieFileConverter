@@ -60,7 +60,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>
         /// Adds a frame to the list, setting its FrameParent property to this object.
         /// </summary>
-        /// <param name="frame"></param>
+        /// <param name="frame">Frame to add.</param>
         public void AddFrame(SupportedFileType frame)
         {
             frame.FrameParent = this;
@@ -237,7 +237,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="pasteLocation">Point at which to paste the image.</param>
         /// <param name="framesRange">Arra containing the indices to paste the image on.</param>
         /// <param name="keepIndices">If all involved images are indexed, and no overflow can occur, paste bare data indices when handling indexed types rather than matching image colours to a palette.</param>
-        /// <returns></returns>
+        /// <returns>A new FileFrames object containing the edited frames.</returns>
         public static FileFrames PasteImageOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
         {
             Boolean wasCloned = false;
@@ -409,7 +409,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);
                 frameCombined.SetFileClass(frame.FileClass);
                 frameCombined.SetColorsInPalette(frame.ColorsInPalette);
-                frameCombined.SetTransparencyMask(transMask);
                 frameCombined.SetExtraInfo(frame.ExtraInfo);
                 newfile.AddFrame(frameCombined);
             }
@@ -418,19 +417,22 @@ namespace EngieFileConverter.Domain.FileTypes
             return newfile;
         }
 
-        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames)
+        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette, Int32[] matchExcludeIndices)
         {
-            Bitmap[] framesArr = ImageUtils.CutImageIntoFrames(image, frameWidth, frameHeight, frames);
+            //Bitmap[] mainFrame = ImageUtils.ImageToFrames(image, image.Width, image.Height, null, null, matchBpp, matchPalette, 0, 0);
+            Bitmap[] framesArr = ImageUtils.ImageToFrames(image, frameWidth, frameHeight, trimColor, trimIndex, matchBpp, matchPalette, matchExcludeIndices, 0, frames - 1);
 
-            Int32 bpp = Image.GetPixelFormatSize(image.PixelFormat);
-            Color[] imPalette = bpp > 8 ? null : image.Palette.Entries;
-            Int32 colorsInPal = imPalette == null ? 0 : imPalette.Length;
-            Boolean indexed = bpp <= 8;
+            Boolean isMatched = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
+            Int32 bpp = isMatched ? matchBpp : Image.GetPixelFormatSize(image.PixelFormat);
+            Color[] imPalette = isMatched ? matchPalette : bpp > 8 ? null : image.Palette.Entries;
+            Int32 colorsInPal = isMatched ? matchPalette.Length : imPalette == null ? 0 : imPalette.Length;
+            Boolean indexed = isMatched  || bpp <= 8;
             FileFrames newfile = new FileFrames();
             newfile.SetFileNames(imagePath);
             newfile.SetCommonPalette(indexed);
             newfile.SetBitsPerColor(bpp);
             newfile.SetPalette(imPalette);
+            newfile.SetColorsInPalette(colorsInPal);
             newfile.SetTransparencyMask(null);
             for (Int32 i = 0; i < framesArr.Length; i++)
             {
@@ -438,10 +440,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.LoadFileFrame(newfile, newfile, framesArr[i], imagePath, i);
                 framePic.SetBitsPerColor(bpp);
                 framePic.SetColorsInPalette(colorsInPal);
-                framePic.SetTransparencyMask(null);
                 newfile.AddFrame(framePic);
             }
-            newfile.m_LoadedImage = ImageUtils.CloneImage(image);
+            //newfile.m_LoadedImage = mainFrame.Length > 0 ? mainFrame[0] : null;
             return newfile;
         }
     }

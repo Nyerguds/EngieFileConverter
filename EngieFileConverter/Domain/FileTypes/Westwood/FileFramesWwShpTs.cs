@@ -113,7 +113,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     ImageUtils.PasteOn8bpp(fullFrame, hdrWidth, hdrHeight, hdrWidth,
                         frame, frmWidth, frmHeight, frmWidth,
-                        new Rectangle(frmX, frmY, frmWidth, frmHeight), transMask, true);
+                        new Rectangle(frmX, frmY, frmWidth, frmHeight), null, true);
                 }
                 // Convert frame data to image and frame object
                 Bitmap curFrImg = ImageUtils.BuildImage(fullFrame, this.m_Width, this.m_Height, this.m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
@@ -122,7 +122,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.SetBitsPerColor(this.BitsPerPixel);
                 framePic.SetFileClass(this.FrameInputFileClass);
                 framePic.SetColorsInPalette(this.ColorsInPalette);
-                framePic.SetTransparencyMask(this.TransparencyMask);
                 StringBuilder extraInfo = new StringBuilder("Blit flags: ");
                 extraInfo.Append(Convert.ToString(frmFlags & 0xFF, 2).PadLeft(8, '0')).Append(" (");
                 if (hasTrans)
@@ -136,12 +135,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (!hasTrans && !usesRle)
                     extraInfo.Append("Opaque data");
                 extraInfo.Append(")");
-                extraInfo.Append("\nData size: ").Append(frameBytes).Append(" bytes @ 0x").Append(frmDataOffset.ToString("X"));
-                extraInfo.Append("\nData location: [").Append(frmX).Append(", ").Append(frmY).Append("]");
-                extraInfo.Append("\nData dimensions: ").Append(frmWidth).Append("x").Append(frmHeight);
+                extraInfo.Append("\nData: ").Append(frameBytes).Append(" bytes @ 0x").Append(frmDataOffset.ToString("X"));
+                extraInfo.Append("\nStored image dimensions: ").Append(frmWidth).Append("x").Append(frmHeight);
+                extraInfo.Append("\nStored image position: [").Append(frmX).Append(", ").Append(frmY).Append("]");
                 extraInfo.Append("\nFrame colour: #").Append((frmColor.ToArgb() & 0xFFFFFF).ToString("X6"));
                 framePic.SetExtraInfo(extraInfo.ToString());
-
                 this.m_FramesList[i] = framePic;
             }
         }
@@ -163,11 +161,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
                 }
             }
-            SaveOption[] opts = new SaveOption[adjust ? 3 : 2];
+            SaveOption[] opts = new SaveOption[adjust ? 4 : 3];
             opts[0] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
             opts[1] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
+            opts[2] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable unit when calculating average colour (ignore remap range)", "0");
             if (adjust)
-                opts[2] = new SaveOption("AJC", SaveOptionType.Boolean, "Fix the palette's 6-bit colours to save the average frame colour.", "0");
+                opts[3] = new SaveOption("AJC", SaveOptionType.Boolean, "Fix the palette's 6-bit colours to save the average frame colour", "0");
             return opts;
         }
 
@@ -179,6 +178,7 @@ namespace EngieFileConverter.Domain.FileTypes
             PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean align = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "ALI"));
+            Boolean ignoreRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "REM"));
             Boolean adjustColors = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "AJC"));
 
             // Fix for 6-bit colour palettes: stretch the 0-252 ranges out over the full 0-255.
@@ -217,6 +217,12 @@ namespace EngieFileConverter.Domain.FileTypes
             if (align && frameDataOffset % 8 > 0)
                 frameDataOffset += 8 - (frameDataOffset % 8);
             Byte[] dummy = trimDuplicates ? new Byte[0] : null;
+                        Boolean[] avgColIgnore = new Boolean[0x100];
+            avgColIgnore[0] = true;
+            if (ignoreRemap)
+                for (Int32 i = 16; i < 32; i++)
+                    avgColIgnore[i] = true;
+
             for (Int32 i = 0; i < fileToSave.Frames.Length; i++)
             {
                 SupportedFileType frame = fileToSave.Frames[i];
@@ -258,7 +264,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    col = this.GetAverageColor(imageData, palette);
+                    // get average colour, ignoring zero and possibly remap range
+                    col = this.GetAverageColor(imageData, palette, avgColIgnore);
                     // compress stuff here
                     // No whitespace in image: store raw
                     if (imageData.All(b => b != 0))
@@ -284,15 +291,15 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     dataOffset = frameDataOffset;
                 }
-                frameDataOffset += (UInt32) imageDataToStore.Length;
+                frameDataOffset += (UInt32)imageDataToStore.Length;
                 if (align && frameDataOffset % 8 > 0)
                     frameDataOffset += 8 - (frameDataOffset % 8);
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x00, 2, true, (UInt16) xOffset); //frmX
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x02, 2, true, (UInt16) yOffset); //frmY
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x04, 2, true, (UInt16) newWidth); //frmWidth
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x06, 2, true, (UInt16) newHeight); //frmHeight
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x00, 2, true, (UInt16)xOffset); //frmX
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x02, 2, true, (UInt16)yOffset); //frmY
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x04, 2, true, (UInt16)newWidth); //frmWidth
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x06, 2, true, (UInt16)newHeight); //frmHeight
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x08, 4, true, flags); //frmFlags     
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x0C, 3, false, (UInt32) col.ToArgb()); //frmColor
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x0C, 3, false, (UInt32)col.ToArgb()); //frmColor
                 //ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x10, 4, true, 00);  //frmReserved
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x14, 4, true, dataOffset); //frmDataOffset
                 frameHeaderOffset += frameHdrSize;
@@ -337,14 +344,15 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        private Color GetAverageColor(Byte[] imageData, Color[] palette)
+        private Color GetAverageColor(Byte[] imageData, Color[] palette, Boolean[] ignoreRange)
         {
             Int32[] colCount = new Int32[256];
             Int32 pixCount = 0;
             foreach (Byte b in imageData)
             {
-                if (b != 0)
-                    pixCount++;
+                if (ignoreRange[b])
+                    continue;
+                pixCount++;
                 colCount[b]++;
             }
             if (pixCount == 0)
@@ -354,6 +362,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int64 allB = 0;
             for (Int32 palCol = 0; palCol < 256; palCol++)
             {
+                if (ignoreRange[palCol])
+                    continue;
                 Color c = palette[palCol];
                 Int32 amount = colCount[palCol];
                 allR += c.R * amount;
@@ -463,7 +473,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameNoShadows.SetBitsPerColor(frame.BitsPerPixel);
                 frameNoShadows.SetFileClass(frame.FileClass);
                 frameNoShadows.SetColorsInPalette(frame.ColorsInPalette);
-                frameNoShadows.SetTransparencyMask(transMask);
                 newfile.AddFrame(frameNoShadows);
 
                 Bitmap imageOnlyShadows = ImageUtils.BuildImage(imageDataShadow, width, height, stride, bm.PixelFormat, palette, null);
@@ -475,7 +484,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameOnlyShadows.SetBitsPerColor(frame.BitsPerPixel);
                 frameOnlyShadows.SetFileClass(frame.FileClass);
                 frameOnlyShadows.SetColorsInPalette(frame.ColorsInPalette);
-                frameOnlyShadows.SetTransparencyMask(transMask);
                 shadowFrames[i] = frameOnlyShadows;
             }
             foreach (SupportedFileType shadowFrame in shadowFrames)
@@ -545,7 +553,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);
                 frameCombined.SetFileClass(frame.FileClass);
                 frameCombined.SetColorsInPalette(frame.ColorsInPalette);
-                frameCombined.SetTransparencyMask(transMask);
                 newfile.AddFrame(frameCombined);
             }
             newfile.SetColors(palette);

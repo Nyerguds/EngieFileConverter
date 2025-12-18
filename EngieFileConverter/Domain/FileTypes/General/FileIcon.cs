@@ -170,7 +170,6 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     framePic.SetFileClass(fc);
                     framePic.SetColorsInPalette(this.ColorsInPalette);
-                    framePic.SetTransparencyMask(this.TransparencyMask);
                     //framePic.SetExtraInfo();
                     this.m_FramesList = new SupportedFileType[1];
                     this.m_FramesList[0] = framePic;
@@ -229,12 +228,12 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>
         /// Converts an image to a icon (ico) with all the sizes windows likes
         /// </summary>
-        /// <param name="inputBitmap">The input bitmap</param>
-        /// <param name="output">The output stream</param>
+        /// <param name="inputBitmap">The input bitmap.</param>
+        /// <param name="output">The output stream.</param>
         /// <param name="makeSquare">True to pad the top and bottom of the icons with transparency to make the saved icons square.</param>
         /// <param name="upscale">True to also save the image in sizes larger than the original image.</param>
         /// <param name="pixelZoom">Use pixel scaling for resizing to sizes larger than the original image.</param>
-        /// <returns>Wether or not the icon was succesfully generated</returns>
+        /// <returns>True if the the icon was succesfully generated.</returns>
         public static Boolean ConvertToIcon(Bitmap inputBitmap, Stream output, Boolean makeSquare, Boolean upscale, Boolean pixelZoom)
         {
             if (inputBitmap == null)

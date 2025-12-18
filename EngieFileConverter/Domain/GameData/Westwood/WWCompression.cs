@@ -84,8 +84,8 @@ namespace Nyerguds.GameData.Westwood
         ///    the reference code.
         /// </summary>
         /// <param name="input">Array of the data to compress.</param>
-        /// <returns>The compressed data</returns>
-        /// <remarks>Commonly known in the community as "format80"</remarks>
+        /// <returns>The compressed data.</returns>
+        /// <remarks>Commonly known in the community as "format80".</remarks>
         public static Byte[] LcwCompress(Byte[] input)
         {
             if (input == null || input.Length == 0)
@@ -252,11 +252,13 @@ namespace Nyerguds.GameData.Westwood
         /// <param name="input">The data to decompress.</param>
         /// <param name="readOffset">Location to start at in the input array.</param>
         /// <param name="output">The buffer to store the decompressed data. This is assumed to be initialized to the correct size.</param>
+        /// <param name="readEnd">End offset for reading. Use 0 to take the end of the given data array.</param>
         /// <returns>Length of the decompressed data in bytes.</returns>
-        public static Int32 LcwDecompress(Byte[] input, ref Int32 readOffset, Byte[] output)
+        public static Int32 LcwDecompress(Byte[] input, ref Int32 readOffset, Byte[] output, Int32 readEnd)
         {
             if (input == null || input.Length == 0 || output == null || output.Length == 0)
                 return 0;
+            Int32 origReadOffset = readOffset;
 	        Boolean relative = false;
             // Nyer's C# conversion: replacements for write and read for pointers.
 	        Int32 writeOffset = 0;
@@ -264,7 +266,8 @@ namespace Nyerguds.GameData.Westwood
             // Techncically it can just be cropped at the end, though this value is used to
             // automatically cut off repeat-commands that go too far.
             Int32 writeEnd = output.Length;
-            Int32 readEnd = input.Length;
+            if (readEnd <= 0)
+                readEnd = input.Length;
 
             //Decide if the stream uses relative 3 and 5 byte commands
 	        //Extension allows effective compression of data > 64k
@@ -306,14 +309,13 @@ namespace Nyerguds.GameData.Westwood
                             if (readOffset >= readEnd)
                                 return writeOffset;
 					        //DEBUG_SAY("0b11111110 Source Pos %ld, Dest Pos %ld, Count %d\n", source - sstart - 3, dest - start, cpysize);
-				            for (Int32 i = writeOffset; i < writeOffset + cpysize; i++)
-				            {
-                                if (i >= writeEnd)
+                            for (; cpysize > 0; --cpysize)
+                            {
+                                if (writeOffset >= writeEnd)
                                     return writeOffset;
-				                output[i] = input[readOffset];
-				            }
+                                output[writeOffset++] = input[readOffset];
+                            }
 				            readOffset++;
-					        writeOffset += cpysize;
 				        }
 				        else
 				        {
@@ -367,10 +369,10 @@ namespace Nyerguds.GameData.Westwood
 							        s = offset;
 						        //DEBUG_SAY("0b11?????? Source Pos %ld, Dest Pos %ld, Count %d, Offset %d\n", source - sstart - 3, dest - start, cpysize, offset);
 					            for (; cpysize > 0; --cpysize)
-					            {
+                                {
                                     if (writeOffset >= writeEnd)
                                         return writeOffset;
-					                output[writeOffset++] = output[s++];
+                                    output[writeOffset++] = output[s++];
 					            }
 					        }
 				        }
@@ -422,8 +424,8 @@ namespace Nyerguds.GameData.Westwood
         /// </summary>
         /// <param name="source">Buffer containing data to generate the delta for.</param>
         /// <param name="base">Buffer containing data that is the base for the delta.</param>
-        /// <returns>The generated delta as bytes array</returns>
-        /// <remarks>Commonly known in the community as "format40"</remarks>
+        /// <returns>The generated delta as bytes array.</returns>
+        /// <remarks>Commonly known in the community as "format40".</remarks>
         public static Byte[] GenerateXorDelta(Byte[] source, Byte[] @base)
         {
             // Nyer's C# conversion: replacements for write and read for pointers.
@@ -580,10 +582,10 @@ namespace Nyerguds.GameData.Westwood
         /// <summary>
         /// Applies a binary delta to a buffer.
         /// </summary>
-        /// <param name="data">The data to apply the xor to</param>
-        /// <param name="xorSource">The the delta data to apply</param>
-        /// <param name="xorStart"></param>
-        /// <param name="xorEnd"></param>
+        /// <param name="data">The data to apply the xor to.</param>
+        /// <param name="xorSource">The the delta data to apply.</param>
+        /// <param name="xorStart">Start offset in the data.</param>
+        /// <param name="xorEnd">End offset in the data. Use 0 to take the end of the whole array.</param>
         public static void ApplyXorDelta(Byte[] data, Byte[] xorSource, ref Int32 xorStart, Int32 xorEnd)
         {
             // Nyer's C# conversion: replacements for write and read for pointers.

@@ -42,14 +42,17 @@ namespace Nyerguds.Util.UI
         }
 
 
-        public Boolean IsChanged()
+        public Boolean IsChanged(Boolean[] currentTypeTransMask)
         {
-            return !this.ColorBackup.SequenceEqual(this.Colors);
+            Color[] compareArr = this.ColorBackup.ToArray();
+            PaletteUtils.ApplyTransparencyGuide(compareArr, currentTypeTransMask);
+            return !compareArr.SequenceEqual(this.Colors);
         }
 
-        public void Revert()
+        public void Revert(Boolean[] currentTypeTransMask)
         {
             Array.Copy(this.ColorBackup, this.Colors, this.Colors.Length);
+            PaletteUtils.ApplyTransparencyGuide(this.Colors, currentTypeTransMask);
         }
 
         public void ClearRevert()

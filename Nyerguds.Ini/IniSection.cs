@@ -47,14 +47,14 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Returns the name of this ini section</summary>
-        /// <returns>The name of this ini section</returns>
+        /// <returns>The name of this ini section.</returns>
         public String GetName()
         {
             return m_name;
         }
 
         /// <summary>Creates a new Ini section object with the specified name</summary>
-        /// <param name="name">The name for this ini section</param>
+        /// <param name="name">The name for this ini section.</param>
         public IniSection(String name)
         {
             this.m_name = name;
@@ -80,21 +80,21 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a String from the ini section</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned, and to 'true' if the value was successfully fetched.</param>
-        /// <returns>The found value, or the given default value if the fetch failed</returns>
+        /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public String GetStringValue(String key, String defaultValue, out Boolean success)
         {
             return GetStringValue(key, defaultValue, m_trimValues, out success);
         }
 
         /// <summary>Gets a String from the ini section</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
-        /// <param name="trimValue">True to trim the retrieved value</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
+        /// <param name="trimValue">True to trim the retrieved value.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned, and to 'true' if the value was successfully fetched.</param>
-        /// <returns>The found value, or the given default value if the fetch failed</returns>
+        /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public String GetStringValue(String key, String defaultValue, Boolean trimValue, out Boolean success)
         {
             if (String.IsNullOrEmpty(key))
@@ -115,8 +115,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a String value in the ini section.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         public void SetStringValue(String key, String value)
         {
             if (String.IsNullOrEmpty(key))
@@ -141,7 +141,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Removes a key from the ini section.</summary>
-        /// <param name="key">The key to remove</param>
+        /// <param name="key">The key to remove.</param>
         public void RemoveKey(String key)
         {
             key = key.ToUpperInvariant();
@@ -160,8 +160,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets an Integer from the ini section.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Int32 GetIntValue(String key, Int32 defaultValue, out Boolean success)
@@ -184,9 +184,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets an Integer value in the ini section.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
-        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetIntValue(String key, Int32 value, Boolean removeComments)
         {
             Boolean exists;
@@ -199,8 +199,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a Character from the ini section.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Char GetCharValue(String key, Char defaultValue, out Boolean success)
@@ -214,9 +214,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a Character value in the ini section.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
-        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetCharValue(String key, Char value, Boolean removeComments)
         {
             Boolean exists;
@@ -232,8 +232,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a Boolean from the ini section. Note that the string-to-boolean conversion method actually only checks the first character.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Boolean GetBoolValue(String key, Boolean defaultValue, out Boolean success)
@@ -295,10 +295,10 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a Boolean value in the ini section, in the chosen boolean save mode.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="booleanmode">The BooleanMode (True/False, Yes/No, 1/0, etc) to use for saving Booleans as String.</param>
-        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value</param>
+        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetBoolValue(String key, Boolean value, BooleanMode booleanmode, Boolean removeComments)
         {
             Boolean exists;
@@ -329,8 +329,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a Float value from the ini section.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Double GetFloatValue(String key, Double defaultValue, out Boolean success)
@@ -352,10 +352,10 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a Float value in the ini section, with the chosen precision.</summary>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
-        /// <param name="precision">Precision for float</param>
-        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="precision">Precision for float.</param>
+        /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetFloatValue(String key, Double value, Int32 precision, Boolean removeComments)
         {
             Boolean exists;
@@ -374,7 +374,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Splits the comment off the given string value, and returns the two parts in a String array.</summary>
-        /// <param name="value">The string to split</param>
+        /// <param name="value">The string to split.</param>
         /// <returns>A 2-element string array with the value as first element and the split off comment as second value.</returns>
         private String[] SplitOffComment(String value)
         {
@@ -412,21 +412,21 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets all keys from the ini section.</summary>
-        /// <returns>A copy of the list of all key names in the ini section</returns>
+        /// <returns>A copy of the list of all key names in the ini section.</returns>
         public List<String> GetKeys()
         {
             return new List<String>(m_iniKeys);
         }
 
         /// <summary>Gets all upper case keys from the ini section.</summary>
-        /// <returns>A copy of the list of all upper case key names in the ini section</returns>
+        /// <returns>A copy of the list of all upper case key names in the ini section.</returns>
         public List<String> GetUpperCaseKeys()
         {
             return new List<String>(m_iniKeysUpper);
         }
 
         /// <summary>Returns a copy of the ini section's key-value pairs map.</summary>
-        /// <returns>A Dictionary with the key-value pairs</returns>
+        /// <returns>A Dictionary with the key-value pairs.</returns>
         public Dictionary<String, String> GetKeyValuePairs()
         {
             return GetKeyValuePairs(false);
@@ -434,7 +434,7 @@ namespace Nyerguds.Ini
 
         /// <summary>Returns a copy of the ini section's key-value pairs map.</summary>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
-        /// <returns>A Dictionary with the key-value pairs</returns>
+        /// <returns>A Dictionary with the key-value pairs.</returns>
         public Dictionary<String, String> GetKeyValuePairs(Boolean upperCaseKeys)
         {
             Dictionary<String, String> dictionary = new Dictionary<String, String>();
@@ -451,7 +451,7 @@ namespace Nyerguds.Ini
 
         /// <summary>Returns a copy of the ini section's Accessed statuses for all keys.</summary>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
-        /// <returns>A Dictionary with the key-value pairs</returns>
+        /// <returns>A Dictionary with the key-value pairs.</returns>
         public Dictionary<String, Boolean> GetKeyValuePairsAccessed(Boolean upperCaseKeys)
         {
             Dictionary<String, Boolean> dictionary = new Dictionary<String, Boolean>();
@@ -462,7 +462,7 @@ namespace Nyerguds.Ini
 
         /// <summary>Returns a copy of the ini section's Changed statuses for all keys.</summary>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
-        /// <returns>A Dictionary with the key-value pairs</returns>
+        /// <returns>A Dictionary with the key-value pairs.</returns>
         public Dictionary<String, Boolean> GetKeyValuePairsChanged(Boolean upperCaseKeys)
         {
             Dictionary<String, Boolean> dictionary = new Dictionary<String, Boolean>();
@@ -472,14 +472,14 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Returns a list of upper case versions of the removed keys.</summary>
-        /// <returns>A List of Strings</returns>
+        /// <returns>A List of Strings.</returns>
         public List<String> GetRemovedKeys()
         {
             return m_iniKeysRemoved;
         }
 
         /// <summary>Returns the name of the section</summary>
-        /// <returns>the name of the section</returns>
+        /// <returns>the name of the section.</returns>
         public override String ToString()
         {
             return this.m_name;

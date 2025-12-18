@@ -29,9 +29,9 @@ namespace Nyerguds.GameData.Westwood
         /// <summary>
         /// Decodes RLE-encoded data.
         /// </summary>
-        /// <param name="buffer">Buffer to decode</param>
-        /// <param name="startOffset">Start offset in buffer</param>
-        /// <param name="endOffset">End offset in buffer</param>
+        /// <param name="buffer">Buffer to decode.</param>
+        /// <param name="startOffset">Start offset in buffer.</param>
+        /// <param name="endOffset">End offset in buffer.</param>
         /// <param name="decompressedSize">The expected size of the decompressed data.</param>
         /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, decoding them as little-endian.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
@@ -45,13 +45,13 @@ namespace Nyerguds.GameData.Westwood
         /// <summary>
         /// Decodes RLE-encoded data.
         /// </summary>
-        /// <param name="buffer">Buffer to decode</param>
-        /// <param name="startOffset">Start offset in buffer</param>
-        /// <param name="endOffset">End offset in buffer</param>
+        /// <param name="buffer">Buffer to decode.</param>
+        /// <param name="startOffset">Start offset in buffer.</param>
+        /// <param name="endOffset">End offset in buffer.</param>
         /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
         /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, decoding them as little-endian.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return -1.</param>
-        /// <returns>The amount of written bytes in bufferOut</returns>
+        /// <returns>The amount of written bytes in bufferOut.</returns>
         public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Byte[] bufferOut, Boolean swapWords, Boolean abortOnError)
         {
             WestwoodRle rle = new WestwoodRle(swapWords);

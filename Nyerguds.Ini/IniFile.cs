@@ -134,7 +134,7 @@ namespace Nyerguds.Ini
         /// <summary>
         ///     Creates an object for reading, editing and writing an ini file.
         /// </summary>
-        /// <param name="filePath">Path of the file to read</param>
+        /// <param name="filePath">Path of the file to read.</param>
         public IniFile(String filePath)
             : this(filePath, DEFAULT_INITIALCAPS, DEFAULT_ENCODING, DEFAULT_TRIMVALUES)
         { }
@@ -142,8 +142,8 @@ namespace Nyerguds.Ini
         /// <summary>
         ///     Creates an object for reading, editing and writing an ini file.
         /// </summary>
-        /// <param name="filePath">Path of the file to read</param>
-        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file</param>
+        /// <param name="filePath">Path of the file to read.</param>
+        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file.</param>
         public IniFile(String filePath, Encoding textEncoding)
             : this(filePath, DEFAULT_INITIALCAPS, textEncoding, DEFAULT_TRIMVALUES)
         { }
@@ -151,9 +151,9 @@ namespace Nyerguds.Ini
         /// <summary>
         ///     Creates an object for reading, editing and writing an ini file.
         /// </summary>
-        /// <param name="filePath">Path of the file to read</param>
-        /// <param name="initialCaps">Write back all ini keys with initial capital letter</param>
-        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file</param>
+        /// <param name="filePath">Path of the file to read.</param>
+        /// <param name="initialCaps">Write back all ini keys with initial capital letter.</param>
+        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file.</param>
         /// <param name="trimValues">True to trim any retrieved values.</param>
         public IniFile(String filePath, Boolean initialCaps, Encoding textEncoding, Boolean trimValues)
         {
@@ -169,8 +169,8 @@ namespace Nyerguds.Ini
         ///     Creates an object for reading, editing and writing an ini file
         ///     that doesn't necessarily exist yet.
         /// </summary>
-        /// <param name="filePath">Path to write the file to when saving</param>
-        /// <param name="filecontents">String with the file contents in it</param>
+        /// <param name="filePath">Path to write the file to when saving.</param>
+        /// <param name="filecontents">String with the file contents in it.</param>
         public IniFile(String filePath, String filecontents)
             : this(filePath, filecontents, DEFAULT_INITIALCAPS, DEFAULT_ENCODING, DEFAULT_TRIMVALUES)
         { }
@@ -179,9 +179,9 @@ namespace Nyerguds.Ini
         ///     Creates an object for reading, editing and writing an ini file
         ///     that doesn't necessarily exist yet.
         /// </summary>
-        /// <param name="filePath">Path to write the file to when saving</param>
-        /// <param name="filecontents">String with the file contents in it</param>
-        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file</param>
+        /// <param name="filePath">Path to write the file to when saving.</param>
+        /// <param name="filecontents">String with the file contents in it.</param>
+        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file.</param>
         public IniFile(String filePath, String filecontents, Encoding textEncoding)
             : this(filePath, filecontents, DEFAULT_INITIALCAPS, textEncoding, DEFAULT_TRIMVALUES)
         { }
@@ -190,11 +190,11 @@ namespace Nyerguds.Ini
         ///     Creates an object for reading, editing and writing an ini file
         ///     that doesn't necessarily exist yet.
         /// </summary>
-        /// <param name="filePath">Path to write the file to when saving</param>
-        /// <param name="filecontents">String with the file contents in it</param>
-        /// <param name="initialCaps">Write back all ini keys with initial capital letter</param>
-        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file</param>
-        /// <param name="trimValues">Trim all values on read / write</param>
+        /// <param name="filePath">Path to write the file to when saving.</param>
+        /// <param name="filecontents">String with the file contents in it.</param>
+        /// <param name="initialCaps">Write back all ini keys with initial capital letter.</param>
+        /// <param name="textEncoding">Text encoding to use for reading (and writing) the file.</param>
+        /// <param name="trimValues">Trim all values on read / write.</param>
         public IniFile(String filePath, String filecontents, Boolean initialCaps, Encoding textEncoding, Boolean trimValues)
         {
             this.m_FilePath = filePath;
@@ -211,8 +211,8 @@ namespace Nyerguds.Ini
         /// Sets the path for the ini file to a new string; and reads that file.
         /// This function does a complete reset of the object's data.
         /// </summary>
-        /// <param name="iniFilePath">Path of the file to read</param>
-        /// <param name="charEncoding">Character encoding to use</param>
+        /// <param name="iniFilePath">Path of the file to read.</param>
+        /// <param name="charEncoding">Character encoding to use.</param>
         protected void ReadIniFile(String iniFilePath, Encoding charEncoding)
         {
             this.m_FilePath = iniFilePath;
@@ -301,7 +301,7 @@ namespace Nyerguds.Ini
         /// and removes keys to adjust the file to the edits made in the stored data. Unknown sections and comments in the file are left untouched.
         /// Note that unknown keys in known sections are only removed if WriteBackMode is WRITE_ALL. The other modes only remove explicitly removed keys.
         /// </summary>
-        /// <returns>True if the save operation succeeded</returns>
+        /// <returns>True if the save operation succeeded.</returns>
         public Boolean WriteIni()
         {
             return WriteIni(this.m_FilePath, this.m_Encoding);
@@ -310,9 +310,9 @@ namespace Nyerguds.Ini
         /// <summary>
         /// Writes the modified ini object to a file.
         /// </summary>
-        /// <param name="iniFilePath">Filename to write to</param>
-        /// <param name="charEncoding">Character encoding to use</param>
-        /// <returns>True if the save operation succeeded</returns>
+        /// <param name="iniFilePath">Filename to write to.</param>
+        /// <param name="charEncoding">Character encoding to use.</param>
+        /// <returns>True if the save operation succeeded.</returns>
         public Boolean WriteIni(String iniFilePath, Encoding charEncoding)
         {
             List<String> initext;
@@ -456,10 +456,10 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Finds the line of a specific section's key.</summary>
-        /// <param name="inifile">The ini file, as List of Strings</param>
-        /// <param name="inisection">The name of the section the key has to in</param>
+        /// <param name="inifile">The ini file, as List of Strings.</param>
+        /// <param name="inisection">The name of the section the key has to in.</param>
         /// <param name="inikey">The name of the key. If null, the index of the section will be returned.</param>
-        /// <returns>The index in the inifile List which holds the key</returns>
+        /// <returns>The index in the inifile List which holds the key.</returns>
         protected Int32 FindLine(List<String> inifile, String inisection, String inikey)
         {
             if (inifile == null)
@@ -488,9 +488,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>This function finds the last key line of an ini section, allowing new keys to be added behind it.</summary>
-        /// <param name="inifile">The ini file, as List of Strings</param>
-        /// <param name="inisection">The name of the section</param>
-        /// <param name="includeBlanks">True if all blank lines after the section should be counted too</param>
+        /// <param name="inifile">The ini file, as List of Strings.</param>
+        /// <param name="inisection">The name of the section.</param>
+        /// <param name="includeBlanks">True if all blank lines after the section should be counted too.</param>
         /// <returns>The index of the last key in this section before a new section or the end of the file.</returns>
         protected Int32 FindLastSectionLine(List<String> inifile, String inisection, Boolean includeBlanks)
         {
@@ -538,7 +538,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Returns the key and value as 2-element String array</summary>
-        /// <param name="input">input line of text</param>
+        /// <param name="input">input line of text.</param>
         /// <returns>A 2-element String array containing the key name and value, or null if the line was not valid.</returns>
         protected String[] GetKeyAndValue(String input)
         {
@@ -554,9 +554,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a String from the ini file</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <returns>The found value, or the given default value.</returns>
         public String GetStringValue(String sectionName, String key, String defaultValue)
         {
@@ -565,11 +565,11 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a String from the ini file</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false'if the fetch failed and the default value was returned.</param>
-        /// <returns>The found value, or the given default value if the fetch failed</returns>
+        /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public String GetStringValue(String sectionName, String key, String defaultValue, out Boolean success)
         {
             IniSection iniSection = GetSection(sectionName);
@@ -583,9 +583,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a String value in the ini file. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         public void SetStringValue(String sectionName, String key, String value)
         {
             IniSection iniSection = GetSection(sectionName, true);
@@ -594,10 +594,10 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets an Integer from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
-        /// <returns>The found value, or the given default value if the fetch failed</returns>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
+        /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Int32 GetIntValue(String sectionName, String key, Int32 defaultValue)
         {
             Boolean rb;
@@ -605,9 +605,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets an Integer from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Int32 GetIntValue(String sectionName, String key, Int32 defaultValue, out Boolean success)
@@ -623,18 +623,18 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets an Integer value in the ini file. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         public void SetIntValue(String sectionName, String key, Int32 value)
         {
             this.SetIntValue(sectionName, key, value, this.m_RemoveComments);
         }
 
         /// <summary>Sets an Integer value in the ini file. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetIntValue(String sectionName, String key, Int32 value, Boolean removeComments)
         {
@@ -644,9 +644,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a Character from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Char GetCharValue(String sectionName, String key, Char defaultValue)
         {
@@ -655,9 +655,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a Character from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Char GetCharValue(String sectionName, String key, Char defaultValue, out Boolean success)
@@ -673,18 +673,18 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a Character value in the ini file. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         public void SetCharValue(String sectionName, String key, Char value)
         {
             this.SetCharValue(sectionName, key, value, this.m_RemoveComments);
         }
 
         /// <summary>Sets a Character value in the ini file. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetCharValue(String sectionName, String key, Char value, Boolean removeComments)
         {
@@ -694,9 +694,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a Boolean from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">he name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">he name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         public Boolean GetBoolValue(String sectionName, String key, Boolean defaultValue)
         {
             Boolean rb;
@@ -707,9 +707,9 @@ namespace Nyerguds.Ini
         /// Gets a Boolean from the ini file. Note that the string-to-boolean
         /// conversion method actually only checks the first character.
         /// </summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Boolean GetBoolValue(String sectionName, String key, Boolean defaultValue, out Boolean success)
@@ -725,18 +725,18 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Sets a Boolean value in the ini file, in the configured BooleanWriteMode. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         public void SetBoolValue(String sectionName, String key, Boolean value)
         {
             this.SetBoolValue(sectionName, key, value, this.m_BooleanMode, this.m_RemoveComments);
         }
 
         /// <summary>Sets a Boolean value in the ini file, as Yes or No. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetBoolValue(String sectionName, String key, Boolean value, Boolean removeComments)
         {
@@ -745,9 +745,9 @@ namespace Nyerguds.Ini
 
         /// <summary>Sets a Boolean value in the ini file, in the chosen boolean save mode.
         /// This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="booleanmode">The BooleanMode (True/False, Yes/No, 1/0, etc) to use for saving Booleans as String.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetBoolValue(String sectionName, String key, Boolean value, BooleanMode booleanmode, Boolean removeComments)
@@ -759,9 +759,9 @@ namespace Nyerguds.Ini
 
         /// <summary>Sets a Boolean value in the ini file, in the chosen boolean save mode.
         /// This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="booleanmode">The BooleanMode (True/False, Yes/No, 1/0, etc) to use for saving Booleans as String.</param>
         public void SetBoolValue(String sectionName, String key, Boolean value, BooleanMode booleanmode)
         {
@@ -771,9 +771,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a floating point value from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Double GetFloatValue(String sectionName, String key, Double defaultValue)
         {
@@ -782,9 +782,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a floating point value from the ini file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="defaultValue">The default value to return in case the key was not found</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Double GetFloatValue(String sectionName, String key, Double defaultValue, out Boolean success)
@@ -801,18 +801,18 @@ namespace Nyerguds.Ini
 
         /// <summary>Sets a floating point value in the ini file, with the configured default precision.
         /// This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         public void SetFloatValue(String sectionName, String key, Double value)
         {
             this.SetFloatValue(sectionName, key, value, this.m_DoublePrecision, this.m_RemoveComments);
         }
 
         /// <summary>Sets a floating point value in the ini file. This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="precision">Precision, in number of digits after the decimal point.</param>
         public void SetFloatValue(String sectionName, String key, Double value, Int32 precision)
         {
@@ -821,9 +821,9 @@ namespace Nyerguds.Ini
 
         /// <summary>Sets a floating point value in the ini file, with the configured default precision.
         /// This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetFloatValue(String sectionName, String key, Double value, Boolean removeComments)
         {
@@ -832,9 +832,9 @@ namespace Nyerguds.Ini
 
         /// <summary>Sets a floating point value in the ini file.
         /// This action does not save the file.</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
-        /// <param name="value">Value to write</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
+        /// <param name="value">Value to write.</param>
         /// <param name="precision">Precision, in number of digits after the decimal point.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetFloatValue(String sectionName, String key, Double value, Int32 precision, Boolean removeComments)
@@ -845,8 +845,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Removes the specified key from the specified section</summary>
-        /// <param name="sectionName">The name of the section the key should be in</param>
-        /// <param name="key">The name of the key</param>
+        /// <param name="sectionName">The name of the section the key should be in.</param>
+        /// <param name="key">The name of the key.</param>
         public void RemoveKey(String sectionName, String key)
         {
             IniSection iniSection = GetSection(sectionName);
@@ -856,7 +856,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Removes all keys in a section.</summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         public void RemoveAllKeys(String sectionName)
         {
             IniSection iniSection = GetSection(sectionName);
@@ -867,7 +867,7 @@ namespace Nyerguds.Ini
         /// <summary>
         /// Removes a section from the ini file, and marks it for deletion on the next rewrite.
         /// </summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         public void RemoveSection(String sectionName)
         {
             for (Int32 i = 0; i < this.m_IniSections.Count; i++)
@@ -886,7 +886,7 @@ namespace Nyerguds.Ini
         /// <summary>
         /// Clears a section's keys.
         /// </summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         public void ClearSectionKeys(String sectionName)
         {
             IniSection section = null;
@@ -904,15 +904,15 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets all keys from a section.</summary>
-        /// <param name="sectionName">The name of the section</param>
-        /// <returns>A list of all key names in the section</returns>
+        /// <param name="sectionName">The name of the section.</param>
+        /// <returns>A list of all key names in the section.</returns>
         public List<String> GetSectionKeys(String sectionName)
         {
             return this.GetSectionKeys(sectionName, false);
         }
 
         /// <summary>Gets all keys from a section.</summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
         /// <returns>A list of all key names in the section.</returns>
         public List<String> GetSectionKeys(String sectionName, Boolean upperCaseKeys)
@@ -926,8 +926,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Returns a copy of a specified section's key-value pairs map.</summary>
-        /// <param name="sectionName">The name of the section</param>
-        /// <returns>A Map with the key-value pairs</returns>
+        /// <param name="sectionName">The name of the section.</param>
+        /// <returns>A Map with the key-value pairs.</returns>
         public Dictionary<String, String> GetSectionContent(String sectionName)
         {
             IniSection iniSection = GetSection(sectionName);
@@ -937,9 +937,9 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Returns a copy of a specified section's key-value pairs map.</summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
-        /// <returns>A Map with the key-value pairs</returns>
+        /// <returns>A Map with the key-value pairs.</returns>
         public Dictionary<String, String> GetSectionContent(String sectionName, Boolean upperCaseKeys)
         {
             IniSection iniSection = GetSection(sectionName);
@@ -952,7 +952,7 @@ namespace Nyerguds.Ini
         /// <summary>
         /// Returns a list of the names of all sections in the ini.
         /// </summary>
-        /// <returns>a List of the names of all sections in the ini</returns>
+        /// <returns>a List of the names of all sections in the ini.</returns>
         public List<String> GetSectionNames()
         {
             List<String> sectionNames = new List<String>();
@@ -962,7 +962,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a section by name. Returns null if the section was not found.</summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         /// <returns>The IniSection object, or null if not found.</returns>
         protected IniSection GetSection(String sectionName)
         {
@@ -970,7 +970,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Gets a section by name.</summary>
-        /// <param name="sectionName">The name of the section</param>
+        /// <param name="sectionName">The name of the section.</param>
         /// <param name="createWhenNotFound">If the section was not found, create a new section with that name and return that.</param>
         /// <returns>The retrieved or new IniSection object with that name.</returns>
         protected IniSection GetSection(String sectionName, Boolean createWhenNotFound)
@@ -996,8 +996,8 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>Reads lines of text from a stream, and returns it as a List of strings.</summary>
-        /// <param name="stream">The stream to read as file</param>
-        /// <param name="charEncoding">The character encoding to use when reading the file</param>
+        /// <param name="stream">The stream to read as file.</param>
+        /// <param name="charEncoding">The character encoding to use when reading the file.</param>
         /// <returns>A List of Strings, each String representing one line from the original text.</returns>
         protected List<String> ReadLinesFromTextStream(StreamReader stream, Encoding charEncoding)
         {
@@ -1026,7 +1026,7 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>A quick test to see if a line contains a valid ini key.</summary>
-        /// <param name="line">The input to test</param>
+        /// <param name="line">The input to test.</param>
         /// <returns>True if the line is not a comment, has key with a length greater than zero, and contains the '=' separator.</returns>
         protected Boolean IsValidKeyLine(String line)
         {

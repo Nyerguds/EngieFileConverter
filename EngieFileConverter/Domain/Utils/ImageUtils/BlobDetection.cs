@@ -12,12 +12,15 @@ namespace Nyerguds.ImageManipulation
     /// </summary>
     public static class BlobDetection
     {
+        //Example code
+
+        /*/
         /// <summary>
         /// Detects darker or brighter spots on the image by brightness threshold, and returns their center points.
         /// </summary>
-        /// <param name="image">Input image</param>
-        /// <param name="detectDark">Detect dark spots. False to detect bright drops</param>
-        /// <param name="brightnessThreshold">Brightness threshold needed to see a pixel as "bright"</param>
+        /// <param name="image">Input image.</param>
+        /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
+        /// <param name="brightnessThreshold">Brightness threshold needed to see a pixel as "bright".</param>
         /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
         /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
         /// <returns>A list of points indicating the centers of all found spots.</returns>
@@ -30,8 +33,8 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Detects darker or brighter spots on the image by brightness threshold, and returns their list of points.
         /// </summary>
-        /// <param name="image">Input image</param>
-        /// <param name="detectDark">Detect dark spots. False to detect bright drops</param>
+        /// <param name="image">Input image.</param>
+        /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
         /// <param name="brightnessThreshold">Brightness threshold. Use -1 to attempt automatic levelling.</param>
         /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
         /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
@@ -97,6 +100,7 @@ namespace Nyerguds.ImageManipulation
             Func<Boolean[,], Int32, Int32, Boolean> clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] == detectVal;
             return FindBlobs(dataBw, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
         }
+        //*/
 
         /// <summary>
         /// Detects a list of all blobs in the image, and merges any with bounds that intersect with each other according to the 'mergeThreshold' parameter.
@@ -105,7 +109,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
-        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
@@ -126,7 +130,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
-        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
@@ -145,7 +149,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
-        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
         public static List<List<Point>> FindBlobs<T>(T data, Int32 width, Int32 height, Func<T, Int32, Int32, Boolean> clearsThreshold, Boolean allEightEdges, Boolean getEdgesOnly)
@@ -162,7 +166,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
-        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
         /// <param name="getEdgesOnly">True to make the lists in 'blobs' only contain the edge points of the blobs. The 'inBlobs' items will still have all points marked.</param>
         /// <param name="inBlobs">Output parameter for receiving the blobs as boolean[,] arrays.</param>
@@ -296,7 +300,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">Image data array. It is processed as one pixel per coordinate.</param>
         /// <param name="width">Image width.</param>
         /// <param name="height">Image height.</param>
-        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean</param>
+        /// <param name="clearsThreshold">Function to check if the pixel at the given coordinates clears the threshold. Should be of the format (imgData, yVal, xVal) => Boolean.</param>
         /// <param name="blobs">Current list of point collections to add new detected blobs to.</param>
         /// <param name="inBlobs">Current list of point collections represented as boolean arrays, for very quick checks to see if a set of coordinates is in a collection.</param>
         /// <param name="allEightEdges">When scanning for pixels to add to the blob, scan all eight surrounding pixels rather than just top, left, bottom, right.</param>
