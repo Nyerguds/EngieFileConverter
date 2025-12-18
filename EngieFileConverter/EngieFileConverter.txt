@@ -82,6 +82,9 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.4.9: (29/10/2019 11:05)
+-Added palette visualiser to the "Match to palette" function.
+
 v1.4.8: (29/10/2019 10:00)
 -Fixed broken detection of Nintendo 64 C&C maps.
 

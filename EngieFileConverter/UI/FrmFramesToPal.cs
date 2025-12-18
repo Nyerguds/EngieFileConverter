@@ -57,6 +57,8 @@ namespace EngieFileConverter.UI
                 SupportedFileType curFrame = m_File.IsFramesContainer ? m_File.Frames[(Int32)numCurFrame.Value] : m_File;
                 
                 PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
+                if(pdd == null)
+                    return;
                 Bitmap image = curFrame.GetBitmap();
                 Image oldImage = this.pzpFramePreview.Image;
                 if (image == null)
@@ -69,9 +71,22 @@ namespace EngieFileConverter.UI
                     }
                     return;
                 }
-
                 Int32 matchBpp = pdd.BitsPerPixel;
                 Color[] matchPalette = pdd.Colors;
+                Color[] loadedColors = this.palPreviewPal.Palette;
+                Boolean match = matchPalette != null && loadedColors != null && matchPalette.Length == loadedColors.Length;
+                if (match)
+                {
+                    Int32 amount = loadedColors.Length;
+                    for (Int32 i = 0; i < amount; ++i)
+                    {
+                        match = loadedColors[i].ToArgb() == matchPalette[i].ToArgb();
+                        if (match == false)
+                            break;
+                    }
+                }
+                if (!match)
+                    PalettePanel.InitPaletteControl(pdd.BitsPerPixel, this.palPreviewPal, matchPalette, 200);
                 Bitmap[] result = ImageUtils.ImageToFrames(image, image.Width, image.Height, null, null, matchBpp, matchPalette, 0, 0);
                 Bitmap bmp = result.Length > 0 ? result[0] : null;
                 this.pzpFramePreview.Image = bmp;
@@ -155,6 +170,11 @@ namespace EngieFileConverter.UI
                     this.m_File.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        private void FrmFramesToPal_Load(object sender, EventArgs e)
+        {
+
         }
 
     }
