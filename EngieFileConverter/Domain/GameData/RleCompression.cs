@@ -2,6 +2,7 @@
 
 namespace Nyerguds.GameData.Compression
 {
+    #region Implementation
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Repeat code.
     /// The used run length is always (code & 0x7F).
@@ -11,8 +12,8 @@ namespace Nyerguds.GameData.Compression
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Copy code.
     /// The used run length is always (code & 0x7F).
-    /// This uses the original GetCode/WriteCode functions but simply flips their "Repeat" boolean.
     /// </summary>
+    /// <remarks>This uses the original GetCode/WriteCode functions but simply flips their "Repeat" boolean.</remarks>
     public class RleCompressionHighBitCopy : RleImplementation<RleCompressionHighBitCopy>
     {
         protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
@@ -27,6 +28,9 @@ namespace Nyerguds.GameData.Compression
             return base.WriteCode(bufferOut, ref outPtr, bufferEnd, !forRepeat, amount);
         }
     }
+    #endregion
+
+    #region Main RLE class
 
     /// <summary>
     /// Basic Run-Length Encoding algorithm. Written by Maarten Meuris, aka Nyerguds.
@@ -382,4 +386,6 @@ namespace Nyerguds.GameData.Compression
         }
         #endregion
     }
+    
+    #endregion
 }

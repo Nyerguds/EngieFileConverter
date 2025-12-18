@@ -46,7 +46,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public enum SaveOptionType
     {
-        /// <summary>Simple numeric input.</summary>
+        /// <summary>Simple numeric input. InitValue can be left empty, or give a comma-separated minimum and/or maximum in the format "min,max".</summary>
         Number,
         /// <summary>Checkbox. Values should be "0" and "1".</summary>
         Boolean,

@@ -50,7 +50,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length < 0x120)
                 throw new FileTypeLoadException("Not long enough.");
             if (fileData.Length % 0x120 != 0)
-                throw new FileTypeLoadException("Not a multiple of 4-bit 24x24 tiles.");
+                throw new FileTypeLoadException("Not a multiple of 4-bit 24×24 tiles.");
             Int32 frames = fileData.Length / 0x120;
             Byte[][] framesList = new Byte[frames][];
             this.m_FramesList = new SupportedFileType[frames];
@@ -104,7 +104,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new NotSupportedException("Image is empty.");
                 Int32 inputFullHeight = image.Height;
                 if (image.Width != 24 || inputFullHeight % 24 != 0)
-                    throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked 24x24 pixel frames.");
+                    throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked 24×24 pixel frames.");
                 if (image.PixelFormat != PixelFormat.Format4bppIndexed)
                     throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
                 frames = inputFullHeight / 24;
@@ -120,7 +120,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     SupportedFileType frame = fileToSave.Frames[i];
                     Bitmap frameImage = frame.GetBitmap();
                     if (frameImage.Width != 24 || frameImage.Height != 24)
-                        throw new NotSupportedException("AdventureSoft icons format needs 24x24 pixel frames.");
+                        throw new NotSupportedException("AdventureSoft icons format needs 24×24 pixel frames.");
                     if (frameImage.PixelFormat != PixelFormat.Format4bppIndexed)
                         throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
                     Byte[] imageData4 = ImageUtils.GetImageData(frameImage, out stride);

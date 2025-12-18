@@ -191,7 +191,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return new SaveOption[]
             {
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Overall file compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
-                new SaveOption("NCM", SaveOptionType.Boolean, "Don't compress separate frames", "1"),
+                new SaveOption("NCM", SaveOptionType.Boolean, "Don't compress separate frames", "0"),
                 new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped.", "1"),
                 new SaveOption("RMU", SaveOptionType.Boolean, "Treat as remapped unit (apply remapping to all frames except the remap table itself at index #16)", null, probablyRemappedUnit ? "1" : "0", new SaveEnableFilter("RMT", false, "1")),
                 new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to process all.", "0123456789-, ", remapped, new SaveEnableFilter("RMU", true, "1"))
@@ -211,9 +211,9 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 Int32 frLen = fileToSave.Frames.Length;
                 remapRange = "0-15";
-                if (frLen > 16)
-                    remapRange += ", 17";
                 if (frLen > 17)
+                    remapRange += ", 17";
+                if (frLen > 18)
                     remapRange += "-" + (frLen - 1);
             }
             SaveOption[] saveOpts = new SaveOption[]

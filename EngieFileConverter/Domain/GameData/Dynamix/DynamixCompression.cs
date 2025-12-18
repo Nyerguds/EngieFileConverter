@@ -113,17 +113,7 @@ namespace Nyerguds.GameData.Dynamix
 
         public static Byte[] LzssDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
         {
-            DynamixLzHuffDecoder lzhDec = new DynamixLzHuffDecoder();
-            Byte[] outputBuffer = lzhDec.Decode(buffer, startOffset, endOffset, decompressedSize);
-            if (decompressedSize < outputBuffer.Length)
-                throw new ArgumentException("Decompression failed!");
-            if (decompressedSize > outputBuffer.Length)
-            {
-                Byte[] output = new Byte[decompressedSize];
-                Array.Copy(outputBuffer, output, outputBuffer.Length);
-                return output;
-            }
-            return outputBuffer;
+            return LzssHuffDecoder.LzssDecode(buffer, startOffset, endOffset, decompressedSize);
         }
 
         public static Byte[] LzwDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
@@ -150,7 +140,7 @@ namespace Nyerguds.GameData.Dynamix
         /// <returns>The run-length encoded data.</returns>
         public static Byte[] LzssEncode(Byte[] buffer)
         {
-            DynamixLzHuffDecoder enc = new DynamixLzHuffDecoder();
+            LzssHuffDecoder enc = new LzssHuffDecoder();
             return null; // enc.Encode(buffer, null, null);
         }
         

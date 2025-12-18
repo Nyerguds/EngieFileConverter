@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.GameData.Compression
 {
-    public class DynamixLzHuffDecoder
+    public class LzssHuffDecoder
     {
         /**************************************************************
         lzhuf.c
@@ -32,6 +32,23 @@ namespace Nyerguds.GameData.Dynamix
     **************************************************************/
 
 // Thanks to: NewRisingSun
+
+
+        public static Byte[] LzssDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
+        {
+            LzssHuffDecoder lzhDec = new LzssHuffDecoder();
+            Byte[] outputBuffer = lzhDec.Decode(buffer, startOffset, endOffset, decompressedSize);
+            if (decompressedSize < outputBuffer.Length)
+                throw new ArgumentException("Decompression failed!");
+            if (decompressedSize > outputBuffer.Length)
+            {
+                Byte[] output = new Byte[decompressedSize];
+                Array.Copy(outputBuffer, output, outputBuffer.Length);
+                return output;
+            }
+            return outputBuffer;
+        }
+
 
 /********** LZSS compression **********/
 

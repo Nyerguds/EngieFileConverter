@@ -78,13 +78,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     // 0 image width (is 0 for "256")
                     Byte dirEntryWidth = fileData[offset];
                     // 1 image height
-                    Byte dirEntryHeight = fileData[offset+1];
+                    Byte dirEntryHeight = fileData[offset + 1];
                     // 2 number of colors
-                    Byte dirEntryPaletteLength = fileData[offset+2];
+                    Byte dirEntryPaletteLength = fileData[offset + 2];
                     // 3 reserved
-                    Byte dirEntryReserved = fileData[offset+3];
+                    Byte dirEntryReserved = fileData[offset + 3];
                     // 4-5 color planes
-                    UInt16 dirEntryColorPlanes = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
+                    UInt16 dirEntryColorPlanes = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 2, true);
                     // 6-7 bits per pixel
                     UInt16 dirEntryBitsPerPixel = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 6, 2, true);
                     // 8-11 size of image data
@@ -240,9 +240,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentNullException("inputBitmap", "Input bitmap cannot be null.");
             if (output == null)
                 throw new ArgumentNullException("output", "Output stream cannot be null.");
-            
+
             List<Byte[]> images = new List<Byte[]>();
-            Int32[] sizes = new Int32[] {16, 32, 48, 128, 256 };
+            Int32[] sizes = new Int32[] { 16, 32, 48, 128, 256 };
             List<Byte> widths = new List<Byte>();
             List<Byte> heights = new List<Byte>();
             List<Int32> bpp = new List<Int32>();
@@ -256,9 +256,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 width = size;
                 Int32 height = size;
                 if (inputBitmap.Width <= inputBitmap.Height)
-                    width = (Int32) (((Double) inputBitmap.Width/inputBitmap.Height)*size);
+                    width = (Int32)(((Double)inputBitmap.Width / inputBitmap.Height) * size);
                 else
-                    height = (Int32) (((Double) inputBitmap.Height/inputBitmap.Width)*size);
+                    height = (Int32)(((Double)inputBitmap.Height / inputBitmap.Width) * size);
                 // These are 0 for "256"
                 Byte saveWidth = (Byte)(Math.Min(makeSquare ? size : width, 0x100) & 0xFF);
                 Byte saveHeight = (Byte)(Math.Min(makeSquare ? size : height, 0x100) & 0xFF);
@@ -287,10 +287,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 offset = 0;
 
                 // 0-1 reserved, 0
-                iconWriter.Write((Byte) 0);
-                iconWriter.Write((Byte) 0);
+                iconWriter.Write((Byte)0);
+                iconWriter.Write((Byte)0);
                 // 2-3 image type, 1 = icon, 2 = cursor
-                iconWriter.Write((Int16) 1);
+                iconWriter.Write((Int16)1);
                 // 4-5 number of images
                 iconWriter.Write((Int16)images.Count);
                 offset += 6 + (16 * images.Count);
@@ -303,11 +303,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     // 1 image height
                     iconWriter.Write(heights[i]);
                     // 2 number of colors
-                    iconWriter.Write((Byte) 0);
+                    iconWriter.Write((Byte)0);
                     // 3 reserved
-                    iconWriter.Write((Byte) 0);
+                    iconWriter.Write((Byte)0);
                     // 4-5 color planes
-                    iconWriter.Write((Int16) 0);
+                    iconWriter.Write((Int16)0);
                     // 6-7 bits per pixel
                     iconWriter.Write((Int16)bpp[i]);
                     // 8-11 size of image data
@@ -337,7 +337,6 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             return data;
         }
-        
     }
 
     public enum ImageScaleMode

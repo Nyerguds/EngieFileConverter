@@ -6,6 +6,7 @@ using Nyerguds.GameData.Compression;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
+using System.Text;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -37,9 +38,45 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] imageData = GetImageData(fileData, filename, false);
+            this.LoadFile(fileData, filename, false);
+        }
+
+        protected void LoadFile(Byte[] fileData, String filename, Boolean asToonstruck)
+        {
+            Int32 compression;
+            Color[] palette;
+            CpsVersion cpsVersion;
+            Int32 startOffset = 0;
+            // 0x4E435053 == "SPCN" string.
+            if (asToonstruck)
+            {
+                if (fileData.Length > 4 && ArrayUtils.ReadIntFromByteArray(fileData, 0, 4, true) == 0x4E435053)
+                    startOffset = 4;
+                else
+                    throw new FileTypeLoadException("Not a Toonstruck CPS!");
+            }
+            Byte[] imageData = GetImageData(fileData, startOffset, filename, false, asToonstruck, out compression, out palette, out cpsVersion);
+            if (asToonstruck && cpsVersion != CpsVersion.Toonstruck)
+                throw new FileTypeLoadException("Bad format for Toonstruck CPS!");
+            this.CompressionType = compression;
+            this.CpsVersion = cpsVersion;
+            this.HasPalette = palette != null;
+            if (this.HasPalette)
+            {
+                Int32 palLen = palette.Length;
+
+                System.IO.File.WriteAllBytes(filename + ".dat", imageData);
+
+                if (palLen < 256 && imageData.Any(b => b >= palLen))
+                    throw new FileTypeLoadException("Palette is too small for image data!");
+                this.m_Palette = palette;
+            }
+            else
+                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, null, false);
             try
             {
+                this.m_Width = cpsVersion == CpsVersion.Toonstruck ? 640 : 320;
+                this.m_Height = cpsVersion == CpsVersion.Toonstruck ? 400 : 200;
                 this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 if (this.m_Palette.Length < 256)
                     this.m_LoadedImage.Palette = BitmapHandler.GetPalette(this.m_Palette);
@@ -59,47 +96,58 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="sourcePath">Source path the file is loaded from.</param>
         /// <param name="asAmigaFourFrame">True to abort if the file is not an Amiga-format 4-frame file.</param>
         /// <returns>The raw 8-bit linear image data in a 64000 byte array.</returns>
-        protected Byte[] GetImageData(Byte[] fileData, String sourcePath, Boolean asAmigaFourFrame)
+        protected static Byte[] GetImageData(Byte[] fileData, Int32 start, String sourcePath, Boolean asAmigaFourFrame, Boolean asToonstruck, out Int32 compression, out Color[] palette, out CpsVersion cpsVersion)
         {
-            if (fileData.Length < 10)
+            Int32 dataLen = fileData.Length - start;
+            if (dataLen < (asToonstruck ? 12 : 10)) 
                 throw new FileTypeLoadException("File is not long enough to be a valid CPS file.");
-            Int32 fileSize = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            Int32 compression = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+            Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 0, asToonstruck ? 4 : 2, true);
+            // compensate for 4-byte file size.
+            if (asToonstruck)
+                start += 2;
+            compression = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 2, 2, true);
             if (compression < 0 || compression > 4)
                 throw new FileTypeLoadException("Unknown compression type " + compression);
-            if (!((compression != 0 || compression != 4) && fileSize == fileData.Length) && !((compression == 0 || compression == 4) && fileSize + 2 == fileData.Length))
+            // compressions other than 0 and 4 count the full file including size header.
+            if (compression != 0 && compression != 4)
+                fileSize += asToonstruck ? 4 : 2;
+            if (fileSize != dataLen)
                 throw new FileTypeLoadException("File size in header does not match!");
-            Int32 bufferSize = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, 4, 4, true);
-            Int32 paletteLength = (Int16) ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
+            Int32 bufferSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 4, 4, true);
+            Int32 paletteLength = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, start + 8, 2, true);
             Boolean isPc = bufferSize == 64000;
+            Boolean isToon = bufferSize == 256000;
             Boolean amigaPal = bufferSize == 40064;
             Boolean isAmiga = amigaPal || bufferSize == 40000;
             Int32 amigaPalCount = 0;
-            if (!isPc && !isAmiga)
+            if (!isPc && !isAmiga && !isToon)
                 throw new FileTypeLoadException("Unknown CPS type!");
 
             if (paletteLength > 0)
             {
                 if (paletteLength <= 0x100 && isAmiga && paletteLength % 0x40 == 0)
                     amigaPalCount = paletteLength / 0x40;
-                if (amigaPalCount == 0 && paletteLength != 0x300)
+                if (amigaPalCount == 0 && paletteLength > 0x300)
                     throw new FileTypeLoadException("Invalid palette length in header!");
-                Byte[] pal = new Byte[paletteLength];
-                Array.Copy(fileData, 10, pal, 0, paletteLength);
+                Int32 palStart = start + 10;
                 try
                 {
                     if (amigaPalCount > 0)
                     {
+                        if (paletteLength % 2 != 0)
+                            throw new FileTypeLoadException("Bad length for Amiga CPS palette!");
                         Int32 palLen = paletteLength / 2;
-                        Color[] palette = new Color[palLen];
+                        palette = new Color[palLen];
                         for (Int32 i = 0; i < palLen; i++)
-                            palette[i] = Format16BitRgbaX444Be.GetColor(pal, i << 1);
-                        this.m_Palette = palette;
+                            palette[i] = Format16BitRgbaX444Be.GetColor(fileData, palStart + i << 1);
                     }
                     else
                     {
-                        ColorSixBit[] palette = ColorUtils.ReadSixBitPaletteFile(pal);
-                        this.m_Palette = ColorUtils.GetEightBitColorPalette(palette);
+                        if (paletteLength % 3 != 0)
+                            throw new FileTypeLoadException("Bad length for 6-bit CPS palette!");
+                        Int32 colors = paletteLength / 3;
+                        ColorSixBit[] sbPalette = ColorUtils.ReadSixBitPalette(fileData, palStart, colors);
+                        palette = ColorUtils.GetEightBitColorPalette(sbPalette);
                     }
                 }
                 catch (ArgumentException ex)
@@ -110,8 +158,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     throw new FileTypeLoadException("Could not load CPS palette: " + ex2.Message, ex2);
                 }
-                this.HasPalette = true;
             }
+            else
+                palette = null;
             if (amigaPalCount > 0 && amigaPal)
                 throw new FileTypeLoadException("Cannot handle both EOB1 and EOB2 type palettes!");
             Boolean isAmigaFourFrames = isAmiga && amigaPalCount > 1;
@@ -120,11 +169,17 @@ namespace EngieFileConverter.Domain.FileTypes
             if (!isAmigaFourFrames && asAmigaFourFrame)
                 throw new FileTypeLoadException("This is not a four-frame Amiga CPS!");
 
-            this.CpsVersion = isPc ? CpsVersion.Pc : (amigaPal || amigaPalCount == 0 ? CpsVersion.AmigaEob1 : CpsVersion.AmigaEob2);
-            this.CompressionType = compression;
+            if (isToon)
+                cpsVersion = CpsVersion.Toonstruck;
+            else if (isPc)
+                cpsVersion = CpsVersion.Pc;
+            else if (amigaPal || amigaPalCount == 0)
+                cpsVersion = CpsVersion.AmigaEob1;
+            else
+                cpsVersion = CpsVersion.AmigaEob2;
             Byte[] imageData;
-            Int32 dataOffset = 10 + paletteLength;
-            if (compression == 0 && fileData.Length < dataOffset + bufferSize)
+            Int32 dataOffset = start + 10 + paletteLength;
+            if (compression == 0 && dataLen < dataOffset + bufferSize)
                 throw new FileTypeLoadException("File is not long enough to contain the image data!");
             try
             {
@@ -165,15 +220,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 // EOB1 embedded palette
                 if (amigaPal)
                 {
-                    Color[] palette = new Color[32];
+                    Color[] pal = new Color[32];
                     Int32 offs = 40000;
                     for (Int32 i = 0; i < 32; i++)
                     {
-                        palette[i] = Format16BitRgbaX444Be.GetColor(imageData, offs);
+                        pal[i] = Format16BitRgbaX444Be.GetColor(imageData, offs);
                         offs += 2;
                     }
-                    this.m_Palette = palette;
-                    this.HasPalette = true;
+                    palette = pal;
                 }
                 // Convert 5-bit planar data to 8-bit linear data.
                 Byte[] imageData8bit = new Byte[64000];
@@ -194,23 +248,29 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 imageData = imageData8bit;
             }
-            if (this.m_Palette == null)
-                this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, null, false);
             return imageData;
         }
 
         protected void SetExtraInfo()
         {
             Boolean isAmiga = this.CpsVersion == CpsVersion.AmigaEob1 || this.CpsVersion == CpsVersion.AmigaEob2;
+            Boolean isToon = this.CpsVersion == CpsVersion.Toonstruck;
             Boolean amigaPal1 = this.HasPalette && this.CpsVersion == CpsVersion.AmigaEob1;
             Boolean amigaPal2 = this.HasPalette && this.CpsVersion == CpsVersion.AmigaEob2;
-            this.ExtraInfo = "Version: " + (isAmiga ? "Amiga" : "PC")
-                             + "\nCompression: " + this.compressionTypes[this.CompressionType]
+            String compression = this.CompressionType == 5 ? "LZSS" : this.compressionTypes[this.CompressionType];
+            this.ExtraInfo = "Version: " + (isAmiga ? "Amiga" : isToon ? "Toonstruck" : "PC")
+                             + "\nCompression: " + compression
                              + "\nIncludes palette: " + (this.HasPalette ? "Yes" + (amigaPal1 ? " (EOB 1)" : (amigaPal2 ? " (EOB 2)" : String.Empty)) : "No");
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {
+        {            
+            if (fileToSave == null || fileToSave.GetBitmap() == null)
+                throw new NotSupportedException("File to save is empty!");
+            Bitmap image = fileToSave.GetBitmap();
+            if (fileToSave.IsFramesContainer || image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
+                throw new NotSupportedException("Only 8-bit 320×200 images can be saved as CPS!");
+
             // If it is a non-image format which does contain colours, offer to save with palette
             Boolean hasColors = fileToSave != null && !(fileToSave is FileImage) && fileToSave.ColorsInPalette != 0;
             FileImgWwCps cps = fileToSave as FileImgWwCps;
@@ -228,19 +288,20 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
+            Bitmap image = fileToSave.GetBitmap();
+            if (fileToSave.IsFramesContainer || image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
+                throw new NotSupportedException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!");
+            
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 version;
             if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version))
                 version = 0;
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
-            Bitmap image = fileToSave.GetBitmap();
-            if (image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
-            if (imageData.Length != 64000)
-                throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
+            if (imageData.Length != this.m_Width * this.m_Height)
+                throw new NotSupportedException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!");
             return SaveCps(imageData, fileToSave.GetColors(), asPaletted ? 1 : 0, compressionType, (CpsVersion) version);
         }
 
@@ -289,7 +350,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 imageData = imageDataPlanes;
             }
-
             Byte[] compressedData;
             switch (compressionType)
             {
@@ -320,11 +380,26 @@ namespace EngieFileConverter.Domain.FileTypes
             else
                 paletteLength = 0;
             dataLength += paletteLength;
+            Boolean asToonstruck = version == CpsVersion.Toonstruck;
+            if (asToonstruck)
+                dataLength += 6;
             Byte[] fullData = new Byte[dataLength];
-            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32) (dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
-            ArrayUtils.WriteIntToByteArray(fullData, 2, 2, true, (UInt32) compressionType);
-            ArrayUtils.WriteIntToByteArray(fullData, 4, 4, true, (UInt32) imageData.Length);
-            ArrayUtils.WriteIntToByteArray(fullData, 8, 2, true, (UInt32) paletteLength);
+            Int32 startOffset = 0;
+            if (version == CpsVersion.Toonstruck)
+            {
+                // "SPCN" string.
+                ArrayUtils.WriteIntToByteArray(fullData, startOffset + 0, 4, true, 0x4E435053);
+                // 4-byte data length
+                ArrayUtils.WriteIntToByteArray(fullData, startOffset + 4, 4, true, (UInt32)(dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
+                startOffset += 6;
+            }
+            else
+            {
+                ArrayUtils.WriteIntToByteArray(fullData, startOffset + 0, 2, true, (UInt32)(dataLength - (compressionType == 0 || compressionType == 4 ? 2 : 0)));
+            }
+            ArrayUtils.WriteIntToByteArray(fullData, startOffset + 2, 2, true, (UInt32)compressionType);
+            ArrayUtils.WriteIntToByteArray(fullData, startOffset + 4, 4, true, (UInt32)imageData.Length);
+            ArrayUtils.WriteIntToByteArray(fullData, startOffset + 8, 2, true, (UInt32)paletteLength);
             Int32 offset = 10;
             if (paletteLength > 0)
             {
@@ -363,6 +438,7 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         Pc = 0,
         AmigaEob1 = 1,
-        AmigaEob2 = 2
+        AmigaEob2 = 2,
+        Toonstruck = 3
     }
 }

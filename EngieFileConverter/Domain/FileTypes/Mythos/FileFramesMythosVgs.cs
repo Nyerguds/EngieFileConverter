@@ -23,7 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Int32 Width { get { return 0; } }
         public override Int32 Height { get { return 0; } }
 
-        public override FileClass FileClass { get { return m_fileClass; } }
+        public override FileClass FileClass { get { return this.m_fileClass; } }
         private FileClass m_fileClass = FileClass.FrameSet;
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
@@ -46,7 +46,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return CreateTransparencyMask(); } }
+        public override Boolean[] TransparencyMask { get { return this.CreateTransparencyMask(); } }
         
         // template.
         //public override SaveOption[] GetPostLoadInitOptions()
@@ -81,7 +81,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="paletteStrict">True if an exception should be thrown if loading as palette and the file contains more than a palette.</param>
         /// <param name="asVideo">True to load the header bytes according to VDA header format, and store the X and Y offsets of all frames in the framesXY list instead of applying them to the images.</param>
         /// <param name="framesXY">List of frame X and Y offsets. Only filled in when asVideo is set to true.</param>
-        /// <param name="forFrameTest">True abort after reading the first frame, so it can be tested to be a full 320x200 VDA start frame.</param>
+        /// <param name="forFrameTest">True abort after reading the first frame, so it can be tested to be a full 320×200 VDA start frame.</param>
         protected void LoadFromFileData(Byte[] fileData, String sourcePath, Boolean asPalette, Boolean paletteStrict, Boolean asVideo, out List<Point> framesXY, Boolean forFrameTest)
         {
             if (fileData.Length < 0x8)
@@ -281,13 +281,13 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo += "Used compression: " + this.compressionTypes[this.CompressionType];
             if (offset != fileData.Length)
                 throw new FileTypeLoadException("Image load failed.");
-            if (m_PaletteSet && m_FramesList.Count == 0)
+            if (this.m_PaletteSet && this.m_FramesList.Count == 0)
                 throw new FileTypeLoadException("this is a palette-only VGS! Load it as palette.");
-            if (!asVideo && m_PaletteSet && m_FramesList.Count == 1 && m_FramesList[0].Width == 320 && m_FramesList[0].Height == 200)
+            if (!asVideo && this.m_PaletteSet && this.m_FramesList.Count == 1 && this.m_FramesList[0].Width == 320 && this.m_FramesList[0].Height == 200)
             {
                 this.m_fileClass = FileClass.Image8Bit;
-                this.m_LoadedImage = m_FramesList[0].GetBitmap();
-                m_FramesList.Clear();
+                this.m_LoadedImage = this.m_FramesList[0].GetBitmap();
+                this.m_FramesList.Clear();
                 this.ExtraInfo += "\nTreated as single image.";
             }
         }
@@ -359,7 +359,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 asPaletted = true;
                 compressionType = 0;
-                palette = CheckInputForColors(fileToSave, true);
+                palette = this.CheckInputForColors(fileToSave, true);
             }
             else
             {

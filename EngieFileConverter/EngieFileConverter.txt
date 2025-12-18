@@ -74,6 +74,17 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.4.1: (16/10/2018 14:42)
+-Compacted the UI to allow showing more additional info.
+-Fixed the position of Lands of Lore SHP in the save types list.
+-Optimised Dune II and Lands of Lore SHP; they no longer store duplicate frames.
+-Fixed image to frames splitting for indexed images of types lower than 256 colour.
+-Splitting an indexed image into frames now also sets the palette on empty frames.
+-Added support for the font format used in C&C1/RA1.
+-Added support for the font format used in Tiberian Sun.
+-Added support for the font format used in Dune 2000.
+-Added option to save Tiberian Sun SHP as uncompressed; required for the mouse cursor.
+
 v1.4.0: (07/09/2018 13:00)
 -Added multithreading to all operations, to prevent UI freezes.
 -Pasting on a range of frames no longer makes it lose its "has common palette" status.

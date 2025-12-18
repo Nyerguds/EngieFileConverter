@@ -263,7 +263,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("Only 4-bit or 8-bit images can be saved as Dynamix SCR!");
 
             if (!v2 && (image.Width != 320 || image.Height != 200))
-                throw new NotSupportedException("Only 320x200 images can be saved as Dynamix SCR v1!");
+                throw new NotSupportedException("Only 320×200 images can be saved as Dynamix SCR v1!");
             List<DynamixChunk> chunks = new List<DynamixChunk>();
             if (v2)
             {

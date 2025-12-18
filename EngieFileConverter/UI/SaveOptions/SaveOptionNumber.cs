@@ -58,13 +58,17 @@ namespace EngieFileConverter.UI.SaveOptions
             if (cpos < 0)
                 return;
             String min = init.Substring(0, cpos);
-            Int32 minVal;
+            Decimal minVal;
+            if (String.IsNullOrEmpty(min) || !Decimal.TryParse(min, out minVal))
+                minVal = Decimal.MinValue;
             String max = init.Substring(cpos + 1);
-            Int32 maxVal;
-            if (!String.IsNullOrEmpty(min) && Int32.TryParse(min, out minVal))
-                this.numValue.Minimum = minVal;
-            if (!String.IsNullOrEmpty(max) && Int32.TryParse(max, out maxVal))
-                this.numValue.Maximum = maxVal;
+            Decimal maxVal;
+            if (String.IsNullOrEmpty(max) || !Decimal.TryParse(max, out maxVal))
+                maxVal = Decimal.MaxValue;
+            if (minVal > maxVal)
+                throw new NotSupportedException("Initialization error: Given maximum is smaller than given minimum!");
+            this.numValue.Minimum = minVal;
+            this.numValue.Maximum = maxVal;
         }
         
         public override void FocusValue()

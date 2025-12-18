@@ -30,13 +30,11 @@
         {
             this.components = new System.ComponentModel.Container();
             this.lblFilename = new System.Windows.Forms.Label();
-            this.lblWidth = new System.Windows.Forms.Label();
-            this.lblHeight = new System.Windows.Forms.Label();
+            this.lblSize = new System.Windows.Forms.Label();
             this.lblColorformat = new System.Windows.Forms.Label();
             this.lblValFilename = new System.Windows.Forms.Label();
             this.lblColorsInPal = new System.Windows.Forms.Label();
-            this.lblValWidth = new System.Windows.Forms.Label();
-            this.lblValHeight = new System.Windows.Forms.Label();
+            this.lblValSize = new System.Windows.Forms.Label();
             this.lblValColorFormat = new System.Windows.Forms.Label();
             this.lblValColorsInPal = new System.Windows.Forms.Label();
             this.lblType = new System.Windows.Forms.Label();
@@ -87,30 +85,20 @@
             this.lblFilename.Text = "Filename:";
             this.lblFilename.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // lblWidth
+            // lblSize
             // 
-            this.lblWidth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblWidth.Location = new System.Drawing.Point(664, 100);
-            this.lblWidth.Name = "lblWidth";
-            this.lblWidth.Size = new System.Drawing.Size(94, 23);
-            this.lblWidth.TabIndex = 102;
-            this.lblWidth.Text = "Image width:";
-            this.lblWidth.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // lblHeight
-            // 
-            this.lblHeight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblHeight.Location = new System.Drawing.Point(664, 123);
-            this.lblHeight.Name = "lblHeight";
-            this.lblHeight.Size = new System.Drawing.Size(94, 23);
-            this.lblHeight.TabIndex = 104;
-            this.lblHeight.Text = "Image height:";
-            this.lblHeight.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblSize.Location = new System.Drawing.Point(664, 100);
+            this.lblSize.Name = "lblSize";
+            this.lblSize.Size = new System.Drawing.Size(94, 23);
+            this.lblSize.TabIndex = 102;
+            this.lblSize.Text = "Image size:";
+            this.lblSize.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // lblColorformat
             // 
             this.lblColorformat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblColorformat.Location = new System.Drawing.Point(664, 146);
+            this.lblColorformat.Location = new System.Drawing.Point(664, 123);
             this.lblColorformat.Name = "lblColorformat";
             this.lblColorformat.Size = new System.Drawing.Size(94, 23);
             this.lblColorformat.TabIndex = 108;
@@ -130,37 +118,27 @@
             // lblColorsInPal
             // 
             this.lblColorsInPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblColorsInPal.Location = new System.Drawing.Point(664, 169);
+            this.lblColorsInPal.Location = new System.Drawing.Point(664, 146);
             this.lblColorsInPal.Name = "lblColorsInPal";
             this.lblColorsInPal.Size = new System.Drawing.Size(94, 23);
             this.lblColorsInPal.TabIndex = 112;
             this.lblColorsInPal.Text = "Colors in palette:";
             this.lblColorsInPal.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // lblValWidth
+            // lblValSize
             // 
-            this.lblValWidth.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValWidth.Location = new System.Drawing.Point(747, 100);
-            this.lblValWidth.Name = "lblValWidth";
-            this.lblValWidth.Size = new System.Drawing.Size(157, 23);
-            this.lblValWidth.TabIndex = 103;
-            this.lblValWidth.Text = "---";
-            this.lblValWidth.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // lblValHeight
-            // 
-            this.lblValHeight.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValHeight.Location = new System.Drawing.Point(747, 123);
-            this.lblValHeight.Name = "lblValHeight";
-            this.lblValHeight.Size = new System.Drawing.Size(157, 23);
-            this.lblValHeight.TabIndex = 105;
-            this.lblValHeight.Text = "---";
-            this.lblValHeight.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.lblValSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblValSize.Location = new System.Drawing.Point(747, 100);
+            this.lblValSize.Name = "lblValSize";
+            this.lblValSize.Size = new System.Drawing.Size(157, 23);
+            this.lblValSize.TabIndex = 105;
+            this.lblValSize.Text = "---";
+            this.lblValSize.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // lblValColorFormat
             // 
             this.lblValColorFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValColorFormat.Location = new System.Drawing.Point(747, 146);
+            this.lblValColorFormat.Location = new System.Drawing.Point(747, 123);
             this.lblValColorFormat.Name = "lblValColorFormat";
             this.lblValColorFormat.Size = new System.Drawing.Size(157, 23);
             this.lblValColorFormat.TabIndex = 109;
@@ -170,7 +148,7 @@
             // lblValColorsInPal
             // 
             this.lblValColorsInPal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValColorsInPal.Location = new System.Drawing.Point(747, 169);
+            this.lblValColorsInPal.Location = new System.Drawing.Point(747, 146);
             this.lblValColorsInPal.Name = "lblValColorsInPal";
             this.lblValColorsInPal.Size = new System.Drawing.Size(157, 23);
             this.lblValColorsInPal.TabIndex = 113;
@@ -326,7 +304,7 @@
             // 
             this.tsmiTo65x65HeightMap.Name = "tsmiTo65x65HeightMap";
             this.tsmiTo65x65HeightMap.Size = new System.Drawing.Size(285, 22);
-            this.tsmiTo65x65HeightMap.Text = "64x64 image to 65x65 height map &image";
+            this.tsmiTo65x65HeightMap.Text = "64×64 image to 65×65 height map &image";
             this.tsmiTo65x65HeightMap.Click += new System.EventHandler(this.TsmiTo65x65HeightMap_Click);
             // 
             // tsmiShadowSplit
@@ -425,7 +403,7 @@
             // lblInfo
             // 
             this.lblInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblInfo.Location = new System.Drawing.Point(664, 192);
+            this.lblInfo.Location = new System.Drawing.Point(664, 169);
             this.lblInfo.Name = "lblInfo";
             this.lblInfo.Size = new System.Drawing.Size(94, 23);
             this.lblInfo.TabIndex = 112;
@@ -435,9 +413,9 @@
             // lblValInfo
             // 
             this.lblValInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblValInfo.Location = new System.Drawing.Point(667, 215);
+            this.lblValInfo.Location = new System.Drawing.Point(667, 192);
             this.lblValInfo.Name = "lblValInfo";
-            this.lblValInfo.Size = new System.Drawing.Size(237, 69);
+            this.lblValInfo.Size = new System.Drawing.Size(237, 92);
             this.lblValInfo.TabIndex = 315;
             // 
             // cmbPalettes
@@ -532,15 +510,13 @@
             this.Controls.Add(this.lblValType);
             this.Controls.Add(this.lblValColorsInPal);
             this.Controls.Add(this.lblValColorFormat);
-            this.Controls.Add(this.lblValHeight);
-            this.Controls.Add(this.lblValWidth);
+            this.Controls.Add(this.lblValSize);
             this.Controls.Add(this.lblInfo);
             this.Controls.Add(this.lblColorsInPal);
             this.Controls.Add(this.lblValFilename);
             this.Controls.Add(this.lblColorformat);
-            this.Controls.Add(this.lblHeight);
             this.Controls.Add(this.lblType);
-            this.Controls.Add(this.lblWidth);
+            this.Controls.Add(this.lblSize);
             this.Controls.Add(this.lblFilename);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.pzpImage);
@@ -565,13 +541,11 @@
         #endregion
 
         private System.Windows.Forms.Label lblFilename;
-        private System.Windows.Forms.Label lblWidth;
-        private System.Windows.Forms.Label lblHeight;
+        private System.Windows.Forms.Label lblSize;
         private System.Windows.Forms.Label lblColorformat;
         private System.Windows.Forms.Label lblValFilename;
         private System.Windows.Forms.Label lblColorsInPal;
-        private System.Windows.Forms.Label lblValWidth;
-        private System.Windows.Forms.Label lblValHeight;
+        private System.Windows.Forms.Label lblValSize;
         private System.Windows.Forms.Label lblValColorFormat;
         private System.Windows.Forms.Label lblValColorsInPal;
         private System.Windows.Forms.Label lblType;

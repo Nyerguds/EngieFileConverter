@@ -466,6 +466,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.LoadFileFrame(newfile, newfile, framesArr[i], imagePath, i);
                 framePic.SetBitsPerColor(bpp);
                 framePic.SetColorsInPalette(colorsInPal);
+                if (framesArr[i] == null && indexed)
+                    framePic.SetColors(imPalette);
                 newfile.AddFrame(framePic);
             }
             //newfile.m_LoadedImage = mainFrame.Length > 0 ? mainFrame[0] : null;

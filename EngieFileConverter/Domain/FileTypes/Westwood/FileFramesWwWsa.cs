@@ -134,32 +134,31 @@ namespace EngieFileConverter.Domain.FileTypes
             String fileName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + "." + checkType.FileExtensions.First());
             // Existence check + original case retrieve.
             String[] fileNames = Directory.GetFiles(Path.GetDirectoryName(fileName), Path.GetFileName(fileName));
-            if (fileNames.Length > 0)
+            if (fileNames.Length <= 0)
+                return null;
+            fileName = fileNames[0];
+            try
             {
-                fileName = fileNames[0];
-                try
-                {
-                    checkType.LoadFile(File.ReadAllBytes(fileName), fileName);
-                    if (checkType.Width >= maxWidth && checkType.Height >= maxHeight && !checkType.IsFramesContainer)
-                        return new List<String>() {fileName};
-                }
-                catch (FileLoadException)
-                {
-                    // ignore; continue with normal load
-                }
-                finally
-                {
-                    // Remove loaded file.
-                    checkType.Dispose();
-                }
+                checkType.LoadFile(File.ReadAllBytes(fileName), fileName);
+                if (checkType.Width >= maxWidth && checkType.Height >= maxHeight && !checkType.IsFramesContainer)
+                    return new List<String>() {fileName};
+            }
+            catch (FileLoadException)
+            {
+                // ignore; continue with normal load
+            }
+            finally
+            {
+                // Remove loaded file.
+                checkType.Dispose();
             }
             return null;
         }
 
         public override void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain)
         {
-            Int32 lastFrameWidth = 0;
-            Int32 lastFrameHeight = 0;
+            Int32 lastFrameWidth;
+            Int32 lastFrameHeight;
             String firstName = loadChain.FirstOrDefault();
             if (firstName == null)
                 return;
@@ -321,7 +320,7 @@ namespace EngieFileConverter.Domain.FileTypes
             StringBuilder generalInfo = new StringBuilder("Version: ").Append(this.formats[(Int32)loadVersion]);
             if (loadVersion != WsaVersion.Dune2 && loadVersion != WsaVersion.Dune2v1)
             {
-                generalInfo.Append("\nFrame dimensions: ").Append(xorWidth).Append("x").Append(xorHeight);
+                generalInfo.Append("\nFrame dimensions: ").Append(xorWidth).Append("×").Append(xorHeight);
                 generalInfo.Append("\nFrame position: [").Append(xPos).Append(", ").Append(yPos).Append("]");
             }
             String extraInfo = generalInfo.ToString();

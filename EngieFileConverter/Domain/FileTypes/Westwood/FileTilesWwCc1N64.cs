@@ -169,7 +169,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (!(outputType is FileImage))
                 throw new NotSupportedException("Exporting tileset as type " + outputType.ShortTypeName + " is not supported.");
             if (outputType is FileImageJpg)
-                throw new NotSupportedException("JPEG? No. Fuck off. Don't do that to those poor 24x24 paletted images.");
+                throw new NotSupportedException("JPEG? No. Fuck off. Don't do that to those poor 24×24 paletted images.");
             String ext = "." + outputType.FileExtensions[0];
             foreach (FileTileCc1N64 tile in this.m_tilesList)
             {

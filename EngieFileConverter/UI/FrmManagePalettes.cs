@@ -69,7 +69,7 @@ namespace Nyerguds.Util.UI
                 {
                     if (!File.Exists(inipath))
                         continue;
-                    IniFile paletteConfig = new IniFile(inipath);
+                    //IniFile paletteConfig = new IniFile(inipath);
                     // Trim all unused entries off the end
                     this.TrimSubPalettes(currentSubPals);
                 }
@@ -101,126 +101,127 @@ namespace Nyerguds.Util.UI
 
         private void CmbPalettes_SelectedIndexChanged(Object sender, EventArgs e)
         {
-            if (this.cmbPalettes.SelectedIndex >= this.subPalettes.Count)
+            if (this.cmbPalettes.SelectedIndex < this.subPalettes.Count)
             {
-                this.lbSubPalettes.Items.Clear();
-                // "Create new" item was selected.
-                // Give "save as" dialog? Maybe not, it only works from the program's folder. Just name + existence check, then?
-                String saveName = "newpal.pal";
-                if (this.SuggestedSaveName != null)
-                    saveName = Path.GetFileNameWithoutExtension(this.SuggestedSaveName) + ".pal";
-                String newPaletteName = InputBox.Show("Palette name:", this.Title, saveName, FormStartPosition.CenterParent);
-                Char[] invalid = Path.GetInvalidFileNameChars();
-                Boolean isNull = newPaletteName == null;
-                Boolean isEmpty = !isNull && newPaletteName.Length == 0;
-                Boolean illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
-                while (isEmpty || illegalChars)
+                this.lbSubPalettes.SelectedItem = null;
+                Int32 items = this.ListSubPalettes((this.cmbPalettes.SelectedItem ?? String.Empty).ToString());
+                //this.lbSubPalettes.Focus();
+                this.lbSubPalettes.SelectedIndex = items > 0 ? 0 : -1;
+            }
+            // "Create new" item was selected.
+            // Give "save as" dialog? Maybe not, it only works from the program's folder. Just name + existence check, then?
+            this.lbSubPalettes.Items.Clear();
+            String saveName = "newpal.pal";
+            if (this.SuggestedSaveName != null)
+                saveName = Path.GetFileNameWithoutExtension(this.SuggestedSaveName) + ".pal";
+            String newPaletteName = InputBox.Show("Palette name:", this.Title, saveName, FormStartPosition.CenterParent);
+            Char[] invalid = Path.GetInvalidFileNameChars();
+            Boolean isNull = newPaletteName == null;
+            Boolean isEmpty = !isNull && newPaletteName.Length == 0;
+            Boolean illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
+            while (isEmpty || illegalChars)
+            {
+                String message;
+                if (isEmpty)
+                    message = "Palette needs a name!";
+                else
+                    message = "Invalid characters in given file name!";
+                MessageBox.Show(this, message , this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (isEmpty)
+                    newPaletteName = saveName;
+                newPaletteName = InputBox.Show("Palette name:", this.Title, newPaletteName, FormStartPosition.CenterParent);
+                isNull = newPaletteName == null;
+                isEmpty = !isNull && newPaletteName.Length == 0;
+                illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
+            }
+            if (isNull)
+            {
+                this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
+            }
+            if (!newPaletteName.EndsWith(".pal"))
+                newPaletteName += ".pal";
+            String newPath = Path.Combine(this.appPath, newPaletteName);
+            List<PaletteDropDownInfo> newPalInfo;
+            Int32 existingpos = this.subPalettes.Keys.ToList().IndexOf(newPaletteName);
+            if (existingpos != -1)
+            {
+                MessageBox.Show(this, "Palette already exists!", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.cmbPalettes.SelectedIndex = existingpos;
+                return;
+            }
+            String barePalName = newPaletteName.Substring(0, newPaletteName.Length - 4);
+            String iniPath = Path.Combine(this.appPath, barePalName + ".ini");
+            Boolean iniExists = File.Exists(iniPath);
+            if (File.Exists(newPath))
+            {
+                if (this.bpp == 4)
                 {
-                    String message;
-                    if (isEmpty)
-                        message = "Palette needs a name!";
-                    else
-                        message = "Invalid characters in given file name!";
-                    MessageBox.Show(this, message , this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    if (isEmpty)
-                        newPaletteName = saveName;
-                    newPaletteName = InputBox.Show("Palette name:", this.Title, newPaletteName, FormStartPosition.CenterParent);
-                    isNull = newPaletteName == null;
-                    isEmpty = !isNull && newPaletteName.Length == 0;
-                    illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
-                }
-                if (isNull)
-                {
-                    this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
-                    return;
-                }
-                if (!newPaletteName.EndsWith(".pal"))
-                    newPaletteName += ".pal";
-                String newPath = Path.Combine(this.appPath, newPaletteName);
-                List<PaletteDropDownInfo> newPalInfo;
-                Int32 existingpos = this.subPalettes.Keys.ToList().IndexOf(newPaletteName);
-                if (existingpos != -1)
-                {
-                    MessageBox.Show(this, "Palette already exists!", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    this.cmbPalettes.SelectedIndex = existingpos;
-                    return;
-                }
-                String barePalName = newPaletteName.Substring(0, newPaletteName.Length - 4);
-                String iniPath = Path.Combine(this.appPath, barePalName + ".ini");
-                Boolean iniExists = File.Exists(iniPath);
-                if (File.Exists(newPath))
-                {
-                    if (this.bpp == 4)
+                    DialogResult dr = DialogResult.Yes;
+                    if (!iniExists)
+                        dr = MessageBox.Show(this, "Palette already exists as 8-bit palette!\nAre you sure you want to use this for 4-bit palettes?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    if (dr == DialogResult.Yes)
                     {
-                        DialogResult dr = DialogResult.Yes;
-                        if (!iniExists)
-                            dr = MessageBox.Show(this, "Palette already exists as 8-bit palette!\nAre you sure you want to use this for 4-bit palettes?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                        if (dr == DialogResult.Yes)
+                        if (iniExists)
                         {
-                            if (iniExists)
-                            {
-                                newPalInfo = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(newPath), true, true, false);
-                                this.TrimSubPalettes(newPalInfo);
-                            }
-                            else
-                            {
-                                newPalInfo = new List<PaletteDropDownInfo>();
-                                newPalInfo.Add(new PaletteDropDownInfo(barePalName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
-                            }
-                            this.subPalettes.Add(newPaletteName, newPalInfo);
-                            this.removedPalettes.Remove(newPaletteName);
-                            this.cmbPalettes.Items[this.subPalettes.Count - 1] = newPaletteName;
-                            this.cmbPalettes.Items.Add(CREATENEW);
+                            newPalInfo = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(newPath), true, true, false);
+                            this.TrimSubPalettes(newPalInfo);
                         }
                         else
-                        {
-                            this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
-                        }
-                    }
-                    else if (this.bpp == 8)
-                    {
-                        DialogResult dr = DialogResult.Yes;
-                        if (iniExists)
-                            dr = MessageBox.Show(this, "Palette already exists as 4-bit palette!\nAre you sure you want to use this as 8-bit palette?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                        if (dr == DialogResult.Yes)
                         {
                             newPalInfo = new List<PaletteDropDownInfo>();
-                            newPalInfo.Add(new PaletteDropDownInfo(newPaletteName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
-                            this.subPalettes.Add(newPaletteName, newPalInfo);
-                            this.removedPalettes.Remove(newPaletteName);
-                            this.cmbPalettes.Items[this.subPalettes.Count - 1] = newPaletteName;
-                            this.cmbPalettes.Items.Add(CREATENEW);
+                            newPalInfo.Add(new PaletteDropDownInfo(barePalName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
                         }
-                        else
-                        {
-                            this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
-                        }
+                        this.subPalettes.Add(newPaletteName, newPalInfo);
+                        this.removedPalettes.Remove(newPaletteName);
+                        Int32 newIndex = this.subPalettes.Count - 1;
+                        this.cmbPalettes.Items[this.subPalettes.Count - 1] = newPaletteName;
+                        this.cmbPalettes.Items.Add(CREATENEW);
+                        this.cmbPalettes.SelectedIndex = newIndex;
                     }
                     else
                     {
-                        // Can normally never happen; dialog is always for 4 or 8 bit.
+                        this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
+                    }
+                }
+                else if (this.bpp == 8)
+                {
+                    DialogResult dr = DialogResult.Yes;
+                    if (iniExists)
+                        dr = MessageBox.Show(this, "Palette already exists as 4-bit palette!\nAre you sure you want to use this as 8-bit palette?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    if (dr == DialogResult.Yes)
+                    {
+                        newPalInfo = new List<PaletteDropDownInfo>();
+                        newPalInfo.Add(new PaletteDropDownInfo(newPaletteName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
+                        this.subPalettes.Add(newPaletteName, newPalInfo);
+                        this.removedPalettes.Remove(newPaletteName);
+                        Int32 newIndex = this.subPalettes.Count - 1;
+                        this.cmbPalettes.Items[newIndex] = newPaletteName;
+                        this.cmbPalettes.Items.Add(CREATENEW);
+                        this.cmbPalettes.SelectedIndex = newIndex;
+                    }
+                    else
+                    {
                         this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
                     }
                 }
                 else
                 {
-                    // Finally, the normal cases.
-                    newPalInfo = new List<PaletteDropDownInfo>();
-                    newPalInfo.Add(new PaletteDropDownInfo(this.bpp == 8 ? newPaletteName : barePalName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
-                    this.subPalettes.Add(newPaletteName, newPalInfo);
-
-                    // Rename current "add new" case to the new palette
-                    this.removedPalettes.Remove(newPaletteName);
-                    this.cmbPalettes.Items[this.subPalettes.Count - 1] = newPaletteName;
-                    this.cmbPalettes.Items.Add(CREATENEW);
+                    // Can normally never happen; dialog is always for 4 or 8 bit.
+                    this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
                 }
-                return;
             }
-            this.lbSubPalettes.SelectedIndex = -1;
-            Int32 items = this.ListSubPalettes((this.cmbPalettes.SelectedItem ?? String.Empty).ToString());
-            //this.lbSubPalettes.Focus();
-            if (items > 0)
-                this.lbSubPalettes.SelectedIndex = 0;
+            else
+            {
+                // Finally, the normal cases.
+                newPalInfo = new List<PaletteDropDownInfo>();
+                newPalInfo.Add(new PaletteDropDownInfo(this.bpp == 8 ? newPaletteName : barePalName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
+                this.subPalettes.Add(newPaletteName, newPalInfo);
+
+                // Rename current "add new" case to the new palette
+                this.removedPalettes.Remove(newPaletteName);
+                this.cmbPalettes.Items[this.subPalettes.Count - 1] = newPaletteName;
+                this.cmbPalettes.Items.Add(CREATENEW);
+            }
         }
 
         private Int32 ListSubPalettes(String filename)

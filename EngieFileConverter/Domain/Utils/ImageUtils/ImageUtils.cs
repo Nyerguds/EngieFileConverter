@@ -1046,7 +1046,7 @@ namespace Nyerguds.ImageManipulation
 
             if (trimmedYTop == height)
             {
-                // Full width was trimmed; image is empty.
+                // Full height was trimmed; image is empty.
                 height = 0;
                 yOffset = 0;
                 return new Byte[0];
@@ -1572,6 +1572,7 @@ namespace Nyerguds.ImageManipulation
                         frameImageData[i] = remapTable[frameImageData[i]];
                     origBpp = matchBpp;
                     palette = matchPalette;
+                    origPf = GetIndexedPixelFormat(matchBpp);
                 }
                 if (origBpp < 8)
                     frameImageData = ImageUtils.ConvertFrom8Bit(frameImageData, frameWidth, frameHeight, origBpp, true, ref stride);

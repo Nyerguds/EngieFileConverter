@@ -37,7 +37,16 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            Byte[] imageData = GetImageData(fileData, filename, true);
+            Int32 compression;
+            Color[] palette;
+            CpsVersion cpsVersion;
+            Byte[] imageData = GetImageData(fileData, 0, filename, true, false, out compression, out palette, out cpsVersion);
+            this.CompressionType = compression;
+            this.CpsVersion = cpsVersion;
+            this.HasPalette = true;
+            if (palette == null)
+                throw new FileTypeLoadException("Cannot identify palette!");
+
             Int32 images = m_Palette.Length / 32;
             Int32 frWidth = 160;
             Int32 frHeight = 96;
@@ -164,7 +173,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 height = frImage.Height;
                 Int32 curMax = i < 2 ? 96 : 104;
                 if (width > 160 && height > curMax)
-                    throw new NotSupportedException("Frame " + i + " does not fit in 160x" + curMax + "!");
+                    throw new NotSupportedException("Frame " + i + " does not fit in 160×" + curMax + "!");
                 Int32 stride;
                 Byte[] frData = ImageUtils.GetImageData(frImage, out stride, true);
                 if (frData.Any(p => p >= 32))

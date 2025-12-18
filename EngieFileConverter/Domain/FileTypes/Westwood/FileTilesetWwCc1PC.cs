@@ -184,7 +184,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.hdrSize != fileData.Length)
                 throw new FileTypeLoadException("File size in header does not match.");
             if (this.hdrTileHeight != 24 || this.hdrTileWidth != 24)
-                throw new FileTypeLoadException("Only 24x24 pixel tiles are supported.");
+                throw new FileTypeLoadException("Only 24×24 pixel tiles are supported.");
             if (this.hdrZero1 != 00 || this.hdrZero2 != 0 || this.hdrID1 != -1 || this.hdrID2 != 0x0D1A)
                 throw new FileTypeLoadException("Invalid values encountered in header.");
             if (this.hdrImgStart >= fileLen || this.hdrIndexTilesetImagesList >= fileLen || this.hdrIndexImages >= fileLen)
@@ -205,7 +205,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("Can only save 8 BPP images as this type.");
             Bitmap bitmap = fileToSave.GetBitmap();
             if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
-                throw new NotSupportedException("The file dimensions are not a multiple of 24x24!");
+                throw new NotSupportedException("The file dimensions are not a multiple of 24×24!");
             Int32 nrOfFramesX = bitmap.Width / 24;
             Int32 nrOfFramesY = bitmap.Height / 24;
             Int32 nrOfFrames = nrOfFramesX * nrOfFramesY;

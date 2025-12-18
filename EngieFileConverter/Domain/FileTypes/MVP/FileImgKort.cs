@@ -54,12 +54,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 for (UInt32 replen = 0; replen < rep; replen++)
                 {
                     if (destOffs >= len)
-                        throw new FileTypeLoadException("Decoded image does not fit in 320x240!");
+                        throw new FileTypeLoadException("Decoded image does not fit in 320×240!");
                     imageData[destOffs++] = (Byte)col;
                 }
             }
             if (destOffs < len)
-                throw new FileTypeLoadException("Decoded image is smaller than 320x240!");
+                throw new FileTypeLoadException("Decoded image is smaller than 320×240!");
             this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, null, false);
             Bitmap image = ImageUtils.BuildImage(imageData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             // reorder lines
@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("File to save is empty!");
             Bitmap image = fileToSave.GetBitmap();
             if (image.Width != 320 || image.Height != 240 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new NotSupportedException("Only 8-bit 320x240 images can be saved as KORT image file!");
+                throw new NotSupportedException("Only 8-bit 320×240 images can be saved as KORT image file!");
             Int32 stride;
             // stride collapse is probably not needed... 320 is divisible by 4.
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);

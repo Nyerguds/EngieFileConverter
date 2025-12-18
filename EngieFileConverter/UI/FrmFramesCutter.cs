@@ -12,7 +12,6 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmFramesCutter : Form
     {
-        private const Char TimesSymbol = '×';
         
         public Int32 FrameWidth { get; private set; }
         public Int32 FrameHeight { get; private set; }
@@ -69,7 +68,7 @@ namespace EngieFileConverter.UI
             this.cmbPalType.SelectedIndex = 2;
 
             this.CustomColors = customColors;
-            this.lblImageSizeVal.Text = String.Concat(image.Width, TimesSymbol, image.Height);
+            this.lblImageSizeVal.Text = String.Concat(image.Width, '×', image.Height);
             this.numWidth.Maximum = image.Width;
             this.numWidth.Value = image.Width;
             this.numHeight.Maximum = image.Height;
@@ -115,7 +114,7 @@ namespace EngieFileConverter.UI
                     this.numFrames.Value = frames;
                     this.numCurFrame.Minimum = 0;
                     this.numCurFrame.Maximum = this.numFrames.Value - 1;
-                    this.lblFramesOnImageVal.Text = String.Concat(framesX * framesY," (", framesX, TimesSymbol, framesY, ")");
+                    this.lblFramesOnImageVal.Text = String.Concat(framesX * framesY," (", framesX, '×', framesY, ")");
                     this.pzpFramePreview.ZoomFactor = Math.Max(1, maxZoom);
                 }
                 Int32 frameNr = (Int32) this.numCurFrame.Value;
@@ -141,7 +140,7 @@ namespace EngieFileConverter.UI
                 this.pzpFramePreview.Image = bmp;
                 Int32 frWidth = bmp != null ? bmp.Width : 0;
                 Int32 frHeight = bmp != null ? bmp.Height : 0;
-                this.lblFrameSizeVal.Text = String.Concat(frWidth, TimesSymbol, frHeight);
+                this.lblFrameSizeVal.Text = String.Concat(frWidth, '×', frHeight);
                 if (oldImage != null)
                 {
                     try { oldImage.Dispose(); }

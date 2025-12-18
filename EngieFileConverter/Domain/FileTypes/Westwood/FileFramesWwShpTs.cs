@@ -166,11 +166,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
             }
-            Int32 nrOfOpts = 3;
+            Int32 nrOfOpts = 4;
             if (evenFrames)
                 nrOfOpts++;
             SaveOption[] opts = new SaveOption[nrOfOpts];
             Int32 opt = 0;
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.Boolean, "Enable transparency compression", "1");
             opts[opt++] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
             opts[opt++] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
             //opts[opt++] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable when calculating average colour (ignores hue of remap pixels)", "0");
@@ -186,6 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 height;
             Color[] palette;
             PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
+            Boolean compress = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CMP"));
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean align = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "ALI"));
             //Boolean adjustForRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "REM"));
@@ -211,8 +213,12 @@ namespace EngieFileConverter.Domain.FileTypes
 
             Int32 frameHeaderOffset = 0;
             UInt32 frameDataOffset = (UInt32) (hdrSize + frameHdrSize * nrOfFrames);
-            if (align && frameDataOffset % 8 > 0)
-                frameDataOffset += 8 - (frameDataOffset % 8);
+            if (align)
+            {
+                UInt32 alignment = frameDataOffset % 8;
+                if (alignment > 0)
+                    frameDataOffset += 8 - alignment;
+            }
             Byte[] dummy = trimDuplicates ? new Byte[0] : null;
             for (Int32 i = 0; i < nrOfFrames; i++)
             {
@@ -270,11 +276,17 @@ namespace EngieFileConverter.Domain.FileTypes
                     else
                     {
                         flags = 0x01;
-                        // Collapse whitespace, check if smaller or not.
-                        imageDataToStore = WestwoodRleZero.CompressRleZeroTs(imageData, newWidth, newHeight);
-                        if (imageDataToStore.Length > imageData.Length)
+                        if (!compress)
                             imageDataToStore = imageData;
-                        else flags |= 2;
+                        else
+                        {
+                            // Collapse whitespace, check if smaller or not.
+                            imageDataToStore = WestwoodRleZero.CompressRleZeroTs(imageData, newWidth, newHeight);
+                            if (imageDataToStore.Length >= imageData.Length)
+                                imageDataToStore = imageData;
+                            else
+                                flags |= 2;
+                        }
                     }
                     frameOffsets[i] = frameDataOffset;
                     framesDataCompressed[i] = imageDataToStore;
@@ -286,8 +298,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     dataOffset = frameDataOffset;
                 }
                 frameDataOffset += (UInt32)imageDataToStore.Length;
-                if (align && frameDataOffset % 8 > 0)
-                    frameDataOffset += 8 - (frameDataOffset % 8);
+                if (align)
+                {
+                    UInt32 alignment = frameDataOffset % 8;
+                    if (alignment > 0)
+                        frameDataOffset += 8 - alignment;
+                }
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x00, 2, true, (UInt16)xOffset); //frmX
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x02, 2, true, (UInt16)yOffset); //frmY
                 ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x04, 2, true, (UInt16)newWidth); //frmWidth

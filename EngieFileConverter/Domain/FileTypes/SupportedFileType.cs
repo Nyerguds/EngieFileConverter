@@ -150,6 +150,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 //Int32 transMaskLen = transMask == null ? 0 : transMask.Length;
                 // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
                 Int32 paletteLength = Math.Min(maxLen, this.m_LoadedImage == null ? maxLen : this.m_LoadedImage.Palette.Entries.Length);
+                if (palette.Length > paletteLength && palette.Length < maxLen)
+                    paletteLength = palette.Length;
                 Color[] pal = new Color[paletteLength];
                 for (Int32 i = 0; i < paletteLength; i++)
                 {
@@ -165,6 +167,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (this.m_LoadedImage != null)
                 {
                     ColorPalette imagePal = this.m_LoadedImage.Palette;
+                    if (imagePal.Entries.Length != pal.Length)
+                        imagePal = BitmapHandler.GetPalette(pal);
                     Int32 entries = imagePal.Entries.Length;
                     for (Int32 i = 0; i < entries; i++)
                     {
@@ -258,12 +262,16 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImage),
             typeof(FileIcon),
             typeof(FileImgWwCps),
+            typeof(FileImgWwCpsToon),
             typeof(FileFramesWwCpsAmi4),
             typeof(FileFramesWwWsa),
             typeof(FileFramesWwShpD2),
             typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwFntV3),
+            typeof(FileFramesWwFntV4),
+            typeof(FileFramesFntD2k),
             typeof(FileImgWwLcw),
             typeof(FileImgWwN64),
             typeof(FileMapWwCc1Pc),
@@ -298,10 +306,14 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImage),
             typeof(FileIcon),
             typeof(FileImgWwCps),
+            typeof(FileImgWwCpsToon),
             typeof(FileFramesWwShpD2),
             typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwFntV3),
+            typeof(FileFramesWwFntV4),
+            typeof(FileFramesFntD2k),
             typeof(FileFramesWwWsa),
             typeof(FileFramesWwCpsAmi4),
             typeof(FileImgWwLcw),
@@ -345,11 +357,15 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePalette6Bit),
             typeof(FilePalette8Bit),
             typeof(FileFramesWwShpD2),
-            typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpLol1),
+            typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
+            typeof(FileFramesWwFntV3),
+            typeof(FileFramesWwFntV4),
+            typeof(FileFramesFntD2k),
             typeof(FileFramesWwWsa),
             typeof(FileImgWwCps),
+            typeof(FileImgWwCpsToon),
             typeof(FileFramesWwCpsAmi4),
             typeof(FileTilesetWwCc1PC),
             typeof(FileImgWwLcw),
@@ -483,6 +499,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     // and should not contain any loaded images at that point.
                     e.AttemptedLoadedType = objInstance.ShortTypeName;
                     loadErrors.Add(e);
+                    // Removes any stored images.
+                    objInstance.Dispose();
                 }
             }
             return null;

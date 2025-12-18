@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.Linq;
 
 namespace Nyerguds.ImageManipulation
@@ -96,7 +95,7 @@ namespace Nyerguds.ImageManipulation
                     dataBw[y, x] = brightness[y, x] > brightnessThreshold;
 
             // Detect blobs.
-            // Coult technically simplify the required Func<> to remove the imgData and directly reference dataBw, but meh.
+            // Could technically simplify the required Func<> to remove the imgData and directly reference dataBw, but meh.
             Func<Boolean[,], Int32, Int32, Boolean> clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] == detectVal;
             return FindBlobs(dataBw, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
         }

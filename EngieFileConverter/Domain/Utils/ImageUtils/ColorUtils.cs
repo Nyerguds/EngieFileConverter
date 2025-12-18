@@ -178,19 +178,24 @@ namespace Nyerguds.ImageManipulation
         {
             if (paletteData.Length != 768)
                 throw new ArgumentException(invalid);
-            return ReadSixBitPalette(paletteData, 0);
+            return ReadSixBitPalette(paletteData, 0, 0x100);
         }
 
         public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData, Int32 start)
         {
-            if (paletteData.Length + start < 768)
+            return ReadSixBitPalette(paletteData, start, 0x100);
+        }
+
+        public static ColorSixBit[] ReadSixBitPalette(Byte[] paletteData, Int32 start, Int32 colors)
+        {
+            if (paletteData.Length + start < colors * 3)
                 throw new ArgumentException(invalid);
-            ColorSixBit[] pal = new ColorSixBit[256];
+            ColorSixBit[] pal = new ColorSixBit[colors];
             try
             {
-                for (Int32 i = 0; i < pal.Length; i++)
+                for (Int32 i = 0; i < colors; i++)
                 {
-                    Int32 index = i * 3;
+                    Int32 index = start + i * 3;
                     pal[i] = new ColorSixBit(paletteData[index], paletteData[index + 1], paletteData[index + 2]);
                 }
                 return pal;

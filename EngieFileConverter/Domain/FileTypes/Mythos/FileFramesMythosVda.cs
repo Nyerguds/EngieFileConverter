@@ -610,7 +610,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 origWidth = 320; //origImage.Width;
             Int32 origHeight = 200; //origImage.Height;
             if (fileToSave.Frames.Any(x => x.Width != origWidth || x.Height != origHeight))
-                throw new NotSupportedException("All frames in the source file must be 320x200!"); // have the same dimensions!");
+                throw new NotSupportedException("All frames in the source file must be 320×200!"); // have the same dimensions!");
             Int32 fullImageStride;
             Byte[] previousImageData = ImageUtils.GetImageData(origImage, out fullImageStride, true);
             Boolean[] previousImageNonTransIndex = previousImageData.Select(b => b != TransparentIndex).ToArray();
