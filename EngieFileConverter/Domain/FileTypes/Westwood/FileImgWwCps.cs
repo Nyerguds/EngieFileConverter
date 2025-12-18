@@ -239,13 +239,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
+            if (imageData.Length != 64000)
+                throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
             return SaveCps(imageData, fileToSave.GetColors(), asPaletted ? 1 : 0, compressionType, (CpsVersion) version);
         }
 
         public static Byte[] SaveCps(Byte[] imageData, Color[] palette, Int32 savePalettes, Int32 compressionType, CpsVersion version)
         {
-            if (imageData.Length != 64000)
-                throw new NotSupportedException("Only 8-bit 320x200 images can be saved as CPS!");
             Boolean isAmiga = version == CpsVersion.AmigaEob1 || version == CpsVersion.AmigaEob2;
             Boolean amigaPal = version == CpsVersion.AmigaEob1 && savePalettes == 1;
             if (isAmiga)

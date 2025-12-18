@@ -31,9 +31,9 @@ namespace EngieFileConverter.UI
         private void InitializeComponent()
         {
             this.pnlOptions = new System.Windows.Forms.Panel();
+            this.lstOptions = new EngieFileConverter.UI.SaveOptions.SaveOptionsList();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOK = new System.Windows.Forms.Button();
-            this.lstOptions = new SaveOptionsList();
             this.pnlOptions.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -48,6 +48,15 @@ namespace EngieFileConverter.UI
             this.pnlOptions.Name = "pnlOptions";
             this.pnlOptions.Size = new System.Drawing.Size(559, 204);
             this.pnlOptions.TabIndex = 1;
+            // 
+            // lstOptions
+            // 
+            this.lstOptions.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lstOptions.Location = new System.Drawing.Point(0, 0);
+            this.lstOptions.Name = "lstOptions";
+            this.lstOptions.Size = new System.Drawing.Size(559, 119);
+            this.lstOptions.TabIndex = 2;
             // 
             // buttonCancel
             // 
@@ -70,15 +79,6 @@ namespace EngieFileConverter.UI
             this.buttonOK.TabIndex = 0;
             this.buttonOK.Text = "OK";
             // 
-            // lstOptions
-            // 
-            this.lstOptions.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lstOptions.Location = new System.Drawing.Point(0, 0);
-            this.lstOptions.Name = "lstOptions";
-            this.lstOptions.Size = new System.Drawing.Size(559, 119);
-            this.lstOptions.TabIndex = 2;
-            // 
             // FrmExtraOptions
             // 
             this.AcceptButton = this.buttonOK;
@@ -90,6 +90,7 @@ namespace EngieFileConverter.UI
             this.Controls.Add(this.buttonOK);
             this.Controls.Add(this.pnlOptions);
             this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
+            this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(400, 300);
             this.Name = "FrmExtraOptions";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

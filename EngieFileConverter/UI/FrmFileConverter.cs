@@ -7,6 +7,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 using EngieFileConverter.Domain.FileTypes;
 using EngieFileConverter.Domain.HeightMap;
@@ -15,6 +16,12 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmFileConverter : Form
     {
+        public delegate void InvokeDelegateReload(SupportedFileType newFile, Boolean asNew, Boolean resetZoom);
+        public delegate DialogResult InvokeDelegateMessageBox(String message, MessageBoxButtons buttons, MessageBoxIcon icon);
+        public delegate void InvokeDelegateTwoArgs(Object arg1, Object arg2);
+        public delegate void InvokeDelegateSingleArg(Object value);
+        public delegate void InvokeDelegateEnableControls(Boolean enabled, String processingLabel);
+
         private const String PROG_NAME = "Engie File Converter";
         private const String PROG_AUTHOR = "Created by Nyerguds";
         private const Int32 PALETTE_DIM = 226;
@@ -24,6 +31,9 @@ namespace EngieFileConverter.UI
         private List<PaletteDropDownInfo> m_ReadPalettes;
         private SupportedFileType m_LoadedFile;
         private String m_LastOpenedFolder;
+        private Thread m_ProcessingThread;
+        private Label m_BusyStatusLabel;
+        private Boolean m_Loading;
 
         private SupportedFileType GetShownFile()
         {
@@ -105,7 +115,18 @@ namespace EngieFileConverter.UI
 
         private void LoadFile(String path, SupportedFileType selectedType, SupportedFileType[] preferredTypes)
         {
-            SupportedFileType oldLoaded = this.m_LoadedFile;
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> this.LoadFileProc(path, selectedType, preferredTypes)),
+                true, true, "Loading"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
+        }
+
+        private SupportedFileType LoadFileProc(String path, SupportedFileType selectedType, SupportedFileType[] preferredTypes)
+        {
+            SupportedFileType loadedFile = null;
             Byte[] fileData = null;
             FileTypeLoadException error = null;
             Boolean isEmptyFile = false;
@@ -119,7 +140,6 @@ namespace EngieFileConverter.UI
                 catch (Exception e)
                 {
                     error = new FileTypeLoadException("Could not access file!\n\n" + e.Message, e);
-                    this.m_LoadedFile = null;
                 }
                 if (!isEmptyFile && error == null)
                 {
@@ -129,11 +149,11 @@ namespace EngieFileConverter.UI
                         try
                         {
                             selectedType.LoadFile(fileData, path);
-                            this.m_LoadedFile = selectedType;
+                            loadedFile = selectedType;
                         }
                         catch (FileTypeLoadException e)
                         {
-                            this.m_LoadedFile = null;
+                            loadedFile = null;
                             e.AttemptedLoadedType = selectedType.ShortTypeName;
                             error = e;
                             // autodetect is possible. Set type to null.
@@ -145,8 +165,8 @@ namespace EngieFileConverter.UI
                     if (selectedType == null)
                     {
                         List<FileTypeLoadException> loadErrors;
-                        this.m_LoadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, error != null);
-                        if (this.m_LoadedFile != null)
+                        loadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, error != null);
+                        if (loadedFile != null)
                             error = null;
                         else
                         {
@@ -154,8 +174,9 @@ namespace EngieFileConverter.UI
                                 loadErrors.Insert(0, error);
                             String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
                             String filename = path == null ? String.Empty : (" of \"" + Path.GetFileName(path) + "\"");
-                            MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            return;
+                            String message = "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors;
+                            this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return null;
                         }
                     }
                 }
@@ -163,10 +184,10 @@ namespace EngieFileConverter.UI
             catch (Exception ex)
             {
                 error = new FileTypeLoadException(ex.Message, ex);
-                this.m_LoadedFile = null;
+                loadedFile = null;
             }
             List<String> filesChain = null;
-            if (!isEmptyFile && error == null && this.m_LoadedFile.IsFramesContainer && (filesChain = this.m_LoadedFile.GetFilesToLoadMissingData(path)) != null && filesChain.Count > 0)
+            if (!isEmptyFile && error == null && loadedFile.IsFramesContainer && (filesChain = loadedFile.GetFilesToLoadMissingData(path)) != null && filesChain.Count > 0)
             {
                 const String loadQuestion = "The file \"{0}\" seems to be missing a starting point. Would you like to load it from \"{1}\"{2}?";
                 const String loadQuestionChain = " (chained through {0})";
@@ -174,57 +195,39 @@ namespace EngieFileConverter.UI
                 String[] chain = filesChain.Skip(1).Select(pth => "\"" + Path.GetFileName(pth) + "\"").ToArray();
                 String chainQuestion = chain.Length == 0 ? String.Empty : String.Format(loadQuestionChain, String.Join(", ", chain));
                 String loadQuestionFormat = String.Format(loadQuestion, Path.GetFileName(path), Path.GetFileName(firstPath), chainQuestion);
-                if (MessageBox.Show(this, loadQuestionFormat, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), loadQuestionFormat, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (dr != DialogResult.Yes)
                 {
                     // quick way to enable the frames detection in the next part, if I do ever want to support real animation chaining.
                     filesChain = null;
                 }
                 else
                 {
-                    this.m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
+                    loadedFile.ReloadFromMissingData(fileData, path, filesChain);
                 }
             }
             if (filesChain == null && (isEmptyFile || error == null))
             {
-                SupportedFileType detectSource = this.m_LoadedFile;
+                SupportedFileType detectSource = loadedFile;
                 if (isEmptyFile && preferredTypes.Length == 1)
                     detectSource = preferredTypes[0];
                 SupportedFileType frames = this.CheckForFrames(path, detectSource);
                 if (ReferenceEquals(frames, detectSource) && isEmptyFile)
                 {
-                    this.m_LoadedFile = null;
                     if (detectSource != null)
                     {
-                        try
-                        {
-                            detectSource.Dispose();
-                        }
-                        catch (Exception)
-                        {
-                            /* ignore */
-                        }
+                        try { detectSource.Dispose(); }
+                        catch { /* ignore */ }
                     }
                 }
                 else
-                    this.m_LoadedFile = frames;
-            }
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            if (!ReferenceEquals(this.m_LoadedFile, oldLoaded))
-            {
-                try
-                {
-                    oldLoaded.Dispose();
-                }
-                catch (Exception)
-                {
-                    /* ignore */
-                }
+                    loadedFile = frames;
             }
             if (error != null)
-                MessageBox.Show(this, "File loading failed: " + error.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            if (this.m_LoadedFile == null && isEmptyFile)
-                MessageBox.Show(this, "File loading failed: The file is empty!", GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), "File loading failed: " + error.Message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (loadedFile == null && isEmptyFile)
+                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), "File loading failed: The file is empty!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return loadedFile;
         }
 
         /// <summary>
@@ -245,7 +248,8 @@ namespace EngieFileConverter.UI
                 return currentType;
             String emptywarning = hasEmptyFrames ? "\nSome of these frames are empty files. Not every save format supports empty frames." : String.Empty;
             String message = "The file appears to be part of a range (" + minName + " - " + maxName + ")." + emptywarning + "\n\nDo you wish to load the frames from all files?";
-            if (MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (dr == DialogResult.Yes)
             {
                 currentType.Dispose();
                 return fr;
@@ -344,6 +348,7 @@ namespace EngieFileConverter.UI
                 this.pzpImage.Image = null;
                 PalettePanel.InitPaletteControl(0, this.palColorViewer, new Color[0], PALETTE_DIM);
                 this.palColorViewer.MaxColors = 0;
+                this.RemoveProcessingLabel();
                 return;
             }
             Int32 bpc = loadedFile.BitsPerPixel;
@@ -367,6 +372,7 @@ namespace EngieFileConverter.UI
                 this.CmbPalettes_SelectedIndexChanged(null, null);
             else
                 this.RefreshColorControls();
+            this.RemoveProcessingLabel();
         }
 
         private ColorStatus GetColorStatus()
@@ -470,9 +476,9 @@ namespace EngieFileConverter.UI
             String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, filteredTypes.ToArray(), false, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
+            SaveOption[] saveOptions = selectedItem.GetSaveOptions(loadedFile, filename);
             try
             {
-                SaveOption[] saveOptions = selectedItem.GetSaveOptions(loadedFile, filename);
                 if (saveOptions != null && saveOptions.Length > 0)
                 {
                     SaveOptionInfo soi = new SaveOptionInfo();
@@ -484,12 +490,32 @@ namespace EngieFileConverter.UI
                         return;
                     saveOptions = extraopts.GetSaveOptions();
                 }
+            }
+            catch (NotSupportedException ex)
+            {
+                String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
+                                 + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
+                MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            Object[] arrParams =
+                {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                    new Func<SupportedFileType>(()=> this.SaveFile(frames, loadedFile, selectedItem, filename, saveOptions)),
+                    false, false, "Saving"
+                };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
+        }
+
+        private SupportedFileType SaveFile(Boolean frames, SupportedFileType loadedFile, SupportedFileType selectedItem, String filename, SaveOption[] saveOptions)
+        {
+            try
+            {
                 if (!frames)
                     selectedItem.SaveAsThis(loadedFile, filename, saveOptions);
                 else
                 {
                     if (loadedFile.Frames == null)
-                        return;
+                        return null;
                     String framename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename));
                     String extension = Path.GetExtension(filename);
                     for (Int32 i = 0; i < loadedFile.Frames.Length; i++)
@@ -507,14 +533,31 @@ namespace EngieFileConverter.UI
             {
                 String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
                                  + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
-                MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+            return null;
         }
-        
 
         private void TsmiExit_Click(Object sender, EventArgs e)
         {
             this.Close();
+        }
+
+
+        protected void FrmFileConverter_FormClosing(Object sender, FormClosingEventArgs e)
+        {
+            if (!this.m_Loading || m_ProcessingThread == null || !m_ProcessingThread.IsAlive)
+                return;
+            DialogResult result = ShowMessageBox("Operations are in progress! Are you sure you want to quit?", MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+            if (result == DialogResult.Yes)
+            {
+                m_ProcessingThread.Abort();
+            }
+            else
+            {
+                // abort the closing of the form.
+                e.Cancel = true;
+            }
         }
 
         private void TsmiOpen_Click(Object sender, EventArgs e)
@@ -987,14 +1030,16 @@ namespace EngieFileConverter.UI
             Int32? trimIndex = frameCutter.TrimIndex;
             Int32 matchBpp = frameCutter.MatchBpp;
             Color[] matchPalette = frameCutter.MatchPalette;
-            FileFrames frames = FileFrames.CutImageIntoFrames(image, imagePath, frameWidth, frameHeight, maxFrames, trimColor, trimIndex, matchBpp, matchPalette);
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = frames;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            oldFile.Dispose();
+
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> FileFrames.CutImageIntoFrames(image, imagePath, frameWidth, frameHeight, maxFrames, trimColor, trimIndex, matchBpp, matchPalette, false)),
+                false, false, "Splitting into frames"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
         }
-        
+
         private void TsmiFramesToSingleImageClick(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
@@ -1066,14 +1111,21 @@ namespace EngieFileConverter.UI
                 Byte.TryParse(SaveOption.GetSaveOptionValue(so, "BGI"), out fillPalIndex);
             else
                 fillColor = ColorUtils.ColorFromHexString(SaveOption.GetSaveOptionValue(so, "BGC"));
-            Bitmap bm = ImageUtils.BuildImageFromFrames(frameImages, frameWidth, frameHeight, framesPerLine, fillPalIndex, fillColor);
-            SupportedFileType oldFile = this.m_LoadedFile;
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(() => this.FramesToSingleImage(frameImages, frameWidth, frameHeight, framesPerLine, fillPalIndex, fillColor)),
+                true, true, "Combining frames"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
+        }
+
+        private SupportedFileType FramesToSingleImage(Bitmap[] images, Int32 framesWidth, Int32 framesHeight, Int32 framesPerLine, Byte backFillPalIndex, Color backFillColor)
+        {
+            Bitmap bm = ImageUtils.BuildImageFromFrames(images, framesWidth, framesHeight, framesPerLine, backFillPalIndex, backFillColor);
             FileImagePng returnImg = new FileImagePng();
             returnImg.LoadFile(bm, this.m_LoadedFile.LoadedFile);
-            this.m_LoadedFile = returnImg;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            oldFile.Dispose();
+            return returnImg;
         }
 
         private void TsmiToHeightMapAdv_Click(Object sender, EventArgs e)
@@ -1121,10 +1173,13 @@ namespace EngieFileConverter.UI
                     return;
                 }
             }
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = HeightMapGenerator.GenerateHeightMapImage64x64(map, plateauImage, null);
-            this.ReloadUi(false);
-            oldFile.Dispose();
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(() => HeightMapGenerator.GenerateHeightMapImage64x64(map, plateauImage, null)),
+                true, true, "Generating height map"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
         }
 
         private void TsmiTo65x65HeightMap_Click(Object sender, EventArgs e)
@@ -1134,14 +1189,22 @@ namespace EngieFileConverter.UI
                 return;
             String baseFileName = Path.Combine(Path.GetDirectoryName(image.LoadedFile), Path.GetFileNameWithoutExtension(image.LoadedFile));
             String imgFileName = baseFileName + ".img";
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> Make65x65HeightMap(image, imgFileName)),
+                false, false, "Creating height map"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
+        }
+        
+        private FileImgWwN64 Make65x65HeightMap(FileImage image, String imgFileName)
+        {
             Bitmap bm = HeightMapGenerator.GenerateHeightMapImage65x65(image.GetBitmap());
             //Byte[] imageData = ImageUtils.GetSavedImageData(bm, ref imgFileName);
             FileImgWwN64 file = new FileImgWwN64();
             file.LoadGrayImage(bm, Path.GetFileName(imgFileName), imgFileName);
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = file;
-            this.ReloadUi(false);
-            oldFile.Dispose();
+            return file;
         }
 
         private void TsmiToPlateaus_Click(Object sender, EventArgs e)
@@ -1149,45 +1212,41 @@ namespace EngieFileConverter.UI
             FileMapWwCc1Pc map = this.m_LoadedFile as FileMapWwCc1Pc;
             if (map == null)
                 return;
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = HeightMapGenerator.GeneratePlateauImage64x64(map, "_lvl");
-            this.ReloadUi(false);
-            oldFile.Dispose();
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> HeightMapGenerator.GeneratePlateauImage64x64(map, "_lvl")),
+                false, false, "Generating plateaus"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
         }
 
         private void TsmiSplitShadows_Click(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
-            try
-            {
-                SupportedFileType oldFile = this.m_LoadedFile;
-                this.m_LoadedFile = FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, 4, 1);
-                this.ReloadUi(true);
-                oldFile.Dispose();
-            }
-            catch (NotSupportedException ex)
-            {
-                MessageBox.Show(this, ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            // TODO maybe ask the indices with a simple save options dialog?
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> FileFramesWwShpTs.SplitShadows(this.m_LoadedFile, 4, 1)),
+                true, false, "Splitting shadows"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
         }
 
         private void TsmiCombineShadows_Click(Object sender, EventArgs e)
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
-            try
-            {
-                SupportedFileType oldFile = this.m_LoadedFile;
-                this.m_LoadedFile = FileFramesWwShpTs.CombineShadows(this.m_LoadedFile, 1, 4);
-                this.ReloadUi(true);
-                oldFile.Dispose();
-            }
-            catch (NotSupportedException ex)
-            {
-                MessageBox.Show(this, ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
-            
+            // TODO maybe ask the indices with a simple save options dialog?
+            Object[] arrParams =
+            {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                new Func<SupportedFileType>(()=> FileFramesWwShpTs.CombineShadows(this.m_LoadedFile, 1, 4)),
+                true, false, "Combining shadows"
+            };
+            this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+            this.m_ProcessingThread.Start(arrParams);
         }
 
         private void TsmiPasteOnFrames_Click(Object sender, EventArgs e)
@@ -1204,18 +1263,169 @@ namespace EngieFileConverter.UI
                 this.m_LastOpenedFolder = pasteBox.LastSelectedFolder;
                 if (dr != DialogResult.OK)
                     return;
-                // Processing code.
-                FileFrames newfile = FileFrames.PasteImageOnFrames(this.m_LoadedFile, pasteBox.Image, pasteBox.Coords, pasteBox.FrameRange, pasteBox.KeepIndices);
-                pasteBox.Image.Dispose();
-                SupportedFileType oldFile = this.m_LoadedFile;
-                this.m_LoadedFile = newfile;
-                this.ReloadUi(false);                
-                oldFile.Dispose();
+                Object[] arrParams =
+                {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
+                    new Func<SupportedFileType>(()=> this.PasteOnFrames(this.m_LoadedFile, pasteBox.Image, pasteBox.Coords, pasteBox.FrameRange, pasteBox.KeepIndices)),
+                    false, false, "Pasting on frames"
+                };
+                this.m_ProcessingThread = new Thread(this.ExecuteThreaded);
+                this.m_ProcessingThread.Start(arrParams);
             }
             catch (NotSupportedException ex)
             {
                 MessageBox.Show(this, ex.Message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+        }
+
+        private SupportedFileType PasteOnFrames(SupportedFileType framesContainer, Bitmap image, Point pasteLocation, Int32[] framesRange, Boolean keepIndices)
+        {
+            FileFrames newfile = FileFrames.PasteImageOnFrames(framesContainer, image, pasteLocation, framesRange, keepIndices);
+            image.Dispose();
+            return newfile;
+        }
+        
+        /// <summary>
+        ///  Executes a threaded operation while locking the UI.
+        ///  Arguments for the thread are: func returning SupportedFileType, reload as new, reset auto-zoom, and a string to indicate the process type being executed (eg. "splitting").
+        /// </summary>
+        /// <param name="parameters">Arguments for the thread are: func returning SupportedFileType, reload as new, reset auto-zoom, and a string to indicate the process type being executed (eg. "splitting").</param>
+        private void ExecuteThreaded(Object parameters)
+        {
+            Object[] arrParams = parameters as Object[];
+            if (arrParams == null || arrParams.Length != 4)
+                return;
+            if (!(arrParams[1] is Boolean) || !(arrParams[2] is Boolean))
+                return;
+            Func<SupportedFileType> func = arrParams[0] as Func<SupportedFileType>;
+            Boolean asNewFile = (Boolean)arrParams[1];
+            Boolean resetZoom = (Boolean)arrParams[2];
+            String operationType = arrParams[3] as String;
+            if (func == null)
+                return;
+            this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), false, operationType);
+            SupportedFileType newfile = null;
+            try
+            {
+                // Processing code.
+                newfile = func();
+            }
+            catch (ThreadAbortException)
+            {
+                // Ignore. Thread is aborted.
+            }
+            catch (Exception ex)
+            {
+                operationType = String.IsNullOrEmpty(operationType) ? String.Empty : operationType.Trim().ToLowerInvariant() + " ";
+                String message = operationType + " failed:\n" + ex.Message;
+                this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), true, null);
+            }
+            try
+            {
+                if (newfile != null)
+                    this.Invoke(new InvokeDelegateReload(this.ReloadWithDispose), newfile, asNewFile, resetZoom);
+                else
+                    this.Invoke(new InvokeDelegateEnableControls(this.EnableControls), true, null);
+            }
+            catch (InvalidOperationException) { /* ignore */ }
+        }
+
+        private void EnableControls(Boolean enabled, String processingLabel)
+        {
+            if (!enabled)
+                this.m_Loading = true;
+            this.EnableToolstrips(enabled);
+            if (!enabled)
+            {
+                // To prevent UI updates using loaded images from interfering with internal operations.
+                // The UI gets reloaded afterwards anyway, so that should always restore the image.
+                this.pzpImage.Image = null;
+                // Disable controls
+                this.numFrame.Enabled = false;
+                this.cmbPalettes.Enabled = false;
+                this.btnSavePalette.Enabled = false;
+                // Create busy status label.
+                if (this.m_BusyStatusLabel != null)
+                {
+                    try { this.m_BusyStatusLabel.Dispose(); }
+                    catch { /*ignore*/ }
+                }
+                this.m_BusyStatusLabel = new Label();
+                this.m_BusyStatusLabel.Text = (String.IsNullOrEmpty(processingLabel) ? "Processing" : processingLabel) + "...";
+                this.m_BusyStatusLabel.TextAlign = ContentAlignment.MiddleCenter;
+                this.m_BusyStatusLabel.Font = new Font(this.m_BusyStatusLabel.Font.FontFamily, 15F, FontStyle.Regular, GraphicsUnit.Pixel, 0);
+                this.m_BusyStatusLabel.AutoSize = false;
+                this.m_BusyStatusLabel.Size = new Size(300, 100);
+                this.m_BusyStatusLabel.Anchor = AnchorStyles.None; // Always floating in the middle, even on resize.
+                this.m_BusyStatusLabel.BorderStyle = BorderStyle.FixedSingle;
+                Int32 x = (this.ClientRectangle.Width - 300) / 2;
+                Int32 y = (this.ClientRectangle.Height - 100) / 2;
+                this.m_BusyStatusLabel.Location = new Point(x, y);
+                this.Controls.Add(this.m_BusyStatusLabel);
+                this.m_BusyStatusLabel.Visible = true;
+                this.m_BusyStatusLabel.BringToFront();
+            }
+            else
+                this.ReloadUi(false);
+            this.pzpImage.Enabled = enabled;
+            if (enabled)
+                this.m_Loading = false;
+        }
+
+        private void RemoveProcessingLabel()
+        {
+            if (this.m_BusyStatusLabel == null)
+                return;
+            this.Controls.Remove(this.m_BusyStatusLabel);
+            try { this.m_BusyStatusLabel.Dispose(); }
+            catch { /* ignore */ }
+            this.m_BusyStatusLabel = null;
+        }
+
+        private void ReloadWithDispose(SupportedFileType newFile, Boolean asNew, Boolean resetZoom)
+        {
+            SupportedFileType oldFile = this.m_LoadedFile;
+            this.m_LoadedFile = newFile;
+            if (resetZoom)
+                this.AutoSetZoom();
+            EnableToolstrips(true);
+            if (!this.pzpImage.Enabled)
+                this.pzpImage.Enabled = true;
+            this.ReloadUi(asNew);
+            if (oldFile != null)
+            {
+                try { oldFile.Dispose(); }
+                catch { /*ignore*/ }
+            }
+            this.m_Loading = false;
+        }
+
+        private void EnableToolstrips(Boolean enable)
+        {
+            this.tsmiOpen.Enabled = enable;
+            this.tsmiSave.Enabled = enable;
+            this.tsmiSaveFrames.Enabled = enable;
+            if (!enable)
+            {
+                // Let the UI reload take care of re-enabling these.
+                this.tsmiCopy.Enabled = false;
+                this.tsmiImageToFrames.Enabled = false;
+                this.tsmiFramesToSingleImage.Enabled = false;
+                this.tsmiToHeightMap.Enabled = false;
+                this.tsmiToPlateaus.Enabled = false;
+                this.tsmiToHeightMapAdv.Enabled = false;
+                this.tsmiTo65x65HeightMap.Enabled = false;
+                this.tsmiCombineShadows.Enabled = false;
+                this.tsmiSplitShadows.Enabled = false;
+            }
+            this.tsmiTestBed.Enabled = enable;
+        }
+
+        private DialogResult ShowMessageBox(String message, MessageBoxButtons buttons, MessageBoxIcon icon)
+        {
+            if (message == null)
+                return DialogResult.Cancel;
+            return MessageBox.Show(this, message, GetTitle(false), buttons, icon);
         }
 
 #if DEBUG

@@ -431,10 +431,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (compressionType > 0)
                 {
                     MythosCompression mc = new MythosCompression();
-                    if (compressionType == 1)
-                        compressedBytes = mc.FlagRleEncode(frameBytes, 0xFE, width, 8);
-                    else if (compressionType == 2)
-                        compressedBytes = mc.CollapsedTransparencyEncode(frameBytes, TransparentIndex, width, 8);
+                    try
+                    {
+                        if (compressionType == 1)
+                            compressedBytes = mc.FlagRleEncode(frameBytes, 0xFE, width, 8);
+                        else if (compressionType == 2)
+                            compressedBytes = mc.CollapsedTransparencyEncode(frameBytes, TransparentIndex, width, 8);
+                    }
+                    catch (OverflowException ex)
+                    {
+                        throw new NotSupportedException(ex.Message, ex);
+                    }
                 }
                 frameData[i] = compressedBytes ?? frameBytes;
                 compressed[i] = compressedBytes != null;

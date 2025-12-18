@@ -15,7 +15,7 @@ namespace EngieFileConverter
         public static Int32 Main(String[] args)
         {
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-            return EngieFileConverter.Run(args);
+            return FileConverter.Run(args);
         }
 
         /// <summary>

@@ -16,7 +16,7 @@ using Nyerguds.GameData.Westwood;
 
 namespace EngieFileConverter
 {
-    public static class EngieFileConverter
+    public static class FileConverter
     {
         /// <summary>
         /// The main entry point for the application.

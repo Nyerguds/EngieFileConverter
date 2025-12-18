@@ -273,7 +273,7 @@
     <Compile Include="UI\FrmFileConverter.Designer.cs">
       <DependentUpon>FrmFileConverter.cs</DependentUpon>
     </Compile>
-    <Compile Include="EngieFileConverter.cs" />
+    <Compile Include="FileConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\Tools\PixelZoomPanel.cs">
       <SubType>UserControl</SubType>

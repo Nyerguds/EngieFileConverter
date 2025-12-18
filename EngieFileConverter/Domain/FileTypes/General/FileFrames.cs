@@ -289,6 +289,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (isEqual)
                     equalPal = true;
             }
+            else
+                framePal = framesContainer.GetColors();
             if (!equalPal)
                 framePal = null;
 
@@ -393,7 +395,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             if (regenImage)
                             {
                                 imData = ImageUtils.GetImageData(image, out imStride, PixelFormat.Format32bppArgb);
-                                // Create 'bit mask' to determine which pieces on the image are transparent and should be ignored for the paste.
+                                // Create transparency mask to determine which pieces on the image are transparent and should be ignored for the paste.
                                 Color[] palTrans = new Color[] { Color.Transparent, Color.Gray };
                                 Int32 maskStride = imStride;
                                 Byte[] transMask1 = ImageUtils.Convert32BitToPaletted(imData, imWidth, imHeight, 8, true, palTrans, ref maskStride);
@@ -426,10 +428,26 @@ namespace EngieFileConverter.Domain.FileTypes
             return newfile;
         }
 
-        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette)
+        /// <summary>
+        /// Cuts an image into frames and returns it as <see cref="FileFrames"/> object.
+        /// </summary>
+        /// <param name="image">Source image.</param>
+        /// <param name="imagePath">Path the image was loaded from, to set the frame names.</param>
+        /// <param name="frameWidth">Width of the cut out frames.</param>
+        /// <param name="frameHeight">Height of the cut out frames.</param>
+        /// <param name="frames">Upper limit to the amount of frames to generate.</param>
+        /// <param name="cropColor">Colour to trim away for cropping frames, if the source is high-colour.</param>
+        /// <param name="cropIndex">Colour index to trim away for cropping frames, if the source is indexed.</param>
+        /// <param name="matchBpp">Bits per pixel for the palette to match. 0 for no palette matching.</param>
+        /// <param name="matchPalette">Palette to match. Only used if <see cref="matchBpp"/> is not 0.</param>
+        /// <param name="cloneSource">True to clone the source image, to prevent conflicts in multithreaded use.</param>
+        /// <returns>A <see cref="FileFrames"/> object that contains the cut-out frames.</returns>
+        public static FileFrames CutImageIntoFrames(Bitmap image, String imagePath, Int32 frameWidth, Int32 frameHeight, Int32 frames, Color? cropColor, Int32? cropIndex, Int32 matchBpp, Color[] matchPalette, Boolean cloneSource)
         {
-            Bitmap[] framesArr = ImageUtils.ImageToFrames(image, frameWidth, frameHeight, trimColor, trimIndex, matchBpp, matchPalette, 0, frames - 1);
-
+            Bitmap editImage = cloneSource ? ImageUtils.CloneImage(image) : image;
+            Bitmap[] framesArr = ImageUtils.ImageToFrames(editImage, frameWidth, frameHeight, cropColor, cropIndex, matchBpp, matchPalette, 0, frames - 1);
+            if (cloneSource)
+                editImage.Dispose();
             Boolean isMatched = matchBpp > 0 && matchBpp <= 8 && matchPalette != null;
             Int32 bpp = isMatched ? matchBpp : Image.GetPixelFormatSize(image.PixelFormat);
             Color[] imPalette = isMatched ? matchPalette : bpp > 8 ? null : image.Palette.Entries;

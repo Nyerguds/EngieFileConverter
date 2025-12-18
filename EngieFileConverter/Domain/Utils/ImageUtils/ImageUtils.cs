@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using EngieFileConverter.Domain.FileTypes;
+using System.Threading;
 
 namespace Nyerguds.ImageManipulation
 {
@@ -322,7 +323,7 @@ namespace Nyerguds.ImageManipulation
                 newImageData = ConvertFrom8Bit(newImageData, width, height, bpp, bigEndianBits, ref stride);
             return newImageData;
         }
-
+        
         /// <summary>
         /// Gets the raw bytes from an image in its original pixel format.
         /// </summary>
@@ -1004,12 +1005,12 @@ namespace Nyerguds.ImageManipulation
         /// <param name="width">Image width (technically stride).</param>
         /// <param name="height">Image height. Will be adjusted by this function.</param>
         /// <param name="yOffset">Current Y-offset to increase.</param>
-        /// <param name="AlsoTrimBottom">Trim both top and bottom of the image.</param>
+        /// <param name="alsoTrimBottom">Trim both top and bottom of the image.</param>
         /// <param name="valueToTrim">Value to trim.</param>
         /// <param name="maxOffset">Maximum value that Y can contain in the file format it'll be saved to. Leave 0 to ignore.</param>
         /// <param name="adjustBuffer">True to actually apply the change to the given buffer. False to only adjust the ref parameters.</param>
         /// <returns>The trimmed image, if adjustBuffer is true.</returns>
-        public static Byte[] OptimizeYHeight(Byte[] buffer, Int32 width, ref Int32 height, ref Int32 yOffset, Boolean AlsoTrimBottom, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
+        public static Byte[] OptimizeYHeight(Byte[] buffer, Int32 width, ref Int32 height, ref Int32 yOffset, Boolean alsoTrimBottom, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
         {
             // nothing to optimize.
             if (height == 0)
@@ -1031,7 +1032,7 @@ namespace Nyerguds.ImageManipulation
                 if (!tempArray.All(x => x == valueToTrim))
                     break;
             }
-            if (AlsoTrimBottom)
+            if (alsoTrimBottom)
             {
                 for (trimmedYBottom = height; trimmedYBottom > trimmedYTop; trimmedYBottom--)
                 {
@@ -1112,12 +1113,12 @@ namespace Nyerguds.ImageManipulation
         /// <param name="width">Image width (technically stride). Will be adjusted by this function.</param>
         /// <param name="height">Image height.</param>
         /// <param name="xOffset">Current X-offset to increase.</param>
-        /// <param name="AlsoTrimRight">Trim both left and right side of the image.</param>
+        /// <param name="alsoTrimRight">Trim both left and right side of the image.</param>
         /// <param name="valueToTrim">Value to trim.</param>
         /// <param name="maxOffset">Maximum value that Y can contain in the file format it'll be saved to. Leave 0 to ignore.</param>
         /// <param name="adjustBuffer">True to actually apply the change to the given buffer. False to only adjust the ref parameters.</param>
         /// <returns>The trimmed image, if adjustBuffer is true. Otherwise, the original reference to the <paramref name="buffer"/> array.</returns>
-        public static Byte[] OptimizeXWidth(Byte[] buffer, ref Int32 width, Int32 height, ref Int32 xOffset, Boolean AlsoTrimRight, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
+        public static Byte[] OptimizeXWidth(Byte[] buffer, ref Int32 width, Int32 height, ref Int32 xOffset, Boolean alsoTrimRight, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
         {
             // nothing to optimize.
             if (width == 0)
@@ -1153,7 +1154,7 @@ namespace Nyerguds.ImageManipulation
                 xOffset = 0;
                 return new Byte[0];
             }
-            if (AlsoTrimRight)
+            if (alsoTrimRight)
             {
                 for (Int32 x = width - 1; x >= 0; x--)
                 {
@@ -1470,7 +1471,21 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        public static Bitmap[] ImageToFrames(Bitmap image, Int32 width, Int32 height, Color? trimColor, Int32? trimIndex, Int32 matchBpp, Color[] matchPalette, Int32 framesRangeMin, Int32 framesRangeMax)
+
+        /// <summary>
+        /// Cuts an image into frames and returns it as an array of <see cref="Bitmap"/> objects.
+        /// </summary>
+        /// <param name="image">Source image.</param>
+        /// <param name="frameWidth">Width of the cut out frames.</param>
+        /// <param name="frameHeight">Height of the cut out frames.</param>
+        /// <param name="cropColor">Colour to trim away for cropping frames, if the source is high-colour.</param>
+        /// <param name="cropIndex">Colour index to trim away for cropping frames, if the source is indexed.</param>
+        /// <param name="matchBpp">Bits per pixel for the palette to match. 0 for no palette matching.</param>
+        /// <param name="matchPalette">Palette to match. Only used if <see cref="matchBpp"/> is not 0.</param>
+        /// <param name="framesRangeMin">Index of the first frame to retrieve.</param>
+        /// <param name="framesRangeMax">Index of the last frame to retrieve.</param>
+        /// <returns>An array of <see cref="Bitmap"/> objects that contains the cut-out frames.</returns>
+        public static Bitmap[] ImageToFrames(Bitmap image, Int32 frameWidth, Int32 frameHeight, Color? cropColor, Int32? cropIndex, Int32 matchBpp, Color[] matchPalette, Int32 framesRangeMin, Int32 framesRangeMax)
         {
             if (image == null)
                 return new Bitmap[0];
@@ -1481,8 +1496,8 @@ namespace Nyerguds.ImageManipulation
             Boolean convertTo32 = !indexed && origPf != PixelFormat.Format32bppArgb;
             Int32 fullWidth = image.Width;
             Int32 fullHeight = image.Height;
-            Int32 framesX = fullWidth / width;
-            Int32 framesY = fullHeight / height;
+            Int32 framesX = fullWidth / frameWidth;
+            Int32 framesY = fullHeight / frameHeight;
             Int32 frames = framesX * framesY;
             Int32 min = Math.Min(Math.Max(0, Math.Min(framesRangeMin, framesRangeMax)), frames);
             Int32 max = Math.Min(Math.Max(0, Math.Max(framesRangeMin, framesRangeMax)), frames);
@@ -1518,12 +1533,12 @@ namespace Nyerguds.ImageManipulation
             {
                 Int32 rectY = frameNr / framesX;
                 Int32 rectX = frameNr % framesX;
-                Rectangle section = new Rectangle(rectX * width, rectY * height, width, height);
+                Rectangle section = new Rectangle(rectX * frameWidth, rectY * frameHeight, frameWidth, frameHeight);
                 Bitmap bmp;
                 if (indexed)
-                    bmp = GetCutFrameIndexed(edImageData, fullWidth, fullHeight, section, origPf, origPalette, trimIndex, matchBpp, remapTable, matchPalette);
+                    bmp = GetCutFrameIndexed(edImageData, fullWidth, fullHeight, section, origPf, origPalette, cropIndex, matchBpp, remapTable, matchPalette);
                 else
-                    bmp = GetCutFrameHiCol(edImage, section, origPf, trimColor, matchBpp, matchPalette);
+                    bmp = GetCutFrameHiCol(edImage, section, origPf, cropColor, matchBpp, matchPalette);
                 bmpFrames[frameNr - min] = bmp;
             }
             if (convertTo32)
@@ -1578,6 +1593,7 @@ namespace Nyerguds.ImageManipulation
             if (section.Width > 0 && section.Height > 0)
             {
                 bmp = new Bitmap(section.Width, section.Height);
+                // This operation is not thread-safe! Do not feed images into this which are being used on the UI and might be repainted during this operation.
                 using (Graphics g = Graphics.FromImage(bmp))
                     g.DrawImage(edImage, new Rectangle(0, 0, section.Width, section.Height), section, GraphicsUnit.Pixel);
                 if (doMatching)

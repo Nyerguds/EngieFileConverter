@@ -16,8 +16,10 @@ namespace Nyerguds.GameData.Mythos
         public Byte[] FlagRleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
             UInt32 offset = startOffset ?? 0;
-            UInt32 end = endOffset ?? (UInt32) buffer.LongLength;
-            UInt32 origOutLength = decompressedSize != 0 ? (UInt32) decompressedSize : (end * 4);
+            UInt32 end = (UInt32) buffer.LongLength;
+            if (endOffset.HasValue)
+                end = Math.Min(endOffset.Value, end);
+            UInt32 origOutLength = decompressedSize != 0 ? (UInt32) decompressedSize : ((end - offset) * 4);
             UInt32 outLength = origOutLength;
             Byte[] output = new Byte[outLength];
             UInt32 writeOffset = 0;
@@ -83,7 +85,9 @@ namespace Nyerguds.GameData.Mythos
         /// <returns>The encoded data.</returns>
         public Byte[] FlagRleEncode(Byte[] buffer, Byte flag, Int32 lineWidth, Int32 headerSize)
         {
-            UInt32 outLen = (UInt32) (buffer.Length * 3) / 2;
+            if (headerSize + 3 >= 0x10000)
+                throw new OverflowException("Header too big!");
+            UInt32 outLen = (UInt32)(0x10000 - headerSize - 3);
             Byte[] bufferOut = new Byte[outLen];
             UInt32 len = (UInt32) buffer.Length;
             UInt32 inPtr = 0;
@@ -93,7 +97,7 @@ namespace Nyerguds.GameData.Mythos
             while (inPtr < len)
             {
                 if (outLen == outPtr)
-                    return null;
+                    throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
                 Byte cur = buffer[inPtr];
                 // only one pixel required to write a repeat code if the value is the flag.
                 UInt32 requiredRepeat = (UInt32) (cur == flag ? 1 : 3);
@@ -110,7 +114,7 @@ namespace Nyerguds.GameData.Mythos
                     UInt32 repeat = inPtr - start;
                     // check buffer overflow
                     if (outLen <= outPtr + 3)
-                        return null;
+                        throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
                     // write code
                     bufferOut[outPtr++] = flag;
                     // Add value to repeat
@@ -131,8 +135,10 @@ namespace Nyerguds.GameData.Mythos
             outPtr += 3 + (UInt32) headerSize;
             if (outPtr > UInt16.MaxValue)
                 throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+            // Store size in first two bytes.            
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);
+            // Store flag value in third byte.
             finalOut[2] = flag;
             return finalOut;
         }
@@ -151,8 +157,10 @@ namespace Nyerguds.GameData.Mythos
         public Byte[] CollapsedTransparencyDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Int32 lineWidth, Byte transparentIndex, Boolean abortOnError)
         {
             UInt32 offset = startOffset ?? 0;
-            UInt32 end = endOffset ?? (UInt32) buffer.LongLength;
-            UInt32 origOutLength = decompressedSize != 0 ? (UInt32) decompressedSize : (end * 4);
+            UInt32 end = (UInt32)buffer.LongLength;
+            if (endOffset.HasValue)
+                end = Math.Min(endOffset.Value, end);
+            UInt32 origOutLength = decompressedSize != 0 ? (UInt32) decompressedSize : ((end - offset) * 4);
             UInt32 outLength = origOutLength;
             Byte[] output = new Byte[outLength];
             UInt32 writeOffset = 0;
@@ -229,7 +237,9 @@ namespace Nyerguds.GameData.Mythos
         /// <returns>The encoded data.</returns>
         public Byte[] CollapsedTransparencyEncode(Byte[] buffer, Byte transparentIndex, Int32 lineWidth, Int32 headerSize)
         {
-            UInt32 outLen = (UInt32) (buffer.Length * 3) / 2;
+            if (headerSize + 3 >= 0x10000)
+                throw new OverflowException("Header too big!");
+            UInt32 outLen = (UInt32)(0x10000 - headerSize - 3);
             Byte[] bufferOut = new Byte[outLen];
             UInt32 len = (UInt32) buffer.Length;
             UInt32 inPtr = 0;
@@ -240,7 +250,7 @@ namespace Nyerguds.GameData.Mythos
             while (inPtr < len)
             {
                 if (outLen == outPtr)
-                    return null;
+                    throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
                 Byte cur = buffer[inPtr];
                 Boolean isTrans = cur == transparentIndex;
                 if (writingTransparency && isTrans)
@@ -265,7 +275,7 @@ namespace Nyerguds.GameData.Mythos
                     bufferOut[outPtr++] = copySize;
                     // Boundary checking
                     if (outLen < outPtr + copySize)
-                        return null;
+                        throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
                     // Write uncollapsed data
                     Array.Copy(buffer, start, bufferOut, outPtr, copySize);
                     outPtr += copySize;
@@ -296,8 +306,10 @@ namespace Nyerguds.GameData.Mythos
             outPtr += 3 + (UInt32) headerSize;
             if (outPtr > UInt16.MaxValue)
                 throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
+            // Store size in first two bytes.
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);
+            // Store (unused) flag value in third byte.
             finalOut[2] = 0xFE;
             return finalOut;
         }

@@ -405,6 +405,7 @@
             this.Icon = global::EngieFileConverter.Properties.Resources.EngieIcon;
             this.MinimumSize = new System.Drawing.Size(560, 410);
             this.Name = "FrmFramesCutter";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Image to frames";
             ((System.ComponentModel.ISupportInitialize)(this.numFrames)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numCurFrame)).EndInit();

@@ -774,10 +774,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     Byte[] compressedBytes = null;
                     MythosCompression mc = new MythosCompression();
-                    if (compressionType == 1)
-                        compressedBytes = mc.FlagRleEncode(chunk.ImageData, 0xFE, chunk.ImageRect.Width, 8);
-                    else if (compressionType == 2)
-                        compressedBytes = mc.CollapsedTransparencyEncode(chunk.ImageData, TransparentIndex, chunk.ImageRect.Width, 8);
+                    try
+                    {
+                        if (compressionType == 1)
+                            compressedBytes = mc.FlagRleEncode(chunk.ImageData, 0xFE, chunk.ImageRect.Width, 8);
+                        else if (compressionType == 2)
+                            compressedBytes = mc.CollapsedTransparencyEncode(chunk.ImageData, TransparentIndex, chunk.ImageRect.Width, 8);
+                    }
+                    catch (OverflowException ex)
+                    {
+                        throw new NotSupportedException(ex.Message, ex);
+                    }
                     if (compressedBytes != null && compressedBytes.Length < chunk.ImageData.Length)
                     {
                         chunk.ImageData = compressedBytes;

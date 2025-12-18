@@ -74,6 +74,14 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.4.0: (07/09/2018 13:00)
+-Added multithreading to all operations, to prevent UI freezes.
+-Pasting on a range of frames no longer makes it lose its "has common palette" status.
+-Improved error handling on Mythos VGS/VDA saving.
+-Added full support for the Lands of Lore SHP format (Dune II SHP embedded in a CPS file).
+-Enhanced WSA chaining logic to allow chaining from CPS files, and from larger dimensions.
+-Fixed bugs in WSA detection logic.
+
 v1.3.6: (04/09/2018 16:27)
 -Fixed the frame range interpreter used in "Paste image on frames" and in Dune II saving.
 -Sped up conversion from high colour to palette by caching colour values in a lookup table.

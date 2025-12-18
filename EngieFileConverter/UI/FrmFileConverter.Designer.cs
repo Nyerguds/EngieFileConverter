@@ -550,6 +550,7 @@
             this.MinimumSize = new System.Drawing.Size(700, 593);
             this.Name = "FrmFileConverter";
             this.Text = "Engie File Converter - Created by Nyerguds";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FrmFileConverter_FormClosing);
             this.Shown += new System.EventHandler(this.FrmFileConverter_Shown);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Frm_DragDrop);
             this.DragEnter += new System.Windows.Forms.DragEventHandler(this.Frm_DragEnter);

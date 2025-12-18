@@ -247,7 +247,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            this.PerformPreliminarychecks(ref fileToSave);
+            PerformPreliminarychecks(ref fileToSave);
             FileFramesWwShpD2 d2File = fileToSave as FileFramesWwShpD2;
             Boolean isdune100shape = d2File != null && !d2File.IsVersion107;
             Boolean hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
@@ -265,10 +265,13 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            this.PerformPreliminarychecks(ref fileToSave);
+            PerformPreliminarychecks(ref fileToSave);
+            // VErsions: 1.00, 1.07 and Lands of Lore (which is 1.07 without LCW compression)
+            Int32 version;
+            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version);
 
-            // Cheaty way of getting a 2-choices dropdown option.
-            Boolean isVersion107 = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "VER"));
+            Boolean isVersion107 = version != 0;
+            Boolean noLcw = version == 2;
             // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
             Boolean addRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMT"));
             Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMA"));
@@ -333,8 +336,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 imageData = WestwoodRleZero.CompressRleZeroD2(imageData, frmWidth, frmHeight);
                 Int32 zeroDataLen = imageData.Length;
-                Byte[] lcwData = WWCompression.LcwCompress(imageData);
-                Boolean isCompressed = lcwData.Length < imageData.Length;
+                Byte[] lcwData = noLcw ? null : WWCompression.LcwCompress(imageData);
+                Boolean isCompressed = !noLcw && lcwData.Length < imageData.Length;
                 if (isCompressed)
                     imageData = lcwData;
 
@@ -401,7 +404,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return finalData;
         }
 
-        private void PerformPreliminarychecks(ref SupportedFileType fileToSave)
+        public static void PerformPreliminarychecks(ref SupportedFileType fileToSave)
         {
             // Preliminary checks
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)

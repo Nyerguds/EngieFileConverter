@@ -251,7 +251,6 @@ namespace EngieFileConverter.Domain.FileTypes
 
         private static Type[] m_autoDetectTypes =
         {
-            typeof(FileFramesWwShpLol1),
             typeof(FileImagePng),
             typeof(FileImageBmp),
             typeof(FileImageGif),
@@ -262,6 +261,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesWwCpsAmi4),
             typeof(FileFramesWwWsa),
             typeof(FileFramesWwShpD2),
+            typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
             typeof(FileImgWwLcw),
@@ -299,6 +299,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileIcon),
             typeof(FileImgWwCps),
             typeof(FileFramesWwShpD2),
+            typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpCc),
             typeof(FileFramesWwShpTs),
             typeof(FileFramesWwWsa),
@@ -345,6 +346,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FilePalette8Bit),
             typeof(FileFramesWwShpD2),
             typeof(FileFramesWwShpCc),
+            typeof(FileFramesWwShpLol1),
             typeof(FileFramesWwShpTs),
             typeof(FileFramesWwWsa),
             typeof(FileImgWwCps),
