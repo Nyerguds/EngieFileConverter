@@ -48,7 +48,6 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiOpen = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSave = new System.Windows.Forms.ToolStripMenuItem();
-            this.tsmiExport = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiSaveFrames = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiExit = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmiEdit = new System.Windows.Forms.ToolStripMenuItem();
@@ -66,6 +65,8 @@
             this.btnResetPalette = new System.Windows.Forms.Button();
             this.btnSavePalette = new System.Windows.Forms.Button();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
+            this.lblInfo = new System.Windows.Forms.Label();
+            this.lblValInfo = new System.Windows.Forms.Label();
             this.cmbPalettes = new Nyerguds.Util.UI.ComboBoxSmartWidth();
             this.numFrame = new Nyerguds.Util.UI.EnhNumericUpDown();
             this.palColorViewer = new Nyerguds.Util.UI.PalettePanel();
@@ -182,7 +183,7 @@
             // lblZoom
             // 
             this.lblZoom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblZoom.Location = new System.Drawing.Point(512, 447);
+            this.lblZoom.Location = new System.Drawing.Point(512, 527);
             this.lblZoom.Name = "lblZoom";
             this.lblZoom.Size = new System.Drawing.Size(72, 20);
             this.lblZoom.TabIndex = 23;
@@ -193,7 +194,7 @@
             // 
             this.lblTransparentColorVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.lblTransparentColorVal.BackColor = System.Drawing.SystemColors.ActiveCaption;
-            this.lblTransparentColorVal.Location = new System.Drawing.Point(497, 447);
+            this.lblTransparentColorVal.Location = new System.Drawing.Point(497, 527);
             this.lblTransparentColorVal.Name = "lblTransparentColorVal";
             this.lblTransparentColorVal.Size = new System.Drawing.Size(20, 20);
             this.lblTransparentColorVal.TabIndex = 118;
@@ -202,7 +203,7 @@
             // lblTransparentColor
             // 
             this.lblTransparentColor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblTransparentColor.Location = new System.Drawing.Point(416, 447);
+            this.lblTransparentColor.Location = new System.Drawing.Point(416, 527);
             this.lblTransparentColor.Name = "lblTransparentColor";
             this.lblTransparentColor.Size = new System.Drawing.Size(75, 20);
             this.lblTransparentColor.TabIndex = 23;
@@ -245,7 +246,6 @@
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmiOpen,
             this.tsmiSave,
-            this.tsmiExport,
             this.tsmiSaveFrames,
             this.tsmiExit});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
@@ -267,14 +267,6 @@
             this.tsmiSave.Size = new System.Drawing.Size(202, 22);
             this.tsmiSave.Text = "&Save File...";
             this.tsmiSave.Click += new System.EventHandler(this.TsmiSave_Click);
-            // 
-            // tsmiExport
-            // 
-            this.tsmiExport.Name = "tsmiExport";
-            this.tsmiExport.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
-            this.tsmiExport.Size = new System.Drawing.Size(202, 22);
-            this.tsmiExport.Text = "Quick Conv&ert...";
-            this.tsmiExport.Click += new System.EventHandler(this.TsmiSaveExport_Click);
             // 
             // tsmiSaveFrames
             // 
@@ -379,7 +371,7 @@
             // lblFrame
             // 
             this.lblFrame.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblFrame.Location = new System.Drawing.Point(12, 447);
+            this.lblFrame.Location = new System.Drawing.Point(12, 527);
             this.lblFrame.Name = "lblFrame";
             this.lblFrame.Size = new System.Drawing.Size(40, 20);
             this.lblFrame.TabIndex = 124;
@@ -389,7 +381,7 @@
             // lblNrOfFrames
             // 
             this.lblNrOfFrames.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblNrOfFrames.Location = new System.Drawing.Point(129, 447);
+            this.lblNrOfFrames.Location = new System.Drawing.Point(129, 527);
             this.lblNrOfFrames.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
             this.lblNrOfFrames.Name = "lblNrOfFrames";
             this.lblNrOfFrames.Size = new System.Drawing.Size(40, 20);
@@ -400,7 +392,7 @@
             // 
             this.btnResetPalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnResetPalette.Enabled = false;
-            this.btnResetPalette.Location = new System.Drawing.Point(788, 442);
+            this.btnResetPalette.Location = new System.Drawing.Point(788, 522);
             this.btnResetPalette.Name = "btnResetPalette";
             this.btnResetPalette.Size = new System.Drawing.Size(49, 23);
             this.btnResetPalette.TabIndex = 313;
@@ -412,7 +404,7 @@
             // 
             this.btnSavePalette.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnSavePalette.Enabled = false;
-            this.btnSavePalette.Location = new System.Drawing.Point(843, 442);
+            this.btnSavePalette.Location = new System.Drawing.Point(843, 522);
             this.btnSavePalette.Name = "btnSavePalette";
             this.btnSavePalette.Size = new System.Drawing.Size(49, 23);
             this.btnSavePalette.TabIndex = 314;
@@ -420,13 +412,31 @@
             this.btnSavePalette.UseVisualStyleBackColor = true;
             this.btnSavePalette.Click += new System.EventHandler(this.BtnSavePalette_Click);
             // 
+            // lblInfo
+            // 
+            this.lblInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblInfo.Location = new System.Drawing.Point(664, 192);
+            this.lblInfo.Name = "lblInfo";
+            this.lblInfo.Size = new System.Drawing.Size(94, 23);
+            this.lblInfo.TabIndex = 112;
+            this.lblInfo.Text = "Additional info:";
+            this.lblInfo.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // lblValInfo
+            // 
+            this.lblValInfo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblValInfo.Location = new System.Drawing.Point(667, 215);
+            this.lblValInfo.Name = "lblValInfo";
+            this.lblValInfo.Size = new System.Drawing.Size(237, 39);
+            this.lblValInfo.TabIndex = 315;
+            // 
             // cmbPalettes
             // 
             this.cmbPalettes.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmbPalettes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cmbPalettes.Enabled = false;
             this.cmbPalettes.FormattingEnabled = true;
-            this.cmbPalettes.Location = new System.Drawing.Point(667, 444);
+            this.cmbPalettes.Location = new System.Drawing.Point(667, 524);
             this.cmbPalettes.Name = "cmbPalettes";
             this.cmbPalettes.Size = new System.Drawing.Size(115, 21);
             this.cmbPalettes.TabIndex = 126;
@@ -440,7 +450,7 @@
             0,
             0,
             0});
-            this.numFrame.Location = new System.Drawing.Point(58, 449);
+            this.numFrame.Location = new System.Drawing.Point(58, 529);
             this.numFrame.Minimum = new decimal(new int[] {
             1,
             0,
@@ -462,7 +472,7 @@
             this.palColorViewer.AutoSize = true;
             this.palColorViewer.ColorSelectMode = Nyerguds.Util.UI.ColorSelMode.None;
             this.palColorViewer.LabelSize = new System.Drawing.Size(12, 12);
-            this.palColorViewer.Location = new System.Drawing.Point(667, 207);
+            this.palColorViewer.Location = new System.Drawing.Point(667, 287);
             this.palColorViewer.Name = "palColorViewer";
             this.palColorViewer.PadBetween = new System.Drawing.Point(2, 2);
             this.palColorViewer.Palette = null;
@@ -481,7 +491,7 @@
             0,
             0,
             0});
-            this.numZoom.Location = new System.Drawing.Point(590, 447);
+            this.numZoom.Location = new System.Drawing.Point(590, 527);
             this.numZoom.Minimum = new decimal(new int[] {
             1,
             0,
@@ -509,7 +519,7 @@
             this.pnlImageScroll.Location = new System.Drawing.Point(12, 30);
             this.pnlImageScroll.Margin = new System.Windows.Forms.Padding(0);
             this.pnlImageScroll.Name = "pnlImageScroll";
-            this.pnlImageScroll.Size = new System.Drawing.Size(646, 409);
+            this.pnlImageScroll.Size = new System.Drawing.Size(646, 489);
             this.pnlImageScroll.TabIndex = 3;
             this.pnlImageScroll.TabStop = true;
             this.pnlImageScroll.MouseScroll += new System.Windows.Forms.MouseEventHandler(this.PnlImageScroll_MouseScroll);
@@ -532,7 +542,8 @@
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(904, 474);
+            this.ClientSize = new System.Drawing.Size(904, 554);
+            this.Controls.Add(this.lblValInfo);
             this.Controls.Add(this.btnResetPalette);
             this.Controls.Add(this.btnSavePalette);
             this.Controls.Add(this.cmbPalettes);
@@ -549,6 +560,7 @@
             this.Controls.Add(this.lblValColorFormat);
             this.Controls.Add(this.lblValHeight);
             this.Controls.Add(this.lblValWidth);
+            this.Controls.Add(this.lblInfo);
             this.Controls.Add(this.lblColorsInPal);
             this.Controls.Add(this.lblValFilename);
             this.Controls.Add(this.lblColorformat);
@@ -560,7 +572,7 @@
             this.Controls.Add(this.menuStrip1);
             this.Icon = global::CnC64FileConverter.Properties.Resources.cnc64logo;
             this.MainMenuStrip = this.menuStrip1;
-            this.MinimumSize = new System.Drawing.Size(700, 512);
+            this.MinimumSize = new System.Drawing.Size(700, 562);
             this.Name = "FrmCnC64FileConverter";
             this.Text = "C&C64 File Converter - Created by Nyerguds";
             this.Shown += new System.EventHandler(this.FrmCnC64FileConverter_Shown);
@@ -602,7 +614,6 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiOpen;
         private System.Windows.Forms.ToolStripMenuItem tsmiSave;
         private System.Windows.Forms.ToolStripMenuItem tsmiExit;
-        private System.Windows.Forms.ToolStripMenuItem tsmiExport;
         private Nyerguds.Util.UI.PalettePanel palColorViewer;
         private System.Windows.Forms.ToolStripMenuItem tsmiEdit;
         private System.Windows.Forms.ToolStripMenuItem tsmiHeightMapTools;
@@ -622,6 +633,8 @@
         private System.Windows.Forms.ToolStripMenuItem tsmiCopy;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.ToolStripMenuItem tsmiSaveFrames;
+        private System.Windows.Forms.Label lblInfo;
+        private System.Windows.Forms.Label lblValInfo;
     }
 }
 

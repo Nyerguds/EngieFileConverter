@@ -79,34 +79,37 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
-    <Compile Include="Domain\FileTypes\FileImgKotB.cs" />
-    <Compile Include="Domain\FileTypes\FileImgMythosVgs.cs" />
+    <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
+    <Compile Include="Domain\FileTypes\EA\FileImgKotB.cs" />
+    <Compile Include="Domain\FileTypes\Mythos\FileImgMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
     <Compile Include="Domain\GameData\Agos\AgosCompression.cs" />
     <Compile Include="Domain\GameData\EA\EACompression.cs" />
+    <Compile Include="Domain\GameData\LzwCompression.cs" />
+    <Compile Include="Domain\GameData\RleCompression.cs" />
     <Compile Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
     <Compile Include="Domain\GameData\Westwood\WWCompression.cs" />
     <Compile Include="Domain\FileTypes\FileImageFrame.cs" />
     <Compile Include="Domain\FileTypes\FileImageFrames.cs" />
-    <Compile Include="Domain\FileTypes\FileImgKortBmp.cs" />
-    <Compile Include="Domain\FileTypes\FileImgKort.cs" />
-    <Compile Include="Domain\FileTypes\FileImgDynScrV2.cs" />
-    <Compile Include="Domain\FileTypes\FilePaletteDyn.cs" />
-    <Compile Include="Domain\FileTypes\FileTilesetCc1PC.cs" />
-    <Compile Include="Domain\FileTypes\FileAdvVgaFrames.cs" />
-    <Compile Include="Domain\FileTypes\FileAdvIcons.cs" />
-    <Compile Include="Domain\FileTypes\FileImgDynBmp.cs" />
-    <Compile Include="Domain\FileTypes\FileImgCps.cs" />
-    <Compile Include="Domain\FileTypes\FileImgWwLcw.cs" />
-    <Compile Include="Domain\FileTypes\FileMapRa1PC.cs" />
-    <Compile Include="Domain\FileTypes\FileImgDynScr.cs" />
+    <Compile Include="Domain\FileTypes\MVP\FileImgKortBmp.cs" />
+    <Compile Include="Domain\FileTypes\MVP\FileImgKort.cs" />
+    <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScrV2.cs" />
+    <Compile Include="Domain\FileTypes\Dynamix\FilePaletteDyn.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileTilesetWwCc1PC.cs" />
+    <Compile Include="Domain\FileTypes\AdvSoft\FileAdvVgaFrames.cs" />
+    <Compile Include="Domain\FileTypes\AdvSoft\FileAdvIcons.cs" />
+    <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmp.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileImgWwCps.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileImgWwLcw.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileMapWwRa1PC.cs" />
+    <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScr.cs" />
     <Compile Include="Domain\GameData\Westwood\HeightTerrainType.cs" />
     <Compile Include="Domain\GameData\Westwood\TerrainType.cs" />
     <Compile Include="Domain\GameData\Westwood\Theater.cs" />
-    <Compile Include="Domain\FileTypes\FileImgN64Gray.cs" />
-    <Compile Include="Domain\FileTypes\FileTilesCc1N64.cs" />
-    <Compile Include="Domain\FileTypes\FilePaletteN64.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileTilesWwCc1N64.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwCc1N64.cs" />
     <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
+    <Compile Include="Domain\GameData\Westwood\WestwoodRle.cs" />
     <Compile Include="Domain\HeightMap\HeightMapGenerator.cs" />
     <Compile Include="Domain\HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
@@ -153,16 +156,16 @@
     <Compile Include="Domain\FileTypeBroadcaster.cs" />
     <Compile Include="Domain\Utils\Crc32.cs" />
     <Compile Include="Domain\Utils\GeneralUtils.cs" />
-    <Compile Include="Domain\FileTypes\FileImageJpg.cs" />
-    <Compile Include="Domain\FileTypes\FileImageBmp.cs" />
-    <Compile Include="Domain\FileTypes\FileImageGif.cs" />
-    <Compile Include="Domain\FileTypes\FileImagePng.cs" />
-    <Compile Include="Domain\FileTypes\FileMapCc1N64.cs" />
-    <Compile Include="Domain\FileTypes\FilePaletteWwPc.cs" />
-    <Compile Include="Domain\FileTypes\FileMapCc1Pc.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImageJpg.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImageBmp.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImageGif.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImagePng.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileMapWwCc1N64.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwPc.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileMapWwCc1Pc.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ImageUtils.cs" />
-    <Compile Include="Domain\FileTypes\FileImage.cs" />
-    <Compile Include="Domain\FileTypes\FileImgN64.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImage.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileImgWwN64.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BitmapHandler.cs" />
     <Compile Include="Domain\GameData\Westwood\CnCMap.cs" />
     <Compile Include="Domain\GameData\Westwood\MapConversion.cs" />
@@ -172,15 +175,60 @@
     <Compile Include="Domain\Utils\ImageUtils\PixelFormatter.cs" />
     <Compile Include="Domain\Utils\KMeans.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="UI\FrmExtraOptions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\FrmExtraOptions.Designer.cs">
+      <DependentUpon>FrmExtraOptions.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\FrmManagePalettes.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="UI\FrmManagePalettes.designer.cs">
       <DependentUpon>FrmManagePalettes.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionChoices.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionChoices.Designer.cs">
+      <DependentUpon>SaveOptionChoices.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionString.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionString.Designer.cs">
+      <DependentUpon>SaveOptionString.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionBoolean.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionBoolean.Designer.cs">
+      <DependentUpon>SaveOptionBoolean.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionInfo.cs" />
+    <Compile Include="UI\SaveOptions\SaveOptionNumber.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionNumber.Designer.cs">
+      <DependentUpon>SaveOptionNumber.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\SaveOptions\SaveOptionsList.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="UI\Tools\ComboBoxSmartWidth.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="UI\Tools\ControlsList\ControlsList.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Tools\ControlsList\ControlsList.designer.cs">
+      <DependentUpon>ControlsList.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Tools\ControlsList\CustomControlInfo.cs" />
+    <Compile Include="UI\Tools\ControlsList\ListedControlController.cs" />
     <Compile Include="UI\Tools\EnhNumericUpDown.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -225,8 +273,26 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="UI\FrmExtraOptions.resx">
+      <DependentUpon>FrmExtraOptions.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\FrmManagePalettes.resx">
       <DependentUpon>FrmManagePalettes.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionChoices.resx">
+      <DependentUpon>SaveOptionChoices.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionString.resx">
+      <DependentUpon>SaveOptionString.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionBoolean.resx">
+      <DependentUpon>SaveOptionBoolean.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\SaveOptions\SaveOptionNumber.resx">
+      <DependentUpon>SaveOptionNumber.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Tools\ControlsList\ControlsList.resx">
+      <DependentUpon>ControlsList.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Tools\InputBox.resx">
       <DependentUpon>InputBox.cs</DependentUpon>

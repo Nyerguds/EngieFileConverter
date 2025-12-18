@@ -14,6 +14,8 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FilePaletteDyn : SupportedFileType
     {
+        public override FileClass FileClass { get { return FileClass.Image8Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Dynamix Palette"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -24,7 +26,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Width { get { return 16; } }
         public override Int32 Height { get { return 16; } }
         public override Int32 ColorsInPalette { get { return 256; } }
-        public override SupportedFileType PreferredExportType { get { return new FilePaletteWwPc(); } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -84,7 +85,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");

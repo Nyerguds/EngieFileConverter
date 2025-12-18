@@ -64,7 +64,6 @@ namespace Nyerguds.ImageManipulation
                             Int32 trnsEnd = trnsOffset + trnsLength + 12;
                             Array.Copy(data, trnsEnd, data2, trnsOffset, data.Length - trnsEnd);
                             data = data2;
-                            //File.WriteAllBytes("test.png", data2);
                         }
                     }
                 }

@@ -7,34 +7,55 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class SaveOption
     {
-        public SaveOption(SaveOptionType type, String name, String initValue)
+        public SaveOption(String code, SaveOptionType type, String UiString, String saveData)
+            : this(code, type, UiString, null, saveData) { }
+
+        public SaveOption(String code, SaveOptionType type, String UiString, String initValue, String saveData)
         {
+            this.Code = code;
             this.Type = type;
-            this.OptionName = name;
+            this.UiString = UiString;
             this.InitValue = initValue;
+            this.SaveData = saveData;
         }
-        
+
+        /// <summary>Code to easily retrieve this option</summary>
+        public String Code { get; private set; }
+        /// <summary>Data type</summary>
         public SaveOptionType Type { get; private set; }
-        public String OptionName { get; private set; }
+        /// <summary>String to show on the UI for this option</summary>
+        public String UiString { get; private set; }
+        /// <summary>Initialisation value. Used differently by all types.</summary>
         public String InitValue { get; private set; }
+        /// <summary>The value of this option. Fill this in in advance to give a default value.</summary>
         public String SaveData { get; set; }
+
+        public static String GetSaveOptionValue(SaveOption[] list, String code)
+        {
+            foreach (SaveOption option in list)
+            {
+                if (String.Equals(option.Code, code, StringComparison.InvariantCultureIgnoreCase))
+                    return option.SaveData;
+            }
+            return null;
+        }
     }
 
     public enum SaveOptionType
     {
-        // Simple numeric input. Avoid setting non-numeric input in InitValue.
-        Integer,
-        // Checkbox. Set InitValue to "0" or "1".
+        /// <summary>Simple numeric input.</summary>
+        Number,
+        /// <summary>Checkbox. Values should be "0" and "1".</summary>
         Boolean,
-        // Free text field.
+        /// <summary>Free text field.</summary>
         String,
-        // Dropdown. Use InitValue to set a semicolon-separated list of options. The first one will be the default value. Returns the chosen index as string.
+        /// <summary>Dropdown. Use InitValue to set a semicolon-separated list of options. Returns the chosen index (0-based) as string. SaveData can be used to set a default index.</summary>
         ChoicesList,
-        // File selector. Any InitValue will be evaluated as relative to the save path. Use "*.EXT" for same filename as save file but with a different extension. USe NAME.*
+        /// <summary>File selector. Use InitValue to specify a File Open mask.</summary>
         FileOpen,
-        // File save dialog. Same InitValue format as FileOpen.
+        /// <summary>Additional file to be written. Use InitValue to specify a File Save mask.</summary>
         FileSave,
-        // Folder selector.
+        /// <summary>Folder selector.</summary>
         Folder,
     }
 }

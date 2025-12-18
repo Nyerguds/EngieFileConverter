@@ -81,7 +81,7 @@ namespace Nyerguds.GameData.Westwood
             Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, input.Length) : input.Length;
             Int32 outPtr = 0;
 
-            // Westwood CMV/RLE implementation:
+            // Westwood RLE implementation:
             // highest bit set = followed by range of repeating bytes, but seen as (256-value)
             // highest bit not set = followed by range of non-repeating bytes
             // Value is 0: read 2 more bytes as Int16 to repeat.
@@ -175,7 +175,7 @@ namespace Nyerguds.GameData.Westwood
                     // Found more than (minimumRepeating) bytes. Worth compressing. Apply run-length encoding.
                     Int32 start = inPtr;
                     //0x7F
-                    Int32 end = Math.Min(inPtr + Int16.MaxValue, len);
+                    Int32 end = Math.Min(inPtr + UInt16.MaxValue, len);
                     Byte cur = buffer[inPtr];
                     // Already checked these
                     inPtr += minimumRepeating;

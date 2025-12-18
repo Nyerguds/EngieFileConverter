@@ -101,7 +101,7 @@ namespace CnC64FileConverter
                 SupportedFileType[] possibleTypesOutput = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.SupportedSaveTypes, outputFull);
 
                 List<FileTypeLoadException> loadErrors;
-                SupportedFileType inputImage = SupportedFileType.LoadImageAutodetect(inputFull, possibleTypesInput, out loadErrors);
+                SupportedFileType inputImage = SupportedFileType.LoadFileAutodetect(inputFull, possibleTypesInput, out loadErrors, false);
 
                 if (inputImage == null)
                 {
@@ -150,7 +150,7 @@ namespace CnC64FileConverter
                         ((FileTilesN64Bpp4)inputImage).ConvertToTiles(Path.GetDirectoryName(output), Path.GetFileNameWithoutExtension(output), outputType);
                     }
                     else
-                        outputType.SaveAsThis(inputImage, outputFull, new SaveOption[0], noCompress);
+                        outputType.SaveAsThis(inputImage, outputFull, new SaveOption[0]);
                 }
                 catch (NotSupportedException ex)
                 {
@@ -190,7 +190,7 @@ namespace CnC64FileConverter
             SupportedFileType palette = null;
             SupportedFileType[] possibleTypesPal = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, paletteName);
             List<FileTypeLoadException> loadErrors;
-            palette = SupportedFileType.LoadImageAutodetect(paletteName, possibleTypesPal, out loadErrors);
+            palette = SupportedFileType.LoadFileAutodetect(paletteName, possibleTypesPal, out loadErrors, false);
             if (palette == null && showErrors)
             {
                 Console.WriteLine("Failed: could not load palette.");
@@ -245,7 +245,7 @@ namespace CnC64FileConverter
                         continue;
                     SupportedFileType[] possibleTypesTile = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, file.Name);
                     List<FileTypeLoadException> loadErrors;
-                    SupportedFileType tileFile = SupportedFileType.LoadImageAutodetect(file.FullName, possibleTypesTile, out loadErrors);
+                    SupportedFileType tileFile = SupportedFileType.LoadFileAutodetect(file.FullName, possibleTypesTile, out loadErrors, false);
                     if (tileFile == null || tileFile.BitsPerColor == 0 || tileFile.Width % 24 != 0 || tileFile.Height % 24 != 0)
                         continue;
                     readFiles[id] = tileFile;

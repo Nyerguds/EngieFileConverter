@@ -1,77 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
+using Nyerguds.Util.GameData;
 
 namespace Nyerguds.GameData.KotB
 {
-    public class EACompression
+    public class EACompression : RleImplementation<EACompression>
     {
-
-        public static Int32 RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Byte[] bufferOut)
+        /// <summary>
+        /// Reads a code, determines the repeat / skip command and the amount of bytes to to repeat/skip,
+        /// and advances the read pointer to the location behind the read code.
+        /// </summary>
+        /// <param name="buffer">Input buffer.</param>
+        /// <param name="inPtr">Input pointer.</param>
+        /// <param name="bufferEnd">End of buffer.</param>
+        /// <param name="IsRepeat">Returns true for repeat code, false for copy code.</param>
+        /// <param name="amount">Returns the amount to copy or repeat.</param>
+        /// <returns>True if the read succeeded, false if it failed.</returns>
+        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean IsRepeat, out UInt32 amount)
         {
-            Int32 inPtr = startOffset ?? 0;
-            Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
-            Int32 outPtr = 0;
-
-            // RLE implementation:
-            // highest bit not set = followed by range of repeating bytes
-            // highest bit set = followed by range of non-repeating bytes
-            // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
-
-            while (inPtr < inPtrEnd)
-            {
-                // get next code
-                Int32 code = buffer[inPtr++];
-                Int32 run = code & 0x7f;
-                if (run == 0) // Illegal command.
-                    return -1;
-                // Repeat
-                if ((code & 0x80) == 0)
-                {
-                    if (inPtr >= inPtrEnd)
-                        return outPtr; 
-                    Int32 rle = buffer[inPtr++];
-                    for (UInt32 lcv = 0; lcv < run; lcv++)
-                    {
-                        if (outPtr >= bufferOut.Length)
-                            return outPtr;
-                        bufferOut[outPtr++] = (Byte)rle;
-                    }
-                }
-                // Copy
-                else
-                {
-                    for (UInt32 lcv = 0; lcv < run; lcv++)
-                    {
-                        if (inPtr >= inPtrEnd)
-                            return outPtr;
-                        Int32 data = buffer[inPtr++];
-                        if (outPtr >= bufferOut.Length)
-                            return outPtr;
-                        bufferOut[outPtr++] = (Byte)data;
-                    }
-                }
-            }
-            return outPtr;
-        }
-
-        private static Byte[] ExpandBuffer(Byte[] source, Int32 expand)
-        {
-            Int32 len = source.Length;
-            Byte[] expanded = new Byte[len + expand];
-            Array.Copy(source, expanded, len);
-            return expanded;
+            Byte code = buffer[inPtr++];
+            amount = (UInt32)(code & 0x7f);
+            IsRepeat = (code & 0x80) == 0;
+            return true;
         }
 
         /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data.
+        /// Writes the copy/skip code to be put before the actual byte(s) to repeat/skip,
+        /// and advances the write pointer to the location behind the written code.
         /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <returns>The run-length encoded data</returns>
-        public static Byte[] RleEncode(Byte[] buffer)
+        /// <param name="bufferOut">Output buffer to write to.</param>
+        /// <param name="outPtr">Pointer for the output buffer.</param>
+        /// <param name="forRepeat">True if this is a repeat code, false if this is a copy code.</param>
+        /// <param name="amount">Amount to write into the repeat or copy code.</param>
+        /// <returns>True if the write succeeded, false if it failed.</returns>
+        protected override Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, Boolean forRepeat, UInt32 amount)
         {
-            return RleEncode(buffer, 3);
+            if (bufferOut.Length <= outPtr)
+                return false;
+            if (forRepeat)
+                bufferOut[outPtr++] = (Byte)(amount);
+            else
+                bufferOut[outPtr++] = (Byte)(amount | 0x80);
+            return true;
         }
-
+        
         /// <summary>
         /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
@@ -98,7 +70,7 @@ namespace Nyerguds.GameData.KotB
             Boolean repeatDetected = false;
             while (inPtr < len)
             {
-                if (repeatDetected || HasRepeatingAhead(buffer, len, inPtr, minimumRepeating))
+                if (repeatDetected || HasRepeatingAhead(buffer, len, inPtr, 2))
                 {
                     repeatDetected = false;
                     // Found more than (minimumRepeating) bytes. Worth compressing. Apply run-length encoding.
@@ -121,7 +93,7 @@ namespace Nyerguds.GameData.KotB
                         for (; inPtr < end; inPtr++)
                         {
                             // detected bytes to compress after this one: abort.
-                            if (!HasRepeatingAhead(buffer, len, inPtr, minimumRepeating))
+                            if (!HasRepeatingAhead(buffer, len, inPtr, 3))
                                 continue;
                             repeatDetected = true;
                             break;

@@ -21,17 +21,17 @@ namespace CnC64FileConverter.Domain.HeightMap
         private const Int32 WATER_HEIGHT_DIFF = -0x20;
         private static readonly Color[] LEVEL_COLORS = Enumerable.Range(0, 5).Select(x => Color.FromArgb(Math.Min(0xFF, BASE_HEIGHT * x), Math.Min(0xFF, BASE_HEIGHT * x), Math.Min(0xFF, BASE_HEIGHT * x))).ToArray();
 
-        public static FileImagePng GeneratePlateauImage64x64(FileMapCc1Pc mapFile, String suffix)
+        public static FileImagePng GeneratePlateauImage64x64(FileMapWwCc1Pc mapFile, String suffix)
         {
             return GenerateHeightMapImage64x64(mapFile, null, true, suffix);
         }
 
-        public static FileImagePng GenerateHeightMapImage64x64(FileMapCc1Pc mapFile, Bitmap plateauLevelsImage, String suffix)
+        public static FileImagePng GenerateHeightMapImage64x64(FileMapWwCc1Pc mapFile, Bitmap plateauLevelsImage, String suffix)
         {
             return GenerateHeightMapImage64x64(mapFile, plateauLevelsImage, false, suffix);
         }
 
-        private static FileImagePng GenerateHeightMapImage64x64(FileMapCc1Pc map, Bitmap plateauLevelsImage, Boolean forPlateau, String returnNameSuffix)
+        private static FileImagePng GenerateHeightMapImage64x64(FileMapWwCc1Pc map, Bitmap plateauLevelsImage, Boolean forPlateau, String returnNameSuffix)
         {
             String loadedPath = map.LoadedFile;
             String baseFileName = Path.Combine(Path.GetDirectoryName(loadedPath), Path.GetFileNameWithoutExtension(loadedPath));

@@ -7,7 +7,6 @@ using System.Text;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Ini;
 using Nyerguds.GameData.Westwood;
-using Nyerguds.ImageManipulation;
 
 namespace Nyerguds.Util.UI
 {

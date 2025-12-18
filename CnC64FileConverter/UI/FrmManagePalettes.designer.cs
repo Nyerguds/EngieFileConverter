@@ -235,6 +235,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.Name = "FrmManagePalettes";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Save palette";
             this.Load += new System.EventHandler(this.FrmManagePalettes_Load);
             this.Shown += new System.EventHandler(this.FrmManagePalettes_Shown);

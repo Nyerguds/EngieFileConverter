@@ -10,11 +10,14 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected Int32 m_BitsPerColor= -1;
         protected Int32 m_ColorsInPalette = -1;
         public override String ShortTypeName { get { return "Frame"; } }
+
+        public override FileClass InputFileClass { get { return FileClass.None; } }
+
+
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return (m_BaseType == null?  String.Empty : m_BaseType + " ") + "Frame"; } }
         public override Int32 BitsPerColor { get { return m_BitsPerColor != -1   ? m_BitsPerColor : base.BitsPerColor; } }
         public override Int32 ColorsInPalette { get { return m_ColorsInPalette != - 1 ? m_ColorsInPalette : base.ColorsInPalette; } }
-        public override SupportedFileType PreferredExportType { get { return new FileImagePng(); } }
         
         public void SetBitsPerColor(Int32 bitsPerColor) { m_BitsPerColor = bitsPerColor; }
         public void SetColorsInPalette(Int32 colorsInPalette) { m_ColorsInPalette = colorsInPalette; }
@@ -33,6 +36,11 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             sourcePath = path;
             UpdateNames();
+        }
+
+        public void SetExtraInfo(String extraInfo)
+        {
+            this.ExtraInfo = extraInfo;
         }
 
         protected void UpdateNames()

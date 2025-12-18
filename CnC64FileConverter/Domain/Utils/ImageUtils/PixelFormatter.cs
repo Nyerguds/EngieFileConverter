@@ -43,6 +43,74 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
+        /// Creats a new PixelFormatter based on masks as used by DIB format.
+        /// </summary>
+        /// <param name="bytesPerPixel">Amount of bytes to read per pixel</param>
+        /// <param name="maskRed"></param>
+        /// <param name="maskGreen"></param>
+        /// <param name="maskBlue"></param>
+        /// <param name="maskAlpha"></param>
+        public PixelFormatter(Byte bytesPerPixel, UInt32 maskRed, UInt32 maskGreen, UInt32 maskBlue, UInt32 maskAlpha)
+        {
+            this.bytesPerPixel = bytesPerPixel;
+            this.littleEndian = true;
+            Byte redBits;
+            Byte redShift;
+            this.BitsFromMask(maskRed, out redBits, out redShift);
+            Byte greenBits;
+            Byte greenShift;
+            this.BitsFromMask(maskGreen, out greenBits, out greenShift);
+            Byte blueBits;
+            Byte blueShift;
+            this.BitsFromMask(maskBlue, out blueBits, out blueShift);
+            Byte alphaBits;
+            Byte alphaShift;
+            this.BitsFromMask(maskAlpha, out alphaBits, out alphaShift);
+
+            this.bitsAmounts[(Int32)ColorComponent.Red] = redBits;
+            this.shiftAmounts[(Int32)ColorComponent.Red] = redShift;
+            this.multipliers[(Int32)ColorComponent.Red] = CalculateMultiplier(redBits);
+            this.limitMasks[(Int32)ColorComponent.Red] = maskRed;
+
+            this.bitsAmounts[(Int32)ColorComponent.Green] = greenBits;
+            this.shiftAmounts[(Int32)ColorComponent.Green] = greenShift;
+            this.multipliers[(Int32)ColorComponent.Green] = CalculateMultiplier(greenBits);
+            this.limitMasks[(Int32)ColorComponent.Green] = maskGreen;
+
+            this.bitsAmounts[(Int32)ColorComponent.Blue] = blueBits;
+            this.shiftAmounts[(Int32)ColorComponent.Blue] = blueShift;
+            this.multipliers[(Int32)ColorComponent.Blue] = CalculateMultiplier(blueBits);
+            this.limitMasks[(Int32)ColorComponent.Blue] = maskBlue;
+
+            this.bitsAmounts[(Int32)ColorComponent.Alpha] = alphaBits;
+            this.shiftAmounts[(Int32)ColorComponent.Alpha] = alphaShift;
+            this.multipliers[(Int32)ColorComponent.Alpha] = CalculateMultiplier(alphaBits);
+            this.limitMasks[(Int32)ColorComponent.Alpha] = maskAlpha;
+        }
+
+        private void BitsFromMask(UInt32 mask, out Byte bits, out Byte shift)
+        {
+            if (mask == 0)
+            {
+                bits = 0;
+                shift = 0;
+                return;
+            }
+            for (shift = 1; shift < 32; shift++)
+            {
+                if (((mask >> shift) << shift) != mask)
+                    break;
+            }
+            shift--;
+            UInt32 shiftedMask = mask >> shift;
+            for (bits = 0; bits < 32 - shift; bits++)
+            {
+                if ((shiftedMask >> bits) == 0)
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Creats a new PixelFormatter, with automatic calculation of colour multipliers using the CalculateMultiplier function.
         /// </summary>
         /// <param name="bytesPerPixel">Amount of bytes to read per pixel</param>
@@ -88,24 +156,24 @@ namespace Nyerguds.ImageManipulation
         {
             this.bytesPerPixel = bytesPerPixel;
             this.littleEndian = littleEndian;
-            this.bitsAmounts [(Int32)ColorComponent.Red] = redBits;
+            this.bitsAmounts[(Int32)ColorComponent.Red] = redBits;
             this.shiftAmounts[(Int32)ColorComponent.Red] = redShift;
-            this.multipliers [(Int32)ColorComponent.Red] = redMultiplier;
+            this.multipliers[(Int32)ColorComponent.Red] = redMultiplier;
             this.limitMasks[(Int32)ColorComponent.Red] = GetLimitMask(redBits, redShift);
 
-            this.bitsAmounts [(Int32)ColorComponent.Green] = greenBits;
+            this.bitsAmounts[(Int32)ColorComponent.Green] = greenBits;
             this.shiftAmounts[(Int32)ColorComponent.Green] = greenShift;
-            this.multipliers [(Int32)ColorComponent.Green] = greenMultiplier;
+            this.multipliers[(Int32)ColorComponent.Green] = greenMultiplier;
             this.limitMasks[(Int32)ColorComponent.Green] = GetLimitMask(greenBits, greenShift);
 
-            this.bitsAmounts [(Int32)ColorComponent.Blue] = blueBits;
+            this.bitsAmounts[(Int32)ColorComponent.Blue] = blueBits;
             this.shiftAmounts[(Int32)ColorComponent.Blue] = blueShift;
-            this.multipliers [(Int32)ColorComponent.Blue] = blueMultiplier;
+            this.multipliers[(Int32)ColorComponent.Blue] = blueMultiplier;
             this.limitMasks[(Int32)ColorComponent.Blue] = GetLimitMask(blueBits, blueShift);
 
-            this.bitsAmounts [(Int32)ColorComponent.Alpha] = alphaBits;
+            this.bitsAmounts[(Int32)ColorComponent.Alpha] = alphaBits;
             this.shiftAmounts[(Int32)ColorComponent.Alpha] = alphaShift;
-            this.multipliers [(Int32)ColorComponent.Alpha] = alphaMultiplier;
+            this.multipliers[(Int32)ColorComponent.Alpha] = alphaMultiplier;
             this.limitMasks[(Int32)ColorComponent.Alpha] = GetLimitMask(alphaBits, alphaShift);
         }
 
@@ -121,6 +189,8 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The most correct multiplier to convert colour components of the given bits length to a 0-255 range.</returns>
         public static Double CalculateMultiplier(Byte colorComponentBitLength)
         {
+            if (colorComponentBitLength == 0)
+                return 0;
             return 255.0 / ((1 << colorComponentBitLength) - 1);
         }
 
@@ -190,7 +260,7 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The integer value to write.</returns>
         public UInt32 GetValueFromColor(Color color)
         {
-            Byte[] components = new Byte[] { color.R, color.G, color.B, color.A};
+            Byte[] components = new Byte[] { color.R, color.G, color.B, color.A };
             UInt32 val = 0;
             for (Int32 i = 0; i < 4; i++)
             {

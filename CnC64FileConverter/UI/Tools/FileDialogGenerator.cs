@@ -231,6 +231,11 @@ namespace Nyerguds.Util.UI
             return possibleMatches.ToArray();
         }
 
+        public static T[] GetItemsList<T>(Type[] typesList) where T : FileTypeBroadcaster
+        {
+            return typesList.Select(x => new FileDialogItem<T>(x).ItemObject).ToArray();
+        }
+
     }
 
     public class FileDialogItem<T> where T : FileTypeBroadcaster

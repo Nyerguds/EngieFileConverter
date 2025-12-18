@@ -1,5 +1,6 @@
 ﻿using System;
 using Nyerguds.Util;
+using Nyerguds.Util.GameData;
 
 namespace Nyerguds.GameData.Dynamix
 {
@@ -9,6 +10,55 @@ namespace Nyerguds.GameData.Dynamix
     /// </summary>
     public class DynamixCompression
     {
+
+        public static Byte[] EnrichFourBit(Byte[] vgaData, Byte[] binData)
+        {
+            Byte[] fullData = new Byte[vgaData.Length * 2];
+            // ENRICHED 4-BIT IMAGE LOGIC
+            // Basic principle: The data in the VGA chunk is already perfectly viewable as 4-bit image. The colour palettes
+            // are designed so each block of 16 colours consists of different tints of the same colour. The 16-colour palette
+            // for the VGA chunk alone can be constructed by taking a palette slice where each colour is 16 entries apart.
+
+            // This VGA data [AB] gets "ennobled" to 8-bit by adding detail data [ab] from the BIN chunk, to get bytes [Aa Bb].
+            for (Int32 i = 0; i < vgaData.Length; i++)
+            {
+                Int32 offs = i * 2;
+                // This can be written much simpler, but I expanded it to clearly show each step.
+                Byte vgaPix = vgaData[i]; // 0xAB
+                Byte binPix = binData[i]; // 0xab
+                Byte vgaPixHi = (Byte)((vgaPix & 0xF0) >> 4); // 0x0A
+                Byte binPixHi = (Byte)((binPix & 0xF0) >> 4); // 0x0a
+                Byte finalPixHi = (Byte)((vgaPixHi << 4) + binPixHi); // Aa
+                Byte vgaPixLo = (Byte)(vgaPix & 0x0F); // 0x0B
+                Byte binPixLo = (Byte)(binPix & 0x0F); // 0x0b
+                Byte finalPixLo = (Byte)((vgaPixLo << 4) + binPixLo); // Bb
+                // Final result: AB + ab == [Aa Bb]
+                fullData[offs] = finalPixHi;
+                fullData[offs + 1] = finalPixLo;
+            }
+            return fullData;
+        }
+
+        public static void SplitEightBit(Byte[] imageData, out Byte[] vgaData, out Byte[] binData)
+        {
+            vgaData = new Byte[imageData.Length / 2];
+            binData = new Byte[imageData.Length / 2];
+            for (Int32 i = 0; i < imageData.Length; i++)
+            {
+                Byte pixData = imageData[i];
+                Int32 pixHi = pixData & 0xF0;
+                Int32 pixLo = pixData & 0x0F;
+                if (i % 2 == 0)
+                    pixLo = pixLo << 4;
+                else
+                    pixHi = pixHi >> 4;
+                Int32 pixOffs = i / 2;
+                vgaData[pixOffs] |= (Byte)pixHi;
+                binData[pixOffs] |= (Byte)pixLo;
+            }
+
+        }
+
         /// <summary>
         /// Decompresses Dynamix chunk data. The chunk data should start with the compression
         /// type byte, followed by a 32-bit integer specifying the uncompressed length.
@@ -51,9 +101,9 @@ namespace Nyerguds.GameData.Dynamix
                     Array.Copy(buffer, start, outBuff, 0, len);
                     return outBuff;
                 case 1:
-                    return RleDecode(buffer, startOffset, endOffset, decompressedSize);
+                    return RleDecode(buffer, (UInt32)start, (UInt32)end, decompressedSize, true);
                 case 2:
-                    return LzwDecode(buffer, startOffset, endOffset, decompressedSize);
+                    return LzwDecode(buffer, start, end, decompressedSize);
                 default:
                     throw new ArgumentException("Unknown compression type: \"" + compression + "\".", "compression");
             }
@@ -67,58 +117,14 @@ namespace Nyerguds.GameData.Dynamix
             return outputBuffer;
         }
 
-        public static Byte[] RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
+        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
         {
             Byte[] outputBuffer = new Byte[decompressedSize];
-            RleDecode(buffer, startOffset, endOffset, outputBuffer);
+            RleCompression rle = new RleCompression();
+            rle.RleDecodeData(buffer, startOffset, endOffset, outputBuffer, abortOnError);
             return outputBuffer;
         }
-
-        public static void RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Byte[] bufferOut)
-        {
-            Int32 inPtr = startOffset ?? 0;
-            Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
-            Int32 outPtr = 0;
-
-            // RLE implementation:
-            // highest bit set = followed by range of repeating bytes
-            // highest bit not set = followed by range of non-repeating bytes
-            // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
-
-            while (outPtr < bufferOut.Length && inPtr < inPtrEnd)
-            {
-                // get next code
-                Int32 code = buffer[inPtr++];
-                Int32 run = code & 0x7f;
-                // RLE run
-                if ((code & 0x80) != 0)
-                {
-                    if (inPtr >= inPtrEnd)
-                        return;
-                    Int32 rle = buffer[inPtr++];
-                    for (UInt32 lcv = 0; lcv < run; lcv++)
-                    {
-                        if (outPtr >= bufferOut.Length)
-                            return;
-                        bufferOut[outPtr++] = (Byte)rle;
-                    }
-                }
-                // raw run
-                else
-                {
-                    for (UInt32 lcv = 0; lcv < run; lcv++)
-                    {
-                        if (inPtr >= inPtrEnd)
-                            return;
-                        Int32 data = buffer[inPtr++];
-                        if (outPtr >= bufferOut.Length)
-                            return;
-                        bufferOut[outPtr++] = (Byte)data;
-                    }
-                }
-            }
-        }
-
+        
         /// <summary>
         /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
@@ -137,84 +143,9 @@ namespace Nyerguds.GameData.Dynamix
         /// <returns>The run-length encoded data</returns>
         public static Byte[] RleEncode(Byte[] buffer)
         {
-            return RleEncode(buffer, 3);
+            // Uses standard RLE implementation.
+            RleCompression rle = new RleCompression();
+            return rle.RleEncodeData(buffer);
         }
-
-        /// <summary>
-        /// Applies Run-Length Encoding (RLE) to the given data.
-        /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <param name="minimumRepeating">Minimum amount of repeating bytes before compression is applied.</param>
-        /// <returns>The run-length encoded data</returns>
-        public static Byte[] RleEncode(Byte[] buffer, Int32 minimumRepeating)
-        {
-            // Technically, compressing a repetition of 2 is not useful: the compressed data
-            // ends up the same size, but it adds an extra byte to the data that follows it.
-            // But it is allowed for the sake of completeness.
-            if (minimumRepeating < 2)
-                minimumRepeating = 2;
-            Int32 inPtr = 0;
-            Int32 outPtr = 0;
-            // Ensure big enough buffer. Sanity check will be done afterwards.
-            Byte[] bufferOut = new Byte[(buffer.Length * 3) / 2];
-
-            // RLE implementation:
-            // highest bit set = followed by range of repeating bytes
-            // highest bit not set = followed by range of non-repeating bytes
-            // In both cases, the "code" specifies the amount of bytes; either to write, or to skip.
-            Int32 len = buffer.Length;
-            Boolean repeatDetected = false;
-            while (inPtr < len)
-            {
-                if (repeatDetected || HasRepeatingAhead(buffer, len, inPtr, minimumRepeating))
-                {
-                    repeatDetected = false;
-                    // Found more than (minimumRepeating) bytes. Worth compressing. Apply run-length encoding.
-                    Int32 start = inPtr;
-                    Int32 end = Math.Min(inPtr + 0x7F, len);
-                    Byte cur = buffer[inPtr];
-                    // Already checked these
-                    inPtr += minimumRepeating;
-                    // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr] == cur; inPtr++) { }
-                    bufferOut[outPtr++] = (Byte)((inPtr - start) | 0x80);
-                    bufferOut[outPtr++] = cur;
-                }
-                else
-                {
-                    while (!repeatDetected && inPtr < len)
-                    {
-                        Int32 start = inPtr;
-                        Int32 end = Math.Min(inPtr + 0x7F, len);
-                        for (; inPtr < end; inPtr++)
-                        {
-                            // detected bytes to compress after this one: abort.
-                            if (!HasRepeatingAhead(buffer, len, inPtr, minimumRepeating))
-                                continue;
-                            repeatDetected = true;
-                            break;
-                        }
-                        bufferOut[outPtr++] = (Byte)(inPtr - start);
-                        for (Int32 i = start; i < inPtr; i++)
-                            bufferOut[outPtr++] = buffer[i];
-                    }
-                }
-            }
-            Byte[] finalOut = new Byte[outPtr];
-            Array.Copy(bufferOut, 0, finalOut, 0, outPtr);
-            return finalOut;
-        }
-
-        public static Boolean HasRepeatingAhead(Byte[] buffer, Int32 max, Int32 ptr, Int32 minAmount)
-        {
-            if (ptr + minAmount - 1 >= max)
-                return false;
-            Byte cur = buffer[ptr];
-            for (Int32 i = 1; i < minAmount; i++)
-                if (buffer[ptr + i] != cur)
-                    return false;
-            return true;
-        }
-
     }
 }

@@ -12,6 +12,9 @@ namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileImageFrames : FileImage
     {
+        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.None; } }
+
         public override String ShortTypeName { get { return "Frames"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
         public override String ShortTypeDescription { get { return (BaseType == null ? String.Empty : BaseType + " ") + "Frames"; } }
@@ -20,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return null; } }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             throw new NotSupportedException("This is not a real file format to save. How did you even get here?");
         }
@@ -48,7 +51,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             frame.FrameParent = this;
             this.FramesList.Add(frame);
         }
-
 
         public static FileImageFrames CheckForFrames(String path, SupportedFileType currentType, out String minName, out String maxName, out Boolean hasEmptyFrames)
         {
@@ -116,7 +118,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         continue;
                     SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(SupportedFileType.AutoDetectTypes, framePath);
                     List<FileTypeLoadException> loadErrors;
-                    currentType = SupportedFileType.LoadImageAutodetect(framePath, possibleTypes, out loadErrors);
+                    currentType = SupportedFileType.LoadFileAutodetect(framePath, possibleTypes, out loadErrors, false);
                     break;
                 }
                 // All frames are empty. Not gonna support that.
@@ -143,6 +145,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frameFile.LoadFile(currentFrame);
                     FileImageFrame frame = new FileImageFrame();
                     frame.LoadFileFrame(framesContainer, frameFile.ShortTypeName, frameFile.GetBitmap(), currentFrame, -1);
+                    frame.SetBitsPerColor(frameFile.BitsPerColor);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);
                 }

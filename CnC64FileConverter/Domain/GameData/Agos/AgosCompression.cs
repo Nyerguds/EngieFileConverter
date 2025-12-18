@@ -1,185 +1,93 @@
 ﻿using System;
 using System.Collections.Generic;
+using Nyerguds.Util.GameData;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.GameData.Agos
 {
-    public class AgosCompression
+    // This one is too messed up to convert to a RleImplementation class.
+    public class AgosCompression: RleImplementation<AgosCompression>
     {
-        /*/
-        // Elvira 1 - English DOS Floppy
-        AGOSGameDescription Elvira1DOSFloppy =
+
+        public static Byte[] DecodeImage(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 height, Int32 stride)
         {
-            ADGameDescription desc = 
-            {
-                const char *gameId = "elvira1";
-                const char *extra = "Floppy";
-                ADGameFileDescription filesDescriptions[] = 
-                {
-                    // const char *fileName, uint16 fileType, const char *md5, int32 fileSize
-                    { "gamepc",   GAME_BASEFILE, "a49e132a1f18306dd5d1ec2fe435e178", 135332},
-                    { "icon.dat", GAME_ICONFILE, "fda48c9da7f3e72d0313e2f5f760fc45", 56448},
-                    { "tbllist",  GAME_TBLFILE,  "319f6b227c7822a551f57d24e70f8149", 368},
-                    { NULL,       0,             NULL,                               0}
-                },
-                Common::Language language = Common::EN_ANY;
-                Common::Platform platform = Common::kPlatformDOS;
-                uint32 flags = ADGF_NO_FLAGS;
-                const char *guiOptions = GUIO1(GUIO_NOSPEECH);
-            },
-            int gameType = GType_ELVIRA1;
-            int gameId = GID_ELVIRA1;
-            uint32 features = GF_OLD_BUNDLE; // Old bundle games (ScummEngine_v3old and subclasses).
-        };
-        //*/
-        
+            AgosCompression rle = new AgosCompression();
+            Int32 byteLength = stride * height;
+            Byte[] outBuffer = new Byte[byteLength];
+            if (rle.RleDecodeData(buffer, startOffset, endOffset, outBuffer, true) == -1)
+                return null;
+            // outBuffer is now the image, with its columns stored as rows.
+            Byte[] outBuffer2 = new Byte[byteLength];
+            // Post-processing: Exchange rows and columns.
+            for (Int32 i = 0; i < byteLength; i++)
+                outBuffer2[i % height * stride + i / height] = outBuffer[i];
+            // outBuffer2 is now the correct image.
+            return outBuffer2;
+
+        }
+
+        public static Byte[] EncodeImage(Byte[] buffer, Int32 stride)
+        {
+            AgosCompression rle = new AgosCompression();
+            Int32 byteLength = buffer.Length;
+            Int32 height = byteLength / stride;
+            // Should not happen, but you never know...
+            if (byteLength > height * stride)
+                height++;
+            Byte[] buffer2 = new Byte[byteLength];
+            // Pre-processing: Exchange rows and columns.
+            for (Int32 i = 0; i < byteLength; i++)
+                buffer2[i] = buffer[i % height * stride + i / height];
+            // buffer2 is now the image, with its columns stored as rows.
+            return rle.RleEncodeData(buffer2);
+        }
+        #region tweaked overrides
+
+        /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
+        public override UInt32 MaxRepeatValue { get { return 0x80; } }
+        /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
+        public override UInt32 MaxCopyValue { get { return 0x7F; } }
+
         /// <summary>
-        /// Decodes AGOS Run-Length Encoded (RLE) data. Requires the width and stride since images are encoded in columns.
+        /// Reads a code, determines the repeat / skip command and the amount of bytes to to repeat/skip,
+        /// and advances the read pointer to the location behind the read code.
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
-        /// <param name="startOffset">Optional start offset. Defaults to 0.</param>
-        /// <param name="endOffset">Optional end offset. Defaults to buffer length.</param>
-        /// <param name="height">Height of the image to decode.</param>
-        /// <param name="stride">Stride of the image to decode.</param>
-        public static Byte[] RleDecodeImage(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 height, Int32 stride)
+        /// <param name="inPtr">Input pointer.</param>
+        /// <param name="bufferEnd">End of buffer.</param>
+        /// <param name="IsRepeat">Returns true for repeat code, false for copy code.</param>
+        /// <param name="amount">Returns the amount to copy or repeat.</param>
+        /// <returns>True if the read succeeded, false if it failed.</returns>
+        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, UInt32 bufferEnd, out Boolean IsRepeat, out UInt32 amount)
         {
-            Int32 inPtr = startOffset ?? 0;
-            Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
-            Int32 outPtr = 0;
-            Byte[] bufferOut = new Byte[stride * height];
-
-            // AGOS RLE implementation: reads code for either repeat or copy.
-            // highest bit not set = followed by a byte to repeat. Repeat amount is (code + 1)
-            // highest bit set = followed by range bytes to copy. Copy amount is (0x100 - code)
-            // The bytes are written to the output array vertically; column by column, without
-            // regard to the bits per pixel.
-
-            while (outPtr < bufferOut.Length && inPtr < inPtrEnd)
-            {
-                // get next code
-                Int32 code = buffer[inPtr++];
-                // RLE run
-                if ((code & 0x80) == 0)
-                {
-                    if (inPtr >= inPtrEnd)
-                        return bufferOut;
-                    Int32 run = code + 1;
-                    Int32 rle = buffer[inPtr++];
-                    for (UInt32 lcv = 0; lcv < run; lcv++)
-                    {
-                        if (outPtr >= bufferOut.Length)
-                            return bufferOut;
-                        bufferOut[outPtr % height * stride + outPtr / height] = (Byte)rle;
-                        outPtr++;
-                    }
-                }
-                // raw run
-                else
-                {
-                    Int32 run = 0x100-code;
-                    for (UInt32 lcv = 0; lcv < run; lcv++)
-                    {
-                        if (inPtr >= inPtrEnd)
-                            return bufferOut;
-                        Int32 data = buffer[inPtr++];
-                        if (outPtr >= bufferOut.Length)
-                            return bufferOut;
-                        bufferOut[outPtr % height * stride + outPtr / height] = (Byte)data;
-                        outPtr++;
-                    }
-                }
-            }
-            return bufferOut;
-        }
-
-        /// <summary>
-        /// Applies AGOS Run-Length Encoding (RLE) to the given data.
-        /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <param name="stride">Stride of the image in the buffer</param>
-        /// <returns>The run-length encoded data</returns>
-        public static Byte[] RleEncodeImage(Byte[] buffer, Int32 stride)
-        {
-            return RleEncodeImage(buffer, 3, stride);
-        }
-
-        /// <summary>
-        /// Applies AGOS Run-Length Encoding (RLE) to the given data.
-        /// </summary>
-        /// <param name="buffer">Input buffer</param>
-        /// <param name="minimumRepeating">Minimum amount of repeating bytes before compression is applied.</param>
-        /// <param name="stride">Stride of the image in the buffer</param>
-        /// <returns>The run-length encoded data</returns>
-        public static Byte[] RleEncodeImage(Byte[] buffer, Int32 minimumRepeating, Int32 stride)
-        {
-            if (minimumRepeating < 2)
-                minimumRepeating = 2;
-            Int32 len = buffer.Length;
-            Int32 height = len / stride;
-            if (len > height * stride)
-                height++;
-            Int32 inPtr = 0;
-            Int32 outPtr = 0;
-            // Ensure big enough buffer. Sanity check will be done afterwards.
-            Byte[] bufferOut = new Byte[(buffer.Length * 3) / 2];
-
-            // AGOS RLE implementation:
-            // highest bit not set = followed by range of repeating bytes. Code is (Amount - 1)
-            // highest bit set = followed by range of non-repeating bytes Code is (0x100 - Amount)
-            // The bytes are read from the input array vertically; column by column.
-
-            Boolean repeatDetected = false;
-            while (inPtr < len)
-            {
-                if (repeatDetected || HasRepeatingAhead(buffer, len, inPtr, minimumRepeating, height, stride))
-                {
-                    repeatDetected = false;
-                    // Found more than (minimumRepeating) bytes. Worth compressing. Apply run-length encoding.
-                    Int32 start = inPtr;
-                    // Can go up to 0x80 since the final value is decremented by 1.
-                    Int32 end = Math.Min(start + 0x80, len);
-                    Byte cur = buffer[inPtr % height * stride + inPtr / height];
-                    // Already checked these
-                    inPtr += minimumRepeating;
-                    // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr % height * stride + inPtr / height] == cur; inPtr++) { }
-                    bufferOut[outPtr++] = (Byte)(inPtr - start - 1);
-                    bufferOut[outPtr++] = cur;
-                }
-                else
-                {
-                    while (!repeatDetected && inPtr < len)
-                    {
-                        Int32 start = inPtr;
-                        Int32 end = Math.Min(start + 0x7F, len);
-                        for (; inPtr < end; inPtr++)
-                        {
-                            // detected bytes to compress after this one: abort.
-                            if (!HasRepeatingAhead(buffer, len, inPtr, minimumRepeating, height, stride))
-                                continue;
-                            repeatDetected = true;
-                            break;
-                        }
-                        bufferOut[outPtr++] = (Byte)(0x100 - (inPtr - start));
-                        for (Int32 i = start; i < inPtr; i++)
-                            bufferOut[outPtr++] = buffer[i % height * stride + i / height];
-                    }
-                }
-            }
-            Byte[] finalOut = new Byte[outPtr];
-            Array.Copy(bufferOut, 0, finalOut, 0, outPtr);
-            return finalOut;
-        }
-
-        public static Boolean HasRepeatingAhead(Byte[] buffer, Int32 max, Int32 ptr, Int32 minAmount, Int32 height, Int32 stride)
-        {
-            if (ptr + minAmount - 1 >= max)
-                return false;
-            Byte cur = buffer[ptr % height * stride + ptr / height];
-            for (Int32 i = 1; i < minAmount; i++)
-                if (buffer[(ptr + 1) % height * stride + (ptr + 1) / height] != cur)
-                    return false;
+            Byte code = buffer[inPtr++];
+            IsRepeat = (code & 0x80) == 0;
+            if (IsRepeat)
+                amount = (UInt32)(code + 1);
+            else
+                amount = (UInt32)(0x100 - code);
             return true;
         }
+
+        /// <summary>
+        /// Writes the copy/skip code to be put before the actual byte(s) to repeat/skip,
+        /// and advances the write pointer to the location behind the written code.
+        /// </summary>
+        /// <param name="bufferOut">Output buffer to write to.</param>
+        /// <param name="outPtr">Pointer for the output buffer.</param>
+        /// <param name="forRepeat">True if this is a repeat code, false if this is a copy code.</param>
+        /// <param name="amount">Amount to write into the repeat or copy code.</param>
+        /// <returns>True if the write succeeded, false if it failed.</returns>
+        protected override Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, Boolean forRepeat, UInt32 amount)
+        {
+            if (bufferOut.Length <= outPtr)
+                return false;
+            if (forRepeat)
+                bufferOut[outPtr++] = (Byte)(amount - 1);
+            else
+                bufferOut[outPtr++] = (Byte)(0x100 - amount);
+            return true;
+        }
+        #endregion
 
     }
 }
