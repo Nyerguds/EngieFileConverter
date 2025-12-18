@@ -413,6 +413,8 @@ namespace Nyerguds.ImageManipulation
             Int32 actualDataWidth = ((Image.GetPixelFormatSize(sourceImage.PixelFormat) * rect.Width) + 7) / 8;
             Int32 h = sourceImage.Height;
             Int32 origStride = sourceData.Stride;
+            Boolean isFlipped = origStride < 0;
+            origStride = Math.Abs(origStride);
             Int32 targetStride = targetData.Stride;
             Byte[] imageData = new Byte[actualDataWidth];
             Int64 sourcePos = sourceData.Scan0.ToInt64();
@@ -427,6 +429,9 @@ namespace Nyerguds.ImageManipulation
             }
             targetImage.UnlockBits(targetData);
             sourceImage.UnlockBits(sourceData);
+            // Fix negative stride on BMP format.
+            if (isFlipped)
+                targetImage.RotateFlip(RotateFlipType.Rotate180FlipX);
             // For indexed images, restore the palette. This is not linking to a referenced
             // object in the original image; the getter of Palette creates a new object when called.
             if ((sourceImage.PixelFormat & PixelFormat.Indexed) != 0)
@@ -1436,10 +1441,11 @@ namespace Nyerguds.ImageManipulation
         /// <param name="outputFormat">Output pixel formatter.</param>
         public static void ReorderBits(Byte[] imageData, Int32 width, Int32 height, Int32 stride, PixelFormatter inputFormat, PixelFormatter outputFormat)
         {
-            if (!inputFormat.BitsAmounts.SequenceEqual(outputFormat.BitsAmounts))
+            if (inputFormat.BytesPerPixel != outputFormat.BytesPerPixel || !inputFormat.BitsAmounts.SequenceEqual(outputFormat.BitsAmounts))
                 throw new ArgumentException("Output format's bytes per pixel do not match input format!", "outputFormat");
             // This code relies on the fact that both formats have the same amount of bits per pixel,
             // meaning they can be written back to the same space.
+            Int32 step = outputFormat.BytesPerPixel;
             if (inputFormat.BitsAmounts.SequenceEqual(outputFormat.BitsAmounts))
             {
                 // Actually has same bit amounts : simply reorder the raw data.
@@ -1450,7 +1456,7 @@ namespace Nyerguds.ImageManipulation
                     {
                         UInt32[] argbValues = inputFormat.GetRawComponents(imageData, offset);
                         outputFormat.WriteRawComponents(imageData, offset, argbValues);
-                        offset += 2;
+                        offset += step;
                     }
                 }
 
@@ -1465,7 +1471,7 @@ namespace Nyerguds.ImageManipulation
                     {
                         Color col = inputFormat.GetColor(imageData, offset);
                         outputFormat.WriteColor(imageData, offset, col);
-                        offset += 2;
+                        offset += step;
                     }
                 }
             }

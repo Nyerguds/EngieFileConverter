@@ -57,7 +57,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return this.m_TilesList.Cast<SupportedFileType>().ToArray(); } }
+        public override SupportedFileType[] Frames { get { return m_TilesList == null ? null : this.m_TilesList.Cast<SupportedFileType>().ToArray(); } }
         /// <summary>
         /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.
         /// C&amp;C tileset files are bit of an edge case, though, since they contains no overall dimensions. Files with known tile names as filename get their X and Y from the tile info.

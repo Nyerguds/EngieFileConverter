@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte[] m_palIndexFile;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
-        public override SupportedFileType[] Frames { get { return this.m_tilesList.Cast<SupportedFileType>().ToArray(); } }
+        public override SupportedFileType[] Frames { get { return this.m_tilesList == null ? null : this.m_tilesList.Cast<SupportedFileType>().ToArray(); } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>

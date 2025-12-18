@@ -12,7 +12,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImgWwCps : SupportedFileType
     {
-        private static readonly PixelFormatter Format16BitRgbaX444Be = new PixelFormatter(2, 0x0000, 0x0F00, 0x00F0, 0x000F, false);
+        public static readonly PixelFormatter Format16BitRgbaX444Be = new PixelFormatter(2, 0x0000, 0x0F00, 0x00F0, 0x000F, false);
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         public override Int32 Width { get { return this.m_Width; } }
@@ -64,9 +64,6 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.HasPalette)
             {
                 Int32 palLen = palette.Length;
-
-                System.IO.File.WriteAllBytes(filename + ".dat", imageData);
-
                 if (palLen < 256 && imageData.Any(b => b >= palLen))
                     throw new FileTypeLoadException("Palette is too small for image data!");
                 this.m_Palette = palette;
@@ -93,8 +90,13 @@ namespace EngieFileConverter.Domain.FileTypes
         /// Retrieves the image data and sets the file properties and palette.
         /// </summary>
         /// <param name="fileData">Original file data.</param>
+        /// <param name="start">Start offset of the data.</param>
         /// <param name="sourcePath">Source path the file is loaded from.</param>
         /// <param name="asAmigaFourFrame">True to abort if the file is not an Amiga-format 4-frame file.</param>
+        /// <param name="asToonstruck">Read as ToonStruck CPS file.</param>
+        /// <param name="compression">Output arg for returning the compression</param>
+        /// <param name="palette">Output arg for returning the palette.</param>
+        /// <param name="cpsVersion">Output arg for returning the CPS version.</param>
         /// <returns>The raw 8-bit linear image data in a 64000 byte array.</returns>
         protected static Byte[] GetImageData(Byte[] fileData, Int32 start, String sourcePath, Boolean asAmigaFourFrame, Boolean asToonstruck, out Int32 compression, out Color[] palette, out CpsVersion cpsVersion)
         {
@@ -109,8 +111,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (compression < 0 || compression > 4)
                 throw new FileTypeLoadException("Unknown compression type " + compression);
             // compressions other than 0 and 4 count the full file including size header.
-            if (compression != 0 && compression != 4)
-                fileSize += asToonstruck ? 4 : 2;
+            if (!asToonstruck && (compression == 0 || compression == 4))
+                fileSize += 2;
             if (fileSize != dataLen)
                 throw new FileTypeLoadException("File size in header does not match!");
             Int32 bufferSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, start + 4, 4, true);
@@ -137,9 +139,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (paletteLength % 2 != 0)
                             throw new FileTypeLoadException("Bad length for Amiga CPS palette!");
                         Int32 palLen = paletteLength / 2;
-                        palette = new Color[palLen];
-                        for (Int32 i = 0; i < palLen; i++)
-                            palette[i] = Format16BitRgbaX444Be.GetColor(fileData, palStart + i << 1);
+                        palette = Format16BitRgbaX444Be.GetColorPalette(fileData, palStart, palLen);
                     }
                     else
                     {
@@ -238,8 +238,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
                 for (Int32 i = 0; i < imageData8bit.Length; i++)
                 {
-                    Int32 bytePos = i / 8;
-                    Int32 bitPos = 7 - (i & 7);
+
+                    Int32 bytePos = i >> 3; // Bitwise optimisation of 'i / 8'
+                    Int32 bitPos = 7 - (i & 7); // Bitwise optimisation of '7 - (i % 8)'
                     imageData8bit[i] = (Byte) ((((imageData[frameOffs[0] + bytePos] >> bitPos) & 1) << 0) |
                                                (((imageData[frameOffs[1] + bytePos] >> bitPos) & 1) << 1) |
                                                (((imageData[frameOffs[2] + bytePos] >> bitPos) & 1) << 2) |
@@ -324,8 +325,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     frameOffs[i] = i * planeSize;
                 for (Int32 i = 0; i < imageData.Length; i++)
                 {
-                    Int32 bytePos = i / 8;
-                    Int32 bitPos = 7 - (i & 7);
+                    Int32 bytePos = i >> 3; // Bitwise optimisation of 'i / 8'
+                    Int32 bitPos = 7 - (i & 7); // Bitwise optimisation of '7 - (i % 8)'
                     Byte curByte = imageData[i];
                     Int32 offs0 = frameOffs[0] + bytePos;
                     imageDataPlanes[offs0] = (Byte)(imageDataPlanes[offs0] | (((curByte >> 0) & 1) << bitPos));

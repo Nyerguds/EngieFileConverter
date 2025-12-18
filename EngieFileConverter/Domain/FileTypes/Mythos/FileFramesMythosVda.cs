@@ -289,6 +289,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_BackupPalette = null;
                 this.m_FramesList = framesList;
             }
+            if (!_isFramed)
+                this.ExtraInfo = "VDX file missing; showing raw chunks\n" + this.ExtraInfo;
             this.ExtraInfo += "\nChunks: " + chunks;
         }
 

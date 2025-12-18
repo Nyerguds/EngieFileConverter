@@ -299,6 +299,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileFramesAdvIco), // Put at the bottom because file size divisible by 0x120 is the only thing identifying this.
             typeof(FilePalette8Bit),
             typeof(FileTblWwPal),
+            //typeof(FilePaletteWwAmiga), // Test
         };
 
         private static Type[] m_supportedOpenTypes =
@@ -508,7 +509,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public void Dispose()
         {
-            if (this.IsFramesContainer)
+            if (this.IsFramesContainer && this.Frames != null)
                 foreach (SupportedFileType frame in this.Frames)
                     if (frame != null)
                         frame.Dispose();

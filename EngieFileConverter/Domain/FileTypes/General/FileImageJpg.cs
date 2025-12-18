@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using Nyerguds.ImageManipulation;
 
 namespace EngieFileConverter.Domain.FileTypes
@@ -39,21 +40,12 @@ namespace EngieFileConverter.Domain.FileTypes
             using (MemoryStream ms = new MemoryStream())
             {
                 // What a mess just to have non-crappy jpeg. Scratch that; jpeg is always crappy.
-                ImageCodecInfo jpegEncoder = null;
-                Guid formatId = ImageFormat.Jpeg.Guid;
-                foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
-                {
-                    if (codec.FormatID == formatId)
-                    {
-                        jpegEncoder = codec;
-                        break;
-                    }
-                }
-                Encoder qualityEncoder = Encoder.Quality;
-                EncoderParameters encparams = new EncoderParameters(1);
-                encparams.Param[0] = new EncoderParameter(qualityEncoder, quality);
-                image.Save(ms, jpegEncoder, encparams);
-                return ms.ToArray();
+    ImageCodecInfo jpegEncoder = ImageCodecInfo.GetImageDecoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
+    Encoder qualityEncoder = Encoder.Quality;
+    EncoderParameters encparams = new EncoderParameters(1);
+    encparams.Param[0] = new EncoderParameter(qualityEncoder, quality);
+    image.Save(ms, jpegEncoder, encparams);
+    return ms.ToArray();
             }
         }
     }

@@ -74,6 +74,10 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.4.2: (28/11/2018 12:25)
+-Fixed several issues with CPS and WSA loading.
+-Added support for toonStruck 640x480 CPS format.
+
 v1.4.1: (16/10/2018 14:42)
 -Compacted the UI to allow showing more additional info.
 -Fixed the position of Lands of Lore SHP in the save types list.

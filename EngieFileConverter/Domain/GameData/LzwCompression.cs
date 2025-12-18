@@ -4,10 +4,12 @@ using System.IO;
 namespace Nyerguds.GameData.Compression
 {
     /// <summary>
-    /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website: http://marknelson.us
+    /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website:
+    /// https://marknelson.us/posts/1989/10/01/lzw-data-compression.html
     /// Based on the C# translation by Github user pevillarreal: https://github.com/pevillarreal/LzwCompressor
-    /// The code was adapted by Maarten Meuris aka Nyerguds to fix the 7-bit filter caused by using an ASCII stream reader.
-    /// This version uses byte arrays as input and output, and uses an enum to switch to different supported bit lengths.
+    /// The code was adapted by Maarten Meuris aka Nyerguds:
+    /// -Fixes the 7-bit filter caused by using an ASCII stream reader (an issue later fixed on the original repository)
+    /// -Uses byte arrays as input and output, and uses an enum to switch to different supported bit lengths.
     /// </summary>
     public class LzwCompression
     {

@@ -69,6 +69,7 @@
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
     <Compile Include="Domain\FileTypes\IG\FileFramesFntD2k.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwAmiga.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwFntV3V4.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpLol1.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwCpsAmi4.cs" />

@@ -14,18 +14,19 @@ namespace Nyerguds.ImageManipulation
     /// </summary>
     public class PixelFormatter
     {
-        /// <summary>Standard PixelFormatter for .Net's RGBA format.</summary>
+        /// <summary>Standard PixelFormatter for .Net's 32-bit RGBA format.</summary>
         public static PixelFormatter Format32BitArgb = new PixelFormatter(4, 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF, true);
+        /// <summary>Standard PixelFormatter for .Net's 16-bit RGBA format with 1-bit transparency.</summary>
         public static PixelFormatter Format16BitArgb1555 = new PixelFormatter(2, 0x8000, 0x7C00, 0x3E0, 0x1F, true);
 
         public Int32 BytesPerPixel { get { return this.bytesPerPixel; } }
         public Boolean LittleEndian { get { return this.littleEndian; } }
         public ReadOnlyCollection<UInt32> LimitMasks { get { return new List<UInt32>(this.limitMasks).AsReadOnly(); } }
-        public ReadOnlyCollection<Byte> BitsAmounts { get { return new List<Byte>(this.bytesPerPixel).AsReadOnly(); } }
+        public ReadOnlyCollection<Byte> BitsAmounts { get { return new List<Byte>(this.bitsAmounts).AsReadOnly(); } }
 
         /// <summary>Number of bytes to read per pixel.</summary>
         private Byte bytesPerPixel;
-        /// <summary>Masks to limit the amount of bits for each component, derived from the bitsAmounts.</summary>
+        /// <summary>Masks to limit the amount of bits for each component. If not explicitly given this can be derived from the number of bits.</summary>
         private UInt32[] limitMasks = new UInt32[4];
         /// <summary>Amount of bits for each component (A,R,G,B)</summary>
         private Byte[] bitsAmounts = new Byte[4];
@@ -34,7 +35,7 @@ namespace Nyerguds.ImageManipulation
         /// <summary>Maximum value for each component (A,R,G,B)</summary>
         private UInt32[] maxChan = new UInt32[4];
         /// <summary>Defaults for each component (A,R,G,B)</summary>
-        private Byte[] defaultsChan = new Byte[4] {255, 0, 0, 0};
+        private Byte[] defaultsChan = new Byte[] {255, 0, 0, 0};
         /// <summary>True to read the input bytes as little-endian.</summary>
         private Boolean littleEndian;
 
@@ -259,7 +260,7 @@ namespace Nyerguds.ImageManipulation
                 return 0;
             return 255.0/((1 << colorComponentBitLength) - 1);
         }
-
+        
         /// <summary>
         /// Gets a color pixel from the data, based on an offset.
         /// </summary>
@@ -270,6 +271,26 @@ namespace Nyerguds.ImageManipulation
         {
             UInt32 value = (UInt32)ArrayUtils.ReadIntFromByteArray(data, offset, this.bytesPerPixel, this.littleEndian);
             return this.GetColorFromValue(value);
+        }
+
+        /// <summary>
+        /// Reads a color palette from the data, starting at the given offset and increasing by the set colour byte length.
+        /// </summary>
+        /// <param name="data">Image data as byte array.</param>
+        /// <param name="offset">Offset to read in the data.</param>
+        /// <param name="colors">Amount of colours in the palette.</param>
+        /// <returns>The color at that position.</returns>
+        public Color[] GetColorPalette(Byte[] data, Int32 offset, Int32 colors)
+        {
+            Color[] palette = new Color[colors];
+            Int32 step = this.bytesPerPixel;
+            Int32 end = offset + step * colors;
+            if (data.Length < end)
+                throw new IndexOutOfRangeException("Palette is too long to be read from the given array!");
+            Int32 palIndex = 0;
+            for (Int32 offs = offset; offs < end; offs += step)
+                palette[palIndex++] = this.GetColor(data, offs);
+            return palette;
         }
 
         /// <summary>
@@ -341,7 +362,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Gets a specific component from a read integer value.
+        /// Gets the raw value of a specific component from the given integer value, without adjustment to 0-255 range.
         /// </summary>
         /// <param name="readValue">The read integer value.</param>
         /// <param name="type">The color component to get.</param>
@@ -352,7 +373,7 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Gets a specific color component from a read integer value.
+        /// Gets a specific color component from a read integer value. The returned value is adjusted to 0-255 range.
         /// </summary>
         /// <param name="readValue">The read integer value.</param>
         /// <param name="type">The color component to get.</param>

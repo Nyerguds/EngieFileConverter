@@ -315,7 +315,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 palSize = maxPalSize;
             Int32 palLen = saveFullPal ? maxPalSize : palSize;
             Color[] entries = new Color[palLen];
-            for (Int32 i = 0; i < palLen; i++)
+            for (Int32 i = palSize; i < palLen; i++)
             {
                 if (i < palSize)
                     entries[i] = Format16BitRgba5551Be.GetColor(paletteData, i * 2);

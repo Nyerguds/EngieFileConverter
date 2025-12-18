@@ -46,7 +46,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.HasPalette = true;
             if (palette == null)
                 throw new FileTypeLoadException("Cannot identify palette!");
-
+            m_Palette = palette;
             Int32 images = m_Palette.Length / 32;
             Int32 frWidth = 160;
             Int32 frHeight = 96;
@@ -101,10 +101,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] adjustedData = new Byte[imageData.Length];
             // EOB2 4-frames image
             Int32 frHeight = 96;
+            // Test if the image data exceeds the normal bottom and goes into the 8-pixel strîp below.
+            Byte[] bottomstrip = ImageUtils.CopyFrom8bpp(imageData, 320, 200, 320, new Rectangle(0, 192, 320, 8));
+            Boolean expandBottomFrames = bottomstrip.Any(p => p != 0);
             // Combine images by making each one use a different 32-colour slice of the palette.
-            Byte[] testFrame = ImageUtils.CopyFrom8bpp(imageData, 320, 200, 320, new Rectangle(0, 192, 320, 8));
-            Boolean expandBottomFrames = testFrame.Any(p => p != 0);
-
             for (Int32 i = 0; i < amigaPalCount; i++)
             {
                 Int32 palOffset = i * 32;
@@ -159,9 +159,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 nrOfFrames = fileToSave.Frames.Length;
             Color[] fullPalette = new Color[nrOfFrames*32];
             Byte[] imageData = new Byte[64000];
-            Color black = Color.FromArgb(0, 0, 0);
             for (Int32 c = 0; c < fullPalette.Length; c++)
-                fullPalette[c] = black;
+                fullPalette[c] = Color.Black;
             for (Int32 i = 0; i < nrOfFrames; i++)
             {
                 SupportedFileType frame = frames[i];

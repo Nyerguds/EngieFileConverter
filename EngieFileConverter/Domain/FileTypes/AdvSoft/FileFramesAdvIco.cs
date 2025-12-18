@@ -10,14 +10,18 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FileFramesAdvIco : SupportedFileType
     {
+        protected const Int32 iconWidth = 24;
+        protected const Int32 iconHeight = 24;
+
         public override FileClass FileClass { get { return FileClass.FrameSet | FileClass.Image4Bit; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image4Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit; } }
 
-        public override Int32 Width { get { return 48; } }
-        public override Int32 Height { get { return 48; } }
-        protected Int32 hdrWidth;
-        protected Int32 hdrHeight;
+        public override Int32 Width { get { return fullWidth; } }
+        public override Int32 Height { get { return fullHeight; } }
+        protected Int32 fullWidth = iconWidth;
+        protected Int32 fullHeight = iconHeight;
+        
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
 
         /// <summary>Very short code name for this type.</summary>
@@ -47,31 +51,35 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            if (fileData.Length < 0x120)
+            Int32 iconDataStride = iconWidth / 8;
+            Int32 iconDataHeight = iconHeight * 4;
+            Int32 iconDataSize = iconDataStride * iconDataHeight;
+
+            if (fileData.Length < iconDataSize)
                 throw new FileTypeLoadException("Not long enough.");
-            if (fileData.Length % 0x120 != 0)
-                throw new FileTypeLoadException("Not a multiple of 4-bit 24×24 tiles.");
-            Int32 frames = fileData.Length / 0x120;
+            if (fileData.Length % iconDataSize != 0)
+                throw new FileTypeLoadException("Not a multiple of 4-bit " + iconWidth + "×" + iconHeight + " tiles.");
+            Int32 frames = fileData.Length / iconDataSize;
             Byte[][] framesList = new Byte[frames][];
             this.m_FramesList = new SupportedFileType[frames];
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
+            Int32 frameSize = iconWidth * iconHeight;
             for (Int32 i = 0; i < frames; i++)
             {
-                Int32 offset = i * 0x120;
-                Byte[] frameData = new Byte[0x120];
-                Array.Copy(fileData, offset, frameData, 0, 0x120);
-                Int32 stride = 3;
-                Byte[] frame8bit1 = ImageUtils.ConvertTo8Bit(frameData, 24, 24*4, 0, 1, true, ref stride);
-                Int32 frameSize = 24 * 24;
+                Int32 offset = i * iconDataSize;
+                Byte[] frameData = new Byte[iconDataSize];
+                Array.Copy(fileData, offset, frameData, 0, iconDataSize);
+                Int32 stride = iconDataStride;
+                Byte[] frame8bit1 = ImageUtils.ConvertTo8Bit(frameData, iconWidth, iconDataHeight, 0, 1, true, ref stride);
                 Byte[] frame8bit4 = new Byte[frameSize];
                 // Go over all pixels of the image, and combine them per 4.
                 for (Int32 fr = 0; fr < frameSize; fr++)
                 {
-                    frame8bit4[fr] = (Byte)((frame8bit1[fr] << 3) + (frame8bit1[frameSize + fr] << 2) + (frame8bit1[frameSize * 2 + fr] << 1) + frame8bit1[frameSize * 3 + fr]);
+                    frame8bit4[fr] = (Byte)((frame8bit1[fr] << 3) | (frame8bit1[frameSize + fr] << 2) | (frame8bit1[frameSize * 2 + fr] << 1) | frame8bit1[frameSize * 3 + fr]);
                 }
                 framesList[i] = frame8bit4;
-                Byte[] frame4bit = ImageUtils.ConvertFrom8Bit(frame8bit4, 24, 24, 4, true, ref stride);
-                Bitmap frameImage = ImageUtils.BuildImage(frame4bit, 24, 24, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+                Byte[] frame4bit = ImageUtils.ConvertFrom8Bit(frame8bit4, iconWidth, iconHeight, 4, true, ref stride);
+                Bitmap frameImage = ImageUtils.BuildImage(frame4bit, iconWidth, iconHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
@@ -79,21 +87,30 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetColorsInPalette(0);
                 this.m_FramesList[i] = frame;
             }
+            this.fullWidth = iconWidth;
+            this.fullHeight = iconHeight * frames;
             this.m_LoadedImage = TileImages(framesList, frames, this.m_Palette);
         }
 
+        /// <summary>
+        /// Make full images. This uses the in-between 8-bit data as source, so it can use the Tile8BitData function.
+        /// </summary>
+        /// <param name="tiles"></param>
+        /// <param name="nrOftiles"></param>
+        /// <param name="palette"></param>
+        /// <returns></returns>
         public static Bitmap TileImages(Byte[][] tiles, Int32 nrOftiles, Color[] palette)
         {
-            Int32 fullImageHeight = nrOftiles * 24;
-            Int32 stride = 24;
-            Byte[] fullImageData8 = ImageUtils.Tile8BitData(tiles, 24, 24, stride, nrOftiles, palette, 1);
-            Byte[] fullImageData4 = ImageUtils.ConvertFrom8Bit(fullImageData8, 24, fullImageHeight, 4, true, ref stride);
-            return ImageUtils.BuildImage(fullImageData4, 24, fullImageHeight, stride, PixelFormat.Format4bppIndexed, palette, Color.Empty);
+            Int32 fullImageHeight = nrOftiles * iconHeight;
+            Int32 stride = iconWidth;
+            Byte[] fullImageData8 = ImageUtils.Tile8BitData(tiles, iconWidth, iconHeight, stride, nrOftiles, palette, 1);
+            Byte[] fullImageData4 = ImageUtils.ConvertFrom8Bit(fullImageData8, iconWidth, fullImageHeight, 4, true, ref stride);
+            return ImageUtils.BuildImage(fullImageData4, iconWidth, fullImageHeight, stride, PixelFormat.Format4bppIndexed, palette, Color.Empty);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            const Int32 framePixSize = 24 * 24;
+            const Int32 framePixSize = iconWidth * iconHeight;
             Int32 frames;
             Byte[] imageDataFull8;
             Int32 stride;
@@ -103,13 +120,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (image == null)
                     throw new NotSupportedException("Image is empty.");
                 Int32 inputFullHeight = image.Height;
-                if (image.Width != 24 || inputFullHeight % 24 != 0)
-                    throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked 24×24 pixel frames.");
                 if (image.PixelFormat != PixelFormat.Format4bppIndexed)
                     throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
-                frames = inputFullHeight / 24;
+                if (image.Width != iconWidth || inputFullHeight % iconHeight != 0)
+                    throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked " + iconWidth + "×" + iconHeight + " pixel frames.");
+                frames = inputFullHeight / iconHeight;
                 Byte[] imageData4 = ImageUtils.GetImageData(image, out stride);
-                imageDataFull8 = ImageUtils.ConvertTo8Bit(imageData4, 24, inputFullHeight, 0, 4, true, ref stride);
+                imageDataFull8 = ImageUtils.ConvertTo8Bit(imageData4, iconWidth, inputFullHeight, 0, 4, true, ref stride);
             }
             else
             {
@@ -119,12 +136,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     SupportedFileType frame = fileToSave.Frames[i];
                     Bitmap frameImage = frame.GetBitmap();
-                    if (frameImage.Width != 24 || frameImage.Height != 24)
-                        throw new NotSupportedException("AdventureSoft icons format needs 24×24 pixel frames.");
                     if (frameImage.PixelFormat != PixelFormat.Format4bppIndexed)
                         throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
+                    if (frameImage.Width != iconWidth || frameImage.Height != iconHeight)
+                        throw new NotSupportedException("AdventureSoft icons format needs " + iconWidth + "×" + iconHeight + " pixel frames.");
                     Byte[] imageData4 = ImageUtils.GetImageData(frameImage, out stride);
-                    Byte[] imageData8 = ImageUtils.ConvertTo8Bit(imageData4, 24, 24, 0, 4, true, ref stride);
+                    Byte[] imageData8 = ImageUtils.ConvertTo8Bit(imageData4, iconWidth, iconHeight, 0, 4, true, ref stride);
                     Array.Copy(imageData8, 0, imageDataFull8, framePixSize * i, framePixSize);
                 }
             }
@@ -137,15 +154,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 for (Int32 j = 0; j < framePixSize; j++)
                 {
                     Byte fourbitpixel = imageDataFull8[frameAddr + j];
-                    fileData8[frameAddr4 + j] = (Byte)((fourbitpixel >> 3) & 1);
-                    fileData8[frameAddr4 + framePixSize + j] = (Byte)((fourbitpixel >> 2) & 1);
+                    fileData8[frameAddr4 /* + framePixSize * 0 */ + j] = (Byte)((fourbitpixel >> 3) & 1);
+                    fileData8[frameAddr4 + framePixSize /* * 1 */ + j] = (Byte)((fourbitpixel >> 2) & 1);
                     fileData8[frameAddr4 + framePixSize * 2 + j] = (Byte)((fourbitpixel >> 1) & 1);
-                    fileData8[frameAddr4 + framePixSize * 3 + j] = (Byte)((fourbitpixel) & 1);
+                    fileData8[frameAddr4 + framePixSize * 3 + j] = (Byte)((fourbitpixel /* >> 0 */) & 1);
                 }
             }
-            stride = 24;
+            stride = iconWidth;
             // Convert the array as if it is one long 1-bit image.
-            return ImageUtils.ConvertFrom8Bit(fileData8, 24, frames * 24 * 4, 1, true, ref stride);
+            return ImageUtils.ConvertFrom8Bit(fileData8, iconWidth, frames * iconHeight * 4, 1, true, ref stride);
         }
     }
 }

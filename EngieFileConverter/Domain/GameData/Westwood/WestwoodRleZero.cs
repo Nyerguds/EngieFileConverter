@@ -107,7 +107,6 @@ namespace Nyerguds.GameData.Westwood
             {
                 Int32 outOffset = outLineOffset;
                 Int32 nextLineOffset = outLineOffset + frameWidth;
-                // Skip header
                 Boolean readZero = false;
                 for (; offset < datalen; offset++)
                 {

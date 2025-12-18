@@ -168,7 +168,7 @@ namespace Nyerguds.ImageManipulation
                                 if (dibHdr.bV5RedMask != 0x00FF0000 || dibHdr.bV5GreenMask != 0x0000FF00 || dibHdr.bV5BlueMask != 0x000000FF)
                                 {
                                     // Any kind of custom format can be handled here.
-                                    PixelFormatter pixFormatter = new PixelFormatter(2, dibHdr.bV5RedMask, dibHdr.bV5GreenMask, dibHdr.bV5BlueMask, dibHdr.bV5AlphaMask, true);
+                                    PixelFormatter pixFormatter = new PixelFormatter(4, dibHdr.bV5RedMask, dibHdr.bV5GreenMask, dibHdr.bV5BlueMask, dibHdr.bV5AlphaMask, true);
                                     ImageUtils.ReorderBits(image, width, height, stride, PixelFormatter.Format32BitArgb, pixFormatter);
                                 }
                             }

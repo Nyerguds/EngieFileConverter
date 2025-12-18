@@ -33,15 +33,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
-
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
-        {
-            return new SaveOption[]
-            {
-                new SaveOption("NOCMP", SaveOptionType.Boolean, "Don't use compression", null)
-            };
-        }
-
+        
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
@@ -68,27 +60,22 @@ namespace EngieFileConverter.Domain.FileTypes
                 firstNonEmpty++;
             if (headerEnd < 0 || headerEnd >= fileData.Length || headerEnd % 8 != 0)
                 throw new FileTypeLoadException("Invalid header length.");
-            List<Int32> offsets = new List<Int32>();
-            List<Int32> widths = new List<Int32>();
-            List<Int32> heights = new List<Int32>();
+            List<UInt32> offsets = new List<UInt32>();
+            List<UInt16> widths = new List<UInt16>();
+            List<UInt16> heights = new List<UInt16>();
             List<Boolean> compressedFlags = new List<Boolean>();
             Int32 readOffset = 0;
 
             while (readOffset + 8 < fileData.Length && readOffset < headerEnd)
             {
-                Int32 dataOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset, 4, false);
-                if (dataOffset < 0 || (dataOffset != 0 && dataOffset < headerEnd))
+                UInt32 dataOffset = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset, 4, false);
+                if (dataOffset != 0 && dataOffset < headerEnd)
                     throw new FileTypeLoadException("Bad offset in header.");
                 offsets.Add(dataOffset);
-                Int32 imageHeight = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset + 4, 2, false);
+                UInt16 imageHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, readOffset + 4, 2, false);
                 compressedFlags.Add((imageHeight & 0x8000) != 0);
-                imageHeight = imageHeight & 0x7FFF;
-                if (imageHeight < 0)
-                    throw new FileTypeLoadException("Bad height in header.");
-                heights.Add(imageHeight);
-                Int32 imagewidth = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, readOffset + 6, 2, false);
-                if (imagewidth < 0)
-                    throw new FileTypeLoadException("Bad width in header.");
+                heights.Add((UInt16)(imageHeight & 0x7FFF));
+                UInt16 imagewidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, readOffset + 6, 2, false);
                 widths.Add(imagewidth);
                 readOffset += 8;
             }
@@ -97,40 +84,44 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
             for (Int32 i = 0; i < frames; i++)
             {
-                Int32 imageOffset = offsets[i];
+                UInt32 imageOffset = offsets[i];
                 Int32 imageHeight = heights[i];
                 Int32 imageWidth = widths[i];
                 Boolean compressed = compressedFlags[i];
-                Int32 dataEnd;
-                Int32 skip = 0;
-                // Skip any 0 entries following this one to get the actual offset following this one,
-                // to determine the data length to read.
-                while ((dataEnd = (i + skip + 1 < frames ? offsets[i + skip + 1] : fileData.Length)) == 0)
-                    skip++;
-                Int32 dataSize = dataEnd - imageOffset;
                 Int32 dataStride = ImageUtils.GetMinimumStride(imageWidth, 4);
                 Int32 neededDataSize = imageHeight * dataStride;
                 Bitmap frameImage;
 
-                if ((imageHeight == 0 && imageWidth == 0) || imageOffset == 0 || dataSize == 0)
+                if (imageHeight == 0 || imageWidth == 0 || imageOffset == 0)
                 {
                     frameImage = null;
                 }
-                else if (!compressed)
-                {
-                    if (neededDataSize > dataSize)
-                        throw new FileTypeLoadException("Invalid data length.");
-                    Byte[] data = new Byte[neededDataSize];
-                    Array.Copy(fileData, imageOffset, data, 0, neededDataSize);
-                    frameImage = ImageUtils.BuildImage(data, imageWidth, imageHeight, dataStride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
-                }
                 else
                 {
-                    Byte[] data = new Byte[dataSize];
-                    Array.Copy(fileData, imageOffset, data, 0, dataSize);
-                    Int32 stride = ImageUtils.GetMinimumStride(imageWidth, 4);
-                    Byte[] outbuff = AgosCompression.DecodeImage(data, null, null, imageHeight, stride);
-                    frameImage = ImageUtils.BuildImage(outbuff, imageWidth, imageHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+                    // Skip any 0 entries following this one to get the actual offset following this one,
+                    // to determine the data length to read.
+                    UInt32 dataEnd;
+                    Int32 skip = 0;
+                    while ((dataEnd = (i + skip + 1 < frames ? offsets[i + skip + 1] : (UInt32)fileData.LongLength)) == 0)
+                        skip++;
+                    if (dataEnd < imageOffset)
+                        throw new FileTypeLoadException("Data offsets are not consecutive.");
+                    UInt32 dataSize = dataEnd - imageOffset;
+                    if (!compressed)
+                    {
+                        if (neededDataSize > dataSize)
+                            throw new FileTypeLoadException("Invalid data length.");
+                        Byte[] data = new Byte[neededDataSize];
+                        Array.Copy(fileData, imageOffset, data, 0, neededDataSize);
+                        frameImage = ImageUtils.BuildImage(data, imageWidth, imageHeight, dataStride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+                    }
+                    else
+                    {
+                        Byte[] data = new Byte[dataSize];
+                        Array.Copy(fileData, imageOffset, data, 0, dataSize);
+                        Byte[] outbuff = AgosCompression.DecodeImage(data, null, null, imageHeight, dataStride);
+                        frameImage = ImageUtils.BuildImage(outbuff, imageWidth, imageHeight, dataStride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+                    }
                 }
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
@@ -145,6 +136,11 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
         
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            return new SaveOption[] { new SaveOption("NOCMP", SaveOptionType.Boolean, "Don't use compression", null) };
+        }
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null)
