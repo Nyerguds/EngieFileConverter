@@ -110,6 +110,7 @@ namespace Nyerguds.GameData.Dynamix
             foreach (DynamixChunk chunk in contents)
                 offset = chunk.WriteChunk(fullData, offset);
             mainChunk.m_data = fullData;
+            mainChunk.IsContainer = true;
             return mainChunk;
         }
 
