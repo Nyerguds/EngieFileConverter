@@ -74,12 +74,8 @@ namespace Nyerguds.ImageManipulation
         {
             Byte[] fileData = File.ReadAllBytes(path);
             using (MemoryStream ms = new MemoryStream(fileData))
-            {
-                Bitmap bm = new Bitmap(ms);
-                bm = new Bitmap(bm);
-                ms.Close();
-                return bm;
-            }
+            using(Bitmap bm = new Bitmap(ms))
+                return CloneImage(bm);
         }
 
         public static void SaveImage(Bitmap image, String filename)

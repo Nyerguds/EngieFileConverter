@@ -1,5 +1,4 @@
 ﻿using System;
-using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {

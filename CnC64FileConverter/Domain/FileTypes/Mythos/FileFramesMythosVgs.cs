@@ -1,6 +1,4 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -8,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Nyerguds.GameData.Mythos;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -80,6 +80,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <param name="paletteStrict">True if an exception should be thrown if loading as palette and the file contains more than a palette.</param>
         /// <param name="asVideo">True to load the header bytes according to VDA header format, and store the X and Y offsets of all frames in the framesXY list instead of applying them to the images.</param>
         /// <param name="framesXY">List of frame X and Y offsets. Only filled in when asVideo is set to true.</param>
+        /// <param name="forFrameTest">True abort after reading the first frame, so it can be tested to be a full 320x200 VDA start frame.</param>
         protected void LoadFromFileData(Byte[] fileData, String sourcePath, Boolean asPalette, Boolean paletteStrict, Boolean asVideo, out List<Point> framesXY, Boolean forFrameTest)
         {
             if (fileData.Length < 0x8)
@@ -324,7 +325,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             return new SaveOption[]
             {
                 new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file as first frame", "0"),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.compressionTypes), compression.ToString()),
+                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
                 new SaveOption("OPX", SaveOptionType.Boolean, "Optimize empty horizontal space to X-offsets", hasXOpt ? "1" : "0"),
                 new SaveOption("OPY", SaveOptionType.Boolean, "Optimize empty vertical space to Y-offsets", hasYOpt ? "1" : "0"),
             };

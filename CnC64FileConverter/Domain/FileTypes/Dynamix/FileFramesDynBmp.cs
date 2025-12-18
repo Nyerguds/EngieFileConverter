@@ -1,13 +1,12 @@
-﻿using Nyerguds.ImageManipulation;
-using Nyerguds.Util;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Nyerguds.GameData.Dynamix;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -52,9 +51,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 FileFramesDynBmp bmp = fileToSave as FileFramesDynBmp;
                 Int32 saveType = bmp != null && bmp.IsMa8 ? 1 : 0;
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", saveType.ToString());
             }
-            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
+            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
         }
         

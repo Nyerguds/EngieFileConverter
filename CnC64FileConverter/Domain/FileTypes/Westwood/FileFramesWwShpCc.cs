@@ -148,13 +148,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 refIndex20 = -1;
                 if (frameOffsFormat == 0x80)
                 {
+                    // Actual LCW-compressed frame data.
                     WWCompression.LcwDecompress(fileData, ref frameOffs, frame);
                 }
                 else
                 {
                     if (frameOffsFormat == 0x20)
                     {
-                        // Don't actually need this, but I do the integrity checks.
+                        // 0x20 = XOR with previous frame. Only used for chaining to previous XOR frames.
+                        // Don't actually need this, but I do the integrity checks:
                         refIndex20 = this.GetOffset(currentFrame.Reference);
                         Byte refFormat = this.GetFormat(currentFrame.Reference);
                         if ((refFormat != 0x48) || (refIndex20 >= i || this.GetFormat(offsets[refIndex20].Offset) != 0x40))
@@ -163,6 +165,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     }
                     else if (frameOffsFormat == 0x40)
                     {
+                        // 0x40 = XOR with previous frame. Could technically reference anything,
+                        // but normally only references the last LCW frame.
                         if (!offsetIndices.TryGetValue(currentFrame.Reference, out refIndex))
                             refIndex = -1;
                     }

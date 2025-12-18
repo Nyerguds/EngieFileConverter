@@ -100,7 +100,7 @@ namespace Nyerguds.GameData.Mythos
                 UInt32 detectedRepeat;
                 if ((curLineEnd - inPtr > 2 || requiredRepeat == 1) && (detectedRepeat = RepeatingAhead(buffer, len, inPtr, requiredRepeat)) == requiredRepeat)
                 {
-                    // Found more than 2 bytes. Worth compressing. Apply run-length encoding.
+                    // Found more than 2 bytes (or a flag byte). Worth compressing. Apply run-length encoding.
                     UInt32 start = inPtr;
                     UInt32 end = Math.Min(inPtr + 0xFF, curLineEnd);
                     // Already checked these in the RepeatingAhead function.
@@ -129,6 +129,8 @@ namespace Nyerguds.GameData.Mythos
             Byte[] finalOut = new Byte[outPtr + 3];
             Array.Copy(bufferOut, 0, finalOut, 3, outPtr);
             outPtr += 3 + (UInt32) headerSize;
+            if (outPtr > UInt16.MaxValue)
+                throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);
             finalOut[2] = flag;
@@ -294,6 +296,8 @@ namespace Nyerguds.GameData.Mythos
             Byte[] finalOut = new Byte[outPtr + 3];
             Array.Copy(bufferOut, 0, finalOut, 3, outPtr);
             outPtr += 8 + (UInt32) headerSize;
+            if (outPtr > UInt16.MaxValue)
+                throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
             finalOut[0] = (Byte) (outPtr & 0xFF);
             finalOut[1] = (Byte) ((outPtr >> 8) & 0xFF);
             finalOut[2] = 0xFE;

@@ -1,9 +1,9 @@
-﻿using Nyerguds.ImageManipulation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using Nyerguds.ImageManipulation;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {

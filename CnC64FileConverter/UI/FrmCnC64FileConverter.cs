@@ -209,7 +209,7 @@ namespace CnC64FileConverter.UI
                         m_LoadedFile.ReloadFromMissingData(fileData, path, filesChain);
                     }
                 }
-                if (filesChain == null && isEmptyFile || error == null)
+                if (filesChain == null && (isEmptyFile || error == null))
                 {
                     SupportedFileType detectSource = this.m_LoadedFile;
                     if (isEmptyFile && preferredTypes.Length == 1)

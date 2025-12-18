@@ -231,6 +231,7 @@ namespace Nyerguds.ImageManipulation
             PixelFormat originalPixelFormat;
             return ImageFromDib(dibBytes, false, out originalPixelFormat);
         }
+
         public static Bitmap ImageFromDib(Byte[] dibBytes, Boolean detectIconFormat, out PixelFormat originalPixelFormat)
         {
             Byte[] imageData;
@@ -251,6 +252,7 @@ namespace Nyerguds.ImageManipulation
                 height /= 2;
                 if (originalPixelFormat == PixelFormat.Format32bppRgb)
                 {
+                    // Icons support transparency when they are 32-bit
                     originalPixelFormat = PixelFormat.Format32bppArgb;
                 }
                 else

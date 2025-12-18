@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Linq;
 using Nyerguds.GameData.Dynamix;
 using Nyerguds.ImageManipulation;
@@ -69,11 +68,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (!is4bpp)
             {
                 Int32 saveType = fileToSave is FileImgDynScr && ((FileImgDynScr)fileToSave).IsMa8 ? 1 : 0;
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type", "VGA/BIN,MA8", saveType.ToString());
+                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "VGA/BIN,MA8", saveType.ToString());
             }
             opts[opt++] = new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString());
             opts[opt++] = new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString());
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.savecompressionTypes), 1.ToString());
+            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), 1.ToString());
             return opts;
         }
 

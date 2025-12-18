@@ -1,11 +1,11 @@
-﻿using Nyerguds.Util;
-using Nyerguds.Util.UI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using Nyerguds.Util;
+using Nyerguds.Util.UI;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -399,8 +399,9 @@ namespace CnC64FileConverter.Domain.FileTypes
         /// <summary>
         /// Autodetects the file type from the given list, and if that fails, from the full autodetect list.
         /// </summary>
-        /// <param name="path">File path to load.</param>
-        /// <param name="preferredTypes">List of the most likely types it can be</param>
+        /// <param name="fileData">File dat to load file from.</param>
+        /// <param name="path">File path, used for extension filtering and file initialisation. Not for reading as bytes; fileData is used for that.</param>
+        /// <param name="preferredTypes">List of the most likely types it can be.</param>
         /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
         /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
         /// <returns>The detected type, or null if detection failed.</returns>
@@ -455,7 +456,8 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (this.IsFramesContainer)
                 foreach (SupportedFileType frame in this.Frames)
-                    frame.Dispose();
+                    if (frame != null)
+                        frame.Dispose();
             Bitmap bitmap = this.GetBitmap();
             if (bitmap != null)
             {

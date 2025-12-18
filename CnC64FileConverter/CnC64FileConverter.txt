@@ -51,6 +51,7 @@ https://www.scummvm.org/
 The Mythos Visage format's RLE compression formats were figured out by user Ceiwad of the
 shikadi.net modding wiki, who posted his findings here:
 http://www.shikadi.net/moddingwiki/Visage_Format
+(though the topic has been thoroughly clarified by me since then :p)
 
 
 Version history:
@@ -60,6 +61,14 @@ At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file
 it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
+
+v1.2.13: (26/06/2018 13:04)
+-Added check on maximum compressed length in Mythos RLE format; it can't exceed 0xFFFF.
+-Added check on maximum amount of chunks when saving Mythos VDA format; it can't exceed 0x7FFF.
+-Added a leniency (of 8/256) to the palette match check in Mythos VDA chaining logic.
+-Added ability to override normal chaining with a single png image of the same name.
+-Added proper cleanup of temporary images in memory loaded in the chaining logics.
+-Added fixes for some unlikely fringe cases in VDA chaining that could crash the program.
 
 v1.2.12: (24/06/2018 19:25)
 -Changed load chaining on the Mythos animation format so the found base frame is added.

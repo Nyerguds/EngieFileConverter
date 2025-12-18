@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
-using System.Collections.Generic;
-using System.IO;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -48,9 +48,27 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (!m_Continues)
                 return null;
+            // If a single png file of the same name is found it overrides normal chaining.
+            String pngName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + ".PNG");
+            if (File.Exists(pngName))
+            {
+                try
+                {
+                    using (Bitmap pngFile = BitmapHandler.LoadBitmap(pngName))
+                    {
+                        if (pngFile.Width == this.Width && pngFile.Height == this.Height)
+                            return new List<String>() { pngName };
+                    }
+                }
+                catch (FileLoadException)
+                {
+                    // ignore; continue with normal load
+                }
+            }
             String baseNameDummy;
             // check numeric ranges first; you never know
             String[] frameNames = FileFrames.GetFrameFilesRange(originalPath, out baseNameDummy);
+            // If no frames were found, use usual WSA A-Z detect logic.
             if (frameNames == null)
             {
                 String dir = Path.GetDirectoryName(originalPath);
@@ -64,11 +82,13 @@ namespace CnC64FileConverter.Domain.FileTypes
                     return null;
                 String baseName = nameNoExt.Substring(0, nameNoExt.Length - 1);
                 List<String> frameNamesList = new List<String>();
+                String[] files = Directory.GetFiles(dir, baseName + '?' + ext);
                 for (Char endch = endChar; endch >= 'a'; endch--)
                 {
                     String curPath = Path.Combine(dir, baseName + endch + ext);
-                    if (File.Exists(curPath))
-                        frameNamesList.Add(curPath);
+                    Int32 findex = Array.FindIndex(files, t => String.Equals(t, curPath, StringComparison.InvariantCultureIgnoreCase));
+                    if (findex != -1)
+                        frameNamesList.Add(files[findex]);
                 }
                 frameNamesList.Reverse();
                 frameNames = frameNamesList.ToArray();
@@ -79,22 +99,22 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 String curName = frameNames[i];
                 Byte[] testBytes = File.ReadAllBytes(curName);
-                FileFramesWwWsa testFrame;
-                try
+                // Clean up used images after check. Probably not needed for WSA since the testContinue check makes it abort without actually storing any.
+                using (FileFramesWwWsa testFrame = new FileFramesWwWsa())
                 {
-                    testFrame = new FileFramesWwWsa();
-                    testFrame.LoadFromFileData(testBytes, curName, m_Version, null, true);
-                }
-                catch (HeaderParseException) { return null; }
-                if (testFrame.Width != this.Width || testFrame.Height != this.Height)
-                    return null;
-                if (!testFrame.m_Continues)
-                {
+                    // Call with testContinue param to abort after confirming initial frame state.
+                    try { testFrame.LoadFromFileData(testBytes, curName, m_Version, null, true); }
+                    catch (HeaderParseException) { return null; }
+                    if (testFrame.Width != this.Width || testFrame.Height != this.Height)
+                        return null;
+                    if (!testFrame.m_Continues)
+                    {
+                        chain.Add(curName);
+                        chain.Reverse();
+                        return chain;
+                    }
                     chain.Add(curName);
-                    chain.Reverse();
-                    return chain;
                 }
-                chain.Add(curName);
             }
             return null;
         }
@@ -102,31 +122,53 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain)
         {
             Byte[] lastFrameData = null;
+            String firstName = loadChain.FirstOrDefault();
+            if (loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
+            {
+                String pngName = loadChain[0];
+                if (File.Exists(pngName))
+                {
+                    try
+                    {
+                        // Extra frame is not used; always dispose image.
+                        using (Bitmap bm = BitmapHandler.LoadBitmap(pngName))
+                        {
+                            if (bm.Width != this.Width || bm.Height != this.Height)
+                                return;
+                            Int32 stride;
+                            lastFrameData = ImageUtils.GetImageData(bm, out stride);
+                            lastFrameData = ImageUtils.CollapseStride(lastFrameData, bm.Width, bm.Height, 8, ref stride);
+                            if (lastFrameData != null)
+                                loadChain.Clear();
+                        }
+                    }
+                    catch { return; }// can't load as png file. Abort.
+                }
+            }
             foreach (String chainFilePath in loadChain)
             {
                 Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
-                FileFramesWwWsa chainFile;
-                try
-                {                    
-                    chainFile = new FileFramesWwWsa();
-                    chainFile.LoadFromFileData(chainFileBytes, chainFilePath, m_Version, lastFrameData, false);
+                using (FileFramesWwWsa chainFile = new FileFramesWwWsa())
+                {
+                    try { chainFile.LoadFromFileData(chainFileBytes, chainFilePath, m_Version, lastFrameData, false); }
+                    catch { return; }
+                    Int32 lastFrameIndex = chainFile.Frames.Length - 1;
+                    if (lastFrameIndex  < 0)
+                        return;
+                    Bitmap lastFrame = chainFile.Frames[lastFrameIndex].GetBitmap();
+                    if (lastFrame == null)
+                        return;
+                    Int32 stride;
+                    Int32 width = lastFrame.Width;
+                    Int32 height = lastFrame.Height;
+                    if (width != this.Width || height != this.Height)
+                        return;
+                    lastFrameData = ImageUtils.GetImageData(lastFrame, out stride);
+                    lastFrameData = ImageUtils.CollapseStride(lastFrameData, width, height, 8, ref stride);
                 }
-                catch (HeaderParseException) { return; }
-                if (chainFile.Frames.Length == null)
-                    return;
-                Bitmap lastFrame = chainFile.Frames.Last().GetBitmap();
-                if (lastFrame == null)
-                    return;
-                Int32 stride;
-                Int32 width = lastFrame.Width;
-                Int32 height = lastFrame.Height;
-                if (width != this.Width || height != this.Height)
-                    return;
-                lastFrameData = ImageUtils.GetImageData(lastFrame, out stride);
-                lastFrameData = ImageUtils.CollapseStride(lastFrameData, width, height, 8, ref stride);
             }
             this.LoadFromFileData(fileData, originalPath, m_Version, lastFrameData, false);
-            this.ExtraInfo += "\nData chained from " + Path.GetFileName(loadChain.First());
+            this.ExtraInfo = (this.ExtraInfo  + "\nData chained from " + Path.GetFileName(firstName)).TrimStart('\n');
         }
         
         
@@ -366,7 +408,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 ignoreLast = toSave.m_DamagedLoopFrame;
             }
             SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
-            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type", String.Join(",", this.formats), ((Int32)type).ToString());
+            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type:", String.Join(",", this.formats), ((Int32)type).ToString());
             opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette (not supported for Dune II v1)", hasColors ? "1" : "0");
             opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
             opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");

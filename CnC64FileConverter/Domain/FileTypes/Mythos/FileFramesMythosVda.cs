@@ -1,19 +1,19 @@
-﻿using Nyerguds.Util;
-using System;
-using System.IO;
-using Nyerguds.ImageManipulation;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using Nyerguds.GameData.Mythos;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
     public class FileFramesMythosVda : FileFramesMythosVgs
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
-        public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         public override String ShortTypeName { get { return "Mythos Visage Animation"; } }
         public override String ShortTypeDescription { get { return "Mythos Visage Animation file"; } }
@@ -42,68 +42,116 @@ namespace CnC64FileConverter.Domain.FileTypes
         }
         //*/
 
-
         public override List<String> GetFilesToLoadMissingData(String originalPath)
         {
+            // No missing data.
             if (!NoFirstFrame)
                 return null;
+            // Wrong file. Switch to the VDA one.
             if (originalPath.EndsWith(".VDX", StringComparison.InvariantCultureIgnoreCase))
             {
                 originalPath = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + ".VDA");
                 if (!File.Exists(originalPath))
                     return null;
             }
+            // If a single png file of the same name is found it overrides normal chaining.
+            String pngName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + ".PNG");
+            if (File.Exists(pngName))
+            {
+                try
+                {
+                    using (FileImagePng pngFile = new FileImagePng())
+                    {
+                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
+                        if (pngFile.Width == 320 && pngFile.Height == 200)
+                            return new List<String>() {pngName};
+                    }
+                }
+                catch (FileLoadException)
+                {
+                    // ignore; continue with normal load
+                }
+            }
             String baseName;
+            // Call file range detection algorithm already in place on FileFrames class.
             String[] frameNames = FileFrames.GetFrameFilesRange(originalPath, out baseName);
             if (frameNames == null)
                 return null;
             originalPath = Path.GetFullPath(originalPath);
+            // The function from FileFrames returns the whole range, which might be too much. Find the actual file we started from.
             Int32 index = Array.FindIndex(frameNames.ToArray(), t => String.Equals(t, originalPath, StringComparison.InvariantCultureIgnoreCase));
-            // todo: check previous files until finding one with an initial frame.
+            // Check previous files until finding one with an initial frame.
             List<String> chain = new List<String>();
             for (Int32 i = index - 1; i >= 0; i--)
             {
                 String curName = frameNames[i];
                 Byte[] testBytesVda = File.ReadAllBytes(curName);
                 String vdxPath = Path.Combine(Path.GetDirectoryName(curName), Path.GetFileNameWithoutExtension(curName) + ".VDX");
+                Byte[] testBytesVdx = File.ReadAllBytes(vdxPath);
+                // Test for obvious indications that the file is a valid VDX
+                if (!this.CheckForVdx(testBytesVdx))
+                    return null;
+                // Can't get last frame if there is no VDX file. Abort immediately.
                 if (!File.Exists(vdxPath))
                     return null;
-                List<Point> framesXY;
-                FileFramesMythosVda testFile;
-                try
+                // Clean up used images after check.
+                using (FileFramesMythosVda testFile = new FileFramesMythosVda())
                 {
-                    testFile = new FileFramesMythosVda();
-                    testFile.LoadFromFileData(testBytesVda, curName, false, false, true, out framesXY, true);
-                }
-                catch (FileLoadException)
-                {
-                    // can't load as VDA file. Abort.
-                    return null;
-                }
-                // no palette? Shouldn't happen on vid files
-                if (!testFile.m_PaletteSet)
-                    return null;
-                // Not the same palette. Assume unrelated file.
-                if (!testFile.m_Palette.SequenceEqual(this.m_Palette))
-                    return null;
-                SupportedFileType firstFrame = testFile.Frames.FirstOrDefault();
-                if (firstFrame == null)
-                    return null;
-                Boolean firstFrameIsComplete = firstFrame.Width == 320 && firstFrame.Height == 200 && framesXY[0].X == 0 && framesXY[0].Y == 0;
-                if (firstFrameIsComplete)
-                {
-                    Byte[] testBytesVdx = File.ReadAllBytes(vdxPath);
-                    Boolean noFirstFrame;
-                    this.BuildAnimationFromChunks(originalPath, testBytesVdx, testFile.m_FramesList, framesXY, null, out noFirstFrame, true);
-                    firstFrameIsComplete = !noFirstFrame;
-                }
-                if (firstFrameIsComplete)
-                {
+                    // Check if first frame in VDX is frame 0. If not, all frames will need to be loaded. This is normally 0 though.
+                    Boolean startsWithFrameZero = (ArrayUtils.ReadIntFromByteArray(testBytesVdx, 0, 2, true) & 0x7FFF) == 0;
+                    List<Point> framesXY;
+                    try
+                    {
+                        // If VDX starts with frame zero, load with the "forFrameTest" option so it aborts after reading that first frame.
+                        testFile.LoadFromFileData(testBytesVda, curName, false, false, true, out framesXY, startsWithFrameZero);
+                    }
+                    catch (FileLoadException)
+                    {
+                        // can't load one of the chained files as VDA file. Abort.
+                        return null;
+                    }
+                    // VDA files always have a palette.
+                    if (!testFile.m_PaletteSet)
+                        return null;
+                    Int32 badPalMatches = 0;
+                    Color[] testPal = testFile.GetColors();
+                    for (Int32 p = 0; p < 256; p++)
+                        if (testPal[p] != m_Palette[p])
+                            badPalMatches++;
+                    // Check if palette matches. Some small changes will be ignored since they happen in the Serrated Scalpel files.
+                    if (badPalMatches > 8)
+                        return null;
+                    SupportedFileType firstFrame = testFile.Frames.FirstOrDefault();
+                    // No frames; could be a palette-only VGS file.
+                    if (firstFrame == null)
+                        return null;
+                    // Check if the frame is complete, which would mean the end point of the chaining was reached.
+                    if (firstFrame.Width == 320 && firstFrame.Height == 200 && framesXY[0].X == 0 && framesXY[0].Y == 0)
+                    {
+                        // Frame is OK. Check amount of chunks in the first frame defined in the VDX file, to see if it may be multi-chunk after all.
+                        Boolean noFirstFrame;
+                        // Call using the testFirstFrame option to abort after performing the "noFirstFrame" check.
+                        // Technically this check is incomplete; if the first referenced frame is not frame #0 it fails.
+                        // But the first referenced frame should always be frame 0... even my VDX optimisation only changes the VDA coordinates, not order.
+                        try
+                        {
+                            this.BuildAnimationFromChunks(originalPath, testBytesVdx, testFile.m_FramesList, framesXY, null, out noFirstFrame, true);
+                        }
+                        catch (FileLoadException)
+                        {
+                            return null;
+                        }
+                        if (!noFirstFrame)
+                        {
+                            // Confirmed as first frame.
+                            chain.Add(curName);
+                            chain.Reverse();
+                            return chain;
+                        }
+                    }
+                    // End point not reached; current file also needs a first frame. Store current file and continue chaining back.
                     chain.Add(curName);
-                    chain.Reverse();
-                    return chain;
                 }
-                chain.Add(curName);
             }
             return null;
         }
@@ -112,43 +160,79 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             Byte[] lastFrameData = null;
             SupportedFileType lastFrame = null;
-            foreach(String chainFilePath in loadChain)
+            String firstName = loadChain.First();
+            if (loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
             {
-                Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
+                String pngName = loadChain[0];
+                if (File.Exists(pngName))
+                {
+                    try
+                    {
+                        FileImageFrame pngFile = new FileImageFrame();
+                        Bitmap bm = BitmapHandler.LoadBitmap(pngName);
+                        pngFile.LoadFileFrame(null, "PNG", bm, pngName, -1);
+                        lastFrameData = Get320x200FrameData(pngFile);
+                        if (lastFrameData != null)
+                        {
+                            lastFrame = pngFile;
+                            loadChain.Clear();
+                        }
+                        else
+                        {
+                            pngFile.Dispose();
+                        }
+                    }
+                    catch { return; }// can't load as png file. Abort.
+                }
+            }
+            Int32 lastIndex = loadChain.Count - 1;
+            for (Int32 i = 0; i <= lastIndex; i++)
+            {
+                String chainFilePath = loadChain[i];
                 try
                 {
-                    FileFramesMythosVda chainFile = new FileFramesMythosVda();
-                    chainFile.LoadFile(chainFileBytes, chainFilePath, lastFrameData);
-                    if(chainFile.Frames.Length == 0)
-                        return;
-                    lastFrame = chainFile.Frames.Last();
-                    Bitmap lastFrameImage = lastFrame.GetBitmap();
-                    if (lastFrameImage == null)
-                        return;
-                    Int32 stride;
-                    Int32 width = lastFrameImage.Width;
-                    Int32 height = lastFrameImage.Height;
-                    if (width != 320 || height != 200)
-                        return;
-                    lastFrameData = ImageUtils.GetImageData(lastFrameImage, out stride);
-                    lastFrameData = ImageUtils.CollapseStride(lastFrameData, width, height, 8, ref stride);
+                    Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
+                    using (FileFramesMythosVda chainFile = new FileFramesMythosVda())
+                    {
+                        chainFile.LoadFile(chainFileBytes, chainFilePath, lastFrameData);
+                        Int32 lastFrIndex = chainFile.Frames.Length - 1;
+                        if (lastFrIndex < 0)
+                            return;
+                        lastFrame = chainFile.m_FramesList[lastFrIndex];
+                        lastFrameData = Get320x200FrameData(lastFrame);
+                        // Maybe use exception? Should never happen though.
+                        if (lastFrameData == null)
+                            return;
+                        // Replace extracted frame to exclude it from cleanup when chainfile gets disposed..
+                        if (i == lastIndex)
+                            chainFile.m_FramesList[lastFrIndex] = new FileImageFrame();
+                    }
                 }
-                catch (FileLoadException)
-                {
-                    // can't load as VDA file. Abort.
-                    return;
-                }
-                //public void LoadFile(Byte[] fileData, String filename, Byte[] initialFrameData)
+                catch { return; } // can't load as VDA file. Abort.
             }
             this.LoadFile(fileData, originalPath, lastFrameData);
-            if (lastFrame != null && lastFrameData != null)
+            if (lastFrame != null)
             {
-                this.ExtraInfo += "\nData chained from " + Path.GetFileName(loadChain.First());
+                this.ExtraInfo += "\nData chained from " + Path.GetFileName(firstName);
                 FileImageFrame last = lastFrame as FileImageFrame;
                 if (last != null)
-                    last.SetExtraInfo(last.ExtraInfo + "\nLoaded from previous file");
+                    last.SetExtraInfo((last.ExtraInfo + "\nLoaded from previous file").TrimStart('\n'));
                 this.m_FramesList.Insert(0, lastFrame);
             }
+        }
+
+        protected Byte[] Get320x200FrameData(SupportedFileType loadedFrame)
+        {
+            if (loadedFrame.Width != 320 || loadedFrame.Height != 200)
+                return null;
+            Bitmap lastFrameImage = loadedFrame.GetBitmap();
+            if (lastFrameImage.PixelFormat != PixelFormat.Format8bppIndexed)
+                return null;
+            Int32 width = lastFrameImage.Width;
+            Int32 height = lastFrameImage.Height;
+            Int32 stride;
+            Byte[] frameData = ImageUtils.GetImageData(lastFrameImage, out stride);
+            return ImageUtils.CollapseStride(frameData, width, height, 8, ref stride);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -158,18 +242,18 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public void LoadFile(Byte[] fileData, String filename, Byte[] initialFrameData)
         {
-            Boolean fromVdx = false;
-            Byte[] vdaBytes = null;
+            Byte[] vdaBytes;
             Byte[] vdxBytes = null;
             String vdaName = null;
             if (filename != null)
             {
                 if (filename.EndsWith(".VDX", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    fromVdx = true;
                     vdaName = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".VDA");
                     if (!File.Exists(vdaName))
                         throw new FileTypeLoadException("Can't load a video from .VDX file without a .VDA!");
+                    if (!this.CheckForVdx(fileData))
+                        throw new FileTypeLoadException("Not a valid VDX file!");
                     vdxBytes = fileData;
                     vdaBytes = File.ReadAllBytes(vdaName);
                 }
@@ -199,9 +283,6 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_Palette = PaletteUtils.ApplyTransparencyGuide(this.m_Palette, null);
             if (vdxBytes != null)
             {
-                if (fromVdx)
-                    this.ExtraInfo = "Loaded from VDX\n" + (this.ExtraInfo ?? String.Empty);
-
                 Boolean noFirstFrame;
                 List<SupportedFileType> framesList = this.BuildAnimationFromChunks(vdaName, vdxBytes, this.m_FramesList, framesXY, initialFrameData, out noFirstFrame, false);
                 this.NoFirstFrame = noFirstFrame;
@@ -257,14 +338,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    Int32 frameNumber = curVal & 0x7FFF;
-                    if (!testFirstFrame && allChunks.Count <= frameNumber)
-                        throw new FileLoadException("Video frames file references more frames than available in graphics file!");
-                    if (testFirstFrame && framesList.Count == 0 && chunks > 0)
+                    if (testFirstFrame && chunks > 0)
                     {
                         noFirstFrame = true;
                         return null;
                     }
+                    Int32 frameNumber = curVal & 0x7FFF;
+                    if (allChunks.Count <= frameNumber)
+                        throw new FileLoadException("Video frames file references more frames than available in graphics file!");
                     Int32 xOffset;
                     Int32 yOffset;
                     if ((curVal & 0x8000) != 0)
@@ -304,7 +385,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                             imageData = Enumerable.Repeat(TransparentIndex, arraySize).ToArray();
                         }
                     }
-                    if (!noFirstFrame && framesList.Count == 0 && chunks > 1)
+                    if (!noFirstFrame && chunks > 1 && framesList.Count == 0)
                     {
                         noFirstFrame = true;
                         if (testFirstFrame)
@@ -326,13 +407,12 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected Boolean CheckForVdx(Byte[] fileData)
         {
-            if (fileData.Length <= 8 || fileData.Length % 2 != 0)
+            if (fileData.Length < 4 || fileData.Length % 2 != 0)
                 return false;
-            UInt16 int0 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            UInt16 int2 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+            // Last two blocks should be FFFF and FFFE.
             UInt16 intl4 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fileData.Length - 4, 2, true);
             UInt16 intl2 = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fileData.Length - 2, 2, true);
-            if (int0 == 0 && int2 == 0xFFFF && intl4 == 0xFFFF && intl2 == 0xFFFE)
+            if (intl4 == 0xFFFF && intl2 == 0xFFFE)
                 return true;
             return false;
         }
@@ -341,8 +421,21 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             if (fileToSave == null)
                 return null;
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("This format needs at least one frame.");
+            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            {
+                if (fileToSave.BitsPerPixel != 8)
+                    throw new NotSupportedException("This format needs 8-bit images!");
+                FileFrames frameSave = new FileFrames();
+                frameSave.AddFrame(fileToSave);
+                fileToSave = frameSave;
+            }
+            else
+            {
+                if (fileToSave.Frames.Length == 0)
+                    throw new NotSupportedException("This format needs at least one frame.");
+                if (fileToSave.Frames.Any(x => x.BitsPerPixel != 8))
+                    throw new NotSupportedException("All frames in the target file must be 8-bit images!");
+            }
             foreach(SupportedFileType sft in fileToSave.Frames)
                 if (sft.BitsPerPixel != 8)
                     throw new NotSupportedException("This format needs 8bpp images.");
@@ -361,13 +454,21 @@ namespace CnC64FileConverter.Domain.FileTypes
                 compression = 0;
             return new SaveOption[]
             {
-                new SaveOption("CHU", SaveOptionType.Boolean, "Optimise to chunks", "1"),
-                new SaveOption("MRG", SaveOptionType.Boolean, "Merge chunks with intersecting rectangles (could give smaller results)", "0"),
+                new SaveOption("OPT", SaveOptionType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks (grouped per rectangle),Optimise to chunks (no grouping)", "1"),
+                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
                 new SaveOption("CUT", SaveOptionType.Boolean, "Leave off the first frame (difference frames only)", "0"),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type", String.Join(",", this.compressionTypes), compression.ToString()),
             };
         }
-        
+
+        private enum OptimiseMethods
+        {
+            DiffFrames = 0,
+            ChunksGrouped = 1,
+            ChunksFragmented = 2,
+            // not yet implemented
+            ChunksBordered = 3
+        }
+
         /// <summary>
         /// Saves the given file as this type.
         /// </summary>
@@ -397,7 +498,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            /// dummy function; this should never be used since it saves without vdx file.
+            // dummy function; this should never be used since it saves without vdx file.
             Byte[] vdxFile;
             return SaveToBytesAsThis(fileToSave, saveOptions, out vdxFile);
         }
@@ -405,7 +506,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, out Byte[] vdxFile)
         {
             // todo check on frame count
-
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
             {
                 if (fileToSave.BitsPerPixel != 8)
@@ -419,9 +519,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileToSave.Frames.Any(x => x.BitsPerPixel != 8))
                 throw new NotSupportedException("All frames in the target file must be 8-bit images!");
 
-            Boolean chunkOptimise = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CHU"));
-            Boolean optimiseMerge = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "MRG"));
-            
+            OptimiseMethods optimisation = (OptimiseMethods)Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "OPT"));
             Boolean cutfirstFrame = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
             Int32 compressionType;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
@@ -468,7 +566,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frameOffs += stride;
                     prevOffs += previousImageStride;
                 }
-                if (!chunkOptimise)
+                Int32 totalChunks = 0;
+                if (optimisation == OptimiseMethods.DiffFrames)
                 {
                     // optimize diff frame by cropping it.
                     Int32 xOffset = 0;
@@ -480,12 +579,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                     imageDataOpt = ImageUtils.OptimizeYHeight(imageDataOpt, newWidth, ref newHeight, ref yOffset, true, TransparentIndex, 0xFFFF, true);
                     VideoChunk chunk = new VideoChunk(imageDataOpt, new Rectangle(xOffset, yOffset, newWidth, newHeight));
                     frames.Add(new List<VideoChunk>() { chunk });
+                    totalChunks++;
+                    if (totalChunks >= 0x7FFF)
+                        throw new NotSupportedException("Chunk count exceeds " + 0x7FFF + "!");
                 }
                 else
                 {
-                    List<Boolean[,]> inBlobs = new List<Boolean[,]>();
+                    List<Boolean[,]> inBlobs;
                     List<List<Point>> blobs = ImageUtils.FindBlobs(imageDataOpt, width, height, (bytes, y, x) => bytes[y * stride + x] != TransparentIndex, true, true, out inBlobs);
-                    if (optimiseMerge)
+                    if (optimisation == OptimiseMethods.ChunksGrouped)
                         ImageUtils.MergeBlobs(blobs, width, height, null, 0);
 
                     List<VideoChunk> frameChunks = new List<VideoChunk>();
@@ -495,7 +597,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         Boolean[,] inBlob = inBlobs[i];
                         Rectangle rect = ImageUtils.GetBlobBounds(blob);
                         Byte[] img = ImageUtils.CopyFrom8bpp(imageDataOpt, width, height, stride, rect);
-                        if (!optimiseMerge)
+                        if (optimisation == OptimiseMethods.ChunksFragmented)
                         {
                             // Remove pixels from the rectangle that are not part of the chunk.
                             Int32 lineIndex = 0;
@@ -515,6 +617,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                         }
                         VideoChunk chunk = new VideoChunk(img, rect);
                         frameChunks.Add(chunk);
+                        totalChunks++;
+                        if (totalChunks >= 0x7FFF)
+                            throw new NotSupportedException("Chunk count exceeds " + 0x7FFF + "!");
                     }
                     frames.Add(frameChunks);
                 }
