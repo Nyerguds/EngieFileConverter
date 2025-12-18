@@ -68,6 +68,7 @@
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosPal.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpLol1.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwCpsAmi4.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpD2.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpTs.cs" />

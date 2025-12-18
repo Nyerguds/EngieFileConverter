@@ -164,7 +164,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 height = frImage.Height;
                 Int32 curMax = i < 2 ? 96 : 104;
                 if (width > 160 && height > curMax)
-                    throw new NotSupportedException("Frame " + i + " do not fit in 160x" + curMax + "!");
+                    throw new NotSupportedException("Frame " + i + " does not fit in 160x" + curMax + "!");
                 Int32 stride;
                 Byte[] frData = ImageUtils.GetImageData(frImage, out stride, true);
                 if (frData.Any(p => p >= 32))

@@ -162,7 +162,7 @@ namespace Nyerguds.GameData.Compression
                             decode_stack[iCounter] = (Byte) this.append_character[code];
                             ++iCounter;
                             if (iCounter >= this.MAX_CODE)
-                                throw new Exception("oh crap");
+                                throw new IndexOutOfRangeException("Maximum code exceeded.");
                             code = this.prefix_code[code];
                         }
                         decode_stack[iCounter] = (Byte)code;
@@ -187,12 +187,8 @@ namespace Nyerguds.GameData.Compression
                 {
                     outputBuffer = outStream.ToArray();
                 }
-                catch (Exception)
-                {
-                    return null;
-                }
             }
-            if (outputBuffer.Length == length)
+            if (outputBuffer.Length == length || length == 0)
                 return outputBuffer;
             Byte[] outputBuffer2 = new Byte[length];
             Array.Copy(outputBuffer, 0, outputBuffer2, 0, Math.Min(outputBuffer.Length, outputBuffer2.Length));

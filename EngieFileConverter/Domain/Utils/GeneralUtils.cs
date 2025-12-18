@@ -215,15 +215,22 @@ namespace Nyerguds.Util
                 if (edPart.Length == 0)
                     continue;
                 // Unlike a simple Split, the use of regex allows the use of negative values if the range splitter is "-".
-                Regex split = new Regex("^(-?\\d+)\\s*" + Regex.Escape(rangeSeparator) + "\\s*(-?\\d+)$");
+                Regex split = new Regex("^(-?\\d+)\\s*(" + Regex.Escape(rangeSeparator) + "\\s*(-?\\d+))?$");
                 Match m = split.Match(edPart);
                 if (m.Success)
                 {
                     Int32 val1 = Int32.Parse(m.Groups[1].Value);
-                    Int32 val2 = Int32.Parse(m.Groups[2].Value);
-                    Int32 lowest = Math.Min(val1, val2);
-                    Int32 highest = Math.Max(val1, val2);
-                    numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
+                    if (m.Groups[3].Value.Length == 0)
+                    {
+                        numbers.Add(val1);
+                    }
+                    else
+                    {
+                        Int32 val2 = Int32.Parse(m.Groups[3].Value);
+                        Int32 lowest = Math.Min(val1, val2);
+                        Int32 highest = Math.Max(val1, val2);
+                        numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
+                    }
                 }
             }
             return numbers.Distinct().ToArray();

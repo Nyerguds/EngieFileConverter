@@ -289,6 +289,8 @@ namespace Nyerguds.ImageManipulation
                 if (palette[i].A == 0)
                     transparentIndices.Add(i);
             Int32 firstTransIndex = transparentIndices.Count > 0 ? transparentIndices[0] : -1;
+            // Mapping table. Takes more memory, but it's way faster, especially on sprites with clear backgrounds.
+            Dictionary<UInt32, Byte> colorMapping = new Dictionary<UInt32, Byte>();
             for (Int32 y = 0; y < height; y++)
             {
                 Int32 inputOffs = y * stride;
@@ -296,10 +298,21 @@ namespace Nyerguds.ImageManipulation
                 for (Int32 x = 0; x < width; x++)
                 {
                     Color c = Color.FromArgb(imageData[inputOffs + 3], imageData[inputOffs + 2], imageData[inputOffs + 1], imageData[inputOffs]);
-                    if (firstTransIndex >= 0 && c.A < 128)
-                        newImageData[outputOffs] = (Byte)firstTransIndex;
+                    UInt32 colKey = (UInt32)c.ToArgb();
+                    Byte outInd;
+                    if (colorMapping.ContainsKey(colKey))
+                    {
+                        outInd = colorMapping[colKey];
+                    }
                     else
-                        newImageData[outputOffs] = (Byte) ColorUtils.GetClosestPaletteIndexMatch(c, palette, transparentIndices);
+                    {
+                        if (firstTransIndex >= 0 && c.A < 128)
+                            outInd = (Byte)firstTransIndex;
+                        else
+                            outInd = (Byte)ColorUtils.GetClosestPaletteIndexMatch(c, palette, transparentIndices);
+                        colorMapping.Add(colKey, outInd);
+                    }
+                    newImageData[outputOffs] = outInd;
                     inputOffs += 4;
                     outputOffs++;
                 }

@@ -150,7 +150,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         WWCompression.LcwDecompress(fileData, ref dataOffset, imageData, 0);
                         break;
                     default:
-                        throw new FileTypeLoadException("Unsupported compression format \"+compression+\".");
+                        throw new FileTypeLoadException("Unsupported compression format \"" + compression + "\".");
                 }
             }
             catch (Exception e)
@@ -185,7 +185,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 for (Int32 i = 0; i < imageData8bit.Length; i++)
                 {
                     Int32 bytePos = i / 8;
-                    Int32 bitPos = 7 - (i % 8);
+                    Int32 bitPos = 7 - (i & 7);
                     imageData8bit[i] = (Byte) ((((imageData[frameOffs[0] + bytePos] >> bitPos) & 1) << 0) |
                                                (((imageData[frameOffs[1] + bytePos] >> bitPos) & 1) << 1) |
                                                (((imageData[frameOffs[2] + bytePos] >> bitPos) & 1) << 2) |
@@ -264,7 +264,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 for (Int32 i = 0; i < imageData.Length; i++)
                 {
                     Int32 bytePos = i / 8;
-                    Int32 bitPos = 7 - (i % 8);
+                    Int32 bitPos = 7 - (i & 7);
                     Byte curByte = imageData[i];
                     Int32 offs0 = frameOffs[0] + bytePos;
                     imageDataPlanes[offs0] = (Byte)(imageDataPlanes[offs0] | (((curByte >> 0) & 1) << bitPos));

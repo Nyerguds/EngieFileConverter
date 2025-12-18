@@ -251,6 +251,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         private static Type[] m_autoDetectTypes =
         {
+            typeof(FileFramesWwShpLol1),
             typeof(FileImagePng),
             typeof(FileImageBmp),
             typeof(FileImageGif),

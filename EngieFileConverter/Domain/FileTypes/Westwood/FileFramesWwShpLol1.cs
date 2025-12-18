@@ -4,13 +4,14 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Nyerguds.GameData.Compression;
 using Nyerguds.GameData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-    public class FileFramesWwShpD2 : SupportedFileType
+    public class FileFramesWwShpLol1 : SupportedFileType
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
@@ -22,9 +23,9 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Int32 m_Width;
         protected Int32 m_Height;
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood Dune II Shape"; } }
+        public override String ShortTypeName { get { return "Westwood LOL 1 Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Dune II Shape File"; } }
+        public override String ShortTypeDescription { get { return "Westwood Lands of Lore 1 Shape File"; } }
         public override Int32 ColorsInPalette { get { return 0; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -39,210 +40,111 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public Boolean IsVersion107 { get; set; }
         public Int32[] RemappedIndices { get; set; }
-        protected readonly String GAMENAME = "Dune II";
+
 
         public override void LoadFile(Byte[] fileData)
         {
-            this.LoadFromFileData(fileData, null, GAMENAME);
+            this.LoadFromFileData(fileData, null);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            this.LoadFromFileData(fileData, filename, GAMENAME);
+            this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath, String gameOverride)
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
+            // OffsetInfo / ShapeFileHeader
+            if (fileData.Length < 0X0A)
+                throw new FileTypeLoadException("Not long enough for header.");
+            UInt16 hdrSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x00, 2, true);
+            if (hdrSize + 2 > fileData.Length)
+                throw new FileTypeLoadException("Not a Lands of Lore SHP file");
+            UInt16 hdrCompression = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x02, 2, true);
+            Int32 hdrUncompressedSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, 0x04, 4, true);
+            if (hdrUncompressedSize < 2)
+                throw new FileTypeLoadException("Not a Lands of Lore SHP file");
+            UInt16 hdrPalSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x08, 2, true);
+            Int32 dataOffset = 0x0A;
+
+            if (hdrPalSize == 768)
+            {
+                try
+                {
+                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, dataOffset));
+                    PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
+                }
+                catch (ArgumentException argex)
+                {
+                    throw new FileTypeLoadException("Illegal values in embedded palette.", argex);
+                }
+            }
+            else
+            {
+                this.m_Palette = null;
+            }
+            dataOffset += hdrPalSize;
+
+            Byte[] uncompressedData;
+
+            UInt32 endOffset = (UInt32)hdrSize + 2;            
+            try
+            {
+                switch (hdrCompression)
+                {
+                    case 0:
+                        uncompressedData = new Byte[hdrUncompressedSize];
+                        Array.Copy(fileData, dataOffset, uncompressedData, 0, hdrUncompressedSize);
+                        break;
+                    case 1:
+                        LzwCompression lzw12 = new LzwCompression(LzwSize.Size12Bit);
+                        uncompressedData = lzw12.Decompress(fileData, dataOffset, hdrUncompressedSize);
+                        break;
+                    case 2:
+                        LzwCompression lzw14 = new LzwCompression(LzwSize.Size14Bit);
+                        uncompressedData = lzw14.Decompress(fileData, dataOffset, hdrUncompressedSize);
+                        break;
+                    case 3:
+                        uncompressedData = WestwoodRle.RleDecode(fileData, (UInt32)dataOffset, endOffset, hdrUncompressedSize, false, true);
+                        break;
+                    case 4:
+                        uncompressedData = new Byte[hdrUncompressedSize];
+                        Int32 written = WWCompression.LcwDecompress(fileData, ref dataOffset, uncompressedData, 0);
+                        break;
+                    default:
+                        throw new FileTypeLoadException("Unsupported compression format \"" + hdrCompression + "\".");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new FileTypeLoadException("Error decompressing image data: " + e.Message, e);
+            }
+            //File.WriteAllBytes(sourcePath + ".unlcw", uncompressedData);
             Boolean isVersion107;
             Int32[] remapFrames;
-            this.m_FramesList = LoadFromFileData(fileData, sourcePath, this, gameOverride, out isVersion107, out remapFrames);
-            SupportedFileType frame0 = this.m_FramesList.FirstOrDefault();
-            if (frame0 != null)
-                m_Palette = frame0.GetColors();
+            this.m_FramesList = FileFramesWwShpD2.LoadFromFileData(uncompressedData, sourcePath, this, "Lands of Lore 1", out isVersion107, out remapFrames);
+            if (this.m_Palette == null)
+            {
+                SupportedFileType frame0 = this.m_FramesList.FirstOrDefault();
+                if (frame0 != null)
+                    m_Palette = frame0.GetColors();
+            }
+            else
+            {
+                // Apply previously-loaded palette to all frames. Maybe I should give it to the load function instead...
+                this.SetColors(m_Palette);
+            }
             this.IsVersion107 = isVersion107;
             this.RemappedIndices = remapFrames;
             StringBuilder extraInfoGlobal = new StringBuilder();
-            extraInfoGlobal.Append("Game version: ").Append(isVersion107 ? "v1.07" : "v1.00");
+            extraInfoGlobal.Append("Embedded format: Dune II ").Append(isVersion107 ? "v1.07" : "v1.00").Append(" SHP");
             extraInfoGlobal.Append("\nRemapped indices: ");
             if (remapFrames.Length == 0)
                 extraInfoGlobal.Append("None");
             else
                 extraInfoGlobal.AppendNumbersGrouped(remapFrames);
             this.ExtraInfo = extraInfoGlobal.ToString();
-        }
-
-        public static SupportedFileType[] LoadFromFileData(Byte[] fileData, String sourcePath, SupportedFileType target, String gameOverride, out Boolean isVersion107, out Int32[] remapFrames)
-        {
-            // OffsetInfo / ShapeFileHeader
-            if (fileData.Length < 6)
-                throw new FileTypeLoadException("Not long enough for header.");
-            Int32 hdrFrames = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
-            if (hdrFrames == 0)
-                throw new FileTypeLoadException("Not a " + gameOverride + " SHP file");
-            if (fileData.Length < 2 + (hdrFrames + 1) * 2)
-                throw new FileTypeLoadException("Not long enough for frames index.");
-            // Length. Done -2 because everything that follows is relative to the location after the header
-            UInt32 endoffset = (UInt32) fileData.Length;
-
-            // test v1.00 first, since it might accidentally be possible that the offset 2x as far happens to contain data matching the file end address.
-            // However, in 32-bit addressing, it is impossible for even partial addresses halfway down the array to ever match the file end value.
-            if (endoffset < UInt16.MaxValue && (endoffset >= 2 + (hdrFrames + 1) * 2 && ArrayUtils.ReadIntFromByteArray(fileData, 2 + hdrFrames * 2, 2, true) == endoffset))
-                isVersion107 = false;
-            else if (endoffset >= 2 + (hdrFrames + 1) * 4 && ArrayUtils.ReadIntFromByteArray(fileData, 2 + hdrFrames * 4, 4, true) == endoffset - 2)
-                isVersion107 = true;
-            else
-                throw new FileTypeLoadException("File size in header does not match; cannot detect version.");
-            // v1.07 is relative to offsets array start, so the found end offset will be 2 lower.
-            if (isVersion107)
-                endoffset -= 2;
-
-            SupportedFileType[] framesList = new SupportedFileType[hdrFrames];
-            Boolean[] remapped = new Boolean[hdrFrames];
-            // Frames
-            Int32 curOffs = 2;
-            Int32 readLen = isVersion107 ? 4 : 2;
-            Color[] palette = PaletteUtils.GenerateGrayPalette(8, new Boolean[] { true }, false);
-            Int32 nextOFfset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
-            for (Int32 i = 0; i < hdrFrames; i++)
-            {
-                // Set current read address to previously-fetched "next entry" address
-                Int32 readOffset = nextOFfset;
-                // Reached end; process completed.
-                if (endoffset == readOffset)
-                    break;
-                // Check illegal values.
-                if (readOffset <= 0 || readOffset + 0x0A > endoffset)
-                    throw new FileTypeLoadException("Illegal address in frame indices.");
-
-                // Set header ptr to next address
-                curOffs += readLen;
-                // Read next entry address, to act as end of current entry.
-                nextOFfset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
-
-                // Compensate for header size
-                Int32 realReadOffset = readOffset;
-                if (isVersion107)
-                    realReadOffset += 2;
-
-                Dune2ShpFrameFlags frameFlags = (Dune2ShpFrameFlags)ArrayUtils.ReadIntFromByteArray(fileData, realReadOffset + 0x00, 2, true);
-                Byte frmSlices = fileData[realReadOffset + 0x02];
-                UInt16 frmWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, realReadOffset + 0x03, 2, true);
-                Byte frmHeight = fileData[realReadOffset + 0x05];
-                // Size of all frame data: header, lookup table, and compressed data.
-                UInt16 frmDataSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, realReadOffset + 0x06, 2, true);
-                UInt16 frmZeroCompressedSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, realReadOffset + 0x08, 2, true);
-                realReadOffset += 0x0A;
-                // Bit 1: Contains remap palette
-                // Bit 2: Don't decompress with LCW
-                // Bit 3: Has custom remap palette size.
-                Boolean hasRemap = (frameFlags & Dune2ShpFrameFlags.HasRemapTable) != 0;
-                Boolean noLcw = (frameFlags & Dune2ShpFrameFlags.NoLcw) != 0;
-                Boolean customRemap = (frameFlags & Dune2ShpFrameFlags.CustomSizeRemap) != 0;
-                remapped[i] = hasRemap;
-                Int32 curEndOffset = readOffset + frmDataSize;
-                if (curEndOffset > endoffset) // curEndOffset > nextOFfset 
-                    throw new FileTypeLoadException("Illegal address in frame indices.");
-                // I assume this is illegal...?
-                if (frmWidth == 0 || frmHeight == 0)
-                    throw new FileTypeLoadException("Illegal values in frame header!");
-
-                Int32 remapSize;
-                Byte[] remapTable;
-                if (hasRemap)
-                {
-                    if (customRemap)
-                    {
-                        remapSize = fileData[realReadOffset];
-                        realReadOffset++;
-                    }
-                    else
-                        remapSize = 16;
-                    remapTable = new Byte[remapSize];
-                    Array.Copy(fileData, realReadOffset, remapTable, 0, remapSize);
-                    realReadOffset += remapSize;
-                }
-                else
-                {
-                    remapSize = 0;
-                    remapTable = null;
-                    // Dunno if this should be done?
-                    if (customRemap)
-                        realReadOffset++;
-                }
-                Byte[] zeroDecompressData = new Byte[frmZeroCompressedSize];
-                if (noLcw)
-                {
-                    Array.Copy(fileData, realReadOffset, zeroDecompressData, 0, frmZeroCompressedSize);
-                }
-                else
-                {
-                    Byte[] lcwDecompressData = new Byte[frmZeroCompressedSize * 3];
-                    Int32 predictedEndOff = realReadOffset + frmDataSize - remapSize;
-                    if (customRemap)
-                        predictedEndOff--;
-                    Int32 decompressedSize = WWCompression.LcwDecompress(fileData, ref realReadOffset, lcwDecompressData, 0);
-                    if (decompressedSize != frmZeroCompressedSize)
-                        throw new FileTypeLoadException("LCW decompression failed.");
-                    if (realReadOffset > predictedEndOff)
-                        throw new FileTypeLoadException("LCW decompression exceeded data bounds!");
-                    Array.Copy(lcwDecompressData, zeroDecompressData, frmZeroCompressedSize);
-
-                }
-                Int32 refOffs = 0;
-                Byte[] fullFrame = WestwoodRleZero.DecompressRleZeroD2(zeroDecompressData, ref refOffs, frmWidth, frmSlices);
-                if (remapTable != null)
-                {
-                    Byte[] remap = remapTable;
-                    Int32 remapLen = remap.Length;
-                    for(Int32 j = 0; j < fullFrame.Length; j++)
-                    {
-                        Byte val = fullFrame[j];
-                        if (val < remapLen)
-                            fullFrame[j] = remap[val];
-                        else
-                            throw new FileTypeLoadException("Remapping failed: value is larger than remap table!");
-                    }
-                }
-                // Convert frame data to image and frame object
-                Bitmap curFrImg = ImageUtils.BuildImage(fullFrame, frmWidth, frmHeight, frmWidth, PixelFormat.Format8bppIndexed, palette, null);
-                FileImageFrame framePic = new FileImageFrame();
-                framePic.LoadFileFrame(target, target, curFrImg, sourcePath, i);
-                framePic.SetBitsPerColor(target.BitsPerPixel);
-                framePic.SetFileClass(FileClass.Image8Bit);
-                framePic.SetColorsInPalette(target.ColorsInPalette);
-                StringBuilder sbFrInfo = new StringBuilder();
-                sbFrInfo.Append("Flags: ");
-                sbFrInfo.Append(Convert.ToString((Int32)frameFlags & 0xFF, 2).PadLeft(8, '0')).Append(" (");
-                Boolean hasData = false;
-                if (hasRemap)
-                {
-                    sbFrInfo.Append("Remap");
-                    hasData = true;
-                }
-                if (noLcw)
-                {
-                    if (hasData)
-                        sbFrInfo.Append(", ");
-                    sbFrInfo.Append("No LCW");
-                    hasData = true;
-                }
-                if (customRemap)
-                {
-                    if (hasData)
-                        sbFrInfo.Append(", ");
-                    sbFrInfo.Append("Table size: ").Append(remapSize);
-                }
-                if (frameFlags == Dune2ShpFrameFlags.Empty)
-                    sbFrInfo.Append("None");
-                sbFrInfo.Append(")");
-                sbFrInfo.Append("\nData size: ").Append(frmDataSize).Append(" bytes");
-                if (hasRemap) sbFrInfo.Append("\nRemap table: ").Append(String.Join(" ", remapTable.Select(b => b.ToString("X2")).ToArray()));
-                framePic.SetExtraInfo(sbFrInfo.ToString());
-                framesList[i] = framePic;
-            }
-            remapFrames = Enumerable.Range(0, hdrFrames).Where(i => remapped[i]).ToArray();
-            return framesList;
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)

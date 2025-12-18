@@ -887,7 +887,6 @@ namespace EngieFileConverter.UI
             MenuItem miAl = new MenuItem("Set alpha...", this.SetColorAlpha);
             miAl.Tag = e.Index;
             cm.MenuItems.Add(miAl);
-
             cm.Show((Control)sender, e.Location);
         }
 
@@ -929,6 +928,8 @@ namespace EngieFileConverter.UI
             if (!(cm.Tag is Int32))
                 return;
             Int32 index = (Int32)cm.Tag;
+            if(this.palColorViewer.Palette.Length <= index)
+                return;
             Color col = this.palColorViewer.Palette[index];
             FrmSetAlpha alphaForm = new FrmSetAlpha(col.A);
             if (alphaForm.ShowDialog(this) != DialogResult.OK)
@@ -946,6 +947,8 @@ namespace EngieFileConverter.UI
             if (!(cm.Tag is Int32))
                 return;
             Int32 index = (Int32)cm.Tag;
+            if (this.palColorViewer.Palette.Length <= index)
+                return;
             Color col = this.palColorViewer.Palette[index];
             col = Color.FromArgb(alpha, col);
             SupportedFileType loadedFile = this.GetShownFile();
@@ -965,16 +968,13 @@ namespace EngieFileConverter.UI
             if (shownFile == null)
                 return;
             Bitmap image = shownFile.GetBitmap();
-
             List<PaletteDropDownInfo> allPalettes = new List<PaletteDropDownInfo>();
             allPalettes.AddRange(this.m_DefaultPalettes);
             allPalettes.AddRange(this.m_ReadPalettes);
-
             FrmFramesCutter frameCutter = new FrmFramesCutter(image, this.pzpImage.CustomColors, allPalettes.ToArray());
             frameCutter.CustomColors = this.pzpImage.CustomColors;
             DialogResult dr = frameCutter.ShowDialog();
             this.pzpImage.CustomColors = frameCutter.CustomColors;
-
             if (dr != DialogResult.OK)
                 return;
             String imagePath = shownFile.LoadedFile;
@@ -1000,8 +1000,6 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
             Bitmap[] frameImages = this.m_LoadedFile.Frames.Select(fr => fr.GetBitmap()).ToArray();
-
-
             PixelFormat highestPf = PixelFormat.Undefined;
             Int32 highestBpp = 0;
             Color[] palette = null;
@@ -1022,9 +1020,7 @@ namespace EngieFileConverter.UI
                 return;
             Int32 maxWidth = frameImages.Select(p => p == null ? 0 : p.Width).Max();
             Int32 maxHeight = frameImages.Select(p => p == null ? 0 : p.Height).Max();
-
             Int32 frames = frameImages.Length;
-            
             SaveOption[] so = new SaveOption[4];
             Boolean hasAlpha = true;
             Boolean hasSimpleTrans = false;
@@ -1042,15 +1038,13 @@ namespace EngieFileConverter.UI
             {
                 paletteStr = String.Join(",", palette.Select(c => ColorUtils.HexStringFromColor(c, false)).ToArray());
             }
-
-            so[0] = new SaveOption("FRW", SaveOptionType.Number, "Frame width",maxWidth + ",", maxWidth.ToString());
-            so[1] =     new SaveOption("FRH", SaveOptionType.Number, "Frame height",maxHeight + ",", maxHeight.ToString());
-            so[2] =     new SaveOption("FPL", SaveOptionType.Number, "Frames per line","1," + frames, ((Int32)Math.Sqrt(frames)).ToString());
+            so[0] = new SaveOption("FRW", SaveOptionType.Number, "Frame width", maxWidth + ",", maxWidth.ToString());
+            so[1] = new SaveOption("FRH", SaveOptionType.Number, "Frame height", maxHeight + ",", maxHeight.ToString());
+            so[2] = new SaveOption("FPL", SaveOptionType.Number, "Frames per line", "1," + frames, ((Int32) Math.Sqrt(frames)).ToString());
             if (highestBpp <= 8)
                 so[3] = new SaveOption("BGI", SaveOptionType.Palette, "Background colour around frames", highestBpp + "|" + paletteStr, "0");
             else
                 so[3] = new SaveOption("BGC", SaveOptionType.Color, "Background colour around frames", hasAlpha ? "A" : hasSimpleTrans ? "T" : String.Empty, "#00000000");
-
             SaveOptionInfo soi = new SaveOptionInfo();
             soi.Name = "Frames to single image";
             soi.Properties = so;
@@ -1072,7 +1066,6 @@ namespace EngieFileConverter.UI
                 Byte.TryParse(SaveOption.GetSaveOptionValue(so, "BGI"), out fillPalIndex);
             else
                 fillColor = ColorUtils.ColorFromHexString(SaveOption.GetSaveOptionValue(so, "BGC"));
-
             Bitmap bm = ImageUtils.BuildImageFromFrames(frameImages, frameWidth, frameHeight, framesPerLine, fillPalIndex, fillColor);
             SupportedFileType oldFile = this.m_LoadedFile;
             FileImagePng returnImg = new FileImagePng();
@@ -1105,8 +1098,6 @@ namespace EngieFileConverter.UI
             if (selectHeightMap)
             {
                 SupportedFileType selectedType;
-                //String plateauFileName = Path.Combine(Path.GetDirectoryName(m_Filename), Path.GetFileNameWithoutExtension(m_Filename)) + "_lvl.png";
-
                 String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select height levels image", new Type[] { typeof(FileImage) }, pngFileName, "images", null, out selectedType);
                 this.m_LastOpenedFolder = Path.GetDirectoryName(filename);
                 if (filename == null)
@@ -1227,14 +1218,6 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void TsmiTestBed(Object sender, EventArgs e)
-        {
-#if DEBUG
-            // any test code can be linked in here
-            this.ViewKortExeIcons();
-#endif
-        }
-
 #if DEBUG
         private void ViewKortExeIcons()
         {
@@ -1333,7 +1316,14 @@ namespace EngieFileConverter.UI
             if (oldFile != null)
                 oldFile.Dispose();
         }
-
 #endif
+        // I put this at the end here to make generated functions not end up in the #debug piece above.
+        private void TsmiTestBed(Object sender, EventArgs e)
+        {
+#if DEBUG
+            // any test code can be linked in here
+            this.ViewKortExeIcons();
+#endif
+        }
     }
 }
