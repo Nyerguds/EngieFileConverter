@@ -57,6 +57,9 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.1.4: (13/09/2017 09:27)
+-Improved file detection checks and error message handling in several file types.
+
 v1.1.3: (12/09/2017 21:20)
 -Optimised RLE compression for Elvira VGA format to compress better than the original.
 -Added checks on empty data before saving.

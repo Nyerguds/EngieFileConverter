@@ -143,6 +143,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 this.ReadHeader(fileData);
             }
+            catch (FileTypeLoadException)
+            {
+                throw;
+            }
             catch (Exception e)
             {
                 throw new FileTypeLoadException("Error loading header data: " + e.Message, e);
@@ -229,7 +233,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             //60020000 = 0x260
             this.hdrIndexTilesetImagesList = (Int32)ArrayUtils.ReadIntFromByteArray(headerBytes, 0x1C, 4, true);
             if (this.hdrSize != headerBytes.Length)
-                throw new FileTypeLoadException("file size in header does not match.");
+                throw new FileTypeLoadException("File size in header does not match.");
             if (this.hdrTileHeight != 24 || this.hdrTileWidth != 24)
                 throw new FileTypeLoadException("Only 24x24 pixel tiles are supported.");
             if (this.hdrZero1 != 00 || hdrZero2 != 0 || this.hdrID1 != -1 || this.hdrID2 != 0x0D1A)

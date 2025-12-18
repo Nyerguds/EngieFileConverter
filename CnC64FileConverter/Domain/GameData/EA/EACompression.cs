@@ -6,13 +6,11 @@ namespace Nyerguds.GameData.KotB
     public class EACompression
     {
 
-        public static Byte[] RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset)
+        public static Int32 RleDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Byte[] bufferOut)
         {
             Int32 inPtr = startOffset ?? 0;
             Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
             Int32 outPtr = 0;
-            Int32 expandSize = buffer.Length;
-            Byte[] bufferOut = new Byte[expandSize*3];
 
             // RLE implementation:
             // highest bit not set = followed by range of repeating bytes
@@ -24,18 +22,18 @@ namespace Nyerguds.GameData.KotB
                 // get next code
                 Int32 code = buffer[inPtr++];
                 Int32 run = code & 0x7f;
-                if (run == 0) // Illegal command
-                    return null;
+                if (run == 0) // Illegal command.
+                    return -1;
                 // Repeat
                 if ((code & 0x80) == 0)
                 {
                     if (inPtr >= inPtrEnd)
-                        break;
+                        return outPtr; 
                     Int32 rle = buffer[inPtr++];
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (outPtr >= bufferOut.Length)
-                            bufferOut = ExpandBuffer(bufferOut, expandSize);
+                            return outPtr;
                         bufferOut[outPtr++] = (Byte)rle;
                     }
                 }
@@ -45,19 +43,15 @@ namespace Nyerguds.GameData.KotB
                     for (UInt32 lcv = 0; lcv < run; lcv++)
                     {
                         if (inPtr >= inPtrEnd)
-                            break;
+                            return outPtr;
                         Int32 data = buffer[inPtr++];
                         if (outPtr >= bufferOut.Length)
-                            bufferOut = ExpandBuffer(bufferOut, expandSize);
+                            return outPtr;
                         bufferOut[outPtr++] = (Byte)data;
                     }
-                    if (inPtr >= inPtrEnd)
-                        break;
                 }
             }
-            Byte[] finalOut = new Byte[outPtr];
-            Array.Copy(bufferOut, finalOut, outPtr);
-            return finalOut;
+            return outPtr;
         }
 
         private static Byte[] ExpandBuffer(Byte[] source, Int32 expand)

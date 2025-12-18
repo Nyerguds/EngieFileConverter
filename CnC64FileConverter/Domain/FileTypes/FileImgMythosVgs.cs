@@ -73,7 +73,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 Int32 frameWidth = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 0, 2, true) + 1;
                 Int32 frameHeight = (Int16)ArrayUtils.ReadIntFromByteArray(fileData, offset + 2, 2, true) + 1;
-                if (frameWidth < 0 || frameHeight < 0)
+                if ((frameWidth < 0 || frameHeight < 0) || (!(frameWidth == 0 && frameHeight == 0) && (frameWidth == 0 || frameHeight == 0)))
                     throw new FileTypeLoadException("Bad header data.");
                 Int32 skipLen;
                 Byte comprByte = fileData[offset + 5];
@@ -100,7 +100,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     // Is compressed. Doesn't actually work...
                     //Array.Copy(fileData, offset, imageData, 0, skipLen);
-                    // TODO: LZW MAGIC! ...or not. Bah.
+                    // TODO: LZW MAGIC! ...or not. Bah. Maybe it's just RLE?
 
                     // Draw a nice little "Nope" box instead...
                     for (int i = 0; i < imageData.Length; i++)

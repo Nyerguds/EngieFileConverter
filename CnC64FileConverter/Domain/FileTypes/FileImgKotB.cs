@@ -36,46 +36,68 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            Int32 datalen = fileData.Length;
-            Byte[] decompressed = EACompression.RleDecode(fileData, 0, null);
-            if (decompressed == null || decompressed.Length == 0)
-                throw new FileLoadException("Error decompressing file.");
-            /*/
-            String dumpPath;
-            if (sourcePath == null)
-                dumpPath = "kotb_decomp.pak";
-            else
-                dumpPath = Path.Combine(Path.GetDirectoryName(sourcePath), Path.GetFileNameWithoutExtension(sourcePath)) + "_decomp" + Path.GetExtension(sourcePath);
-            File.WriteAllBytes(dumpPath, decompressed);
-            //*/
-            Int32 byteWidth = decompressed[0];
-            Int32 height = decompressed[1];
-            Int32 actualWidth = byteWidth * 8; // 4 times a 1/2 byte image
+            if (fileData.Length == 0)
+                throw new FileTypeLoadException("File is empty.");
+            // First RLE byte value is 0. Not allowed.
+            if ((fileData[0] & 0x7F) == 0)
+                throw new FileTypeLoadException("Error decompressing file.");
+            // Structure is: 1. An RLE command, and if the command is repeat (same X and Y dimension) 1 byte for the dimensions, else two bytes.
+            if (fileData.Length < 2 && ((fileData[0] & 0x80) == 0 || fileData.Length < 3))
+                throw new FileTypeLoadException("File too short to decompress header!");
+            // Decompress just the dimensions header, to define the final decompression array size.
+            Byte[] dimensions = new Byte[2];
+            if (EACompression.RleDecode(fileData, 0, null, dimensions) <= 0)
+                throw new FileTypeLoadException("Error decompressing file.");
+            Int32 byteWidth = dimensions[0];
+            Int32 imgHeight = dimensions[1];
+            if (byteWidth == 0 || imgHeight == 0)
+                throw new FileTypeLoadException("Image dimensions can't be 0.");
+            Byte[] decompressed = new Byte[2 + byteWidth * 4 * imgHeight];
+            if (EACompression.RleDecode(fileData, 0, null, decompressed) <= 0)
+                throw new FileTypeLoadException("Error decompressing file.");
+            
+            // OVERALL PRINCIPLE:
+            // Each full scanline is made up of four 1-bpp "lines" of the byte width found in the header.
+            // So the real stride is (byte width * 4). These bytes are the data to create a 4bpp image, meaning,
+            // two pixels per byte. So the actual image width is (real stride * 2), or, put differently, (byte width * 8).
+            // As mentioned, the bits in such a line of data are four blocks of 1-bpp data, and the single bits of these
+            // four lines need to be combined by x-offset, giving the final 4-bit pixel values.
+
+            // Single line length for horizontally-composed image is
+            // four "bit frames" with a stride equal to the given byte width.
             Int32 fourLinesStride = byteWidth * 4;
+            // Actual final image pixel width. One scanline is four 1-bpp lines of stride
+            // interpreted as 4bpp image, so with 2 pixels per byte.
+            Int32 imgWidth = fourLinesStride * 2;
             // Some files seem cut off, but seem to end on an incomplete line of garbare which only contains some of the bits.
             // The play court images are notorious for this; I suspect they have a hardcoded cutoff height in the game code.
             // They all seem to use the Rio one (which is complete) for the court image itself.
             Int32 cutoffHeight = (decompressed.Length - 2) / fourLinesStride;
-            Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, actualWidth * 4, cutoffHeight, 2, 1, true, ref fourLinesStride);
-            // For a 12x83, the data is actually (12*4)x83. This forms quadruple-width rows to be combined to one.
-            Byte[] actualImage = new Byte[actualWidth * height];
+            // Final 1-bit image is four times the image width. Convert to 1 byte per bit for editing convenience.
+            Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, imgWidth * 4, cutoffHeight, 2, 1, true, ref fourLinesStride);
+            // Array for 4-bit image where each byte is one pixel. Will be converted to true 4bpp later.
+            Byte[] pixelImage = new Byte[imgWidth * imgHeight];
+            // Combine the bits into the new array.
             for (Int32 y = 0; y < cutoffHeight; y++)
             {
                 Int32 offset = fourLinesStride * y;
-                Int32 finalOffset = actualWidth * y;
-                for (Int32 x = 0; x < actualWidth; x++)
+                Int32 finalOffset = imgWidth * y;
+                for (Int32 x = 0; x < imgWidth; x++)
                 {
+                    // Take the 4 bits by skipping imgWidth bytes for each next one.
+
+
                     Byte bit1 = oneBitQuadImage[offset + x];
-                    Byte bit2 = (Byte)(oneBitQuadImage[offset + actualWidth + x] << 1);
-                    Byte bit3 = (Byte)(oneBitQuadImage[offset + actualWidth * 2 + x] << 2);
-                    Byte bit4 = (Byte)(oneBitQuadImage[offset + actualWidth * 3 + x] << 3);
-                    actualImage[finalOffset + x] = (Byte)(bit1 | bit2 | bit3 | bit4);
+                    Byte bit2 = (Byte)(oneBitQuadImage[offset + imgWidth + x] << 1);
+                    Byte bit3 = (Byte)(oneBitQuadImage[offset + imgWidth * 2 + x] << 2);
+                    Byte bit4 = (Byte)(oneBitQuadImage[offset + imgWidth * 3 + x] << 3);
+                    pixelImage[finalOffset + x] = (Byte)(bit1 | bit2 | bit3 | bit4);
                 }
             }
-            Int32 stride = actualWidth;
-            Byte[] fourbitImage = ImageUtils.ConvertFrom8Bit(actualImage, actualWidth, height, 4, true, ref stride);
+            Int32 stride = imgWidth;
+            Byte[] fourbitImage = ImageUtils.ConvertFrom8Bit(pixelImage, imgWidth, imgHeight, 4, true, ref stride);
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
-            this.m_LoadedImage = ImageUtils.BuildImage(fourbitImage, actualWidth, height, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+            this.m_LoadedImage = ImageUtils.BuildImage(fourbitImage, imgWidth, imgHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean dontCompress)
