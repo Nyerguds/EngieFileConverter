@@ -30,6 +30,9 @@ At that point, it becameto CnC64FileConverter v1.0.
 
 CnC64FileConverter versions:
 
+v1.0.1: (04/04/2017 23:33)
+-Fixed behaviour of map import to allow PC maps saved by CCMAP.
+
 v1.0: (04/04/2017 22:33)
 -Removed img type debug info (internal data size) from the user interface.
 -Can now open normal images (png/gif/bmp/jpg).

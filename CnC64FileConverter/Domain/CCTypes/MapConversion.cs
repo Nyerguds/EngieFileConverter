@@ -124,10 +124,13 @@ namespace Nyerguds.CCTypes
         {
             foreach (CnCMapCell cell in map.Cells)
             {
-                if (cell.HighByte != 0)
-                    continue;
-                cell.HighByte = 0xFF;
-                cell.LowByte = 0x00;
+                if (cell.HighByte == 0)
+                {
+                    cell.HighByte = 0xFF;
+                    cell.LowByte = 0x00;
+                }
+                else if (cell.HighByte == 0xFF && cell.LowByte == 0xFF)
+                    cell.LowByte = 0x00;
             }
         }
     }

@@ -176,12 +176,7 @@ namespace CnC64FileConverter.Domain.ImageFile
                 Byte hiByte = mapData[i * 2];
                 Byte loByte = mapData[i * 2 + 1];
                 TerrainType terrain = TerrainType.Clear;
-                if (hiByte == 0xFF)
-                {
-                    if (loByte == 0xFF)
-                        throw new FileTypeLoadException("Bad format for clear map terrain!");   
-                }
-                else
+                if (hiByte != 0xFF)
                 {
                     TileInfo info;
                     if (TILEINFO.TryGetValue(hiByte, out info))
@@ -222,7 +217,7 @@ namespace CnC64FileConverter.Domain.ImageFile
         }
 
         protected Byte[] IdentifyTheaterAndConvert(Byte[] fileData, ref Theater theater, Boolean toPC, String sourceFile)
-        {;
+        {
             Dictionary<Int32, CnCMapCell> mappingDes = toPC ? DESERT_MAPPING : DESERT_MAPPING_REVERSED;
             Dictionary<Int32, CnCMapCell> mappingTem = toPC ? TEMPERATE_MAPPING : TEMPERATE_MAPPING_REVERSED;
 
