@@ -313,8 +313,8 @@ namespace EngieFileConverter.UI
             this.tsmiCopy.Enabled = hasFile;
 
             // General frame tools
-            tsmiImageToFrames.Enabled = hasFile && loadedFile.GetBitmap() != null;
-            tsmiFramesToSingleImage.Enabled = canExportFrames;
+            this.tsmiImageToFrames.Enabled = hasFile && loadedFile.GetBitmap() != null;
+            this.tsmiFramesToSingleImage.Enabled = canExportFrames;
             // C&C64 toolsets
             this.tsmiToHeightMap.Enabled = loadedFile is FileMapWwCc1Pc;
             this.tsmiToPlateaus.Enabled = loadedFile is FileMapWwCc1Pc;
@@ -570,7 +570,7 @@ namespace EngieFileConverter.UI
                     break;
                 case ColorStatus.External:
                     PaletteDropDownInfo currentPal = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
-                    resetEnabled = currentPal != null && currentPal.IsChanged(GetCurrentTypeTransparencyMask());
+                    resetEnabled = currentPal != null && currentPal.IsChanged(this.GetCurrentTypeTransparencyMask());
                     if (fileLoaded) // && currentPal.Colors.Length != loadedFile.GetColors().Length)
                         pal = loadedFile.GetColors();
                     else
@@ -627,7 +627,7 @@ namespace EngieFileConverter.UI
                     this.btnSavePalette.Enabled = false;
                 else if (!this.btnSavePalette.Enabled && bpp != 1)
                     this.btnSavePalette.Enabled = true;
-                this.btnResetPalette.Enabled = currentPal.IsChanged(GetCurrentTypeTransparencyMask());
+                this.btnResetPalette.Enabled = currentPal.IsChanged(this.GetCurrentTypeTransparencyMask());
             }
             if (loadedFile == null)
                 this.pzpImage.Image = null;
@@ -660,7 +660,7 @@ namespace EngieFileConverter.UI
                         if (dr != DialogResult.Yes)
                             return;
                     }
-                    currentPal.Revert(GetCurrentTypeTransparencyMask());
+                    currentPal.Revert(this.GetCurrentTypeTransparencyMask());
                     Color[] colors = currentPal.Colors;
                     this.GetShownFile().SetColors(colors);
                     break;
@@ -699,7 +699,7 @@ namespace EngieFileConverter.UI
             palSave.Icon = this.Icon;
             palSave.Title = GetTitle(false);
             palSave.PaletteToSave = currentPal;
-            palSave.SuggestedSaveName = m_LoadedFile.LoadedFile ?? m_LoadedFile.LoadedFileName;
+            palSave.SuggestedSaveName = this.m_LoadedFile.LoadedFile ?? this.m_LoadedFile.LoadedFileName;
             palSave.StartPosition = FormStartPosition.CenterParent;
             DialogResult dr = palSave.ShowDialog(this);
             if (dr != DialogResult.OK || cs == ColorStatus.Internal)
@@ -749,7 +749,7 @@ namespace EngieFileConverter.UI
             if (oldBpp != -1 && oldBpp == bpp && !forced)
                 return;
             Int32 index = -1;
-            List<PaletteDropDownInfo> bppPalettes = this.GetPalettes(bpp, reloadFiles, GetCurrentTypeTransparencyMask());
+            List<PaletteDropDownInfo> bppPalettes = this.GetPalettes(bpp, reloadFiles, this.GetCurrentTypeTransparencyMask());
             if (forced && oldBpp != -1 && oldBpp == bpp && currentPal != null)
                 index = bppPalettes.FindIndex(x => x.Name == currentPal.Name);
             if (bppPalettes.Count == 0)
@@ -961,7 +961,7 @@ namespace EngieFileConverter.UI
         
         private void TsmiImageToFramesClick(Object sender, EventArgs e)
         {
-            SupportedFileType shownFile = GetShownFile();
+            SupportedFileType shownFile = this.GetShownFile();
             if (shownFile == null)
                 return;
             Bitmap image = shownFile.GetBitmap();
@@ -970,10 +970,10 @@ namespace EngieFileConverter.UI
             allPalettes.AddRange(this.m_DefaultPalettes);
             allPalettes.AddRange(this.m_ReadPalettes);
 
-            FrmFramesCutter frameCutter = new FrmFramesCutter(image, pzpImage.CustomColors, allPalettes.ToArray());
-            frameCutter.CustomColors = pzpImage.CustomColors;
+            FrmFramesCutter frameCutter = new FrmFramesCutter(image, this.pzpImage.CustomColors, allPalettes.ToArray());
+            frameCutter.CustomColors = this.pzpImage.CustomColors;
             DialogResult dr = frameCutter.ShowDialog();
-            pzpImage.CustomColors = frameCutter.CustomColors;
+            this.pzpImage.CustomColors = frameCutter.CustomColors;
 
             if (dr != DialogResult.OK)
                 return;
@@ -999,7 +999,7 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
                 return;
-            Bitmap[] frameImages = m_LoadedFile.Frames.Select(fr => fr.GetBitmap()).ToArray();
+            Bitmap[] frameImages = this.m_LoadedFile.Frames.Select(fr => fr.GetBitmap()).ToArray();
 
 
             PixelFormat highestPf = PixelFormat.Undefined;
@@ -1076,7 +1076,7 @@ namespace EngieFileConverter.UI
             Bitmap bm = ImageUtils.BuildImageFromFrames(frameImages, frameWidth, frameHeight, framesPerLine, fillPalIndex, fillColor);
             SupportedFileType oldFile = this.m_LoadedFile;
             FileImagePng returnImg = new FileImagePng();
-            returnImg.LoadFile(bm, m_LoadedFile.LoadedFile);
+            returnImg.LoadFile(bm, this.m_LoadedFile.LoadedFile);
             this.m_LoadedFile = returnImg;
             this.AutoSetZoom();
             this.ReloadUi(true);

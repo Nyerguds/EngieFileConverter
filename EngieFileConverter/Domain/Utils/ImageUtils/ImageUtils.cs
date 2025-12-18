@@ -1576,11 +1576,12 @@ namespace Nyerguds.ImageManipulation
                 else if (Image.GetPixelFormatSize(origPf) > 8 && origPf != PixelFormat.Format32bppArgb)
                 {
                     Int32 stride;
-                    Byte[] frameData = GetImageData(bmp, out stride);
+                    Byte[] frameData = GetImageData(bmp, out stride, origPf);
                     Bitmap newBmp = BuildImage(frameData, section.Width, section.Height, stride, origPf, null, null);
                     bmp.Dispose();
                     bmp = newBmp;
                 }
+                // else: target is 32bpp already; don't convert&replace.
             }
             return bmp;
         }
