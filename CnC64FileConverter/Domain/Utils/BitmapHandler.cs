@@ -163,7 +163,7 @@ namespace Nyerguds.ImageManipulation
                 tempFileName += ".png";
             Byte[] data = ImageUtils.GetSavedImageData(image, ref tempFileName);
             Int32 cols = image.Palette.Entries.Length;
-            if (cols > 0 && cols > paletteLength)
+            if (paletteLength != 0 && cols > 0 && cols > paletteLength)
             {
                 Int32 paletteDataLength = paletteLength * 3;
                 Int32 plteOffset = FindChunk(data, "PLTE");
