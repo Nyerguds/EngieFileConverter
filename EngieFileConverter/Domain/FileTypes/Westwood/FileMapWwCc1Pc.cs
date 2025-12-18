@@ -167,7 +167,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "C&C map file - PC"; } }
+        public override String LongTypeName { get { return "C&C map file - PC"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "bin" }; } }
         public override Int32 Width { get { return 64; } }
@@ -232,7 +232,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return null;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             FileMapWwCc1Pc cc1PcMap = fileToSave as FileMapWwCc1Pc;
             if (cc1PcMap == null)

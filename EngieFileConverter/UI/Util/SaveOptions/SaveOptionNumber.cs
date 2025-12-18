@@ -27,7 +27,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public SaveOptionNumber() : this(null, null) { }
 
-        public SaveOptionNumber(SaveOption info, ListedControlController<SaveOption> controller)
+        public SaveOptionNumber(Option info, ListedControlController<Option> controller)
         {
             this.InitializeComponent();
             this.InitResize();
@@ -46,11 +46,11 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
-        public override void UpdateInfo(SaveOption info)
+        public override void UpdateInfo(Option info)
         {
             this.Info = info;
             this.lblName.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
-            this.numValue.Text = this.Info.SaveData;
+            this.numValue.Text = this.Info.Data;
             String init = this.Info.InitValue;
             this.m_minimum = null;
             this.m_maximum = null;
@@ -83,7 +83,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             // Update controller
             if (this.Info == null)
                 return;
-            this.Info.SaveData = this.numValue.Value.ToString(CultureInfo.InvariantCulture);
+            this.Info.Data = this.numValue.Value.ToString(CultureInfo.InvariantCulture);
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

@@ -19,7 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "ImageLine JMX image"; } }
         public override String[] FileExtensions { get { return new String[] { "jmx" }; } }
-        public override String ShortTypeDescription { get { return "ImageLine JMX image file"; } }
+        public override String LongTypeName { get { return "ImageLine JMX image file"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -56,7 +56,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(sourcePath);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)

@@ -19,7 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "DynScr"; } }
         public override String[] FileExtensions { get { return new String[] { "scr" }; } }
         public override String ShortTypeName { get { return "Dynamix SCR"; } }
-        public override String ShortTypeDescription { get { return "Dynamix Screen file v1"; } }
+        public override String LongTypeName { get { return "Dynamix Screen file v1"; } }
 
         protected String[] saveTypes = new String[] { "VGA/BIN", "MA8" };
         protected String[] compressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
@@ -192,42 +192,42 @@ namespace EngieFileConverter.Domain.FileTypes
             return fullPal;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Bitmap img = fileToSave.GetBitmap();
             if (img == null)
                 return null;
             Boolean is4bpp = img.PixelFormat == PixelFormat.Format4bppIndexed;
-            SaveOption[] opts = new SaveOption[is4bpp ? 1 : 2];
+            Option[] opts = new Option[is4bpp ? 1 : 2];
             Int32 opt = 0;
             Int32 compressionType = 1;
             if (!is4bpp)
             {
                 FileImgDynScr toSaveScr = fileToSave as FileImgDynScr;
                 Int32 saveType = toSaveScr != null && toSaveScr.IsMa8 ? 1 : 0;
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", String.Join(",", saveTypes), saveType.ToString());
+                opts[opt++] = new Option("TYP", OptionInputType.ChoicesList, "Save type:", String.Join(",", saveTypes), saveType.ToString());
                 if (fileToSave.ExtraInfo != null && fileToSave.ExtraInfo.Contains(saveTypes[saveType] + ":" + this.savecompressionTypes[0]))
                     compressionType = 0;
             }
             else if (fileToSave.ExtraInfo != null && fileToSave.ExtraInfo.Contains("BIN:" + this.savecompressionTypes[0]))
                 compressionType = 0;
-            opts[opt] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), compressionType.ToString());
+            opts[opt] = new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", this.savecompressionTypes), compressionType.ToString());
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, saveOptions, false);
         }
 
-        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean v2)
+        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions, Boolean v2)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 saveType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYP"), out saveType);
             Bitmap image = fileToSave.GetBitmap();
             if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
                 throw new ArgumentException("This format needs 4bpp or 8bpp images.", "fileToSave");

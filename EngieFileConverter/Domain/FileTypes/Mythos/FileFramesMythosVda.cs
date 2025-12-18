@@ -18,7 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override String IdCode { get { return "MythVda"; } }
         public override String ShortTypeName { get { return "Mythos Visage Animation"; } }
-        public override String ShortTypeDescription { get { return "Mythos Visage Animation file"; } }
+        public override String LongTypeName { get { return "Mythos Visage Animation file"; } }
         public override String[] FileExtensions { get { return new String[] { "vda", "vdx" }; } }
         public override Boolean[] TransparencyMask { get { return (!this._isFramed || (this._noFirstFrame && !this._isChained)) ? base.TransparencyMask : new Boolean[0]; } }
 
@@ -235,7 +235,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         // Uses specific PNG loading from its superclass, since
                         // FileImageFrame inherits from png and still contains its mime type.
                         pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
-                        pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
+                        pngFile.LoadFileFrame(null, new FileImagePng().LongTypeName, pngFile.GetBitmap(), pngName, -1);
                         lastFrameData = this.Get320x200FrameData(pngFile);
 
                         if (lastFrameData != null)
@@ -530,7 +530,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return false;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Color[] palette;
             this.PerformPreliminaryChecks(fileToSave, out palette);
@@ -545,16 +545,16 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileVda != null)
             {
                 if (fileVda._noFirstFrame && !fileVda._isChained)
-                    throw new ArgumentException("A " + ShortTypeDescription + " without initial frame cannot be re-saved correctly. Reload it with the missing start added (either as vda or as png) before saving it.");
+                    throw new ArgumentException("A " + this.LongTypeName + " without initial frame cannot be re-saved correctly. Reload it with the missing start added (either as vda or as png) before saving it.");
                 noFirstFrame = fileVda._noFirstFrame;
             }
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("OPT", SaveOptionType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks", "1"),
-                new SaveOption("CH8", SaveOptionType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", null, "1", new SaveEnableFilter("OPT", false, "1")),
-                new SaveOption("CHR", SaveOptionType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", null, "1", new SaveEnableFilter("OPT", false, "1")),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
-                new SaveOption("CUT", SaveOptionType.Boolean, "Leave off the first frame (save differences without initial state)", noFirstFrame? "1" : "0"),
+                new Option("OPT", OptionInputType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks", "1"),
+                new Option("CH8", OptionInputType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", null, "1", new EnableFilter("OPT", true, "1")),
+                new Option("CHR", OptionInputType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", null, "1", new EnableFilter("OPT", true, "1")),
+                new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
+                new Option("CUT", OptionInputType.Boolean, "Leave off the first frame (save differences without initial state)", noFirstFrame? "1" : "0"),
             };
         }
 
@@ -564,7 +564,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The input file to convert.</param>
         /// <param name="savePath">The path to save to.</param>
         /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
-        public override void SaveAsThis(SupportedFileType fileToSave, String savePath, SaveOption[] saveOptions)
+        public override void SaveAsThis(SupportedFileType fileToSave, String savePath, Option[] saveOptions)
         {
             String vdaName;
             String vdxName;
@@ -585,24 +585,24 @@ namespace EngieFileConverter.Domain.FileTypes
                 File.WriteAllBytes(vdxName, vdxFile);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // dummy function; this should never be used since it saves without vdx file.
             Byte[] vdxFile;
             return this.SaveToBytesAsThis(fileToSave, saveOptions, out vdxFile);
         }
 
-        public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, out Byte[] vdxFile)
+        public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions, out Byte[] vdxFile)
         {
             Color[] palette;
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out palette);
             Int32 nrOfFrames = frames.Length;
-            Boolean useChunks = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "OPT")) == 1;
-            Boolean chunkDiag = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CH8"));
-            Boolean chunkRects = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CHR"));
-            Boolean cutfirstFrame = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
+            Boolean useChunks = Int32.Parse(Option.GetSaveOptionValue(saveOptions, "OPT")) == 1;
+            Boolean chunkDiag = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CH8"));
+            Boolean chunkRects = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CHR"));
+            Boolean cutfirstFrame = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CUT"));
             Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             if (compressionType < 0 || compressionType > 2)
                 compressionType = 0;
             Bitmap origImage = frames[0].GetBitmap();

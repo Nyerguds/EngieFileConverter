@@ -20,7 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "BIF image"; } }
         public override String[] FileExtensions { get { return new String[] { "bif" }; } }
-        public override String ShortTypeDescription { get { return "BIF image file (15 Move Hole)"; } }
+        public override String LongTypeName { get { return "BIF image file (15 Move Hole)"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         protected Boolean m_PaletteLoaded;
@@ -77,7 +77,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(sourcePath);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)

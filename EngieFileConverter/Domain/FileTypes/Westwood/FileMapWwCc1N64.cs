@@ -14,10 +14,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "WwCc1MapN64"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Map"; } }
-        public override String ShortTypeDescription { get { return "C&C map file - N64"; } }
+        public override String LongTypeName { get { return "C&C map file - N64"; } }
         public override String[] FileExtensions { get { return new String[] { "map" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] {this.ShortTypeDescription }; } }
+        public override String[] DescriptionsForExtensions { get { return new String[] {this.LongTypeName }; } }
 
         public FileMapWwCc1N64() { }
 
@@ -31,7 +31,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.LoadFile(fileData, filename, null, null, false);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
             if (mapPc == null)

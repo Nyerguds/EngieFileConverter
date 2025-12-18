@@ -19,7 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood LCW IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img" }; } }
-        public override String ShortTypeDescription { get { return "Blade Runner LCW image"; } }
+        public override String LongTypeName { get { return "Blade Runner LCW image"; } }
         public override Int32 BitsPerPixel { get{ return 16; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -38,7 +38,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException("File to save is empty!", "fileToSave");

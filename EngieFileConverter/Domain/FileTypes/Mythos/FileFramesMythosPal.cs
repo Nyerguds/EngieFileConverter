@@ -17,7 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override String IdCode { get { return "MythPal"; } }
         public override String ShortTypeName { get { return "Mythos Visage palette"; } }
-        public override String ShortTypeDescription { get { return "Mythos Visage Palette file"; } }
+        public override String LongTypeName { get { return "Mythos Visage Palette file"; } }
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
@@ -41,11 +41,11 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new SaveOption[0]; }
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new Option[0]; }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            saveOptions = new SaveOption[] { new SaveOption("PALONLY", SaveOptionType.Boolean, String.Empty, "1") };
+            saveOptions = new Option[] { new Option("PALONLY", OptionInputType.Boolean, String.Empty, "1") };
             return base.SaveToBytesAsThis(fileToSave, saveOptions);
         }
 

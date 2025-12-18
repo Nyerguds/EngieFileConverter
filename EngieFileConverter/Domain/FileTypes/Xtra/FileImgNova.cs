@@ -24,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Nova image"; } }
         public override String[] FileExtensions { get { return new String[] { "ppp" }; } }
-        public override String ShortTypeDescription { get { return "Nova image file"; } }
+        public override String LongTypeName { get { return "Nova image file"; } }
         public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public override SupportedFileType[] Frames { get { return this.m_Frames; } }
@@ -128,7 +128,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return frames.Count;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)

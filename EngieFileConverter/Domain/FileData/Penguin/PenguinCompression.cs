@@ -8,6 +8,12 @@ namespace Nyerguds.FileData.Compression.Penguin
     {
         public static Byte[] DecompressDogsFlagRle(Byte[] compressedData, Int32 dataStart, Int32 compSize, Int32 decompSize, Byte flag)
         {
+            return DecompressDogsFlagRle(compressedData, dataStart, compSize, decompSize, flag, false);
+        }
+
+        public static Byte[] DecompressDogsFlagRle(Byte[] compressedData, Int32 dataStart, Int32 compSize, Int32 decompSize, Byte flag, Boolean oneByteRepeat)
+        {
+            Int32 minSkip = oneByteRepeat ? 2 : 3;
             if (dataStart + compSize > compressedData.Length)
                 throw new ArgumentException("Given data is too small for the given data boundaries.", "compressedData");
             Byte[] frameData = new Byte[decompSize];
@@ -24,10 +30,16 @@ namespace Nyerguds.FileData.Compression.Penguin
                 Byte value = compressedData[readPtr++];
                 if (value == flag)
                 {
-                    if (readPtr + 3 > dataEnd)
+                    if (readPtr + minSkip > dataEnd)
                         throw new ArgumentException("Decompression failed: input too small for repeat command.", "compressedData");
-                    Int32 repeat = ArrayUtils.ReadUInt16FromByteArrayBe(compressedData, readPtr);
-                    readPtr += 2;
+                    Int32 repeat;
+                    if (oneByteRepeat)
+                        repeat = compressedData[readPtr++];
+                    else
+                    {
+                        repeat = ArrayUtils.ReadUInt16FromByteArrayBe(compressedData, readPtr);
+                        readPtr += 2;
+                    }
                     Byte repVal = compressedData[readPtr++];
                     if (writePtr + repeat > decompSize)
                         throw new ArgumentException("Decompression failed: output buffer too small.", "compressedData");
@@ -48,7 +60,14 @@ namespace Nyerguds.FileData.Compression.Penguin
 
         public static Byte[] CompressDogsFlagRle(Byte[] fileData, Byte flag)
         {
+            return CompressDogsFlagRle(fileData, flag, false);
+        }
+
+        public static Byte[] CompressDogsFlagRle(Byte[] fileData, Byte flag, Boolean oneByteRepeat)
+        {
             Int32 dataLen = fileData.Length;
+            Int32 minBlock = oneByteRepeat ? 3 : 4;
+            Int32 maxRepeatVal = oneByteRepeat ? 0xFF : 0xFFFF;
             Byte[] compressData = new Byte[dataLen];
             Int32 readPtr = 0;
             Int32 writePtr = 0;
@@ -57,17 +76,19 @@ namespace Nyerguds.FileData.Compression.Penguin
             {
                 Byte value = fileData[readPtr];
                 Int32 repeat = 1;
-                for (; repeat < UInt16.MaxValue && repeat + readPtr < dataLen && fileData[readPtr + repeat] == value; ++repeat) { }
-                if (writePtr + Math.Min(repeat, 4) >= dataLen)
+                for (; repeat < UInt16.MaxValue && repeat + readPtr < dataLen && fileData[readPtr + repeat] == value && repeat < maxRepeatVal; ++repeat) { }
+                if (writePtr + Math.Min(repeat, minBlock) >= dataLen)
                 {
+                    // Can probably never overflow; the algo only compresses if it reduces. But I guess this shaves off the final compression operation?
                     overflow = true;
                     break;
                 }
                 readPtr += repeat;
-                if (repeat >= 4 || value == flag)
+                if (repeat >= minBlock || value == flag)
                 {
                     compressData[writePtr++] = flag;
-                    compressData[writePtr++] = (Byte) ((repeat >> 8) & 0xFF);
+                    if (!oneByteRepeat)
+                        compressData[writePtr++] = (Byte) ((repeat >> 8) & 0xFF);
                     compressData[writePtr++] = (Byte) (repeat & 0xFF);
                     compressData[writePtr++] = value;
                 }

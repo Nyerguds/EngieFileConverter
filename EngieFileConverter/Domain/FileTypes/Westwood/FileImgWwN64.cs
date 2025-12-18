@@ -23,7 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 IMG"; } }
         public override String[] FileExtensions { get { return new String[] { "img", "jim" }; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C N64 image"; } }
+        public override String LongTypeName { get { return "Westwood C&C N64 image"; } }
 
         public override Boolean NeedsPalette { get { return this.HdrColorFormat != 2 && this.HdrColorsInPalette == 0; } }
 
@@ -154,17 +154,17 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             this.PerformPreliminaryChecks(fileToSave);
             // If it is a hi-colour image, return empty
             if (fileToSave == null || (fileToSave.FileClass & FileClass.ImageHiCol) != 0)
-                return new SaveOption[0];
+                return new Option[0];
             // If it is a non-image format which does contain colours, offer to save with palette.
             // Palette option is disabled by default if the palette it would save comes from the UI.
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (!fileToSave.NeedsPalette ? 0 : 1).ToString()),
+                new Option("PAL", OptionInputType.Boolean, "Include palette", (!fileToSave.NeedsPalette ? 0 : 1).ToString()),
             };
         }
 
@@ -178,11 +178,11 @@ namespace EngieFileConverter.Domain.FileTypes
             return image;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap image = this.PerformPreliminaryChecks(fileToSave);
             Int32 colors = fileToSave.GetColors().Length;
-            Boolean savePalette = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean savePalette = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
             // 0 = 4bpp, 1 = 8bpp, 2 = 16bpp
             Byte colorFormat;
             Int32 width = image.Width;

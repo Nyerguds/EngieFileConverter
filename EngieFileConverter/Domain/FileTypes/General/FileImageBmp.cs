@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
+using Windows.Graphics2d;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -13,7 +14,7 @@ namespace EngieFileConverter.Domain.FileTypes
         private readonly String LOAD_ERROR = "Not a bitmap file.";
         public override String ShortTypeName { get { return "Bitmap"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Bitmap Image"; } }
+        public override String LongTypeName { get { return "Bitmap Image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
         protected override String MimeType { get { return "bmp"; } }
@@ -21,7 +22,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
         {
-            get { return new String[] {this.ShortTypeDescription }; }
+            get { return new String[] {this.LongTypeName }; }
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
@@ -37,6 +38,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (size != dataLen || reserved != 0 || dataLen < headerEnd)
                 throw new FileTypeLoadException(this.LOAD_ERROR);
             Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0E);
+            String compression = null;
             if (headerEnd < headerSize + 14)
                 throw new FileTypeLoadException(this.LOAD_ERROR);
             try
@@ -45,17 +47,45 @@ namespace EngieFileConverter.Domain.FileTypes
                     this.m_LoadedImage = DibHandler.ImageFromDib(fileData, 14, headerEnd, true);
                 else if (headerSize == 124)
                     this.m_LoadedImage = DibHandler.ImageFromDib5(fileData, 14, headerEnd, false);
-                else
+                if (this.m_LoadedImage == null)
                 {
-                    // Attempt loading through the framework
+                    // Attempt loading through the framework to catch unsupported cases.
                     using (MemoryStream ms = new MemoryStream(fileData))
                     using (Bitmap loadedImage = new Bitmap(ms))
                         this.m_LoadedImage = ImageUtils.CloneImage(loadedImage);
+                    if (this.m_LoadedImage != null)
+                    {
+                        // Success. Now try to figure out what went wrong.
+                        if (headerSize == 40)
+                        {
+                            BITMAPINFOHEADER header = ArrayUtils.ReadStructFromByteArray<BITMAPINFOHEADER>(fileData, 14, Endianness.LittleEndian);
+                            if (header.biCompression != BITMAPCOMPRESSION.BI_RGB && header.biCompression != BITMAPCOMPRESSION.BI_BITFIELDS)
+                            {
+                                compression = header.biCompression.ToString();
+                                if (compression.StartsWith("BI_"))
+                                    compression = compression.Substring(3);
+                            }
+                        }
+                        else if (headerSize == 124)
+                        {
+                            BITMAPV5HEADER dib5Hdr = ArrayUtils.ReadStructFromByteArray<BITMAPV5HEADER>(fileData, 14, Endianness.LittleEndian);
+                            if (dib5Hdr.bV5Compression != BITMAPCOMPRESSION.BI_RGB && dib5Hdr.bV5Compression != BITMAPCOMPRESSION.BI_BITFIELDS)
+                            {
+                                compression = dib5Hdr.bV5Compression.ToString();
+                                if (compression.StartsWith("BI_"))
+                                    compression = compression.Substring(3);
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception e)
             {
                 throw new FileTypeLoadException("Error loading bitmap: " + e);
+            }
+            if (this.m_LoadedImage == null)
+            {
+                throw new FileTypeLoadException("Error loading bitmap.");
             }
             StringBuilder sbExtrainfo = new StringBuilder();
             Int32 version = 0;
@@ -97,11 +127,13 @@ namespace EngieFileConverter.Domain.FileTypes
                         break;
                 }
             }
+            if (compression != null)
+                sbExtrainfo.Append("\nCompression: ").Append(compression);
             this.ExtraInfo = sbExtrainfo.ToString();
             this.SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");

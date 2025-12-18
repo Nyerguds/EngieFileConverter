@@ -2305,5 +2305,31 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
+        public static void SaveImage(short[] data, int width, int height, string path)
+        {
+            int dataLen = data.Length;
+            byte[] sourceData = new byte[dataLen];
+            // Reduce Int16 to bytes by downshifting the data by 8 bits.
+            // Effectively this divides the number by 256.
+            for (int i = 0; i < dataLen; ++i)
+                sourceData[i] = (Byte) (data[i] >> 8);
+            // Make an 8bpp image
+            Bitmap pic = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+            BitmapData picData = pic.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, pic.PixelFormat);
+            // Get actual stride in BitmapData
+            Int32 targetStride = picData.Stride;
+            Int64 scan0 = picData.Scan0.ToInt64();
+            // Stride is ALWAYS rounded up to the next multiple of 4, so copy line by line to avoid issues.
+            for (int y = 0; y < height; ++y)
+                Marshal.Copy(sourceData, y * width, new IntPtr(scan0 + y * targetStride), width);
+            pic.UnlockBits(picData);
+            // Requesting 'Palette' makes a COPY, so get it out, edit it, and then reassign it.
+            ColorPalette pal = pic.Palette;
+            for (int i = 0; i < 256; ++i)
+                pal.Entries[i] = Color.FromArgb(i, i, i);
+            pic.Palette = pal;
+            pic.Save(path, ImageFormat.Png);
+        }
+
     }
 }

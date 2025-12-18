@@ -7,7 +7,7 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         public override String[] FileExtensions { get { return new String[] { "scr" }; } }
         public override String ShortTypeName { get { return "Dynamix SCR v2"; } }
-        public override String ShortTypeDescription { get { return "Dynamix Screen file v2"; } }
+        public override String LongTypeName { get { return "Dynamix Screen file v2"; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -20,7 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.LoadFile(fileData, filename, true);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, saveOptions, true);
         }

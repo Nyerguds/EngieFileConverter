@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood LOL 1 Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Shape File - Lands of Lore 1"; } }
+        public override String LongTypeName { get { return "Westwood Shape File - Lands of Lore 1"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -158,7 +158,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = extraInfoGlobal.ToString();
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             SupportedFileType[] frames = FileFramesWwShpD2.PerformPreliminaryChecks(fileToSave);
             // If it is a non-image format which does contain colours, offer to save with palette
@@ -198,28 +198,28 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean hasUncompressed = d2shp != null && d2shp.UncompressedIndices != null && d2shp.UncompressedIndices.Length > 0;
             String uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(d2shp.UncompressedIndices) : String.Empty;
 
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Overall file compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
-                new SaveOption("NCM", SaveOptionType.Boolean, "Don't compress separate frames (might give better overall compression)", "0"),
-                new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped.", "1"),
-                new SaveOption("RMU", SaveOptionType.Boolean, "Treat as remapped unit (apply remapping to all frames except the remap table itself at index #16)", null, probablyRemappedUnit ? "1" : "0", new SaveEnableFilter("RMT", false, "1")),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, " + Environment.NewLine, remapped, new SaveEnableFilter("RMU", true, "1")),
-                new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "0", "1", new SaveEnableFilter("NCM", true, "1")),
-                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, " + Environment.NewLine, uncompressed, new SaveEnableFilter("NCM", true, "1"), new SaveEnableFilter("NCA", true, "1"))
+                new Option("CMP", OptionInputType.ChoicesList, "Overall file compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
+                new Option("NCM", OptionInputType.Boolean, "Don't compress separate frames (might give better overall compression)", "0"),
+                new Option("RMT", OptionInputType.Boolean, "Add remapping tables to allow frames to be remapped.", "1"),
+                new Option("RMU", OptionInputType.Boolean, "Treat as remapped unit (apply remapping to all frames except the remap table itself at index #16)", null, probablyRemappedUnit ? "1" : "0", new EnableFilter("RMT", true, "1")),
+                new Option("RMS", OptionInputType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, " + Environment.NewLine, remapped, new EnableFilter("RMU", false, "1")),
+                new Option("NCA", OptionInputType.Boolean, "Auto-detect best compression usage.", "0", "1", new EnableFilter("NCM", false, "1")),
+                new Option("NCS", OptionInputType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, " + Environment.NewLine, uncompressed, new EnableFilter("NCM", false, "1"), new EnableFilter("NCA", false, "1"))
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = FileFramesWwShpD2.PerformPreliminaryChecks(fileToSave);
             Int32 compressionType;
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType))
+            if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType))
                 compressionType = 4;
-            Boolean noFramesCompr = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NCM"));
-            Boolean addRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMT"));
-            Boolean addUnitRemap = addRemap && frames.Length > 16 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMU"));
-            String remapRange = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
+            Boolean noFramesCompr = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NCM"));
+            Boolean addRemap = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMT"));
+            Boolean addUnitRemap = addRemap && frames.Length > 16 && GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMU"));
+            String remapRange = Option.GetSaveOptionValue(saveOptions, "RMS");
             if (addUnitRemap)
             {
                 Int32 frLen = frames.Length;
@@ -229,16 +229,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frLen > 18)
                     remapRange += "-" + (frLen - 1);
             }
-            SaveOption noCompAuto = SaveOption.GetSaveOption(saveOptions, "NCA");
-            SaveOption noCompSpecified = SaveOption.GetSaveOption(saveOptions, "NCS");
-            List<SaveOption> saveOpts = new List<SaveOption>();
-            saveOpts.Add(new SaveOption("VER", SaveOptionType.Boolean, null, null, "1"));
-            saveOpts.Add(new SaveOption("RMT", SaveOptionType.Boolean, null, null, addRemap || !String.IsNullOrEmpty(remapRange) ? "1" : "0"));
-            saveOpts.Add(new SaveOption("RMS", SaveOptionType.String, null, null, remapRange));
+            Option noCompAuto = Option.GetSaveOption(saveOptions, "NCA");
+            Option noCompSpecified = Option.GetSaveOption(saveOptions, "NCS");
+            List<Option> saveOpts = new List<Option>();
+            saveOpts.Add(new Option("VER", OptionInputType.Boolean, null, null, "1"));
+            saveOpts.Add(new Option("RMT", OptionInputType.Boolean, null, null, addRemap || !String.IsNullOrEmpty(remapRange) ? "1" : "0"));
+            saveOpts.Add(new Option("RMS", OptionInputType.String, null, null, remapRange));
             if (noFramesCompr)
             {
-                saveOpts.Add(new SaveOption("NCA", SaveOptionType.Boolean, "", "0"));
-                saveOpts.Add(new SaveOption("NCS", SaveOptionType.String, String.Empty, String.Empty, String.Empty));
+                saveOpts.Add(new Option("NCA", OptionInputType.Boolean, "", "0"));
+                saveOpts.Add(new Option("NCS", OptionInputType.String, String.Empty, String.Empty, String.Empty));
             }
             else
             {

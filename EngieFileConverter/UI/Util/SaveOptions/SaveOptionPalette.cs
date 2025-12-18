@@ -26,7 +26,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public SaveOptionPalette() : this(null, null) { }
 
-        public SaveOptionPalette(SaveOption info, ListedControlController<SaveOption> controller)
+        public SaveOptionPalette(Option info, ListedControlController<Option> controller)
         {
             this.InitializeComponent();
             this.InitResize();
@@ -45,7 +45,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
-        public override void UpdateInfo(SaveOption info)
+        public override void UpdateInfo(Option info)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         private void SelectFromSaveData()
         {
             Int32 select;
-            Int32.TryParse(this.Info.SaveData, out select);
+            Int32.TryParse(this.Info.Data, out select);
             if (this.m_Palette != null && select >= 0 && select < this.m_Palette.Length)
             {
                 this.lblColor.TrueBackColor = this.m_Palette[select];
@@ -99,7 +99,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         private void PickTrimColor()
         {
             Int32 selectedColor;
-            using (FrmPalette palSelect = new FrmPalette(this.m_Palette.ToArray(), false, ColorSelMode.Single))
+            using (FrmPalette palSelect = new FrmPalette(m_paletteBpp, this.m_Palette.ToArray(), false, ColorSelMode.Single))
             {
                 palSelect.SelectedIndices = new Int32[] {lblColor.Tag as Int32? ?? 0};
                 if (palSelect.ShowDialog() != DialogResult.OK)
@@ -109,7 +109,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             lblColor.Tag = selectedColor;
             lblColor.TrueBackColor = this.m_Palette[selectedColor];
             this.lblColorVal.Text = "Index " + selectedColor;
-            this.Info.SaveData = selectedColor.ToString();
+            this.Info.Data = selectedColor.ToString();
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

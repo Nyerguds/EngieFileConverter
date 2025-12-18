@@ -22,7 +22,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public SaveOptionString() : this(null, null) { }
 
-        public SaveOptionString(SaveOption info, ListedControlController<SaveOption> controller)
+        public SaveOptionString(Option info, ListedControlController<Option> controller)
         {
             this.InitializeComponent();
             this.InitResize();
@@ -41,12 +41,12 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
-        public override void UpdateInfo(SaveOption info)
+        public override void UpdateInfo(Option info)
         {
             this.Info = info;
             this.lblDescription.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
             this.m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
-            this.txtValue.Text = this.Info.SaveData;
+            this.txtValue.Text = this.Info.Data;
         }
 
         public override void FocusValue()
@@ -61,7 +61,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 this.m_Loading = true;
                 this.Enabled = enabled;
                 if (enabled)
-                    this.txtValue.Text = this.Info.SaveData;
+                    this.txtValue.Text = this.Info.Data;
                 else
                     this.txtValue.Text = String.Empty;
             }
@@ -106,7 +106,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 // Update controller
                 if (this.Info == null)
                     return;
-                this.Info.SaveData = textbox.Text;
+                this.Info.Data = textbox.Text;
                 if (this.m_Controller != null)
                     this.m_Controller.UpdateControlInfo(this.Info);
             }

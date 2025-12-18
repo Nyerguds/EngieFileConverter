@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood TS Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Shape File - Tiberian Sun"; } }
+        public override String LongTypeName { get { return "Westwood Shape File - Tiberian Sun"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -144,7 +144,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 width;
             Int32 height;
@@ -170,30 +170,30 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 nrOfOpts = 4;
             if (evenFrames)
                 nrOfOpts++;
-            SaveOption[] opts = new SaveOption[nrOfOpts];
+            Option[] opts = new Option[nrOfOpts];
             Int32 opt = 0;
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.Boolean, "Enable transparency compression", "1");
-            opts[opt++] = new SaveOption("TDL", SaveOptionType.Boolean, "Save duplicate frames only once", "1");
-            opts[opt++] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
+            opts[opt++] = new Option("CMP", OptionInputType.Boolean, "Enable transparency compression", "1");
+            opts[opt++] = new Option("TDL", OptionInputType.Boolean, "Save duplicate frames only once", "1");
+            opts[opt++] = new Option("ALI", OptionInputType.Boolean, "Align to 8-byte boundaries", "0");
             //opts[opt++] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable when calculating average color (ignores hue of remap pixels)", "0");
-            opts[opt++] = new SaveOption("TIB", SaveOptionType.Boolean, "Average color calculation: treat remap as tiberium", null, "0"); // "(treats remap as green instead of ignoring hue)", new SaveEnableFilter("REM", false, "1"));
+            opts[opt++] = new Option("TIB", OptionInputType.Boolean, "Average color calculation: treat remap as tiberium", null, "0"); // "(treats remap as green instead of ignoring hue)", new EnableFilter("REM", false, "1"));
             if (evenFrames)
-                opts[opt] = new SaveOption("SHD", SaveOptionType.Boolean, "Average color calculation: Ignore shadow frames", null, hasShadow ? "1" : "0");
+                opts[opt] = new Option("SHD", OptionInputType.Boolean, "Average color calculation: Ignore shadow frames", null, hasShadow ? "1" : "0");
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Int32 width;
             Int32 height;
             Color[] palette;
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out width, out height, out palette);
-            Boolean compress = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CMP"));
-            Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
-            Boolean align = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "ALI"));
+            Boolean compress = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CMP"));
+            Boolean trimDuplicates = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "TDL"));
+            Boolean align = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "ALI"));
             //Boolean adjustForRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "REM"));
-            Boolean asTib = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TIB"));
-            Boolean hasShadow = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "SHD"));
+            Boolean asTib = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "TIB"));
+            Boolean hasShadow = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "SHD"));
 
             Int32 nrOfFrames = frames.Length;
             Int32 shadowLimit = nrOfFrames / 2;

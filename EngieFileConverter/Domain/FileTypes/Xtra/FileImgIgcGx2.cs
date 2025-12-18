@@ -19,7 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Interactive Girls GX2 file"; } }
         public override String[] FileExtensions { get { return new String[] { "gx2" }; } }
-        public override String ShortTypeDescription { get { return "Interactive Girls GX2 image file"; } }
+        public override String LongTypeName { get { return "Interactive Girls GX2 image file"; } }
         public override Int32 BitsPerPixel { get { return this.m_BitPerPixel; } }
         protected Int32 m_BitPerPixel;
 
@@ -38,7 +38,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 dataLen = fileData.Length;
             if (dataLen < 0x1B)
-                throw new FileTypeLoadException("Too short to be an " + this.ShortTypeDescription + "!");
+                throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + "!");
             UInt32 magic1 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x00);
             //UInt16 headsize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x04);
             Byte bpp = fileData[0x06];
@@ -55,11 +55,11 @@ namespace EngieFileConverter.Domain.FileTypes
             if (width == 0 || height == 0)
                 throw new FileTypeLoadException("Dimensions cannot be 0!");
             if (magic1 != 0x01325847 || magic2 != 0x58465053)
-                throw new FileTypeLoadException("Not an " + this.ShortTypeDescription + "!");
+                throw new FileTypeLoadException("Not an " + this.LongTypeName + "!");
             Int32 palSize = bpp > 8 ? 0 : (1 << bpp) * 3;
             this.m_BitPerPixel = bpp;
             if (dataLen < 0x1B + palSize)
-                throw new FileTypeLoadException("Too short to be an " + this.ShortTypeDescription + "!");
+                throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + "!");
             Byte[] pal = new Byte[palSize];
             Array.Copy(fileData, 0x1B, pal, 0, palSize);
             this.m_Palette = ColorUtils.ReadEightBitPalette(pal, false);
@@ -79,7 +79,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(frameData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)

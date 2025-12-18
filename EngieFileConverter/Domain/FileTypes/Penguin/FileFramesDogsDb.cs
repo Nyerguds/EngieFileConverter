@@ -16,7 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         public static readonly Byte FlagByte = 0x1B;
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
-        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image4Bit; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image4Bit | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
@@ -24,8 +24,8 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "All Dogs DB"; } }
         public override String[] FileExtensions { get { return new String[] { "db0", "db1", "db2", "db3", "db4", "db5", "db6" }; } }
-        public override String ShortTypeDescription { get { return "All Dogs Go To Heaven DB file"; } }
-        public override Boolean NeedsPalette { get { return false; } }
+        public override String LongTypeName { get { return "All Dogs Go To Heaven DB file"; } }
+        public override Boolean NeedsPalette { get { return m_bpp == -2; } }
         public override Int32 BitsPerPixel { get { return m_bpp; } }
         protected Int32 m_bpp;
 
@@ -37,7 +37,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean HasCompositeFrame { get { return false; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
+        public override Boolean[] TransparencyMask { get { return null; } }
 
         protected Dictionary<Int32, String> m_textEntries = new Dictionary<Int32, String>();
         protected Dictionary<Int32, Int32> m_textLengths = new Dictionary<Int32, Int32>();
@@ -79,15 +79,16 @@ namespace EngieFileConverter.Domain.FileTypes
             // No longer using filename method; it's annoying for testing.
             Boolean isCga = !forceEga; // && (sourcePath == null || Path.GetFileNameWithoutExtension(sourcePath).EndsWith("C", StringComparison.InvariantCultureIgnoreCase));
             ColorPalette cgaPal = null;
+            Color[] pal;
             if (isCga)
             {
-                this.m_Palette = PaletteUtils.GetCgaPalette(0, true, true, true, 2);
-                cgaPal = ImageUtils.GetPalette(this.m_Palette);
-                m_bpp = 2;
+                pal = PaletteUtils.GetCgaPalette(0, true, true, true, 2);
+                cgaPal = ImageUtils.GetPalette(pal);
+                m_bpp = -2;
             }
             else
             {
-                this.m_Palette = PaletteUtils.GetEgaPalette(4);
+                pal = PaletteUtils.GetEgaPalette(4);
                 m_bpp = 4;
             }
             Int32 offset = 2;
@@ -174,7 +175,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         frameData2 = ImageUtils.ConvertTo8Bit(frameData2, width, height, 0, 2, true, ref stride);
                         frameData2 = ImageUtils.ConvertFrom8Bit(frameData2, width, height, 4, true, ref stride);
                     }
-                    frameImage = ImageUtils.BuildImage(frameData2, width, height, stride, PixelFormat.Format4bppIndexed, this.m_Palette, Color.Black);
+                    frameImage = ImageUtils.BuildImage(frameData2, width, height, stride, PixelFormat.Format4bppIndexed, pal, Color.Black);
                     if (isCga)
                         frameImage.Palette = cgaPal;
                     extraInfo.Add("Type: " + (isCga ? "CGA" : "EGA") + " image frame");
@@ -187,7 +188,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(textFrame == null ? this.BitsPerPixel : 0);
-                frame.SetNeedsPalette(false);
+                frame.SetNeedsPalette(m_bpp == -2);
                 frame.SetExtraInfo(String.Join("\n", extraInfo.ToArray()));
                 this.m_FramesList[i] = frame;
             }
@@ -196,11 +197,12 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 this.ExtraInfo += "\nContains text entries at frames " + GeneralUtils.GroupNumbers(this.m_textEntries.Keys) + ".";
             }
+            this.SetColors(pal);
             this.m_LoadedImage = null;
             return true;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 maxCol = 0;
             Boolean canBeCga = true;
@@ -269,19 +271,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 nrOpts++;
             if (empty != null)
                 nrOpts++;
-            SaveOption[] opts = new SaveOption[nrOpts];
+            Option[] opts = new Option[nrOpts];
             Int32 opt = 0;
             if (canBeCga)
-                opts[opt++] = new SaveOption("CGA", SaveOptionType.Boolean, "Save as CGA", null, "1", true);
+                opts[opt++] = new Option("CGA", OptionInputType.Boolean, "Save as CGA", null, "1", true);
             if (empty != null)
-                opts[opt++] = new SaveOption("TXT", SaveOptionType.String, "Text entries. Format: \"nr : size : text\". The easiest way to get this is to go to the save options of the original archive and copy it from the text field.", String.Join(Environment.NewLine, empty));
+                opts[opt++] = new Option("TXT", OptionInputType.String, "Text entries. Format: \"nr : size : text\". The easiest way to get this is to go to the save options of the original archive and copy it from the text field.", String.Join(Environment.NewLine, empty));
 
             return opts;
         }
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            Boolean isCga = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CGA"));
-            String emptyEntries = SaveOption.GetSaveOptionValue(saveOptions, "TXT");
+            Boolean isCga = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CGA"));
+            String emptyEntries = Option.GetSaveOptionValue(saveOptions, "TXT");
             HashSet<Int32> emptyKeys = new HashSet<Int32>();
             Dictionary<Int32, String> textEntries = new Dictionary<Int32, String>();
             Dictionary<Int32, Int32> textLengths = new Dictionary<Int32, Int32>();
@@ -351,7 +353,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 2, (UInt16) height);
                     ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 4, (UInt16)frameDataRaw.Length);
                     Array.Copy(frameDataRaw, 0, frameDataFinal, 6, frameDataRaw.Length);
-                    curFrameCompressed = PenguinCompression.CompressDogsFlagRle(frameDataFinal, FlagByte);
+                    curFrameCompressed = PenguinCompression.CompressDogsFlagRle(frameDataFinal, FlagByte, true);
                 }
                 frameData[i] = curFrameCompressed;
                 ArrayUtils.WriteUInt16ToByteArrayLe(header, offset, (UInt16)uncompressedSize);

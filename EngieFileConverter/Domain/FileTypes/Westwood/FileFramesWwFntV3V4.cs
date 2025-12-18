@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Font v3"; } }
         public override String[] FileExtensions { get { return new String[] { "fnt" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Font v3 (Dune II, C&C1, RA1)"; } }
+        public override String LongTypeName { get { return "Westwood Font v3 (Dune II, C&C1, RA1)"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 4; } }
 
@@ -179,7 +179,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 maxUsedWidth;
             Int32 maxUsedHeight;
@@ -187,26 +187,26 @@ namespace EngieFileConverter.Domain.FileTypes
             FileFramesWwFntV3 fontFile = fileToSave as FileFramesWwFntV3;
             Int32 fontWidth = fontFile != null ? fontFile.Width : maxUsedWidth;
             Int32 fontHeight = fontFile != null ? fontFile.Height : maxUsedHeight;
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("WI", SaveOptionType.Number, "Font width", fontWidth +",255", fontWidth.ToString()),
-                new SaveOption("HE", SaveOptionType.Number, "Font height", fontHeight +",255", fontHeight.ToString()),
+                new Option("WI", OptionInputType.Number, "Font width", fontWidth +",255", fontWidth.ToString()),
+                new Option("HE", OptionInputType.Number, "Font height", fontHeight +",255", fontHeight.ToString()),
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveV3V4Font(fileToSave, saveOptions, false);
         }
 
-        protected Byte[] SaveV3V4Font(SupportedFileType fileToSave, SaveOption[] saveOptions, Boolean forV4)
+        protected Byte[] SaveV3V4Font(SupportedFileType fileToSave, Option[] saveOptions, Boolean forV4)
         {
             Int32 fontWidth;
             Int32 fontHeight;
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out fontWidth, out fontHeight);
             //Ignore values returned from check; overwrite with save options.
-            fontWidth = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "WI"));
-            fontHeight = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "HE"));
+            fontWidth = Int32.Parse(Option.GetSaveOptionValue(saveOptions, "WI"));
+            fontHeight = Int32.Parse(Option.GetSaveOptionValue(saveOptions, "HE"));
 
             Int32 imagesCount = frames.Length;
             Byte[][] imageData = new Byte[imagesCount][];
@@ -420,7 +420,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "WwFnt4"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Font v4"; } }
-        public override String ShortTypeDescription { get { return "Westwood Font v4 (Tiberian Sun)"; } }
+        public override String LongTypeName { get { return "Westwood Font v4 (Tiberian Sun)"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -434,7 +434,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveV3V4Font(fileToSave, saveOptions, true);
         }

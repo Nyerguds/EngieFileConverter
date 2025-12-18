@@ -68,6 +68,9 @@ namespace EngieFileConverter.UI
             //this.AutoRemapPalette();
             //this.SwapColors();
             //this.MakeIcons();
+            //this.ExtractBitmaps();
+            //this.ShiftMap();
+            this.ListHighVerDotWriterFonts();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -1499,6 +1502,124 @@ namespace EngieFileConverter.UI
                 File.WriteAllBytes(icoPath, icoFile);
             }
         }
+
+        private void ExtractBitmaps()
+        {
+            String fileToHandle = "PCS0396S.MVB";
+            if (!File.Exists(fileToHandle))
+                return;
+            String baseName = Path.GetFileNameWithoutExtension(fileToHandle);
+            if (!Directory.Exists(baseName))
+            {
+                Directory.CreateDirectory(baseName);
+            }
+            else
+            {
+                String[] bmpFiles = Directory.GetFiles(baseName, "*.bmp", SearchOption.TopDirectoryOnly);
+                for (Int32 i = 0; i < bmpFiles.Length; ++i)
+                    File.Delete(bmpFiles[i]);
+            }
+            using (FileStream fs = new FileStream(fileToHandle, FileMode.Open))
+            using(BinaryReader br = new BinaryReader(fs))
+            {
+                Int32 curBm = 0;
+                Int64 len = fs.Length;                
+                while (fs.Position + 0x13 < len)
+                {
+                    Int64 readStart = fs.Position;
+                    Int32 cur = br.ReadByte();
+                    if (cur != 0x42)
+                        continue;
+                    cur = br.ReadByte();
+                    if (cur != 0x4D)
+                    {
+                        fs.Position = readStart + 1;
+                        continue;
+                    }
+                    // Possible BMP point
+                    UInt32 size = br.ReadUInt32();
+                    UInt32 reserved = br.ReadUInt32();
+                    UInt32 headerEnd = br.ReadUInt32();
+                    if (reserved != 0 || headerEnd > size || size + readStart > len)
+                    {
+                        fs.Position = readStart + 1;
+                        continue;
+                    }
+                    UInt32 headerSize = br.ReadUInt32();
+                    if (headerEnd < headerSize + 14)
+                    {
+                        fs.Position = readStart + 1;
+                        continue;
+                    }
+                    fs.Position = readStart;
+                    Byte[] bmArr = br.ReadBytes((Int32) size);
+                    String writeName = Path.Combine(baseName, String.Format("{0:000000}.bmp", curBm++));
+                    File.WriteAllBytes(writeName, bmArr);
+                }
+            }
+        }
+
+        private void ShiftMap()
+        {
+            FileMapWwCc1Pc map;
+            if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile) || (map = m_LoadedFile as FileMapWwCc1Pc) == null)
+                return;
+            String filename = map.LoadedFile;
+            if (!filename.EndsWith(".bin", StringComparison.InvariantCultureIgnoreCase) && !filename.EndsWith(".int", StringComparison.InvariantCultureIgnoreCase))
+                return;
+            String writeName = filename.Substring(0, filename.Length - 4) + "1.ini";
+            filename = filename.Substring(0, filename.Length - 3) + "ini";
+
+            String text = File.ReadAllText(filename);
+            Regex infRegex = new Regex("^(\\d+=[^,\\r\\n]+,[^,\\r\\n]+,\\d+,)(\\d+)(,\\d+,[^,\\r\\n]+,\\d+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
+            Regex strRegex = new Regex("^(\\d+=[^,\\r\\n]+,[^,\\r\\n]+,\\d+,)(\\d+)(,\\d+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
+            Regex uniRegex = new Regex("^(\\d+=[^,\\r\\n]+,[^,\\r\\n]+,\\d+,)(\\d+)(,\\d+,[^,\\r\\n]+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
+            Regex ovrRegex = new Regex("^(\\d+)(=[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
+            Regex terRegex = new Regex("^(\\d+)(=[^,\\r\\n]+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
+            MatchCollection mci = infRegex.Matches(text);
+            text = infRegex.Replace(text, m => m.Groups[1].Value + (Int32.Parse(m.Groups[2].Value) - 64) + m.Groups[3].Value);
+            MatchCollection mcs = strRegex.Matches(text);
+            text = strRegex.Replace(text, m => m.Groups[1].Value + (Int32.Parse(m.Groups[2].Value) - 64) + m.Groups[3].Value);
+            MatchCollection mcu = uniRegex.Matches(text);
+            text = uniRegex.Replace(text, m => m.Groups[1].Value + (Int32.Parse(m.Groups[2].Value) - 64) + m.Groups[3].Value);
+            MatchCollection mco = ovrRegex.Matches(text);
+            text = ovrRegex.Replace(text, m => (Int32.Parse(m.Groups[1].Value) - 64) + m.Groups[2].Value);
+            MatchCollection mct = terRegex.Matches(text);
+            text = terRegex.Replace(text, m => (Int32.Parse(m.Groups[1].Value) - 64) + m.Groups[2].Value);
+            File.WriteAllText(writeName, text);
+        }
+
+
+        private void ListHighVerDotWriterFonts()
+        {
+            if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile))
+                return;
+            String curFile = Path.GetFileName(this.m_LoadedFile.LoadedFile);
+            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            String[] files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
+            files = files.OrderBy(x=>x.ToUpperInvariant()).ToArray();
+            StringBuilder sb = new StringBuilder("Found files:");
+            Byte[] header = new Byte[0x0A];
+            for (Int32 i = 0; i < files.Length; ++i)
+            {
+                FileInfo fi = new FileInfo(files[i]);
+                if (curFile.Equals(fi.Name, StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+                if (fi.Length >= header.Length)
+                {
+                    using (FileStream fs = fi.OpenRead())
+                    {
+                        fs.Read(header, 0, header.Length);
+                    }
+                    if (header[5] != 0)
+                    {
+                        sb.AppendLine().Append(fi.Name).Append(new String(' ', 12 - fi.Name.Length)).Append(": v").Append(header[5]).Append(", height 0x").Append(String.Format("{0:X02}", header[4]));
+                    }
+                }
+            }
+            MessageBox.Show(sb.ToString().Replace("\r\n", "\n"), "Info", MessageBoxButtons.OK);
+        }
+
     }
 }
 #endif

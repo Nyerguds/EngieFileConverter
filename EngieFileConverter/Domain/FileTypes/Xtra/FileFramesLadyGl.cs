@@ -19,7 +19,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "LadyLove GL archive"; } }
         public override String[] FileExtensions { get { return new String[] { "gl", "glt" }; } }
-        public override String ShortTypeDescription { get { return "LadyLove GL archive"; } }
+        public override String LongTypeName { get { return "LadyLove GL archive"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
@@ -171,7 +171,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotSupportedException();
         }

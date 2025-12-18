@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "IG Font (Dune 2000)"; } }
         public override String[] FileExtensions { get { return new String[] { "fnt" }; } }
-        public override String ShortTypeDescription { get { return "IG Font (Dune 2000)"; } }
+        public override String LongTypeName { get { return "IG Font (Dune 2000)"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -159,19 +159,19 @@ namespace EngieFileConverter.Domain.FileTypes
             return framePic;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 maxUsedHeight;
             this.PerformPreliminaryChecks(fileToSave, out maxUsedHeight);
             FileFramesWwFntV3 fontFile = fileToSave as FileFramesWwFntV3;
             Int32 fontHeight = fontFile != null ? fontFile.Height : maxUsedHeight;
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("FHE", SaveOptionType.Number, "Font height", fontHeight +",255", fontHeight.ToString())
+                new Option("FHE", OptionInputType.Number, "Font height", fontHeight +",255", fontHeight.ToString())
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveFont(fileToSave, saveOptions);
         }
@@ -204,12 +204,12 @@ namespace EngieFileConverter.Domain.FileTypes
             return frames;
         }
 
-        protected Byte[] SaveFont(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        protected Byte[] SaveFont(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Int32 fontHeight;
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out fontHeight);
             // Override the one from the preliminary check.
-            fontHeight = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "FHE"));
+            fontHeight = Int32.Parse(Option.GetSaveOptionValue(saveOptions, "FHE"));
             Int32 origFrameLen = frames.Length;
             if (origFrameLen < 0x100)
             {

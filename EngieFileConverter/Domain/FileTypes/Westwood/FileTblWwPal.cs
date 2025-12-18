@@ -20,18 +20,18 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood PAL Table"; } }
         public override String[] FileExtensions { get { return new String[] {"pal"}; } }
-        public override String ShortTypeDescription  { get { return "Westwood Palette Stretch Table"; } }
+        public override String LongTypeName  { get { return "Westwood Palette Stretch Table"; } }
         public override Boolean NeedsPalette  { get { return true; } }
         public override Int32 BitsPerPixel  { get { return 8; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("IGI", SaveOptionType.String, "Exclude these color indices from the matching process", "0123456789;, " + Environment.NewLine, String.Empty),
-                new SaveOption("DUP", SaveOptionType.Boolean, "Duplicate on excluded indices", String.Empty),
-                new SaveOption("IGM", SaveOptionType.String, "Prohibit matching to these color indices", "0123456789;, " + Environment.NewLine, String.Empty)
+                new Option("IGI", OptionInputType.String, "Exclude these color indices from the matching process", "0123456789;, " + Environment.NewLine, String.Empty),
+                new Option("DUP", OptionInputType.Boolean, "Duplicate on excluded indices", String.Empty),
+                new Option("IGM", OptionInputType.String, "Prohibit matching to these color indices", "0123456789;, " + Environment.NewLine, String.Empty)
             };
         }
 
@@ -46,12 +46,12 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, true);
-            List<Int32> ignorelistInput = this.GetIndices(SaveOption.GetSaveOptionValue(saveOptions, "IGI"));
-            List<Int32> ignorelistMatch = this.GetIndices(SaveOption.GetSaveOptionValue(saveOptions, "IGM"));
-            Boolean dupOnExcluded = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "DUP"));
+            List<Int32> ignorelistInput = this.GetIndices(Option.GetSaveOptionValue(saveOptions, "IGI"));
+            List<Int32> ignorelistMatch = this.GetIndices(Option.GetSaveOptionValue(saveOptions, "IGM"));
+            Boolean dupOnExcluded = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "DUP"));
             return GenerateInterlaceTable(cols, ignorelistInput, dupOnExcluded, ignorelistMatch);
         }
 

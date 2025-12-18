@@ -24,7 +24,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "AdvSoft VGA"; } }
         public override String[] FileExtensions { get { return new String[] { "vga" }; } }
-        public override String ShortTypeDescription { get { return "AdventureSoft VGA file"; } }
+        public override String LongTypeName { get { return "AdventureSoft VGA file"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 4; } }
         protected SupportedFileType[] m_FramesList = new SupportedFileType[0];
@@ -150,12 +150,12 @@ namespace EngieFileConverter.Domain.FileTypes
                              + "Empty frames: " + emptyFrames;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            return new SaveOption[] { new SaveOption("NOCMP", SaveOptionType.Boolean, "Don't use compression", null) };
+            return new Option[] { new Option("NOCMP", OptionInputType.Boolean, "Don't use compression", null) };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
@@ -163,7 +163,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException("AdventureSoft VGA saving for single frame is not supported!", "fileToSave");
             if (fileToSave.Frames.Length == 0)
                 throw new ArgumentException("No frames found in source data!", "fileToSave");
-            Boolean noCompression = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NOCMP"));
+            Boolean noCompression = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NOCMP"));
             Int32 nrOfFr = fileToSave.Frames.Length;
             Byte[][] data = new Byte[nrOfFr][];
             Int32[] offsets = new Int32[nrOfFr];

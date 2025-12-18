@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "DaisyField Pictures"; } }
         public override String[] FileExtensions { get { return new String[] { "pic" }; } }
-        public override String ShortTypeDescription { get { return "DaisyField Pictures File"; } }
+        public override String LongTypeName { get { return "DaisyField Pictures File"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Boolean FramesHaveCommonPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 8; } }
@@ -87,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");

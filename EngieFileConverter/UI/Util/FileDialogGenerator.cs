@@ -343,7 +343,7 @@ namespace Nyerguds.Util.UI
             T item = this.ItemObject;
             if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
                 throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "itemtype");
-            this.Description = item.ShortTypeDescription;
+            this.Description = item.LongTypeName;
             this.Extensions = item.FileExtensions;
             this.DescriptionsForExtensions = item.DescriptionsForExtensions;
         }
@@ -357,14 +357,14 @@ namespace Nyerguds.Util.UI
             this.itemObjectSet = true;
             if (item.FileExtensions.Length != item.DescriptionsForExtensions.Length)
                 throw new ArgumentException("Entry " + this.ItemObject.GetType().Name + " does not have equal amount of extensions and descriptions!", "item");
-            this.Description = item.ShortTypeDescription;
+            this.Description = item.LongTypeName;
             this.Extensions = item.FileExtensions;
             this.DescriptionsForExtensions = item.DescriptionsForExtensions;
         }
 
         public override String ToString()
         {
-            return this.ItemObject.ShortTypeDescription;
+            return this.ItemObject.LongTypeName;
         }
     }
 }

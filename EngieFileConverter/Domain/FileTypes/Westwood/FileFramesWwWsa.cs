@@ -29,7 +29,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood WSA"; } }
         public override String[] FileExtensions { get { return new String[] { "wsa" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Animation File"; } }
+        public override String LongTypeName { get { return "Westwood Animation File"; } }
         public override Boolean NeedsPalette { get { return !this.m_HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_HasPalette;
@@ -498,7 +498,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = extraInfo;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             // Preliminary checks
             Int32 width;
@@ -523,19 +523,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 continues = toSave.m_Continues;
                 ignoreLast = toSave.m_DamagedLoopFrame;
             }
-            SaveOption[] opts = new SaveOption[ignoreLast ? 7 : 6];
-            opts[0] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type:", String.Join(",", this.formats), ((Int32)type).ToString());
-            opts[1] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", null, hasColors ? "1" : "0", new SaveEnableFilter("TYPE", true, "0"));
-            opts[2] = new SaveOption("PAL6", SaveOptionType.Boolean, "Force 6-bit palette", null, "0", new SaveEnableFilter("TYPE", true, "1", "2"), new SaveEnableFilter("PAL", false, "1"));
-            opts[3] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
-            opts[4] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
-            opts[5] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets", null, trim ? "1" : "0", new SaveEnableFilter("TYPE", true, "0" ,"1"));
+            Option[] opts = new Option[ignoreLast ? 7 : 6];
+            opts[0] = new Option("TYPE", OptionInputType.ChoicesList, "Type:", String.Join(",", this.formats), ((Int32)type).ToString());
+            opts[1] = new Option("PAL", OptionInputType.Boolean, "Include palette", null, hasColors ? "1" : "0", new EnableFilter("TYPE", false, "0"));
+            opts[2] = new Option("PAL6", OptionInputType.Boolean, "Force 6-bit palette", null, "0", true, new EnableFilter("TYPE", true, "3"), new EnableFilter("PAL", true, "1"));
+            opts[3] = new Option("LOOP", OptionInputType.Boolean, "Loop", null, loop ? "1" : "0");
+            opts[4] = new Option("CONT", OptionInputType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
+            opts[5] = new Option("CROP", OptionInputType.Boolean, "Crop to X and Y offsets", null, trim ? "1" : "0", new EnableFilter("TYPE", false, "0" ,"1"));
             if (ignoreLast)
-                opts[6] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
+                opts[6] = new Option("CUT", OptionInputType.Boolean, "Ignore broken input loop frame", null, "1");
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             Int32 width;
@@ -547,17 +547,18 @@ namespace EngieFileConverter.Domain.FileTypes
             // Save options
             Int32 type;
             WsaVersion saveType;
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYPE"), out type) || !Enum.IsDefined(typeof (WsaVersion), type))
+            if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYPE"), out type) || !Enum.IsDefined(typeof (WsaVersion), type))
                 saveType = WsaVersion.Cnc;
             else
                 saveType = (WsaVersion)type;
-            Boolean asPaletted = saveType != WsaVersion.Dune2v1 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
-            Boolean saveSixBitPal = saveType != WsaVersion.Poly || GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL6"));
+            Boolean asPaletted = saveType != WsaVersion.Dune2v1 && GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean sixBitPalOpt = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL6"));
+            Boolean saveSixBitPal = saveType != WsaVersion.Poly || sixBitPalOpt;
 
-            Boolean loop = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "LOOP"));
-            Boolean crop = saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CROP"));
-            Boolean cut = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
-            Boolean continues = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CONT"));
+            Boolean loop = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "LOOP"));
+            Boolean crop = saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2 && GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CROP"));
+            Boolean cut = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CUT"));
+            Boolean continues = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CONT"));
 
             // Fetch and compress data
             Int32 readFrames = nrOfFrames;
@@ -687,7 +688,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (saveType != WsaVersion.Dune2v1)
             {
                 Int32 flags = asPaletted ? 1 : 0;
-                if (asPaletted & saveSixBitPal)
+                // Enable extra flag
+                if (asPaletted & saveType == WsaVersion.Poly && sixBitPalOpt)
                     flags |= 2;
                 ArrayUtils.WriteInt16ToByteArrayLe(fileData, offset, flags);
                 offset += 2;

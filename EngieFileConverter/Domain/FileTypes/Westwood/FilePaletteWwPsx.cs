@@ -17,7 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "WW PSX Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Westwood PSX palette"; } }
+        public override String LongTypeName { get { return "Westwood PSX palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
         public override Int32 Width { get { return 16; } }
@@ -105,7 +105,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Palette = null;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
             /*/

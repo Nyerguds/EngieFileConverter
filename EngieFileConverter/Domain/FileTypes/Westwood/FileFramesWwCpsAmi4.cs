@@ -27,7 +27,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Amiga Frames CPS"; } }
         public override String[] FileExtensions { get { return new String[] { "cps" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Amiga Frames CPS File"; } }
+        public override String LongTypeName { get { return "Westwood Amiga Frames CPS File"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -130,23 +130,23 @@ namespace EngieFileConverter.Domain.FileTypes
             return adjustedData;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             this.PerformPreliminaryChecks(fileToSave);
             FileFramesWwCpsAmi4 cps = fileToSave as FileFramesWwCpsAmi4;
             Int32 compression = cps != null ? cps.CompressionType : 4;
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
+                new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave);
             // Save options
             Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
 
             // Extract frames + frame-specific checks
             Int32 nrOfFrames = fileToSave.Frames.Length;

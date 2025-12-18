@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos LBV Image"; } }
         public override String[] FileExtensions { get { return new String[] { "lbv" }; } }
-        public override String ShortTypeDescription { get { return "Mythos LBV Image"; } }
+        public override String LongTypeName { get { return "Mythos LBV Image"; } }
         public override Boolean NeedsPalette { get { return false; } }
         public override Int32 BitsPerPixel { get{ return 8; } }
 
@@ -65,7 +65,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = image;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap image = this.PerformPreliminaryChecks(fileToSave);
             Byte[] imageData = ImageUtils.GetImageData(image, true);

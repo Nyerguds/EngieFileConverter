@@ -21,13 +21,13 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override String ShortTypeName { get { return "Frames"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return (this.BaseType == null ? String.Empty : this.BaseType + " ") + "Frames"; } }
+        public override String LongTypeName { get { return (this.BaseType == null ? String.Empty : this.BaseType + " ") + "Frames"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[0]; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return null; } }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new ArgumentException("This is not a real file format to save. How did you even get here?", "fileToSave");
         }
@@ -522,7 +522,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         }
                         // Paste using the transparency image mask.
                         frData = ImageUtils.PasteOn8bpp(frData, frWidth, frHeight, frStride, imData, imWidth, imHeight, imStride, pastePos, transGuide, true, imTransMask);
-                        frData = ImageUtils.ConvertFrom8Bit(frData, frWidth, frHeight, frBpp, false, ref frStride);
+                        frData = ImageUtils.ConvertFrom8Bit(frData, frWidth, frHeight, frBpp, true, ref frStride);
                         newBm = ImageUtils.BuildImage(frData, frWidth, frHeight, frStride, ImageUtils.GetIndexedPixelFormat(frBpp), frPalette, null);
                     }
                     frameBpp = curFrameBpp;
@@ -539,7 +539,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     return result;
                 }
                 FileImageFrame frameCombined = new FileImageFrame();
-                frameCombined.LoadFileFrame(newfile, frame.ShortTypeDescription, newBm, name, i);
+                frameCombined.LoadFileFrame(newfile, frame.LongTypeName, newBm, name, i);
                 frameCombined.SetBitsPerColor(frame.BitsPerPixel);
                 frameCombined.SetFileClass(frame.FileClass);
                 frameCombined.SetNeedsPalette(frame.NeedsPalette);

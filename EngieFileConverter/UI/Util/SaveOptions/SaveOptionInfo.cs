@@ -4,37 +4,37 @@ using Nyerguds.Util.Ui;
 
 namespace Nyerguds.Util.UI.SaveOptions
 {
-    public class SaveOptionInfo : CustomControlInfo<SaveOptionControl, SaveOption>
+    public class SaveOptionInfo : CustomControlInfo<SaveOptionControl, Option>
     {
-        public override SaveOptionControl MakeControl(SaveOption property, ListedControlController<SaveOption> controller)
+        public override SaveOptionControl MakeControl(Option property, ListedControlController<Option> controller)
         {
-            switch (property.Type)
+            switch (property.InputType)
             {
-                case SaveOptionType.Number:
+                case OptionInputType.Number:
                     return new SaveOptionNumber(property, controller);
-                case SaveOptionType.Boolean:
+                case OptionInputType.Boolean:
                     return new SaveOptionBoolean(property, controller);
-                case SaveOptionType.String:
+                case OptionInputType.String:
                     return new SaveOptionString(property, controller);
-                case SaveOptionType.ChoicesList:
+                case OptionInputType.ChoicesList:
                     return new SaveOptionChoices(property, controller);
-                case SaveOptionType.Color:
+                case OptionInputType.Color:
                     return new SaveOptionColor(property, controller);
-                case SaveOptionType.Palette:
+                case OptionInputType.Palette:
                     throw new NotImplementedException("Not yet implemented.");
                 //    return new SaveOptionPalette(property, controller);
-                case SaveOptionType.FileOpen:
+                case OptionInputType.FileOpen:
                     throw new NotImplementedException("Not yet implemented.");
-                case SaveOptionType.FileSave:
+                case OptionInputType.FileSave:
                     throw new NotImplementedException("Not yet implemented.");
-                case SaveOptionType.Folder:
+                case OptionInputType.Folder:
                     throw new NotImplementedException("Not yet implemented.");
                 default:
                     return null;
             }
         }
 
-        public override SaveOptionControl GetControlByProperty(SaveOption property, IEnumerable<SaveOptionControl> controls)
+        public override SaveOptionControl GetControlByProperty(Option property, IEnumerable<SaveOptionControl> controls)
         {
             if (property == null || controls == null)
                 return null;

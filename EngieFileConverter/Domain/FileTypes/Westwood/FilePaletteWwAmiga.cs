@@ -16,7 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Amiga Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Westwood Amiga palette"; } }
+        public override String LongTypeName { get { return "Westwood Amiga palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
         public override Int32 Width { get { return 16; } }
@@ -69,7 +69,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, false);
             if (cols.Length % 16 != 0)

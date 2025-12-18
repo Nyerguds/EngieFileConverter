@@ -17,11 +17,12 @@ namespace EngieFileConverter.Domain.FileTypes
         public Dictionary<String, Object> ExtraProps { get { return this.m_ExtraProps; }}
 
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return this.m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
+        public override String LongTypeName { get { return this.m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
         public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
         public override FileClass FileClass  { get { return this.m_FileClass ?? base.FileClass; } }
         public override Boolean NeedsPalette { get { return this.m_NeedsPalette ?? base.NeedsPalette; } }
-        //public override Boolean[] TransparencyMask { get { return this.m_transparencyMask; } }
+        // Let the SetColor function handle this from the UI.
+        //public override Boolean[] TransparencyMask { get { return this.FrameParent != null ? this.FrameParent.TransparencyMask : null; } }
 
         public void SetBitsPerColor(Int32 bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
         public void SetFileClass(FileClass? fileClass) { this.m_FileClass = fileClass; }

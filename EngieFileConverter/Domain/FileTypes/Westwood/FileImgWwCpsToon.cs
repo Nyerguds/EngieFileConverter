@@ -13,7 +13,7 @@ namespace EngieFileConverter.Domain.FileTypes
     class FileImgWwCpsToon : FileImgWwCps
     {
         public override String ShortTypeName { get { return "Toonstruck CPS"; } }
-        public override String ShortTypeDescription { get { return "Toonstruck CPS File"; } }
+        public override String LongTypeName { get { return "Toonstruck CPS File"; } }
 
         // TODO might need inbuilt palette here.
 
@@ -69,7 +69,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Not a Toonstruck CPS!");
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException("File to save is empty!", "fileToSave");
@@ -79,18 +79,18 @@ namespace EngieFileConverter.Domain.FileTypes
 
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (fileToSave.NeedsPalette ? 0 : 1).ToString()),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
+                new Option("PAL", OptionInputType.Boolean, "Include palette", (fileToSave.NeedsPalette ? 0 : 1).ToString()),
+                new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            List<SaveOption> svOpts = new List<SaveOption>();
+            List<Option> svOpts = new List<Option>();
             svOpts.AddRange(saveOptions.Where(opt => !String.Equals(opt.Code, "VER")));
-            svOpts.Add(new SaveOption("VER", SaveOptionType.Number, "Version", ((Int32)CpsVersion.Toonstruck).ToString()));
+            svOpts.Add(new Option("VER", OptionInputType.Number, "Version", ((Int32)CpsVersion.Toonstruck).ToString()));
             return base.SaveToBytesAsThis(fileToSave, svOpts.ToArray());
         }
     }

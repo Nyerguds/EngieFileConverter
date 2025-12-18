@@ -30,7 +30,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "AdvSoft Icons"; } }
         public override String[] FileExtensions { get { return new String[] { "dat" }; } }
-        public override String ShortTypeDescription { get { return "AdventureSoft icons file"; } }
+        public override String LongTypeName { get { return "AdventureSoft icons file"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 4; } }
 
@@ -91,11 +91,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetNeedsPalette(true);
                 this.m_FramesList[i] = frame;
             }
-            this.fullWidth = iconWidth;
-            this.fullHeight = iconHeight * frames;
+            //this.fullWidth = iconWidth;
+            //this.fullHeight = iconHeight * frames;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             const Int32 framePixSize = iconWidth * iconHeight;
             Int32 stride;

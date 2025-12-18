@@ -16,7 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Westwood C&C N64 palette"; } }
+        public override String LongTypeName { get { return "Westwood C&C N64 palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
         public override Int32 Width { get { return 16; } }
@@ -63,7 +63,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new ArgumentException("Use specific PA4 or PA8 type.");
         }
@@ -82,10 +82,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 4-bit palette"; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C N64 4-bit palettes file"; } }
+        public override String LongTypeName { get { return "Westwood C&C N64 4-bit palettes file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, false);
         }
@@ -96,7 +96,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "WwPal64b8"; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 8-bit palette"; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C N64 8-bit palette file"; } }
+        public override String LongTypeName { get { return "Westwood C&C N64 8-bit palette file"; } }
         public override String[] FileExtensions { get { return new String[] { "pa8" }; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -116,7 +116,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, true);
         }

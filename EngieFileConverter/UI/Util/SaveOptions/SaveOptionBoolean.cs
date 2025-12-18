@@ -9,17 +9,17 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public SaveOptionBoolean() : this(null, null) { }
 
-        public SaveOptionBoolean(SaveOption info, ListedControlController<SaveOption> controller)
+        public SaveOptionBoolean(Option info, ListedControlController<Option> controller)
         {
             this.InitializeComponent();
             this.Init(info, controller);
         }
 
-        public override void UpdateInfo(SaveOption info)
+        public override void UpdateInfo(Option info)
         {
             this.Info = info;
             this.chkOption.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
-            this.chkOption.Checked = GeneralUtils.IsTrueValue(this.Info.SaveData);
+            this.chkOption.Checked = GeneralUtils.IsTrueValue(this.Info.Data);
         }
 
         public override void FocusValue()
@@ -33,7 +33,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             {
                 m_Loading = true;
                 this.Enabled = enabled;
-                this.chkOption.Checked = enabled && GeneralUtils.IsTrueValue(this.Info.SaveData);
+                this.chkOption.Checked = enabled && GeneralUtils.IsTrueValue(this.Info.Data);
             }
             finally
             {
@@ -45,7 +45,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         {
             if (m_Loading || this.Info == null)
                 return;
-            this.Info.SaveData = this.chkOption.Checked ? "1" : "0";
+            this.Info.Data = this.chkOption.Checked ? "1" : "0";
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

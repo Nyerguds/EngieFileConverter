@@ -18,7 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "RA1 Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Red Alert map file"; } }
+        public override String LongTypeName { get { return "Red Alert map file"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "mpr", "ini" }; } }
         public override Int32 Width { get { return this.width; } }
@@ -89,7 +89,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return mapFile;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
         }

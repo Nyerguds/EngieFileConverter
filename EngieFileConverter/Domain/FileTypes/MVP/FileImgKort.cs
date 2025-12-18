@@ -20,7 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "KORT Image"; } }
         public override String[] FileExtensions { get { return new String[] { "000", "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "016", "017" }; } }
-        public override String ShortTypeDescription { get { return "KORT Image file"; } }
+        public override String LongTypeName { get { return "KORT Image file"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get{ return 8; } }
 
@@ -66,7 +66,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = image;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap image = this.PerformPreliminaryChecks(fileToSave);
             Int32 stride;

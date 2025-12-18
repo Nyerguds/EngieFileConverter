@@ -16,11 +16,11 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String IdCode { get { return "PCX"; } }
         public override String ShortTypeName { get { return "PCX"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "ZSoft Picture Exchange Format"; } }
+        public override String LongTypeName { get { return "ZSoft Picture Exchange Format"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pcx" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] {this.ShortTypeDescription }; } }
+        public override String[] DescriptionsForExtensions { get { return new String[] {this.LongTypeName }; } }
         public override Int32 BitsPerPixel { get { return this.m_BitsPerPixel; } }
 
         // TODO remove when implemented.
@@ -323,7 +323,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return PaletteUtils.GetCgaPalette(cgaDefinedColor, cgaColorBurstEnable, cgaPaletteValue, cgaIntensityValue, bitsPerPixel);
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             throw new NotImplementedException();
             if (fileToSave == null || fileToSave.GetBitmap() == null)
@@ -331,9 +331,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Color[] palEntries = fileToSave.GetColors();
             Int32 colors = palEntries.Length;
             if (colors == 0)
-                return new SaveOption[] { new SaveOption("PLN", SaveOptionType.Boolean, "Save data as linear, not planar.", "1") };
+                return new Option[] { new Option("PLN", OptionInputType.Boolean, "Save data as linear, not planar.", "1") };
 
-            SaveOption version = new SaveOption("VER", SaveOptionType.ChoicesList, "PCX version:", "0: Paintbrush v2.5 (pure EGA colors only),2: Paintbrush v2.8 (with palette),3: Paintbrush v2.8 (no palette),4: Paintbrush for Windows,5: Paintbrush v3.0+", "4");
+            Option version = new Option("VER", OptionInputType.ChoicesList, "PCX version:", "0: Paintbrush v2.5 (pure EGA colors only),2: Paintbrush v2.8 (with palette),3: Paintbrush v2.8 (no palette),4: Paintbrush for Windows,5: Paintbrush v3.0+", "4");
 
             if (colors == 2 || colors == 4)
             {
@@ -343,10 +343,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 Boolean intensity;
                 if (PaletteUtils.DetectCgaPalette(palEntries, out backgroundColor, out colorBurst, out palette, out intensity))
                 {
-                    return new SaveOption[]
+                    return new Option[]
                     {
-                        new SaveOption("CGA", SaveOptionType.Boolean, "Save as CGA palette.", "1"),
-                        new SaveOption("NCG", SaveOptionType.Boolean, "Save as new type CGA.", "0")
+                        new Option("CGA", OptionInputType.Boolean, "Save as CGA palette.", "1"),
+                        new Option("NCG", OptionInputType.Boolean, "Save as new type CGA.", "0")
                     };
                 }
             }
@@ -354,7 +354,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return base.GetSaveOptions(fileToSave, targetFileName);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // TODO
             throw new NotImplementedException();

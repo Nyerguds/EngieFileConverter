@@ -18,7 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "KotB PAK"; } }
         public override String[] FileExtensions { get { return new String[] { "pak" }; } }
-        public override String ShortTypeDescription { get { return "Kings of the Beach PAK file"; } }
+        public override String LongTypeName { get { return "Kings of the Beach PAK file"; } }
         //public override Boolean NeedsPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 4; } }
 
@@ -93,7 +93,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 imgWidth;
             Int32 imgHeight;
@@ -104,16 +104,16 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, imgWidth, 1, lastLineOffs, 4, true, ref stride);
             for (Int32 x = 0; x < imgWidth; ++x)
                 if (lastLine[x] != 0)
-                    return new SaveOption[0];
-            return new SaveOption[] { new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "1") };
+                    return new Option[0];
+            return new Option[] { new Option("CUT", OptionInputType.Boolean, "Trim 0-value lines off the end.", "1") };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Int32 imgWidth;
             Int32 imgHeight;
             Bitmap image = this.PerformPreliminaryChecks(fileToSave, out imgWidth, out imgHeight);
-            Boolean trimEnd = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
+            Boolean trimEnd = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CUT"));
             Int32 saveHeight = imgHeight;
             // Width has to be a multiple of 8.
             Int32 byteWidth = (image.Width + 7) / 8;

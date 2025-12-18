@@ -99,9 +99,18 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.8: (09/10/2021 16:10 CET)
+-AdventureSoft icons file: Fixed UI display of dimensions.
+-Added internal support for selecting the six CGA palettes from the palette dropdown.
+ Like 1bpp, though, this type does not support saving or loading palettes.
+-Fixed an error where pixels inside bytes got swapped when pasting on a 4-bpp or 1-bpp picture.
+-Cleaned up code in the C&C tileset type.
+-Fixed issue with palette saving options in the Westwood WSA type.
+-Removed enable/disable ambiguity in save option filters.
+
 v1.5.7: (17/08/2021 14:55 CET)
--All Dogs DB format: Added automatic detection for CGA/EGA by testing if any widths exceed 320.
--All Dogs DB format: Fixed detection of CGA content in save options.
+-All Dogs DB format: added automatic detection for CGA/EGA by testing if any widths exceed 320.
+-All Dogs DB format: fixed detection of CGA content in save options.
 -Made the "Set different palette" tool able to handle 2-bit images by using 4-bit palettes.
 -Added new high res icon to the editor.
 -Removed some old libraries that never got used.

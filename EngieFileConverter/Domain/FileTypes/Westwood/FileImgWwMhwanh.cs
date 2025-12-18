@@ -18,7 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "HSI Raw"; } }
         public override String[] FileExtensions { get { return new String[] { "raw", "jap" }; } }
-        public override String ShortTypeDescription { get { return "ImageAlchemy HSI Raw Format"; } }
+        public override String LongTypeName { get { return "ImageAlchemy HSI Raw Format"; } }
         public override FileClass FileClass { get { return this._IsHighCol ? FileClass.ImageHiCol : FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.ImageHiCol; } }
         public override Int32 Width { get { return this._Width; } }
@@ -90,7 +90,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo += Environment.NewLine + "Gamma: " + gamma;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotSupportedException();
         }

@@ -18,7 +18,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public SaveOptionColor() : this(null, null) { }
 
-        public SaveOptionColor(SaveOption info, ListedControlController<SaveOption> controller)
+        public SaveOptionColor(Option info, ListedControlController<Option> controller)
         {
             this.InitializeComponent();
             this.InitResize();
@@ -37,7 +37,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
-        public override void UpdateInfo(SaveOption info)
+        public override void UpdateInfo(Option info)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         private void SelectFromSaveData()
         {
 
-            String saveData = this.Info.SaveData;
+            String saveData = this.Info.Data;
             Color col = ColorUtils.ColorFromHexString(saveData);
             lblColor.TrueBackColor = Color.FromArgb(0xFF, col);
             if (numAlpha.Enabled)
@@ -143,7 +143,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                 col = Color.FromArgb(chkTransparent.Checked ? 0x00 : 0xFF, col);
             else if (numAlpha.Enabled)
                 col = Color.FromArgb((Int32)numAlpha.Value, col);
-            this.Info.SaveData = ColorUtils.HexStringFromColor(col, true);
+            this.Info.Data = ColorUtils.HexStringFromColor(col, true);
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

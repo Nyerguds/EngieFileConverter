@@ -31,7 +31,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean FramesHaveCommonPalette { get { return false; } }
 
         public override String ShortTypeName { get { return "Icon"; } }
-        public override String ShortTypeDescription { get { return "Icon file"; } }
+        public override String LongTypeName { get { return "Icon file"; } }
         public override String[] FileExtensions { get { return new String[] { "ico" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions { get { return new String[] { "Windows Icon" }; } }
@@ -195,32 +195,32 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Bitmap bmToSave = fileToSave.GetBitmap();
             Int32 w = bmToSave.Width;
             Int32 h = bmToSave.Height;
             Boolean addSq = w != h;
             Boolean addInc = Math.Max(w, h) < 256;
-            List<SaveOption> opts = new List<SaveOption>();
+            List<Option> opts = new List<Option>();
             if (addSq)
-                opts.Add(new SaveOption("SQR", SaveOptionType.Boolean, "Pad image to square format", null, "1"));
+                opts.Add(new Option("SQR", OptionInputType.Boolean, "Pad image to square format", null, "1"));
             if (addInc)
             {
-                opts.Add(new SaveOption("INC", SaveOptionType.Boolean, "Include formats larger than source image", "1"));
-                opts.Add(new SaveOption("PIX", SaveOptionType.Boolean, "Use pixel zoom for larger images", "0"));
+                opts.Add(new Option("INC", OptionInputType.Boolean, "Include formats larger than source image", "1"));
+                opts.Add(new Option("PIX", OptionInputType.Boolean, "Use pixel zoom for larger images", "0"));
             }
             // The character filter specifically disallows "-", so no actual ranges can be given.
-            opts.Add(new SaveOption("SIZ", SaveOptionType.String, "Included sizes: (Comma separated, max 256)", "0123456789, " + Environment.NewLine, "16, 24, 32, 48, 64, 96, 128, 192, 256"));
+            opts.Add(new Option("SIZ", OptionInputType.String, "Included sizes: (Comma separated, max 256)", "0123456789, " + Environment.NewLine, "16, 24, 32, 48, 64, 96, 128, 192, 256"));
             return opts.ToArray();
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            Boolean makeSquare = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "SQR"));
-            Boolean upscale = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "INC"));
-            Boolean pixelZoom = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PIX"));
-            String includedSizesStr = SaveOption.GetSaveOptionValue(saveOptions, "SIZ");
+            Boolean makeSquare = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "SQR"));
+            Boolean upscale = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "INC"));
+            Boolean pixelZoom = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PIX"));
+            String includedSizesStr = Option.GetSaveOptionValue(saveOptions, "SIZ");
             // The character filter specifically disallows "-", so no actual ranges can be given.
             Int32[] sizes = GeneralUtils.GetRangedNumbers(includedSizesStr);
             if (sizes.Length == 0)

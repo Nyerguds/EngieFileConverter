@@ -102,7 +102,7 @@ namespace EngieFileConverter.UI
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Could not load file as " + selectedType.ShortTypeDescription + ":\n\n" + ex.Message, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Could not load file as " + selectedType.LongTypeName + ":\n\n" + ex.Message, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
             {

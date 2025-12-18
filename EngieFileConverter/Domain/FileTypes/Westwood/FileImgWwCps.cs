@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood CPS"; } }
         public override String[] FileExtensions { get { return new String[] {"cps"}; } }
-        public override String ShortTypeDescription { get { return "Westwood CPS File"; } }
+        public override String LongTypeName { get { return "Westwood CPS File"; } }
         public override Boolean NeedsPalette { get { return m_LoadedPalette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected String m_LoadedPalette = null;
@@ -288,7 +288,7 @@ namespace EngieFileConverter.Domain.FileTypes
                                 ("\nIncludes palette: " + (!this.NeedsPalette ? "Yes" + (amigaV1 ? " (EOB 1)" : (amigaV2 ? " (EOB 2)" : String.Empty)) : "No")));
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException("File to save is empty!", "fileToSave");
@@ -299,15 +299,15 @@ namespace EngieFileConverter.Domain.FileTypes
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;
             CpsVersion ver = cps != null ? cps.CpsVersion : CpsVersion.Pc;
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("VER", SaveOptionType.ChoicesList, "Version", "PC,Amiga (EOB 1),Amiga (EOB 2)", ((Int32)ver).ToString()),
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", (fileToSave.NeedsPalette ? 0 : 1).ToString()),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
+                new Option("VER", OptionInputType.ChoicesList, "Version", "PC,Amiga (EOB 1),Amiga (EOB 2)", ((Int32)ver).ToString()),
+                new Option("PAL", OptionInputType.Boolean, "Include palette", (fileToSave.NeedsPalette ? 0 : 1).ToString()),
+                new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString())
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException("File to save is empty!", "fileToSave");
@@ -315,12 +315,12 @@ namespace EngieFileConverter.Domain.FileTypes
             if (image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
                 throw new ArgumentException("Only 8-bit " + this.m_Width + "×" + this.m_Height + " images can be saved as CPS!", "fileToSave");
 
-            Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 version;
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version))
+            if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "VER"), out version))
                 version = 0;
             Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
             if (imageData.Length != this.m_Width * this.m_Height)

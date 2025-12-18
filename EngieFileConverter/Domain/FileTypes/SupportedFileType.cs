@@ -49,16 +49,16 @@ namespace EngieFileConverter.Domain.FileTypes
         public abstract FileClass InputFileClass { get; }
         /// <summary>Type to be accepted as frames. Override this for frame types.</summary>
         public virtual FileClass FrameInputFileClass { get { return FileClass.None; } }
-        /// <summary>Unique identifier for this type. Use null for types that do not represent actual specific file types.</summary>
+        /// <summary>Short unique identifier code for this type. Use null for types that do not represent actual specific file types.</summary>
         public abstract String IdCode { get; }
-        /// <summary>Very short code name for this type.</summary>
+        /// <summary>Short name for this type.</summary>
         public virtual String ShortTypeName { get { return this.FileExtensions.Length > 0 ? this.FileExtensions[0].ToUpper() : this.GetType().Name; } }
-        /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public abstract String ShortTypeDescription { get; }
+        /// <summary>Longer name and description of the file type, for the UI and for the types dropdown in the "open file" dialog.</summary>
+        public abstract String LongTypeName { get; }
         /// <summary>Possible file extensions for this file type.</summary>
         public abstract String[] FileExtensions { get; }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public virtual String[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.ShortTypeDescription, this.FileExtensions.Length).ToArray(); } }
+        public virtual String[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.LongTypeName, this.FileExtensions.Length).ToArray(); } }
         /// <summary>True if this type can save. Defaults to true.</summary>
         public virtual Boolean CanSave { get { return true; } }
         /// <summary>Width of the file (if applicable). Normally the same as GetBitmap().Width</summary>
@@ -71,7 +71,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public String LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
         public String LoadedFileName { get; protected set; }
-        /// <summary>Color depth of the file.</summary>
+        /// <summary>Color depth of the file. Note: "-2" switches the program to specific CGA-support 2-bit.</summary>
         public virtual Int32 BitsPerPixel { get { return this.m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat); } }
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public virtual SupportedFileType[] Frames { get { return null; } }
@@ -87,7 +87,10 @@ namespace EngieFileConverter.Domain.FileTypes
         public virtual Boolean HasCompositeFrame { get { return false; } }
         /// <summary>Extra info to be shown on the UI, like detected internal compression type in a loaded file.</summary>
         public virtual String ExtraInfo { get; set; }
-        /// <summary>Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.</summary>
+        /// <summary>
+        /// Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.
+        /// Note that this is only applied when a palette is loaded into the file from the UI; the class itself is responsible for the loaded file's initial colour palette and transparency.
+        /// </summary>
         public virtual Boolean[] TransparencyMask { get { return null; } }
 
         /// <summary>
@@ -138,7 +141,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The opened file that is being saved.</param>
         /// <param name="targetFileName">The target file path.</param>
         /// <returns>The list of options. Leave empty if no options are needed. Returning null will give a general "cannot save as this type" message.</returns>
-        public virtual SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new SaveOption[0]; }
+        public virtual Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new Option[0]; }
 
         /// <summary>
         /// Saves the given file as this type.
@@ -146,7 +149,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The input file to convert.</param>
         /// <param name="savePath">The path to save to.</param>
         /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
-        public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath, SaveOption[] saveOptions)
+        public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath, Option[] saveOptions)
         {
             Byte[] data = this.SaveToBytesAsThis(fileToSave, saveOptions);
             File.WriteAllBytes(savePath, data);
@@ -158,7 +161,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The input file to convert.</param>
         /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
         /// <returns>The bytes of the file converted to this type.</returns>
-        public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions);
+        public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions);
 
         public virtual void SetFileNames(String path)
         {
@@ -177,13 +180,20 @@ namespace EngieFileConverter.Domain.FileTypes
 
         protected Color[] GetColorsInternal()
         {
-            if (this.BitsPerPixel == 0 || this.BitsPerPixel > 8)
+            if (!this.IsIndexed())
                 return null;
             if (this.m_Palette != null)
                 return ArrayUtils.CloneArray(m_Palette);
             if (this.m_LoadedImage != null && (this.m_LoadedImage.PixelFormat & PixelFormat.Indexed) != 0)
                 return this.m_LoadedImage.Palette.Entries;
             return null;
+        }
+
+        protected Boolean IsIndexed()
+        {
+            Int32 bpp = Math.Abs(this.BitsPerPixel);
+            return bpp > 0 && bpp <= 8;
+
         }
 
         public virtual void SetColors(Color[] palette)
@@ -200,13 +210,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 paletteLength = palette.Length;
             if (paletteLength == 0)
                 return;
-            if (this.BitsPerPixel > 0 && this.BitsPerPixel <= 8)
+            if (this.IsIndexed())
             {
-                Int32 maxLen = 1 << this.BitsPerPixel;
+                Int32 maxLen = 1 << Math.Abs(this.BitsPerPixel);
                 // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
                 Color[] origPal = GetColorsInternal();
                 Int32 origPalLength = origPal == null ? maxLen : Math.Min(origPal.Length, maxLen);
                 Color[] newPalette = new Color[origPalLength];
+                // Do not apply transparency mask; that should be applied by the file itself, otherwise it can't be changed on the UI.
                 for (Int32 i = 0; i < origPalLength; ++i)
                 {
                     if (i < paletteLength)
@@ -258,7 +269,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public virtual Boolean ColorsChanged()
         {
-            if (this.BitsPerPixel == 0 || this.BitsPerPixel > 8)
+            if (!this.IsIndexed())
                 return false;
             if (this.m_BackupPalette == null)
                 return false;
@@ -355,7 +366,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 bpp;
             if (!this.IsFramesContainer)
             {
-                bpp = this.BitsPerPixel;
+                bpp = Math.Abs(this.BitsPerPixel);
             }
             else
             {
@@ -367,9 +378,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     SupportedFileType frame = frames[i];
                     if (frame == null)
                         continue;
+                    Int32 frameBpp = Math.Abs(frame.BitsPerPixel);
                     if (bpp == -1)
-                        bpp = frame.BitsPerPixel;
-                    else if (bpp != frame.BitsPerPixel)
+                        bpp = Math.Abs(frameBpp);
+                    else if (bpp != frameBpp)
                     {
                         bpp = -1;
                         break;

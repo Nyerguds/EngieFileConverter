@@ -40,7 +40,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Dynamix BMP"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
-        public override String ShortTypeDescription { get { return "Dynamix BMP sprites file"; } }
+        public override String LongTypeName { get { return "Dynamix BMP sprites file"; } }
 
         protected static String[] CompressionTypes = new String[] { "None", "RLE", "LZW", "LZSS" };
         protected static String[] SaveCompressionTypes = new String[] { "None", "RLE" };
@@ -299,10 +299,10 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Boolean is4bpp = fileToSave.BitsPerPixel == 4;
-            SaveOption[] opts = new SaveOption[3];
+            Option[] opts = new Option[3];
             Int32 opt = 0;
             Boolean isScn = false;
             if (is4bpp)
@@ -318,7 +318,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
                 isScn = saveType == 1;
-                opts[opt++] = new SaveOption("TYP4", SaveOptionType.ChoicesList, "Save type:", "BIN,SCN", saveType.ToString());
+                opts[opt++] = new Option("TYP4", OptionInputType.ChoicesList, "Save type:", "BIN,SCN", saveType.ToString());
             }
             else
             {
@@ -334,21 +334,21 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
                 isScn = saveType == 2;
-                opts[opt++] = new SaveOption("TYP8", SaveOptionType.ChoicesList, "Save type:", "BIN / VGA,MA8,SCN", saveType.ToString());
+                opts[opt++] = new Option("TYP8", OptionInputType.ChoicesList, "Save type:", "BIN / VGA,MA8,SCN", saveType.ToString());
             }
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", SaveCompressionTypes), isScn ? "0" : "1", false, new SaveEnableFilter("TYP4", true, "1"), new SaveEnableFilter("TYP8", true, "2"));
-            opts[opt] = new SaveOption("SCL", SaveOptionType.Boolean, "SCN: Include line end at end of compressed data", null, "1", true, new SaveEnableFilter("TYP4", false, "1"), new SaveEnableFilter("TYP8", false, "2"));
+            opts[opt++] = new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", SaveCompressionTypes), isScn ? "0" : "1", is4bpp ? new EnableFilter("TYP4", false, "1") : new EnableFilter("TYP8", false, "2"));
+            opts[opt] = new Option("SCL", OptionInputType.Boolean, "SCN: Include line end at end of compressed data", null, "1", is4bpp ? new EnableFilter("TYP4", true, "1") : new EnableFilter("TYP8", true, "2"));
 
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             DynBmpInternalType saveType = DynBmpInternalType.Unknown;
             if (fileToSave.BitsPerPixel == 4)
             {
                 Int32 saveType4;
-                if (Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP4"), out saveType4))
+                if (Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYP4"), out saveType4))
                 {
                     switch (saveType4)
                     {
@@ -364,7 +364,7 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 Int32 saveType8;
-                if (Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP8"), out saveType8))
+                if (Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYP8"), out saveType8))
                 {
                     switch (saveType8)
                     {
@@ -383,14 +383,14 @@ namespace EngieFileConverter.Domain.FileTypes
             DynBmpInternalCompression compressionType;
             if (saveType == DynBmpInternalType.Scn)
             {
-                Boolean lineEnd = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "SCL"));
+                Boolean lineEnd = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "SCL"));
                 // SCN has its own compression. Use the "Compression" parameter to transfer its options instead.
                 compressionType = lineEnd ? DynBmpInternalCompression.Rle : DynBmpInternalCompression.None;
             }
             else
             {
                 Int32 compression;
-                Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compression);
+                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compression);
                 compressionType = (DynBmpInternalCompression) compression;
             }
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)

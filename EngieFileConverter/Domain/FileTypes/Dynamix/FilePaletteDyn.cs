@@ -16,7 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Dynamix Palette"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "Dynamix palette"; } }
+        public override String LongTypeName { get { return "Dynamix palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "pal" }; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
@@ -65,7 +65,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");

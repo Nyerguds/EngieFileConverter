@@ -7,7 +7,7 @@ namespace Nyerguds.Util
         /// <summary>Very short code name for this type.</summary>
         String ShortTypeName { get; }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        String ShortTypeDescription { get; }
+        String LongTypeName { get; }
         /// <summary>Possible file extensions for this file type.</summary>
         String[] FileExtensions { get; }
         /// <summary>Brief name and description of the specific type for each extension, for the types dropdown in the save file dialog.</summary>

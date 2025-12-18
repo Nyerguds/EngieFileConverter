@@ -10,7 +10,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.ImageIndexed; } }
         public override String ShortTypeName { get { return "GIF"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "CompuServe GIF image"; } }
+        public override String LongTypeName { get { return "CompuServe GIF image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "gif" }; } }
         protected override String MimeType { get { return "gif"; } }
@@ -18,10 +18,10 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
         {
-            get { return new String[] {this.ShortTypeDescription }; }
+            get { return new String[] {this.LongTypeName }; }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");

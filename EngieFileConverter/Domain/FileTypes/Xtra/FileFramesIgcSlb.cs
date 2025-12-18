@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Interactive Girls archive"; } }
         public override String[] FileExtensions { get { return new String[] { "slb", "m3" }; } }
-        public override String ShortTypeDescription { get { return "Interactive Girls SLB archive"; } }
+        public override String LongTypeName { get { return "Interactive Girls SLB archive"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Boolean FramesHaveCommonPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 8; } }
@@ -109,7 +109,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotSupportedException();
         }

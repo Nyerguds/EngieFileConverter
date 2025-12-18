@@ -57,6 +57,16 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
+        public static int FindEgaColor(Color color)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                if (color.Equals(EgaPalette[i]))
+                    return i;
+            }
+            return -1;
+        }
+
         public static Color[] GetCgaPalette(Byte definedColor, Boolean colorBurst, Boolean palette, Boolean intensity, Int32 bitsPerPixel)
         {
             if (definedColor > 15)

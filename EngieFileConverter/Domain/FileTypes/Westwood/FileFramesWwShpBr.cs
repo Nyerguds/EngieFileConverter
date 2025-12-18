@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood BR Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Shape File - Blade Runner"; } }
+        public override String LongTypeName { get { return "Westwood Shape File - Blade Runner"; } }
         public override Boolean NeedsPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 16; } }
 
@@ -90,12 +90,12 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             return null;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave);
             UInt32 nrOfFrames = (UInt32)frames.Length;

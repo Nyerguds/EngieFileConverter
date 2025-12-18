@@ -20,7 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "KORT BMP"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
-        public override String ShortTypeDescription { get { return "KORT frames file"; } }
+        public override String LongTypeName { get { return "KORT frames file"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -89,7 +89,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = null;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
             Int32 nrOfFrames = frames.Length;

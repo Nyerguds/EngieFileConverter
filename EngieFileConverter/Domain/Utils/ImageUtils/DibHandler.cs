@@ -398,7 +398,7 @@ namespace Nyerguds.ImageManipulation
                 if (dibHeaderSize != headerSize)
                     return false;
                 header = ArrayUtils.ReadStructFromByteArray<BITMAPINFOHEADER>(dibBytes, offset, Endianness.LittleEndian);
-                // No support for dealing with multiplanar or compressed formats.
+                // No support for dealing with multiplanar or compressed formats yet.
                 if (header.biPlanes != 1 || (header.biCompression != BITMAPCOMPRESSION.BI_RGB && header.biCompression != BITMAPCOMPRESSION.BI_BITFIELDS))
                     return false;
                 Int32 readIndex = headerSize + offset;

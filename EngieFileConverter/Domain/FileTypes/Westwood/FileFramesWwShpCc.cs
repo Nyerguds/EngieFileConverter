@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood C&C1 Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Shape File - C&C"; } }
+        public override String LongTypeName { get { return "Westwood Shape File - C&C"; } }
         public override Boolean NeedsPalette { get { return !this.m_HasPalette; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_HasPalette;
@@ -273,29 +273,29 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 width;
             Int32 height;
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out width, out height);
             if (frames.Length == 1)
-                return new SaveOption[0];
-            return new SaveOption[]
+                return new Option[0];
+            return new Option[]
             {
-                new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate LCW frames", "1"),
-                new SaveOption("FDL", SaveOptionType.Boolean, "Save all frames that have duplicates as LCW to allow more trimming. Useful on small graphics with many duplicates.", null, "0", new SaveEnableFilter("TDL", false, "1")),
-                new SaveOption("LMX", SaveOptionType.Boolean, "Limit XOR chaining length by comparing full XOR chain size to the size of its XOR base frame", null, "1")
+                new Option("TDL", OptionInputType.Boolean, "Trim duplicate LCW frames", "1"),
+                new Option("FDL", OptionInputType.Boolean, "Save all frames that have duplicates as LCW to allow more trimming. Useful on small graphics with many duplicates.", null, "0", new EnableFilter("TDL", true, "1")),
+                new Option("LMX", OptionInputType.Boolean, "Limit XOR chaining length by comparing full XOR chain size to the size of its XOR base frame", null, "1")
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Int32 width;
             Int32 height;
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave, out width, out height);
-            Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
-            Boolean forceDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "FDL"));
-            Boolean chainedSizeCheck = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "LMX"));
+            Boolean trimDuplicates = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "TDL"));
+            Boolean forceDuplicates = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "FDL"));
+            Boolean chainedSizeCheck = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "LMX"));
 
             Int32 nrOfFrames = frames.Length;
             Int32 hdrSize = 0x0E;

@@ -716,16 +716,19 @@ namespace Nyerguds.Util.UI
                 mousebutton = 0;
             if ((e.Button & MouseButtons.Right) != 0)
                 mousebutton = 1;
+            Boolean changed = false;
             if (mousebutton != -1)
             {
                 if ((this.m_ColorSelectMode == ColorSelMode.Single && mousebutton == 0) || this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
                 {
                     Int32 oldVal = this.m_SelectedIndicesArr[mousebutton];
+                    changed = index != oldVal;
                     if (this.m_ColorSelectMode == ColorSelMode.Single)
                     {
-                        if (index != oldVal)
+                        if (changed)
                         {
-                            this.m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
+                            if (oldVal > 0 && oldVal < this.m_ColorLabels.Length)
+                                this.m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
                             this.m_SelectedIndicesArr[0] = index;
                             lbl.BorderStyle = BorderStyle.FixedSingle;
                         }
@@ -734,17 +737,21 @@ namespace Nyerguds.Util.UI
                     {
                         Int32 mousebuttonOther = mousebutton == 0 ? 1 : 0;
                         Int32 oldValOther = this.m_SelectedIndicesArr[mousebuttonOther];
-                        if (index != oldVal)
+                        if (changed)
                         {
                             if (index == oldValOther)
                             {
                                 this.m_SelectedIndicesArr[mousebutton] = index;
-                                this.m_SelectedIndicesArr[mousebuttonOther] = oldVal;
-                                this.m_ColorLabels[oldVal].Invalidate();
+                                if (oldVal > 0 && oldVal < this.m_ColorLabels.Length)
+                                {
+                                    this.m_SelectedIndicesArr[mousebuttonOther] = oldVal;
+                                    this.m_ColorLabels[oldVal].Invalidate();
+                                }
                             }
                             else
                             {
-                                this.m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
+                                if (oldVal > 0 && oldVal < this.m_ColorLabels.Length)
+                                    this.m_ColorLabels[oldVal].BorderStyle = BorderStyle.None;
                                 this.m_SelectedIndicesArr[mousebutton] = index;
                                 lbl.BorderStyle = BorderStyle.FixedSingle;
                             }
@@ -753,6 +760,7 @@ namespace Nyerguds.Util.UI
                 }
                 else if (this.m_ColorSelectMode == ColorSelMode.Multi && mousebutton == 0)
                 {
+                    changed = true;
                     if (!this.m_SelectedIndicesList.Contains(index))
                     {
                         this.m_SelectedIndicesList.Add(index);
@@ -765,10 +773,13 @@ namespace Nyerguds.Util.UI
                         lbl.BorderStyle = BorderStyle.None;
                     }
                 }
-                // force refresh
-                lbl.Invalidate();
-                if (this.ColorSelectionChanged != null)
-                    this.ColorSelectionChanged(this, new PaletteClickEventArgs(e, lbl.Location, index, this.GetColor(index)));
+                if (changed)
+                {
+                    // force refresh
+                    lbl.Invalidate();
+                    if (this.ColorSelectionChanged != null)
+                        this.ColorSelectionChanged(this, new PaletteClickEventArgs(e, lbl.Location, index, this.GetColor(index)));
+                }
             }
             if (this.ColorLabelMouseClick != null)
                 this.ColorLabelMouseClick(this, new PaletteClickEventArgs(e, lbl.Location, index, this.GetColor(index)));

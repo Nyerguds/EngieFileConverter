@@ -17,7 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "LadyLove TME Image"; } }
         public override String[] FileExtensions { get { return new String[] { "tme" }; } }
-        public override String ShortTypeDescription { get { return "LadyLove TME Image file"; } }
+        public override String LongTypeName { get { return "LadyLove TME Image file"; } }
         public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -110,7 +110,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.ExtraInfo += '\n' + source;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
         }

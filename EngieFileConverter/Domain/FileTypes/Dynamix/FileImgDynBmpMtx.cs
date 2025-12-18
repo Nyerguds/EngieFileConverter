@@ -16,7 +16,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.None; } }
         public override String ShortTypeName { get { return "Dynamix BMP MTX"; } }
         public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
-        public override String ShortTypeDescription { get { return "Dynamix BMP Matrix image"; } }
+        public override String LongTypeName { get { return "Dynamix BMP Matrix image"; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
@@ -30,7 +30,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 fullWidth = fileToSave.Width;
             Int32 fullHeight = fileToSave.Height;
@@ -64,17 +64,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 blockHeight = matchingHeights.Count == 0 ? 5 : matchingHeights.Min();
             }
             Boolean is4bpp = bpp == 4;
-            SaveOption[] opts = new SaveOption[is4bpp ? 3 : 4];
+            Option[] opts = new Option[is4bpp ? 3 : 4];
             Int32 opt = 0;
             if (!is4bpp)
-                opts[opt++] = new SaveOption("TYP", SaveOptionType.ChoicesList, "Save type:", "BIN / VGA,MA8", "0");
-            opts[opt++] = new SaveOption("BLW", SaveOptionType.Number, "Block width", "0,", blockWidth.ToString());
-            opts[opt++] = new SaveOption("BLH", SaveOptionType.Number, "Block height", "0,", blockHeight.ToString());
-            opts[opt++] = new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", SaveCompressionTypes), "1");
+                opts[opt++] = new Option("TYP", OptionInputType.ChoicesList, "Save type:", "BIN / VGA,MA8", "0");
+            opts[opt++] = new Option("BLW", OptionInputType.Number, "Block width", "0,", blockWidth.ToString());
+            opts[opt++] = new Option("BLH", OptionInputType.Number, "Block height", "0,", blockHeight.ToString());
+            opts[opt++] = new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", SaveCompressionTypes), "1");
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
@@ -85,14 +85,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 width = image.Width;
             Int32 height = image.Height;
             Int32 saveTypeInt;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYP"), out saveTypeInt);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYP"), out saveTypeInt);
             DynBmpInternalType saveType = saveTypeInt == 0 ? DynBmpInternalType.BinVga : DynBmpInternalType.Ma8;
             Int32 compression;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compression);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compression);
             DynBmpInternalCompression compressionType = (DynBmpInternalCompression)compression;
             Int32 blockWidth;
             Int32 blockHeight;
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
+            if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
                 throw new ArgumentException("Could not parse block width!", "saveOptions");
             if (blockWidth <= 0)
                 throw new ArgumentException("Bad block height: needs to be more than 0!", "saveOptions");
@@ -100,7 +100,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new ArgumentException("Bad block width: needs to be a multiple of 8!", "saveOptions");
             if (width % blockWidth != 0)
                 throw new ArgumentException("Bad block width: not an exact part of the full image width!", "saveOptions");
-            if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "BLH"), out blockHeight))
+            if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLH"), out blockHeight))
                 throw new ArgumentException("Could not parse block height!", "saveOptions");
             if (blockHeight <= 0)
                 throw new ArgumentException("Bad block height: needs to be more than 0!", "saveOptions");

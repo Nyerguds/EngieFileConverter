@@ -6,10 +6,10 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     public class SaveOptionControl : UserControl
     {
-        public SaveOption Info { get; set; }
-        protected ListedControlController<SaveOption> m_Controller;
+        public Option Info { get; set; }
+        protected ListedControlController<Option> m_Controller;
 
-        protected void Init(SaveOption info, ListedControlController<SaveOption> controller)
+        protected void Init(Option info, ListedControlController<Option> controller)
         {
             this.UpdateInfo(info);
             this.m_Controller = controller;
@@ -21,7 +21,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         }
 
         public virtual void FocusValue() { this.Select(); }
-        public virtual void UpdateInfo(SaveOption info) { this.Info = info; }
+        public virtual void UpdateInfo(Option info) { this.Info = info; }
 
     }
 }

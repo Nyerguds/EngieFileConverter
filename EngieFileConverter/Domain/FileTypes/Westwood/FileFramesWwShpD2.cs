@@ -25,7 +25,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood Dune II Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String ShortTypeDescription { get { return "Westwood Shape File - Dune II"; } }
+        public override String LongTypeName { get { return "Westwood Shape File - Dune II"; } }
         public override Boolean NeedsPalette { get { return true; } }
         public override Int32 BitsPerPixel { get { return 8; } }
 
@@ -263,7 +263,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return framesList;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             PerformPreliminaryChecks(fileToSave);
             Dune2ShpType d2File = fileToSave as Dune2ShpType;
@@ -273,34 +273,34 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean hasUncompressed = d2File != null && d2File.UncompressedIndices != null && d2File.UncompressedIndices.Length > 0;
             String uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(d2File.UncompressedIndices) : String.Empty;
 
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("VER", SaveOptionType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape ? "0" : "1"),
+                new Option("VER", OptionInputType.ChoicesList, "Game version", "v1.00,v1.07", isdune100shape ? "0" : "1"),
                 // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
-                new SaveOption("RMT", SaveOptionType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
-                new SaveOption("RMA", SaveOptionType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new SaveEnableFilter("RMT", false, "1")),
-                new SaveOption("RMS", SaveOptionType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, " + Environment.NewLine, remapped, new SaveEnableFilter("RMA", true, "1")),
-                new SaveOption("NCA", SaveOptionType.Boolean, "Auto-detect best compression usage.", "1"),
-                new SaveOption("NCS", SaveOptionType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, " + Environment.NewLine, uncompressed, new SaveEnableFilter("NCA", false, "0"))
+                new Option("RMT", OptionInputType.Boolean, "Add remapping tables to allow frames to be remapped to House colors.", hasRemap ? "1" : "0"),
+                new Option("RMA", OptionInputType.Boolean, "Auto-detect remap on the existence of color indices 144-150.", null, "0", new EnableFilter("RMT", true, "1")),
+                new Option("RMS", OptionInputType.String, "Specify remapped indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to remap all.", "0123456789-, " + Environment.NewLine, remapped, new EnableFilter("RMA", false, "1")),
+                new Option("NCA", OptionInputType.Boolean, "Auto-detect best compression usage.", "1"),
+                new Option("NCS", OptionInputType.String, "Specify non-compressed indices (Comma separated. Can use ranges like \"0-20\"). Leave empty to treat all as non-compressed.", "0123456789-, " + Environment.NewLine, uncompressed, new EnableFilter("NCA", true, "0"))
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave);
             // VErsions: 1.00, 1.07 and Lands of Lore (which is 1.07 without LCW compression)
             Int32 version;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "VER"), out version);
 
             Boolean isVersion107 = version != 0;
             // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
-            Boolean addRemap = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMT"));
-            Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMA"));
-            String remapSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
+            Boolean addRemap = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMT"));
+            Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMA"));
+            String remapSpecificStr = Option.GetSaveOptionValue(saveOptions, "RMS");
             Boolean remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
             Int32[] remappedFrames = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
-            Boolean compressAuto = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NCA"));
-            String uncomprSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "NCS");
+            Boolean compressAuto = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NCA"));
+            String uncomprSpecificStr = Option.GetSaveOptionValue(saveOptions, "NCS");
             Int32[] uncompFrames = compressAuto ? null : GeneralUtils.GetRangedNumbers(uncomprSpecificStr);
             Int32 nrOfFrames = frames.Length;
             Boolean[] remapFrame = new Boolean[nrOfFrames];

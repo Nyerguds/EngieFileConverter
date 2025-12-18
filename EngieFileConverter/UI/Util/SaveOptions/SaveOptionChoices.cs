@@ -16,7 +16,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public SaveOptionChoices() : this(null, null) { }
 
-        public SaveOptionChoices(SaveOption info, ListedControlController<SaveOption> controller)
+        public SaveOptionChoices(Option info, ListedControlController<Option> controller)
         {
             this.InitializeComponent();
             this.InitResize();
@@ -35,7 +35,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
         }
 
-        public override void UpdateInfo(SaveOption info)
+        public override void UpdateInfo(Option info)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         private void SelectFromSaveData()
         {
             Int32 select;
-            Int32.TryParse(this.Info.SaveData, out select);
+            Int32.TryParse(this.Info.Data, out select);
             if (this.cmbChoices.Items.Count > select)
                 this.cmbChoices.SelectedIndex = select;
         }
@@ -92,7 +92,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             // Update controller
             if (this.m_Loading || this.Info == null)
                 return;
-            this.Info.SaveData = this.cmbChoices.SelectedIndex.ToString();
+            this.Info.Data = this.cmbChoices.SelectedIndex.ToString();
             if (this.m_Controller != null)
                 this.m_Controller.UpdateControlInfo(this.Info);
         }

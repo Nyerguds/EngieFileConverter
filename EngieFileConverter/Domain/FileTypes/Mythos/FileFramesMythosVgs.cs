@@ -32,7 +32,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos Visage"; } }
         public override String[] FileExtensions { get { return new String[] { "vgs", "lbv", "all" }; } }
-        public override String ShortTypeDescription { get { return "Mythos Visage Frames file"; } }
+        public override String LongTypeName { get { return "Mythos Visage Frames file"; } }
         public override Boolean NeedsPalette { get { return this.m_LoadedPalette == null; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public Int32 CompressionType { get; set; }
@@ -280,7 +280,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Int32 compression = 0;
             Boolean hasXOpt = false;
@@ -315,28 +315,28 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (compression < 0 || compression > this.compressionTypes.Length)
                 compression = 0;
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file as first frame", hasPal ? "1" : "0"),
-                new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
-                new SaveOption("OPX", SaveOptionType.Boolean, "Optimize empty horizontal space to X-offsets", hasXOpt ? "1" : "0"),
-                new SaveOption("OPY", SaveOptionType.Boolean, "Optimize empty vertical space to Y-offsets", hasYOpt ? "1" : "0"),
+                new Option("PAL", OptionInputType.Boolean, "Save palette into file as first frame", hasPal ? "1" : "0"),
+                new Option("CMP", OptionInputType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
+                new Option("OPX", OptionInputType.Boolean, "Optimize empty horizontal space to X-offsets", hasXOpt ? "1" : "0"),
+                new Option("OPY", OptionInputType.Boolean, "Optimize empty vertical space to Y-offsets", hasYOpt ? "1" : "0"),
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave);
             Int32 nrOfFrames = frames.Length;
-            Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
-            Boolean optimiseX = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPX"));
-            Boolean optimiseY = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPY"));
+            Boolean asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean optimiseX = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "OPX"));
+            Boolean optimiseY = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "OPY"));
             Int32 compressionType;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             if (compressionType < 0 || compressionType > 2)
                 compressionType = 0;
 
-            Boolean paletteOnly = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PALONLY"));
+            Boolean paletteOnly = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PALONLY"));
             if (paletteOnly)
             {
                 asPaletted = true;

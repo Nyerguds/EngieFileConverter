@@ -32,7 +32,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override String IdCode { get { return null; } }
         public override String ShortTypeName { get { return "Image"; } }
-        public override String ShortTypeDescription { get { return "Image file"; } }
+        public override String LongTypeName { get { return "Image file"; } }
         public override String[] FileExtensions { get { return new String[] { "png", "bmp", "gif", "jpg", "jpeg" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
         public override String[] DescriptionsForExtensions
@@ -87,7 +87,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("This is not a " + this.ShortTypeName + " image!");
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // General override in case an Image sub-type has no implementation of this.
             if (fileToSave == null || fileToSave.GetBitmap() == null)

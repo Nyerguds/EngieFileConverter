@@ -23,7 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Interactive Girls DMP file"; } }
         public override String[] FileExtensions { get { return new String[] { "dmp" }; } }
-        public override String ShortTypeDescription { get { return "Interactive Girls DMP image file"; } }
+        public override String LongTypeName { get { return "Interactive Girls DMP image file"; } }
         public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         protected Boolean m_PaletteLoaded;
@@ -206,16 +206,16 @@ namespace EngieFileConverter.Domain.FileTypes
             return imgBytes;
         }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             PerformPreliminaryChecks(fileToSave);
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", fileToSave.NeedsPalette ? "0" : "1"),
+                new Option("PAL", OptionInputType.Boolean, "Include palette", fileToSave.NeedsPalette ? "0" : "1"),
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Specs:
             // 00 - Byte   - Magic marker '01'
@@ -227,7 +227,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // 30A - Byte[Width*Height] - Data
 
             PerformPreliminaryChecks(fileToSave);
-            Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
+            Boolean asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 stride;
             Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
             Int32 imageLength = imageBytes.Length;

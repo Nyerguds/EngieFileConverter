@@ -14,27 +14,27 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override String ShortTypeName { get { return "JPEG"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return "JPEG"; } }
+        public override String LongTypeName { get { return "JPEG"; } }
         /// <summary>Possible file extensions for this file type.</summary>
         public override String[] FileExtensions { get { return new String[] { "jpg", "jpeg" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] {this.ShortTypeDescription, this.ShortTypeDescription }; } }
+        public override String[] DescriptionsForExtensions { get { return new String[] {this.LongTypeName, this.LongTypeName }; } }
         protected override String MimeType { get { return "jpg"; } }
 
-        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            return new SaveOption[]
+            return new Option[]
             {
-                new SaveOption("QUA", SaveOptionType.Number, "Save quality (%)", "1,100", "100"),
+                new Option("QUA", OptionInputType.Number, "Save quality (%)", "1,100", "100"),
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             Int32 quality;
-            Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "QUA"), out quality);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "QUA"), out quality);
             quality = Math.Max(1, Math.Min(quality, 100));
             Bitmap image = fileToSave.GetBitmap();
             image = ImageUtils.CloneImage(image);

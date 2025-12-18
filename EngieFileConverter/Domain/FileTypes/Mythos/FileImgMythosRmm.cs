@@ -28,7 +28,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Mythos RMM Image"; } }
         public override String[] FileExtensions { get { return new String[] { "rmm" }; } }
-        public override String ShortTypeDescription { get { return "Mythos RMM Scene Image"; } }
+        public override String LongTypeName { get { return "Mythos RMM Scene Image"; } }
         public override Boolean NeedsPalette { get { return false; } }
         public override Int32 BitsPerPixel { get{ return 8; } }
         public override bool CanSave { get { return false; } }
@@ -67,7 +67,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = image;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotSupportedException();
         }

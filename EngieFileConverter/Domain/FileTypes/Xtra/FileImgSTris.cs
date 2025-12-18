@@ -17,7 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "SexTris image"; } }
         public override String[] FileExtensions { get { return new String[] { "sex" }; } }
-        public override String ShortTypeDescription { get { return "SexTris image file"; } }
+        public override String LongTypeName { get { return "SexTris image file"; } }
         public override Int32 BitsPerPixel { get { return 8; } }
         public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
         protected Boolean m_PaletteLoaded;
@@ -119,7 +119,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(sourcePath);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Basic format for the 224x200 images. There are also 320x200 ones, without the palette or padding zeroes.
             //0000   UInt16       Fixed value 00FD

@@ -22,7 +22,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "INT 33 Cursor"; } }
         public override String[] FileExtensions { get { return new String[] { "i33", "dat" }; } }
-        public override String ShortTypeDescription { get { return "INT 33 Graphics Pointer Shape"; } }
+        public override String LongTypeName { get { return "INT 33 Graphics Pointer Shape"; } }
         public override Boolean NeedsPalette { get { return false; } }
         public override Int32 BitsPerPixel { get { return 2; } }
 
@@ -133,7 +133,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = composite;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap[] frames;
 

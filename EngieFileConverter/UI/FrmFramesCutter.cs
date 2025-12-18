@@ -196,11 +196,13 @@ namespace EngieFileConverter.UI
             }
             else
             {
-                FrmPalette palSelect = new FrmPalette(m_OriginalPalette.ToArray(), false, ColorSelMode.Single);
+                FrmPalette palSelect = new FrmPalette(-1, m_OriginalPalette.ToArray(), false, ColorSelMode.Single);
                 palSelect.SelectedIndices = new Int32[] { lblTrimColor.Tag as Int32? ?? 0 };
                 if (palSelect.ShowDialog() != DialogResult.OK)
                     return;
                 Int32 selectedColor = palSelect.SelectedIndices.Length == 0 ? 0 : palSelect.SelectedIndices[0];
+                if (selectedColor >= m_OriginalPalette.Length)
+                    return;
                 lblTrimColor.Tag = selectedColor;
                 lblTrimColor.TrueBackColor = m_OriginalPalette[selectedColor];
                 this.lblTrimColorVal.Text = "Index " + selectedColor;

@@ -17,7 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected abstract Int32 Bpp { get; }
         public override String[] FileExtensions { get { return new String[] { "da" + this.Bpp }; } }
         public override String ShortTypeName { get { return "C&C64 " + this.Bpp + "-bit tiles"; } }
-        public override String ShortTypeDescription { get { return "Westwood C&C N64 " + this.Bpp + "-bit tile data"; } }
+        public override String LongTypeName { get { return "Westwood C&C N64 " + this.Bpp + "-bit tile data"; } }
         protected abstract FilePaletteWwCc1N64 PaletteType { get; }
         protected String ExtData { get { return "da" + this.Bpp; } }
         protected String ExtPalIndex { get { return "nd" + this.Bpp; } }
@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             String ext = Path.GetExtension(filename).TrimStart('.');
             if (!String.Equals(ext, this.ExtData, StringComparison.InvariantCultureIgnoreCase))
-                throw new FileTypeLoadException("Not a " + this.ShortTypeDescription + " file!");
+                throw new FileTypeLoadException("Not a " + this.LongTypeName + " file!");
             String fileNameBase = Path.GetFileNameWithoutExtension(filename).ToLowerInvariant();
             String filePathBase = Path.Combine(Path.GetDirectoryName(filename), fileNameBase) + ".";
             String dataFileName = filePathBase + this.ExtData;
@@ -138,7 +138,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return PixelFormat.DontCare;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
         }
@@ -184,7 +184,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new ArgumentException("Bad mapping in " + this.ExtTileIds + " file!");
                 String outputName = ti.TileName + "_" + tile.CellData.LowByte.ToString("D3") + "_pal" + tile.PaletteIndex.ToString("D2") + ext;
                 String outputPath = Path.Combine(outputFolder, outputName);
-                outputType.SaveAsThis(tile, outputPath, new SaveOption[0]);
+                outputType.SaveAsThis(tile, outputPath, new Option[0]);
             }
         }
 
@@ -213,7 +213,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.None; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "C&C64 Tile"; } }
-        public override String ShortTypeDescription { get { return "C&C64 " + this.Bpp + "-bit terrain tile";} }
+        public override String LongTypeName { get { return "C&C64 " + this.Bpp + "-bit terrain tile";} }
         public override String[] FileExtensions { get { return new String[0]; } }
 
         public String SourceFileName { get; private set; }
@@ -255,7 +255,7 @@ namespace EngieFileConverter.Domain.FileTypes
             throw new FileTypeLoadException("Loading as this type is not supported.");
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
         }
