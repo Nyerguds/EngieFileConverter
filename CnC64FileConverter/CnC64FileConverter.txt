@@ -74,8 +74,14 @@ it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
 
+v1.2.20: (03/08/2018 12:40)
+-Added better memory management in the "paste image on frames" feature.
+-Optimised the paste logic for frame ranges containing palette differences.
+-Files that were pasted on will no longer identify as having a common palette if they don't.
+-Visage Animation continued from a previous file will now use its own palette everywhere.
+
 v1.2.19: (03/08/2018 21:20)
--Loading a VDA animation's initial state from PNG no longer messed up the save logic.
+-Loading a Visage Animation's initial state from PNG no longer messed up the save logic.
 -Added feature to paste an image on a range of frames.
 
 v1.2.18: (27/07/2018 20:30)

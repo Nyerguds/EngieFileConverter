@@ -188,7 +188,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             framesContainer.BaseType = currentType.ShortTypeName;
             Color[] pal = currentType.GetColors();
-            framesContainer.m_CommonPalette = pal != null && currentType.ColorsInPalette > 0;
+            // 'common palette' logic is started by setting it to True when there is a palette.
+            framesContainer.SetCommonPalette(pal != null && currentType.ColorsInPalette > 0);
             foreach (String currentFrame in frameNames)
             {
                 if (new FileInfo(currentFrame).Length == 0)
@@ -213,8 +214,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frame.SetFileClass(frameFile.FileClass);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);
-                    if (framesContainer.m_CommonPalette)
-                        framesContainer.m_CommonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
+                    if (framesContainer.FramesHaveCommonPalette)
+                        framesContainer.SetCommonPalette(frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors()));
                 }
                 catch (FileTypeLoadException)
                 {
@@ -246,7 +247,32 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 imHeight = image.Height;
             Byte[] imData = null;
             Int32 imStride = imWidth;
+            // check if all frames have the same palette.
             Boolean equalPal = framesContainer.FramesHaveCommonPalette;
+            Color[] framesPal = null;
+            if (!equalPal)
+            {
+                Boolean isEqual = true;
+                foreach (SupportedFileType frame in framesContainer.Frames)
+                {
+                    if (frame == null)
+                        continue;
+                    if (framesPal == null)
+                        framesPal = frame.GetColors();
+                    else
+                    {
+                        if (!framesPal.SequenceEqual(frame.GetColors()))
+                        {
+                            isEqual = false;
+                            break;
+                        }
+                    }
+                }
+                if (isEqual)
+                    equalPal = true;
+            }
+            if (!equalPal)
+                framesPal = null;
 
             Rectangle pastePos = new Rectangle(pasteLocation, new Size(imWidth, imHeight));
             String name = String.Empty;
@@ -256,7 +282,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 name = framesContainer.LoadedFileName;
             FileFrames newfile = new FileFrames();
             newfile.SetFileNames(name);
-            newfile.SetCommonPalette(true);
+            newfile.SetCommonPalette(equalPal);
             newfile.SetBitsPerColor(framesContainer.BitsPerPixel);
             newfile.SetColorsInPalette(framesContainer.ColorsInPalette);
             Boolean[] transMask = framesContainer.TransparencyMask;
@@ -268,6 +294,8 @@ namespace CnC64FileConverter.Domain.FileTypes
             for (Int32 i = 0; i < framesContainer.Frames.Length; i++)
             {
                 SupportedFileType frame = framesContainer.Frames[i];
+                if (frame == null)
+                    continue;
                 Bitmap frBm = frame.GetBitmap();
                 Bitmap newBm;
                 // List is sorted. This is more efficient than "contains" every time.
@@ -294,7 +322,24 @@ namespace CnC64FileConverter.Domain.FileTypes
                         Int32 frStride;
                         Byte[] frData = ImageUtils.GetImageData(frBm, out frStride);
                         frData = ImageUtils.ConvertTo8Bit(frData, frWidth, freight, 0, frBpp, false, ref frStride);
-                        Boolean regenImage = imData == null || !equalPal;
+                        // determine whether the image needs to be re-matched to the palette.
+                        Boolean regenImage = false;
+                        if (imData == null)
+                            regenImage = true;
+                        else if (!equalPal)
+                        {
+                            if (framesPal == null)
+                            {
+                                regenImage = true;
+                                framesPal = frPalette;
+                            }
+                            else
+                            {
+                                regenImage = !framesPal.SequenceEqual(frPalette);
+                                if (regenImage)
+                                    framesPal = frame.GetColors();
+                            }
+                        }
                         if (bpp <= 8)
                         {
                             Boolean keepInd = keepIndices && bpp <= frBpp;

@@ -389,14 +389,16 @@
             // tsmiCombineShadows
             // 
             this.tsmiCombineShadows.Name = "tsmiCombineShadows";
-            this.tsmiCombineShadows.Size = new System.Drawing.Size(172, 22);
+            this.tsmiCombineShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.M)));
+            this.tsmiCombineShadows.Size = new System.Drawing.Size(217, 22);
             this.tsmiCombineShadows.Text = "Combine shadows";
             this.tsmiCombineShadows.Click += new System.EventHandler(this.TsmiCombineShadows_Click);
             // 
             // tsmiSplitShadows
             // 
             this.tsmiSplitShadows.Name = "tsmiSplitShadows";
-            this.tsmiSplitShadows.Size = new System.Drawing.Size(172, 22);
+            this.tsmiSplitShadows.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T)));
+            this.tsmiSplitShadows.Size = new System.Drawing.Size(217, 22);
             this.tsmiSplitShadows.Text = "Split shadows";
             this.tsmiSplitShadows.Click += new System.EventHandler(this.TsmiSplitShadows_Click);
             // 
@@ -411,7 +413,8 @@
             // tsmiPasteOnFrames
             // 
             this.tsmiPasteOnFrames.Name = "tsmiPasteOnFrames";
-            this.tsmiPasteOnFrames.Size = new System.Drawing.Size(203, 22);
+            this.tsmiPasteOnFrames.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
+            this.tsmiPasteOnFrames.Size = new System.Drawing.Size(244, 22);
             this.tsmiPasteOnFrames.Text = "Paste image on frames...";
             this.tsmiPasteOnFrames.Click += new System.EventHandler(this.TsmiPasteOnFrames_Click);
             // 

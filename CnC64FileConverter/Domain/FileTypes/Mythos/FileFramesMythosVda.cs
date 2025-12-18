@@ -147,7 +147,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain)
         {
             Byte[] lastFrameData = null;
-            SupportedFileType lastFrame = null;
+            String lastFrameInfo = String.Empty;
             String firstName = loadChain.First();
             Boolean isPng = loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase);
             if (isPng)
@@ -157,21 +157,18 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     try
                     {
-                        FileImageFrame pngFile = new FileImageFrame();
-                        // Uses specific PNG loading from its superclass, since
-                        // FileImageFrame inherits from png and still contains its mime type.
-                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
-                        pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
-                        lastFrameData = this.Get320x200FrameData(pngFile);
-                        if (lastFrameData != null)
+                        using (FileImageFrame pngFile = new FileImageFrame())
                         {
-                            pngFile.SetFileClass(FileClass.Image8Bit);
-                            lastFrame = pngFile;
-                            loadChain.Clear();
-                        }
-                        else
-                        {
-                            pngFile.Dispose();
+                            // Uses specific PNG loading from its superclass, since
+                            // FileImageFrame inherits from png and still contains its mime type.
+                            pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
+                            pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
+                            lastFrameData = this.Get320x200FrameData(pngFile);
+                            if (lastFrameData != null)
+                            {
+                                lastFrameInfo = pngFile.ExtraInfo;
+                                loadChain.Clear();
+                            }
                         }
                     }
                     catch { return; } // can't load as png file. Abort.
@@ -190,26 +187,28 @@ namespace CnC64FileConverter.Domain.FileTypes
                         Int32 lastFrIndex = chainFile.Frames.Length - 1;
                         if (lastFrIndex < 0)
                             return;
-                        lastFrame = chainFile.m_FramesList[lastFrIndex];
+                        SupportedFileType lastFrame = chainFile.m_FramesList[lastFrIndex];
                         lastFrameData = this.Get320x200FrameData(lastFrame);
                         // Maybe use exception? Should never happen though.
                         if (lastFrameData == null)
                             return;
-                        // Replace extracted frame to exclude it from cleanup when chainfile gets disposed..
-                        if (i == lastIndex)
-                            chainFile.m_FramesList[lastFrIndex] = new FileImageFrame();
+                        lastFrameInfo = lastFrame.ExtraInfo;
                     }
                 }
                 catch { return; } // can't load as VDA file. Abort.
             }
             this.LoadFile(fileData, originalPath, lastFrameData);
-            if (lastFrame != null)
+            if (lastFrameData != null)
             {
                 this.ExtraInfo += "\nData chained from " + Path.GetFileName(firstName);
-                FileImageFrame last = lastFrame as FileImageFrame;
-                if (last != null)
-                    last.SetExtraInfo((last.ExtraInfo + "\n" + (isPng ? "PNG loaded as base frame" : "Loaded from previous file")).TrimStart('\n'));
-                this.m_FramesList.Insert(0, lastFrame);
+
+                if (String.IsNullOrEmpty(lastFrameInfo))
+                    lastFrameInfo = String.Empty;
+                else
+                    lastFrameInfo += "\n";
+                FileImageFrame first = this.m_FramesList[0] as FileImageFrame;
+                if (first != null)
+                    first.SetExtraInfo((lastFrameInfo + (isPng ? "PNG loaded as base frame" : "Loaded from previous file")).TrimStart('\n'));
             }
         }
 
@@ -331,7 +330,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         private List<SupportedFileType> BuildAnimationFromChunks(String sourcePath, Byte[] framesInfo, List<SupportedFileType> allChunks, List<Point> framesXY, Byte[] initialFrameData, out Boolean noFirstFrame, Boolean testFirstFrame)
         {
-            noFirstFrame = false;
+            noFirstFrame = initialFrameData != null;
             List<SupportedFileType> framesList = new List<SupportedFileType>();
             Int32 offset = 0;
             Int32 imageWidth = 320;
@@ -341,8 +340,23 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (initialFrameData != null && initialFrameData.Length != arraySize)
                 throw new FileTypeLoadException("Bad start frame data length!");
             Byte[] imageData = initialFrameData == null ? null : initialFrameData.ToArray();
+            
             Boolean[] pasteTransMask = this.CreateTransparencyMask();
             Boolean[] imageTransMask = pasteTransMask;
+            if (initialFrameData != null)
+            {
+                // starting frame
+                Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
+                FileImageFrame frame = new FileImageFrame();
+                frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
+                frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
+                frame.SetTransparencyMask(imageTransMask);
+                // Give parent ref so the SetColors mechanism thinks this is an update coming from the parent and will not loop over the parent's frames.
+                frame.SetColors(this.m_Palette, this);
+                frame.SetFileClass(this.FrameInputFileClass);
+                frame.SetExtraInfo(CHUNKS + 1);
+                framesList.Add(frame);
+            }
             Int32 chunks = 0;
             while (offset + 2 <= framesInfo.Length)
             {

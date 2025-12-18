@@ -880,9 +880,7 @@ namespace CnC64FileConverter.UI
             DialogResult res = cdl.ShowDialog(this);
             this.m_CustomColors = cdl.CustomColors;
             if (res == DialogResult.OK)
-            {
                 this.SetPaletteColor(palpanel, colindex, cdl.Color, loadedFile);
-            }
         }
 
         private void SetPaletteColor(PalettePanel palpanel, Int32 colindex, Color color, SupportedFileType loadedFile)
