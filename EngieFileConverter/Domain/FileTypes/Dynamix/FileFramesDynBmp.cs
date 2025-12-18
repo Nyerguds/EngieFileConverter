@@ -178,7 +178,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex), ex);
+                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
                 }
                 this.m_bpp = eightBitFound ? 8 : 4;
                 pf = eightBitFound ? PixelFormat.Format8bppIndexed : PixelFormat.Format4bppIndexed;

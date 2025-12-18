@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
+                throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
             }
             this.m_Palette = palette;
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);

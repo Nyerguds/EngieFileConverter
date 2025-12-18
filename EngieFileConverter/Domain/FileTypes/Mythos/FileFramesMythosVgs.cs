@@ -402,7 +402,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (ArgumentException ex)
                     {
-                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex), "fileToSave", ex);
+                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex, false), "fileToSave", ex);
                     }
                 }
                 frameData[i] = compressedBytes ?? frameBytes;

@@ -452,9 +452,9 @@ namespace EngieFileConverter.UI
             this.tsmiExtract4BitPal.Enabled = hasPal && shownBpp == 8;
             this.tsmiImageToPalette4Bit.Enabled = hasShownImage;
             this.tsmiImageToPalette8Bit.Enabled = hasShownImage;
-            this.tsmiMatchToPal.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0;
+            this.TsmiMatchToPalette.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0;
             int globalBpp = !hasFile ? -1 : this.m_LoadedFile.GetGlobalBpp();
-            this.tsmiSetDifferentPal.Enabled = globalBpp != -1 && globalBpp <= 8;
+            this.TsmiSetToDifferenPalette.Enabled = globalBpp != -1 && globalBpp <= 8;
             this.tsmiChangeTo24BitRgb.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0 && this.m_LoadedFile.BitsPerPixel != 24;
             this.tsmiChangeTo32BitArgb.Enabled = hasFile && (this.m_LoadedFile.FileClass & (FileClass.Image | FileClass.FrameSet)) != 0 && this.m_LoadedFile.BitsPerPixel != 32;
 
@@ -676,29 +676,39 @@ namespace EngieFileConverter.UI
             SaveOption[] saveOptionsChosen = null;
             try
             {
-                // For export to frames only: if this was loaded from a range of files, it might contain multiple types, so collect the options for all frames.
-                FileFrames framesFile = !frames ? null : loadedFile as FileFrames;
-                Boolean fromfileRangeToMultiple = framesFile != null && framesFile.FromFileRange;
-                if (fromfileRangeToMultiple)
+                // For export to frames only: collect the options for all frames.
+                Dictionary<String, SaveOption> saveOptsUnique = new Dictionary<String, SaveOption>();
+                if (frames && hasFrames)
                 {
-                    Dictionary<String, SaveOption> saveOptsUnique = new Dictionary<String, SaveOption>();
                     SupportedFileType[] internalFrames = loadedFile.Frames;
                     Int32 nrOfFrames = internalFrames.Length;
                     for (Int32 i = 0; i < nrOfFrames; i++)
                     {
-                        SaveOption[] opts = selectedItem.GetSaveOptions(internalFrames[i], filename);
-                        for (Int32 j = 0; j < opts.Length; j++)
+                        SaveOption[] optsInt = selectedItem.GetSaveOptions(internalFrames[i], filename);
+                        for (Int32 j = 0; j < optsInt.Length; j++)
                         {
-                            SaveOption opt = opts[j];
-                            if (!saveOptsUnique.ContainsKey(opt.Code))
-                                saveOptsUnique.Add(opt.Code, opt);
+                            SaveOption optInt = optsInt[j];
+                            if (!saveOptsUnique.ContainsKey(optInt.Code))
+                                saveOptsUnique.Add(optInt.Code, optInt);
                         }
                     }
-                    saveOptions.AddRange(saveOptsUnique.Values);
                 }
-                saveOptions.AddRange(selectedItem.GetSaveOptions(loadedFile, filename));
+                else
+                {
+                    SaveOption[] optsFile = selectedItem.GetSaveOptions(loadedFile, filename);
+                    for (Int32 j = 0; j < optsFile.Length; j++)
+                    {
+                        SaveOption optFile = optsFile[j];
+                        if (!saveOptsUnique.ContainsKey(optFile.Code))
+                            saveOptsUnique.Add(optFile.Code, optFile);
+                    }
+                }
+                saveOptions.AddRange(saveOptsUnique.Values);
                 if (frames && hasFrames)
                 {
+                    // Check if this is a loaded files range; in that case, prefer using the real filenames.
+                    FileFrames framesFile = loadedFile as FileFrames;
+                    Boolean fromfileRangeToMultiple = framesFile != null && framesFile.FromFileRange;
                     String filenameEx = Path.GetFileNameWithoutExtension(filename) + "-00000" + Path.GetExtension(filename);
                     saveOptions.Add(new SaveOption("FRAMES_NEWNAMES", SaveOptionType.Boolean, "Override internal names with new given name (names will be generated as \"" + filenameEx + "\"). Otherwise the current internal frame names are kept.", fromfileRangeToMultiple? "0" : "1"));
                     if (hasEmptyFrames)
@@ -721,7 +731,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                String msg = GeneralUtils.RecoverArgExceptionMessage(ex);
+                String msg = GeneralUtils.RecoverArgExceptionMessage(ex, false);
                 String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
                                  + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(msg) ? "." : ":\n" + msg);
                 MessageBox.Show(this, message, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -773,7 +783,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                String msg = GeneralUtils.RecoverArgExceptionMessage(ex);
+                String msg = GeneralUtils.RecoverArgExceptionMessage(ex, false);
                 String message = "Error saving " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
                                  + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(msg) ? "." : ":\n" + msg);
                 this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1447,7 +1457,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             
@@ -1597,7 +1607,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Int32 ind;
@@ -1633,7 +1643,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Int32 ind;
@@ -1689,7 +1699,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1776,7 +1786,7 @@ namespace EngieFileConverter.UI
                 }
                 catch (ArgumentException ex)
                 {
-                    MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
                 Int32 coordX;
@@ -1793,7 +1803,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -1930,7 +1940,7 @@ namespace EngieFileConverter.UI
             this.m_ProcessingThread.Start(arrParams);
         }
 
-        private void TsmiSetDifferentoPalette_Click(Object sender, EventArgs e)
+        private void TsmiSetToDifferenPalette_Click(Object sender, EventArgs e)
         {
             SupportedFileType fileToEdit = this.m_LoadedFile;
             if (fileToEdit == null || (fileToEdit.FileClass & (FileClass.Image | FileClass.FrameSet)) == 0)
@@ -1952,7 +1962,6 @@ namespace EngieFileConverter.UI
                     return;
                 matchPalette = setPal.MatchPalette;
             }
-
             Object[] arrParams =
             {   //Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
                 new Func<SupportedFileType>(()=> this.SetToPalette(fileToEdit, matchPalette)),
@@ -2007,6 +2016,8 @@ namespace EngieFileConverter.UI
             Int32 bpp = fileToEdit.GetGlobalBpp();
             if (bpp <= 0 || bpp > 8)
                 return null;
+            if (bpp > 1 && bpp < 4)
+                bpp = 4;
             FileFrames framesFile = fileToEdit as FileFrames;
             if (framesFile != null)
             {
@@ -2066,7 +2077,7 @@ namespace EngieFileConverter.UI
             }
             catch (ArgumentException ex)
             {
-                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Error initializing conversion options: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             Color[] col;

@@ -74,7 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             catch (ArgumentException ex)
             {
-                throw new FileTypeLoadException("Bit mask decompression failed: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
+                throw new FileTypeLoadException("Bit mask decompression failed: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
             }
             this.m_LoadedImage = ImageUtils.BuildImage(frameData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
         }

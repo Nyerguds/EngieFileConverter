@@ -792,7 +792,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     catch (ArgumentException ex)
                     {
-                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex), "fileToSave", ex);
+                        throw new ArgumentException(GeneralUtils.RecoverArgExceptionMessage(ex, false), "fileToSave", ex);
                     }
                     if (compressedBytes != null && compressedBytes.Length < chunk.ImageData.Length)
                     {

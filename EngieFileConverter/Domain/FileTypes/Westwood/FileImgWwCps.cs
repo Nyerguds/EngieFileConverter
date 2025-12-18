@@ -8,7 +8,6 @@ using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.Text;
-using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -180,7 +179,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException("Could not load CPS palette: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
+                    throw new FileTypeLoadException("Could not load CPS palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
                 }
             }
             else

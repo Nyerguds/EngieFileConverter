@@ -373,7 +373,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new HeaderParseException("Error loading color palette: " + GeneralUtils.RecoverArgExceptionMessage(ex), ex);
+                    throw new HeaderParseException("Error loading color palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, false), ex);
                 }
             }
             if (this.m_Palette == null)

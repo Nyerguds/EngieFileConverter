@@ -54,16 +54,20 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData)
         {
-            this.LoadFromFileData(fileData, null);
+            Boolean cgaLoadSucceeded = this.LoadFromFileData(fileData, null, false);
+            if (!cgaLoadSucceeded)
+                this.LoadFromFileData(fileData, null, true);
         }
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            this.LoadFromFileData(fileData, filename);
+            Boolean cgaLoadSucceeded = this.LoadFromFileData(fileData, filename, false);
+            if (!cgaLoadSucceeded)
+                this.LoadFromFileData(fileData, null, true);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected Boolean LoadFromFileData(Byte[] fileData, String sourcePath, Boolean forceEga)
         {
             Int32 datalen = fileData.Length;
             if (datalen < 2)
@@ -72,7 +76,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 headerEnd = 2 + (nrOfFrames * 8);
             if (datalen < headerEnd)
                 throw new FileTypeLoadException("File is too short to contain an index of " + nrOfFrames + " files");
-            Boolean isCga = sourcePath != null && Path.GetFileNameWithoutExtension(sourcePath).EndsWith("C", StringComparison.InvariantCultureIgnoreCase);
+            // No longer using filename method; it's annoying for testing.
+            Boolean isCga = !forceEga; // && (sourcePath == null || Path.GetFileNameWithoutExtension(sourcePath).EndsWith("C", StringComparison.InvariantCultureIgnoreCase));
             ColorPalette cgaPal = null;
             if (isCga)
             {
@@ -107,7 +112,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 catch (ArgumentException ex)
                 {
-                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex) + " (frame " + i + ")", ex);
+                    throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, false) + " (frame " + i + ")", ex);
                 }
                 Int32 stride = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 0);
                 Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 2);
@@ -155,6 +160,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 else
                 {
                     Int32 width = stride*(isCga ? 4 : 2);
+                    // Try again as EGA.
+                    if (width > 320)
+                    {
+                        if (isCga)
+                            return false;
+                        throw new FileTypeLoadException("Image width exceeds 320.");
+                    }
                     Byte[] frameData2 = new Byte[imageSize];
                     Array.Copy(frameData, 6, frameData2, 0, imageSize);
                     if (isCga)
@@ -179,11 +191,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 frame.SetExtraInfo(String.Join("\n", extraInfo.ToArray()));
                 this.m_FramesList[i] = frame;
             }
+            this.ExtraInfo = "Type: " + (isCga ? "C" : "E") + "GA images";
             if (this.m_textEntries.Count > 0)
             {
-                this.ExtraInfo = "Contains text entries at frames " + GeneralUtils.GroupNumbers(this.m_textEntries.Keys) + ".";
+                this.ExtraInfo += "\nContains text entries at frames " + GeneralUtils.GroupNumbers(this.m_textEntries.Keys) + ".";
             }
             this.m_LoadedImage = null;
+            return true;
         }
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
@@ -203,6 +217,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     emptyEntries.Add(i);
                     continue;
                 }
+                if (frame.Width > 320)
+                    throw new ArgumentException("The images can't exceed a width of 320 pixels.", "fileToSave");
+                if (frame.Height > 200)
+                    throw new ArgumentException("The images can't exceed a height of 200 pixels.", "fileToSave");
                 if (frame.GetColors().Length == 4)
                 {
                     // Don't actually check 4 colour images.
@@ -211,9 +229,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 Byte[] pixels = ImageUtils.GetImageData(bm, PixelFormat.Format8bppIndexed);
                 Int32 len = pixels.Length;
-                for (int p = 0; p < len; ++p)
+                for (Int32 p = 0; p < len; ++p)
                 {
-                    maxCol = Math.Max(maxCol, pixels[i]);
+                    maxCol = Math.Max(maxCol, pixels[p]);
                     if (maxCol >= 16)
                         throw new ArgumentException("The images contain colours on indices higher than 15.", "fileToSave");
                     if (maxCol >= 4)

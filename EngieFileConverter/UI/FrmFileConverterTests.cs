@@ -34,7 +34,7 @@ namespace EngieFileConverter.UI
             //this.ViewInt33MouseCursors();
             //this.MatrixImage();
             //this.LoadByteArrayImage();
-            this.CombineHue();
+            //this.CombineHue();
             //this.CreateSierpinskiImage();
             //this.ColorPsx();
             //this.ExpandRAMap();
@@ -67,6 +67,7 @@ namespace EngieFileConverter.UI
             //this.ReplaceImagePalette();
             //this.AutoRemapPalette();
             //this.SwapColors();
+            //this.MakeIcons();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -1459,10 +1460,45 @@ namespace EngieFileConverter.UI
             }
             Bitmap newBm = ImageUtils.BuildImage(imgData, width, height, stride, loadedBm.PixelFormat, null, null);
             this.LoadTestFile(newBm);
-
-
         }
-        
+
+
+        private void MakeIcons()
+        {
+            if (this.m_LoadedFile == null)
+                return;
+            SupportedFileType[] frames = this.m_LoadedFile.IsFramesContainer ? this.m_LoadedFile.Frames : new SupportedFileType[] {this.m_LoadedFile};
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                return;
+            Bitmap[] bm = frames.Select(fr => fr.GetBitmap()).OrderBy(b => b.Width).ToArray();
+
+            Bitmap source16 = bm.FirstOrDefault(b => b.Width >= 16) ?? bm.Last();
+            Bitmap source32 = bm.FirstOrDefault(b => b.Width >= 32) ?? bm.Last();
+            Bitmap source48 = bm.FirstOrDefault(b => b.Width >= 48) ?? bm.Last();
+            Bitmap source64 = bm.FirstOrDefault(b => b.Width >= 64) ?? bm.Last();
+            Bitmap source96 = bm.FirstOrDefault(b => b.Width >= 96) ?? bm.Last();
+            Bitmap source128 = bm.FirstOrDefault(b => b.Width >= 128) ?? bm.Last();
+            Bitmap source192 = bm.FirstOrDefault(b => b.Width >= 192) ?? bm.Last();
+            Bitmap source256 = bm.FirstOrDefault(b => b.Width >= 256) ?? bm.Last();
+
+            String icoPath = "engie.ico";
+            InterpolationMode scalingMode = InterpolationMode.HighQualityBicubic;
+            using (Bitmap resize16 = source16.Resize(16, 16, scalingMode))
+            using (Bitmap resize32 = source32.Resize(32, 32, scalingMode))
+            using (Bitmap resize48 = source48.Resize(48, 48, scalingMode))
+            using (Bitmap resize64 = source64.Resize(64, 64, scalingMode))
+            using (Bitmap resize96 = source96.Resize(96, 96, scalingMode))
+            using (Bitmap resize128 = source128.Resize(128, 128, scalingMode))
+            using (Bitmap resize192 = source192.Resize(192, 192, scalingMode))
+            using (Bitmap resize256 = source256.Resize(256, 256, scalingMode))
+            {
+                Image[] includedSizes = new Image[]
+                {resize16, resize32, resize48, resize64, resize96, resize128, resize192, resize256};
+                Byte[] icoFile = ImageUtilsSO.ConvertImagesToIco(includedSizes);
+                File.WriteAllBytes(icoPath, icoFile);
+            }
+        }
     }
 }
 #endif

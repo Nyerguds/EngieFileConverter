@@ -47,18 +47,12 @@ namespace EngieFileConverter.UI
             this.numCurFrame.Maximum = hasFrames ? origFile.Frames.Length - 1 : 0;
             this.cmbPalType.DataSource = new String[] {"1-bit", "4-bit", "8-bit"};
             Int32 selectedIndex;
-            switch (origFile.BitsPerPixel)
-            {
-                case 1:
-                    selectedIndex = 0;
-                    break;
-                case 4:
-                    selectedIndex = 1;
-                    break;
-                default:
-                    selectedIndex = 2;
-                    break;
-            }
+            if (origFile.BitsPerPixel > 4)
+                selectedIndex = 2;
+            else if (origFile.BitsPerPixel > 1)
+                selectedIndex = 1;
+            else
+                selectedIndex = 0;
             this.cmbPalType.SelectedIndex = selectedIndex;
             this.cmbPalType.Enabled = !m_DontMatch;
             this.m_Loading = false;

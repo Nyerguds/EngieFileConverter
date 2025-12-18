@@ -109,26 +109,6 @@ namespace EngieFileConverter.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] Microsoft_WindowsAPICodePack {
-            get {
-                object obj = ResourceManager.GetObject("Microsoft_WindowsAPICodePack", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] Microsoft_WindowsAPICodePack_Shell {
-            get {
-                object obj = ResourceManager.GetObject("Microsoft_WindowsAPICodePack_Shell", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to [Structures]
         ///0=WEAP
         ///1=GTWR

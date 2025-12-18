@@ -99,9 +99,16 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.7: (17/08/2021 14:55 CET)
+-All Dogs DB format: Added automatic detection for CGA/EGA by testing if any widths exceed 320.
+-All Dogs DB format: Fixed detection of CGA content in save options.
+-Made the "Set different palette" tool able to handle 2-bit images by using 4-bit palettes.
+-Added new high res icon to the editor.
+-Removed some old libraries that never got used.
+
 v1.5.6: (17/08/2021 01:46 CET)
 -Added tool to change an indexed image's fixed palette.
--Added the archive/tileset format from "All Dogs Go To Heaven".
+-Added the .DB# archive/tileset format from "All Dogs Go To Heaven".
 -Fixed a bug in the handling of text with line breaks in save options.
 -Fixed feedback from .Net's ArgumentException type so it shows only the proper message.
 
