@@ -90,6 +90,9 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.5: (04/05/2021 20:41 CET)
+-Fixed handling of AdventureSoft VGA format; apparently not all files start with an empty frame.
+
 v1.5.4: (21/03/2021 20:30 CET)
 -Added support for saving completely transparent Dynamix BMP of the SCN type.
 -Fixed incorrect loading of 16-colour palettes for Dynamix BMP files.
