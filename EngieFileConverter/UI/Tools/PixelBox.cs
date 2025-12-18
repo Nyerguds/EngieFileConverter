@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
@@ -38,14 +39,23 @@ namespace Nyerguds.Util.UI
         /// <param name="pe">A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data.</param>
         protected override void OnPaint (PaintEventArgs pe)
         {
-            pe.Graphics.InterpolationMode = this.InterpolationMode;
+            Graphics g = pe.Graphics;
+            g.InterpolationMode = this.InterpolationMode;
             // docs on this are wrong; if the interpolation mode is NearestNeighbor, putting it on
             // Half makes it NOT shift the whole thing up and to the left by half a (zoomed) pixel.
             // I'm frankly baffled they didn't just make this an automatic part of the interpolation modes.
             if (this.InterpolationMode == InterpolationMode.NearestNeighbor)
-                pe.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-            base.OnPaint(pe);
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+            try
+            {
+                base.OnPaint(pe);
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show("A problem has occurred when drawing this image. Perhaps the zoom is set too high?");
+            }
         }
+
         #endregion
     }
 }

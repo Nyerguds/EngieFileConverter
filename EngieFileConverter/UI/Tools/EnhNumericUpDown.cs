@@ -31,6 +31,12 @@ namespace Nyerguds.Util.UI
         [DefaultValue(true)]
         [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
         public Boolean UpDownValidatesEnter { get { return this._UpDownValidatesEnter; } set { this._UpDownValidatesEnter = value; } }
+
+
+        [Category("Data")]
+        [DefaultValue(false)]
+        [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
+        public Boolean ZoomMode { get { return this._zoomMode; } set { this._zoomMode = value; } }
         
         /// <summary>
         /// Last validated entered value.
@@ -51,7 +57,8 @@ namespace Nyerguds.Util.UI
         private Decimal _EnteredValue = 0;
         private Boolean _ScrollValidatesEnter = true;
         private Boolean _UpDownValidatesEnter = true;
-        private TextBox textBox;
+        private Boolean _zoomMode = false;
+        private TextBox _TextBox;
 
         public EnhNumericUpDown()
         {
@@ -61,13 +68,13 @@ namespace Nyerguds.Util.UI
             {
                 if (control is TextBox)
                 {
-                    this.textBox = control as TextBox;
+                    this._TextBox = control as TextBox;
                     break;
                 }
             }
         }
 
-        public TextBox TextBox { get { return this.textBox; } }
+        public TextBox TextBox { get { return this._TextBox; } }
         
         protected override void OnTextChanged(EventArgs e)
         {
@@ -106,28 +113,28 @@ namespace Nyerguds.Util.UI
         /// <summary>Gets or sets the starting point of text selected in the text box.</summary>
         public Int32 SelectionStart
         {
-            get { return this.textBox.SelectionStart; }
-            set { this.textBox.SelectionStart = value; }
+            get { return this._TextBox.SelectionStart; }
+            set { this._TextBox.SelectionStart = value; }
         }
 
         /// <summary>Gets or sets the number of characters selected in the text box.</summary>
         public Int32 SelectionLength
         {
-            get { return this.textBox.SelectionLength; }
-            set { this.textBox.SelectionLength = value; }
+            get { return this._TextBox.SelectionLength; }
+            set { this._TextBox.SelectionLength = value; }
         }
 
         /// <summary>Gets or sets a value indicating the currently selected text in the control.</summary>
         public String SelectedText
         {
-            get { return this.textBox.SelectedText; }
-            set { this.textBox.SelectedText = value; }
+            get { return this._TextBox.SelectedText; }
+            set { this._TextBox.SelectedText = value; }
         }
 
         public void SelectAll()
         {
-            this.textBox.SelectionStart = 0;
-            this.textBox.SelectionLength = this.TextBox.TextLength;
+            this._TextBox.SelectionStart = 0;
+            this._TextBox.SelectionLength = this.TextBox.TextLength;
         }
 
         protected override void OnMouseWheel(MouseEventArgs e)
@@ -141,12 +148,18 @@ namespace Nyerguds.Util.UI
             UpDownAction action;
             if (e.Delta > 0)
             {
-                this.Value = Math.Min(this.Maximum, this.Value + this.MouseWheelIncrement);
+                Decimal value = this.Value + this.MouseWheelIncrement;
+                if (_zoomMode && this.Value < 1 && this.Value >= -2 && value <= 1)
+                    value = 1;
+                this.Value = Math.Min(this.Maximum, value);
                 action = UpDownAction.Up;
             }
             else if (e.Delta < 0)
             {
-                this.Value = Math.Max(this.Minimum, this.Value - this.MouseWheelIncrement);
+                Decimal value = this.Value - this.MouseWheelIncrement;
+                if (_zoomMode && this.Value <= 1 && this.Value > -2 && value > -2)
+                    value = -2;
+                this.Value = Math.Max(this.Minimum, value);
                 action = UpDownAction.Down;
             }
             else
@@ -189,6 +202,10 @@ namespace Nyerguds.Util.UI
         public override void DownButton()
         {
             base.DownButton();
+            Decimal value = this.Value;
+            if (_zoomMode && this.Value <= 1 && this.Value > -2 && value > -2)
+                value = -2;
+            this.Value = Math.Max(this.Minimum, value);
             if (this.UpDownValidatesEnter)
                 this.ValidateValue();
             if (this.ValueUpDown != null)
@@ -201,6 +218,10 @@ namespace Nyerguds.Util.UI
         public override void UpButton()
         {
             base.UpButton();
+            Decimal value = this.Value;
+            if (_zoomMode && this.Value < 1 && this.Value >= -2 && value <= 1)
+                value = 1;
+            this.Value = Math.Min(this.Maximum, value);
             if (this.UpDownValidatesEnter)
                 this.ValidateValue();
             if (this.ValueUpDown != null)

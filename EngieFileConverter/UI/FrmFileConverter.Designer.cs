@@ -513,6 +513,7 @@
             this.pzpImage.Size = new System.Drawing.Size(646, 522);
             this.pzpImage.TabIndex = 316;
             this.pzpImage.ZoomFactor = 1;
+            this.pzpImage.ZoomFactorMinimum = -10;
             // 
             // FrmFileConverter
             // 

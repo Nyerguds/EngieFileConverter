@@ -370,6 +370,7 @@
             this.pzpFramePreview.Size = new System.Drawing.Size(322, 350);
             this.pzpFramePreview.TabIndex = 100;
             this.pzpFramePreview.ZoomFactor = 1;
+            this.pzpFramePreview.ZoomFactorMinimum = -10;
             // 
             // FrmFramesCutter
             // 

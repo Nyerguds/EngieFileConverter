@@ -98,6 +98,7 @@
             0,
             0,
             0});
+            this.numZoom.ZoomMode = true;
             this.numZoom.ValueChanged += new System.EventHandler(this.NumZoomValueChanged);
             // 
             // pnlImageScroll

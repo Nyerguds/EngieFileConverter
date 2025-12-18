@@ -1566,7 +1566,7 @@ namespace Nyerguds.ImageManipulation
             {
                 bmp = new Bitmap(section.Width, section.Height);
                 using (Graphics g = Graphics.FromImage(bmp))
-                    g.DrawImage(edImage, 0, 0, section, GraphicsUnit.Pixel);
+                    g.DrawImage(edImage, new Rectangle(0, 0, section.Width, section.Height), section, GraphicsUnit.Pixel);
                 if (doMatching)
                 {
                     Bitmap newBmp = ImageUtils.ConvertToPalette(bmp, matchBpp, matchPalette);

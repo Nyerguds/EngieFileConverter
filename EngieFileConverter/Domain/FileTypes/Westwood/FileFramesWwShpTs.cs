@@ -150,6 +150,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 height;
             Color[] palette;
             PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
+            /*/
+            // Experiment. Ignore.
             Boolean adjust = palette != null && palette.Length > 0;
             if (adjust)
             {
@@ -161,12 +163,13 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
                 }
             }
-            SaveOption[] opts = new SaveOption[adjust ? 4 : 3];
+            //*/
+            SaveOption[] opts = new SaveOption[3];//adjust ? 4 : 3];
             opts[0] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
             opts[1] = new SaveOption("ALI", SaveOptionType.Boolean, "Align to 8-byte boundaries", "0");
             opts[2] = new SaveOption("REM", SaveOptionType.Boolean, "Treat as remappable unit when calculating average colour (ignore remap range)", "0");
-            if (adjust)
-                opts[3] = new SaveOption("AJC", SaveOptionType.Boolean, "Fix the palette's 6-bit colours to save the average frame colour", "0");
+            //if (adjust)
+            //    opts[3] = new SaveOption("AJC", SaveOptionType.Boolean, "Fix the palette's 6-bit colours to save the average frame colour", null, "0", new SaveEnableFilter("REM", false, "1"));
             return opts;
         }
 

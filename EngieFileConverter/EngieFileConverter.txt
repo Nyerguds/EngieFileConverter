@@ -74,6 +74,11 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.3.3: (21/08/2018 12:20)
+-Fixed scaling issue on images with custom DPI setting.
+-Added automatic maximum zoom boundary to avoid memory corruption in PictureBox.
+-Added zoom levels below "1". Negative values are seen as fractions, so it skips 0 and -1.
+
 v1.3.2: (20/08/2018 14:15)
 -Added a palette selector for the fill colour in the frames-to-image options list.
 -Fixed a crash when matching an indexed image to a palette in the image-to-frames window.
