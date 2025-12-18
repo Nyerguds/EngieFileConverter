@@ -92,6 +92,7 @@
             this.Name = "FrmExtraOptions";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "FrmExtraOptions";
+            this.Load += new System.EventHandler(this.FrmExtraOptions_Load);
             this.pnlOptions.ResumeLayout(false);
             this.ResumeLayout(false);
 

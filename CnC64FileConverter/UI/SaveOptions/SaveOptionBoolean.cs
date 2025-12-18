@@ -25,7 +25,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         
         public override void FocusValue()
         {
-            this.chkOption.Focus();
+            this.chkOption.Select();
         }
 
         private void chkOption_CheckedChanged(Object sender, EventArgs e)

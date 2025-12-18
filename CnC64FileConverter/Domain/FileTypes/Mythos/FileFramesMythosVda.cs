@@ -19,13 +19,16 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override String ShortTypeDescription { get { return "Mythos Visage Animation file"; } }
         public override String[] FileExtensions { get { return new String[] { "vda", "vdx" }; } }
         public override Boolean[] TransparencyMask { get { return null; } }
-                
+
         public override void LoadFile(Byte[] fileData)
         {
             this.LoadFile(fileData, null);
         }
 
         public Boolean NoFirstFrame { get; set; }
+
+        private String vdaLoadName;
+        private String vdxLoadName;
         
         /*/
         public override FileFrames ChainLoadFiles(ref String[] fileNames, String originalPath)
@@ -47,6 +50,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             // No missing data.
             if (!NoFirstFrame)
                 return null;
+            
             // Wrong file. Switch to the VDA one.
             if (originalPath.EndsWith(".VDX", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -168,9 +172,12 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     try
                     {
+                        
                         FileImageFrame pngFile = new FileImageFrame();
-                        Bitmap bm = BitmapHandler.LoadBitmap(pngName);
-                        pngFile.LoadFileFrame(null, "PNG", bm, pngName, -1);
+                        // Uses specific PNG loading from its superclass, since
+                        // FileImageFrame inherits from png and still contains its mime type.
+                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
+                        pngFile.LoadFileFrame(null, new FileImagePng().ShortTypeDescription, pngFile.GetBitmap(), pngName, -1);
                         lastFrameData = Get320x200FrameData(pngFile);
                         if (lastFrameData != null)
                         {
@@ -243,40 +250,18 @@ namespace CnC64FileConverter.Domain.FileTypes
         public void LoadFile(Byte[] fileData, String filename, Byte[] initialFrameData)
         {
             Byte[] vdaBytes;
-            Byte[] vdxBytes = null;
-            String vdaName = null;
-            if (filename != null)
-            {
-                if (filename.EndsWith(".VDX", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    vdaName = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".VDA");
-                    if (!File.Exists(vdaName))
-                        throw new FileTypeLoadException("Can't load a video from .VDX file without a .VDA!");
-                    if (!this.CheckForVdx(fileData))
-                        throw new FileTypeLoadException("Not a valid VDX file!");
-                    vdxBytes = fileData;
-                    vdaBytes = File.ReadAllBytes(vdaName);
-                }
-                else
-                {
-                    vdaName = filename;
-                    String vdxName = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".VDX");
-                    vdaBytes = fileData;
-                    if (File.Exists(vdxName))
-                        vdxBytes = File.ReadAllBytes(vdxName);
-                }
-            }
-            else
-            {
-                if (this.CheckForVdx(fileData))
-                    throw new FileTypeLoadException("Can't load a video from .VDX file without filename!");
-                vdaBytes = fileData;
-            }
+            Byte[] vdxBytes;
+            String vdaName;
+            String vdxName;
+            GetLoadFileInfo(fileData, filename, out vdaBytes, out vdxBytes, out vdaName, out vdxName);
+            vdaLoadName = vdaName;
+            vdxLoadName = vdxName;
+
             if (vdaName != null)
             {
-                this.SetFileNames(vdaName);
-                if (vdxBytes != null)
-                    this.LoadedFileName += "/VDX";
+                this.SetFileNames(vdaName.ToUpper());
+                if (vdxBytes != null && vdxName != null)
+                    this.LoadedFileName += "/" + Path.GetExtension(vdxName).TrimStart('.').ToUpper();
             }
             List<Point> framesXY;
             this.LoadFromFileData(vdaBytes, vdaName, false, false, true, out framesXY, false);
@@ -287,6 +272,67 @@ namespace CnC64FileConverter.Domain.FileTypes
                 List<SupportedFileType> framesList = this.BuildAnimationFromChunks(vdaName, vdxBytes, this.m_FramesList, framesXY, initialFrameData, out noFirstFrame, false);
                 this.NoFirstFrame = noFirstFrame;
                 this.m_FramesList = framesList;
+            }
+        }
+
+
+        private void GetLoadFileInfo(Byte[] fileData, String filename, out Byte[] vdaBytes, out Byte[] vdxBytes, out String vdaName, out String vdxName)
+        {
+            vdxBytes = null;
+            vdaName = null;
+            vdxName = null;
+            if (filename != null)
+            {
+                Boolean isVda = filename.EndsWith(".VDA", StringComparison.InvariantCultureIgnoreCase);
+                Boolean isVdx = filename.EndsWith(".VDx", StringComparison.InvariantCultureIgnoreCase);
+                String vdaNm = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".VDA");
+                String vdxNm = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".VDx");
+                if (isVda)
+                {
+                    vdaName = filename;
+                    vdaBytes = fileData;
+                    vdxName = vdxNm;
+                    vdxBytes = File.ReadAllBytes(vdxName);
+                }
+                else if (isVdx)
+                {
+                    vdaName = vdaNm;
+                    vdaBytes = File.ReadAllBytes(vdaNm);
+                    vdxName = filename;
+                    vdxBytes = fileData;
+                }
+                else
+                {
+                    Boolean hasVda = File.Exists(vdaNm);
+                    Boolean hasVdx = File.Exists(vdxNm);
+                    if (hasVda && hasVdx)
+                    {
+                        Boolean dataIsVdx = this.CheckForVdx(fileData);
+                        vdaName = dataIsVdx ? vdaNm : filename;
+                        vdxName = dataIsVdx ? filename : vdxNm;
+                        vdaBytes = dataIsVdx ? File.ReadAllBytes(vdaNm) : fileData;
+                        vdxBytes = dataIsVdx ? fileData : File.ReadAllBytes(vdxNm);
+                    }
+                    else if (hasVda && this.CheckForVdx(fileData))
+                    {
+                        vdaName = vdaNm;
+                        vdaBytes = File.ReadAllBytes(vdaNm);
+                        vdxBytes = fileData;
+                        vdxName = filename;
+                    }
+                    else
+                    {
+                        vdaName = filename;
+                        vdaBytes = fileData;
+                        vdxBytes = hasVdx ? File.ReadAllBytes(vdxNm) : null;
+                    }
+                }
+            }
+            else
+            {
+                if (this.CheckForVdx(fileData))
+                    throw new FileTypeLoadException("Can't load a video from .VDX file without filename!");
+                vdaBytes = fileData;
             }
         }
 
@@ -327,7 +373,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     }
                     Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                     FileImageFrame frame = new FileImageFrame();
-                    frame.LoadFileFrame(this, this.ShortTypeName, curImage, sourcePath, framesList.Count);
+                    frame.LoadFileFrame(this, this, curImage, sourcePath, framesList.Count);
                     frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
                     frame.SetTransparencyMask(noFirstFrame ? transMask : null);
                     frame.SetColors(this.m_Palette, this);
@@ -535,10 +581,12 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 previousImageStride = fullImageStride;
             List<List<VideoChunk>> frames = new List<List<VideoChunk>>();
 
+            Int32 totalChunks = 0;
             if (!cutfirstFrame)
             {
                 VideoChunk chunk = new VideoChunk(previousImageData, new Rectangle(0, 0, origWidth, origHeight));
                 frames.Add(new List<VideoChunk>() { chunk });
+                totalChunks++;
             }
             foreach (SupportedFileType frame in fileToSave.Frames.Skip(1))
             {
@@ -566,7 +614,6 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frameOffs += stride;
                     prevOffs += previousImageStride;
                 }
-                Int32 totalChunks = 0;
                 if (optimisation == OptimiseMethods.DiffFrames)
                 {
                     // optimize diff frame by cropping it.

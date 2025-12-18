@@ -214,7 +214,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 offset += curSize;
                 Bitmap frameImage = ImageUtils.BuildImage(image, widths[i], heights[i], stride, pf, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(this.m_loadedPalette ? this.m_Palette.Length : 0);
                 frame.SetTransparencyMask(this.TransparencyMask);

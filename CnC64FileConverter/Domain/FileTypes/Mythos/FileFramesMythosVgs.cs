@@ -264,7 +264,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 Bitmap curImage = ImageUtils.BuildImage(imageData, frameWidth, frameHeight, frameWidth, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this.ShortTypeName, curImage, sourcePath, this.m_FramesList.Count);
+                frame.LoadFileFrame(this, this, curImage, sourcePath, this.m_FramesList.Count);
                 frame.SetColorsInPalette(this.m_PaletteSet ? this.m_Palette.Length : 0);
                 frame.SetTransparencyMask(transMask);
                 frame.SetColors(this.m_Palette, this);

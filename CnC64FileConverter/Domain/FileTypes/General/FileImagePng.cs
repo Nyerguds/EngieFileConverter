@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
 using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
+using System.Linq;
 
 namespace CnC64FileConverter.Domain.FileTypes
 {
@@ -17,12 +19,30 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected override String MimeType { get { return "png"; } }
 
+        public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        {
+            SupportedFileType parType = fileToSave.FrameParent;
+            Boolean mainTypeIndexed = (fileToSave.FileClass & FileClass.ImageIndexed) != 0;
+            Boolean parTypeIndexed = parType != null && ((parType.FileClass & FileClass.ImageIndexed) != 0 || (parType.FrameInputFileClass & FileClass.ImageIndexed) != 0);
+            // Does not support indexed graphics; don't show the option at all.
+            if (!mainTypeIndexed && !parTypeIndexed)
+                return new SaveOption[0];            
+            Boolean mainTypeHasMask = fileToSave.TransparencyMask != null && fileToSave.TransparencyMask.Any(b => b);
+            Boolean parTypeHasMask = parType != null && parType.TransparencyMask != null && parType.TransparencyMask.Any(b => b);
+            // Default to true if the type has a specific forced transparent index; this kind of transparency is usually best removed for editing.
+            return new SaveOption[]
+            {
+                new SaveOption("NPT", SaveOptionType.Boolean, "Save indexed graphics without transparency (advised for editing)", mainTypeHasMask || parTypeHasMask ? "1" : "0")
+            };
+        }
+
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
             Color[] pal = fileToSave.GetColors();
-            return BitmapHandler.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length);
+            Boolean noPalTransparency = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NPT"));
+            return BitmapHandler.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length, noPalTransparency);
         }
     }
 }

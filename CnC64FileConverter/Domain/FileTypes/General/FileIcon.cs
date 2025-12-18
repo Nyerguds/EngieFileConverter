@@ -14,7 +14,7 @@ namespace CnC64FileConverter.Domain.FileTypes
     {
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
-        public override FileClass FrameInputFileClass { get { return FileClass.Image; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.None; } }
         protected SupportedFileType[] m_FramesList;
 
         public override Int32 Width { get { return this.m_MaxWidth; } }
@@ -53,7 +53,7 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            HeaderParseException hpe = null;
+            HeaderParseException hpe;
             try
             {
                 Int32 hdrSize = Marshal.SizeOf(typeof (ICONDIR));
@@ -104,7 +104,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     this.m_MaxHeight = Math.Max(this.m_MaxHeight, frHeight);
                     this.m_MaxWidth = Math.Max(this.m_MaxWidth, frWidth);
                     FileImageFrame framePic = new FileImageFrame();
-                    framePic.LoadFileFrame(this, this.ShortTypeName, bmp, sourcePath, i);
+                    framePic.LoadFileFrame(this, this, bmp, sourcePath, i);
                     String extraInfo = "Format: " + type.ToUpper();
                     if (originalPixelFormat != PixelFormat.Undefined)
                         extraInfo += "\nOriginal pixel format: " + Image.GetPixelFormatSize(originalPixelFormat) + " bpp";
@@ -128,7 +128,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     this.m_MaxHeight = bm.Height;
                     this.m_MaxWidth = bm.Width;
                     FileImageFrame framePic = new FileImageFrame();
-                    framePic.LoadFileFrame(this, this.ShortTypeName, ImageUtils.CloneImage(bm), sourcePath, -1);
+                    framePic.LoadFileFrame(this, this, ImageUtils.CloneImage(bm), sourcePath, -1);
                     framePic.SetFileNames(sourcePath);
                     framePic.SetBitsPerColor(this.BitsPerPixel);
                     framePic.SetColorsInPalette(this.ColorsInPalette);

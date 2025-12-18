@@ -182,7 +182,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             {
                 FileImageFrame fr = new FileImageFrame();
                 Bitmap frImage = ImageUtils.BuildImage(allFramesActual[i], blockWidth, blockHeight, blockStride, pf, palette, null);
-                fr.LoadFileFrame(this, this.ShortTypeName, frImage, null, i);
+                fr.LoadFileFrame(this, this, frImage, null, i);
                 fr.SetColorsInPalette(palette.Length);
                 fr.SetColors(this.m_Palette);
                 fr.SetBitsPerColor(bpp);

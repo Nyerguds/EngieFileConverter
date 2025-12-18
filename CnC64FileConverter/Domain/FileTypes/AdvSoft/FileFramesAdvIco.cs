@@ -73,7 +73,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Byte[] frame4bit = ImageUtils.ConvertFrom8Bit(frame8bit4, 24, 24, 4, true, ref stride);
                 Bitmap frameImage = ImageUtils.BuildImage(frame4bit, 24, 24, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(0);
                 frame.SetTransparencyMask(this.TransparencyMask);

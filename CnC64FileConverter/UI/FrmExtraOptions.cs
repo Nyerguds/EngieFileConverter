@@ -34,5 +34,10 @@ namespace CnC64FileConverter.UI
             if (current != null)
                 current.SaveData = updateInfo.SaveData;
         }
+
+        private void FrmExtraOptions_Load(object sender, EventArgs e)
+        {
+            this.lstOptions.FocusFirst();
+        }
     }
 }

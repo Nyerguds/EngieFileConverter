@@ -128,7 +128,7 @@ namespace Nyerguds.ImageManipulation
                         img2.Save(ms, saveFormat);
                 }
                 else if (saveFormat.Equals(ImageFormat.Png))
-                    BitmapHandler.GetPngImageData(image, 0);
+                    BitmapHandler.GetPngImageData(image, 0, false);
                 else
                     image.Save(ms, saveFormat);
                 // Clean up temp image.

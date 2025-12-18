@@ -295,7 +295,7 @@ namespace Nyerguds.GameData.Mythos
             }
             Byte[] finalOut = new Byte[outPtr + 3];
             Array.Copy(bufferOut, 0, finalOut, 3, outPtr);
-            outPtr += 8 + (UInt32) headerSize;
+            outPtr += 3 + (UInt32) headerSize;
             if (outPtr > UInt16.MaxValue)
                 throw new OverflowException("Compressed data is too big to be stored as Mythos compressed format!");
             finalOut[0] = (Byte) (outPtr & 0xFF);

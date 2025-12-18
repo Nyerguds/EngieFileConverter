@@ -83,7 +83,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 // reorder lines
                 frameImage.RotateFlip(RotateFlipType.Rotate180FlipX);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(0);
                 frame.SetTransparencyMask(mask);

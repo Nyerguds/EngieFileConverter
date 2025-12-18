@@ -14,7 +14,7 @@ namespace CnC64FileConverter.UI
             this.UpdateInfo(info);
             this.m_Controller = controller;
         }
-        public virtual void FocusValue() { this.Focus(); }
+        public virtual void FocusValue() { this.Select(); }
         public virtual void UpdateInfo(SaveOption info) { this.m_Info = info; }
     }
 }

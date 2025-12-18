@@ -68,7 +68,7 @@ namespace Nyerguds.Util
         /// <param name="image">Image to put on the clipboard.</param>
         /// <param name="imageNoTr">Optional specifically nontransparent version of the image to put on the clipboard.</param>
         /// <param name="data">Clipboard data object to put the image into. Might already contain other stuff. Leave null to create a new one.</param>
-        public static void SetClipboardImage(Image image, Image imageNoTr, DataObject data)
+        public static void SetClipboardImage(Bitmap image, Bitmap imageNoTr, DataObject data)
         {
             if (data == null)
                 data = new DataObject();
@@ -81,7 +81,7 @@ namespace Nyerguds.Util
                 // As standard bitmap, without transparency support
                 data.SetData(DataFormats.Bitmap, true, imageNoTr);
                 // As PNG. Gimp will prefer this over the other two.
-                Byte[] pngData = BitmapHandler.GetPngImageData(image, 0);
+                Byte[] pngData = BitmapHandler.GetPngImageData(image, 0, false);
                 pngMemStream.Write(pngData, 0, pngData.Length);
                 data.SetData("PNG", false, pngMemStream);
                 // As DIBv5. This supports transparency when using BITFIELDS.

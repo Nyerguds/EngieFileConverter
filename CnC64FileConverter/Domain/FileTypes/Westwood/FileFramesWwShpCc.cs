@@ -183,7 +183,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 // Convert frame data to image and frame object
                 Bitmap curFrImg = ImageUtils.BuildImage(frame, this.m_Width, this.m_Height, this.m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame framePic = new FileImageFrame();
-                framePic.LoadFileFrame(this, this.ShortTypeName, curFrImg, sourcePath, i);
+                framePic.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 framePic.SetBitsPerColor(this.BitsPerPixel);
                 framePic.SetColorsInPalette(this.ColorsInPalette);
                 framePic.SetTransparencyMask(this.TransparencyMask);
@@ -315,7 +315,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (folder != null)
                     nameNoShadows = Path.Combine(folder, nameNoShadows);
                 FileImageFrame frameNoShadows = new FileImageFrame();
-                frameNoShadows.LoadFileFrame(newfile, file.ShortTypeName, imageNoShadows, nameNoShadows, i);
+                frameNoShadows.LoadFileFrame(newfile, file, imageNoShadows, nameNoShadows, i);
                 frameNoShadows.SetBitsPerColor(frame.BitsPerPixel);
                 frameNoShadows.SetColorsInPalette(frame.ColorsInPalette);
                 newfile.AddFrame(frameNoShadows);
@@ -325,7 +325,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (folder != null)
                     nameOnlyShadows = Path.Combine(folder, nameOnlyShadows);
                 FileImageFrame frameOnlyShadows = new FileImageFrame();
-                frameOnlyShadows.LoadFileFrame(newfile, file.ShortTypeName, imageOnlyShadows, nameOnlyShadows, i);
+                frameOnlyShadows.LoadFileFrame(newfile, file, imageOnlyShadows, nameOnlyShadows, i);
                 frameOnlyShadows.SetBitsPerColor(frame.BitsPerPixel);
                 frameOnlyShadows.SetColorsInPalette(frame.ColorsInPalette);
                 shadowFrames[i] = frameOnlyShadows;

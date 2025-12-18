@@ -133,7 +133,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     frameImage = ImageUtils.BuildImage(outbuff, imageWidth, imageHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
                 }
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this.ShortTypeName, frameImage, sourcePath, i);
+                frame.LoadFileFrame(this, this, frameImage, sourcePath, i);
                 frame.SetColorsInPalette(0);
                 frame.SetBitsPerColor(4);
                 frame.SetTransparencyMask(this.TransparencyMask);

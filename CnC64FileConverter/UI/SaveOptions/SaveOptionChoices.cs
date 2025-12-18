@@ -52,7 +52,7 @@ namespace CnC64FileConverter.UI.SaveOptions
         
         public override void FocusValue()
         {
-            this.cmbChoices.Focus();
+            this.cmbChoices.Select();
         }
 
         private void cmbChoices_SelectedIndexChanged(Object sender, EventArgs e)

@@ -46,9 +46,8 @@ namespace CnC64FileConverter.UI.SaveOptions
         
         public override void FocusValue()
         {
-            this.txtValue.Focus();
-        }
-        
+            this.txtValue.Select();
+        }        
 
         private void TextBoxCheckLines(Object sender, EventArgs e)
         {

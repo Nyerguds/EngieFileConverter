@@ -36,14 +36,17 @@ The compression code used for handling the CPS and LCW formats was gracefully pr
 people of the RA++ project:
 https://redalertpp.org/
 
-The Dynamix decompression code was converted from the C++ code of VOGONS.org user tikalat's Midi
-Tools. It contains no license but I assume the fact he included the code implies that he doesn't
-mind it being useful to more people.
+The Dynamix LZW decompression code was converted from the C++ code of VOGONS.org user tikalat's
+Midi Tools. It contains no license but I assume the fact he included the code implies that he
+doesn't mind it being useful to more people.
 https://www.vogons.org/viewtopic.php?p=273448#p273448
 
 The K.O.R.T. image format was decoded thanks to documentation included in the K.O.R.T. savegame
-editor written by David Eriksson, aka Edison of 2GooD.
+editor written by David Eriksson, aka Edison of 2GooD:
 http://www.2good.nu/projekt/korted
+
+The K.O.R.T. BMP format was mapped by TheRuler on the OldGamesItalia forum:
+http://www.oldgamesitalia.net/forum/index.php?s=&showtopic=16027&view=findpost&p=360174
 
 The code of ScummVM helped a lot to figure out the compression on the Elvira VGA format.
 https://www.scummvm.org/
@@ -61,6 +64,16 @@ At that point, it became the CnC64FileConverter v1.0. Since I'm adding more file
 it may become a more general game formats conversion tool.
 
 CnC64FileConverter versions:
+
+v1.2.14: (28/06/2018 13:50)
+-A VDA chained from png will now indicate its first frame the same way as a normally loaded png.
+-Fixed bug that could let WSA load chaining skip missing files (which wouldn't load correctly).
+-Fixed chunk overflow check mechanism in the VDA animations save process.
+-Indexed images saved as png get a save option asking to save without transparency.
+ This option defaults to true on types with a fixed transparency index determined by the game.
+-Fixed bug in Mythos collapsed-transparency compression that made it save a wrong header size.
+-Changed Windows icon handling so it no longer shows up as a type that supports frame input.
+-Fixed focus issues in the save options window.
 
 v1.2.13: (26/06/2018 13:04)
 -Added check on maximum compressed length in Mythos RLE format; it can't exceed 0xFFFF.

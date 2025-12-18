@@ -50,6 +50,7 @@ namespace Nyerguds.Util.Ui
         {
             if (this.m_Contents.Count == 0)
                 return;
+            //this.Select();
             this.FocusItem(this.m_Contents[0]);
         }
 
@@ -59,7 +60,7 @@ namespace Nyerguds.Util.Ui
         /// <param name="control">The control to focus.</param>
         protected virtual void FocusItem(T control)
         {
-            control.Focus();
+            control.Select();
         }
 
         protected void AddControl(T control, Boolean refresh)

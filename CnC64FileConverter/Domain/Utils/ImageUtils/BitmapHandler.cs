@@ -101,9 +101,9 @@ namespace Nyerguds.ImageManipulation
         /// <param name="image">Image to save.</param>
         /// <param name="filename">Target filename.</param>
         /// <param name="paletteLength">Actual length of the palette.</param>
-        public static void SaveAsPng(Image image, String filename, Int32 paletteLength)
+        public static void SaveAsPng(Bitmap image, String filename, Int32 paletteLength)
         {
-            Byte[] data = GetPngImageData(image, paletteLength);
+            Byte[] data = GetPngImageData(image, paletteLength, false);
             File.WriteAllBytes(filename, data);
         }
 
@@ -112,16 +112,40 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="image">Image to save.</param>
         /// <param name="paletteLength">Actual length of the palette. Use 0 to ignore.</param>
-        public static Byte[] GetPngImageData(Image image, Int32 paletteLength)
+        /// <param name="noPalTrans">Remove all palette transparency.</param>
+        public static Byte[] GetPngImageData(Bitmap image, Int32 paletteLength, Boolean noPalTrans)
         {
+            Boolean isPaletted = (image.PixelFormat & PixelFormat.Indexed) == PixelFormat.Indexed;
+            Int32 maxPalSize = 1 << Image.GetPixelFormatSize(image.PixelFormat);
+            if (paletteLength == 0 && isPaletted)
+                paletteLength = maxPalSize;
+            else
+                paletteLength = Math.Min(paletteLength, maxPalSize);
             Byte[] data;
+            Color[] palette = null;
+            ColorPalette changedPal = null;
+            Byte[] transparencyData = new Byte[noPalTrans ? 0 : paletteLength];
+            if ((image.PixelFormat & PixelFormat.Indexed) != 0 && image.Palette.Entries.Length > 0)
+            {
+                changedPal = image.Palette;
+                palette = image.Palette.Entries;
+                for (Int32 i = 0; i < palette.Length; i++)
+                    changedPal.Entries[i] = Color.FromArgb(0xFF, palette[i]);
+                if (!noPalTrans)
+                    for (Int32 i = 0; i < paletteLength; i++)
+                        transparencyData[i] = palette[i].A;
+            }
             using (MemoryStream ms = new MemoryStream())
             {
-                image.Save(ms, ImageFormat.Png);
+                Bitmap saveImage = changedPal == null ? image : ImageUtils.CloneImage(image);
+                if (changedPal != null)
+                    saveImage.Palette = changedPal;
+                saveImage.Save(ms, ImageFormat.Png);
                 data = ms.ToArray();
+                if (changedPal != null)
+                    saveImage.Dispose();
             }
-            Int32 cols = ((image.PixelFormat & PixelFormat.Indexed) == 0) ? 0 : image.Palette.Entries.Length;
-            if (paletteLength == 0 || cols == 0 || cols <= paletteLength)
+            if (palette == null)
                 return data;
             Int32 paletteDataLength = paletteLength*3;
             Int32 plteOffset = FindPngChunk(data, "PLTE");
@@ -132,20 +156,23 @@ namespace Nyerguds.ImageManipulation
             Array.Copy(data, plteOffset + 8, paletteData, 0, paletteDataLength);
             paletteDataLength += 12;
 
-            Int32 actualTrnsDataLength = 0;
+            Int32 actualTrnsDataLength = Enumerable.Range(1, transparencyData.Length).LastOrDefault(i => transparencyData[i - 1] != 255);
+            if (actualTrnsDataLength < transparencyData.Length)
+            {
+                Byte[] transData = new Byte[actualTrnsDataLength];
+                Array.Copy(transparencyData, transData, actualTrnsDataLength);
+                transparencyData = transData;
+            }
+            if (actualTrnsDataLength != 0)
+                actualTrnsDataLength += 12;
             Int32 oldTrnsDataLength = 0;
-            Byte[] transparencyData = null;
-
-            // Check if it contains a palette transparency chunk.
+            
+            // Check if it contains a palette transparency chunk. Don't think it ever will though.
             Int32 trnsOffset = FindPngChunk(data, "tRNS");
             if (trnsOffset != -1)
             {
                 oldTrnsDataLength = GetPngChunkDataLength(data, trnsOffset);
-                actualTrnsDataLength = Math.Min(oldTrnsDataLength, paletteLength);
-                transparencyData = new Byte[actualTrnsDataLength];
-                Array.Copy(data, trnsOffset + 8, transparencyData, 0, actualTrnsDataLength);
                 oldTrnsDataLength += 12;
-                actualTrnsDataLength += 12;
             }
             Int32 newSize = data.Length - (plteLength - paletteDataLength) - (oldTrnsDataLength - actualTrnsDataLength);
             Byte[] newData = new Byte[newSize];
@@ -157,7 +184,7 @@ namespace Nyerguds.ImageManipulation
             currentPosTrg += writeLength;
             currentPosTrg = WritePngChunk(newData, currentPosTrg, "PLTE", paletteData);
             currentPosSrc += plteLength;
-            if (trnsOffset != -1)
+            if (actualTrnsDataLength > 0)
             {
                 Int32 inbetweenData = trnsOffset - currentPosSrc;
                 if (inbetweenData > 0)

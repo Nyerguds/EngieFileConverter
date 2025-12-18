@@ -158,7 +158,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     hasEmptyFrames = true;
                     FileImageFrame frame = new FileImageFrame();
-                    frame.LoadFileFrame(framesContainer, currentType.ShortTypeName, null, currentFrame, -1);
+                    frame.LoadFileFrame(framesContainer, currentType, null, currentFrame, -1);
                     frame.SetBitsPerColor(currentType.BitsPerPixel);
                     frame.SetColorsInPalette(currentType.ColorsInPalette);
                     framesContainer.AddFrame(frame);
@@ -170,7 +170,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Byte[] fileData = File.ReadAllBytes(currentFrame);
                     frameFile.LoadFile(fileData, currentFrame);
                     FileImageFrame frame = new FileImageFrame();
-                    frame.LoadFileFrame(framesContainer, frameFile.ShortTypeName, frameFile.GetBitmap(), currentFrame, -1);
+                    frame.LoadFileFrame(framesContainer, frameFile, frameFile.GetBitmap(), currentFrame, -1);
                     frame.SetBitsPerColor(frameFile.BitsPerPixel);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
                     framesContainer.AddFrame(frame);

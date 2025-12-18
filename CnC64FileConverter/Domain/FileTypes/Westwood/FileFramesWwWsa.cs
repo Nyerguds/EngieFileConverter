@@ -50,14 +50,18 @@ namespace CnC64FileConverter.Domain.FileTypes
                 return null;
             // If a single png file of the same name is found it overrides normal chaining.
             String pngName = Path.Combine(Path.GetDirectoryName(originalPath), Path.GetFileNameWithoutExtension(originalPath) + ".PNG");
-            if (File.Exists(pngName))
+            // Existence check + original case retrieve.
+            String[] pngNames = Directory.GetFiles(Path.GetDirectoryName(pngName), Path.GetFileName(pngName));
+            if (pngNames.Length > 0)
             {
+                pngName = pngNames[0];
                 try
                 {
-                    using (Bitmap pngFile = BitmapHandler.LoadBitmap(pngName))
+                    using (FileImagePng pngFile = new FileImagePng())
                     {
+                        pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
                         if (pngFile.Width == this.Width && pngFile.Height == this.Height)
-                            return new List<String>() { pngName };
+                            return new List<String>() {pngName};
                     }
                 }
                 catch (FileLoadException)
@@ -74,7 +78,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 String dir = Path.GetDirectoryName(originalPath);
                 String nameNoExt = Path.GetFileNameWithoutExtension(originalPath);
                 String ext = Path.GetExtension(originalPath);
-                if (nameNoExt.Length == 0)
+                if (String.IsNullOrEmpty(nameNoExt))
                     return null;
                 Char endChar = nameNoExt.ToLower().Last();
                 // no alphabetic last character, or it is an 'A' and thus there can't be any previous chained files.
@@ -89,6 +93,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 findex = Array.FindIndex(files, t => String.Equals(t, curPath, StringComparison.InvariantCultureIgnoreCase));
                     if (findex != -1)
                         frameNamesList.Add(files[findex]);
+                    else
+                        break;
                 }
                 frameNamesList.Reverse();
                 frameNames = frameNamesList.ToArray();
@@ -126,13 +132,16 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (loadChain.Count == 1 && loadChain[0].EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
             {
                 String pngName = loadChain[0];
-                if (File.Exists(pngName))
+                if(File.Exists(pngName))
                 {
+                    // Get actual name
                     try
                     {
                         // Extra frame is not used; always dispose image.
-                        using (Bitmap bm = BitmapHandler.LoadBitmap(pngName))
+                        using (FileImageFrame pngFile = new FileImageFrame())
                         {
+                            pngFile.LoadFile(File.ReadAllBytes(pngName), pngName);
+                            Bitmap bm = pngFile.GetBitmap();
                             if (bm.Width != this.Width || bm.Height != this.Height)
                                 return;
                             Int32 stride;
@@ -356,7 +365,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
                 Bitmap curFrImg = ImageUtils.BuildImage(finalFrameData, finalWidth, finalHeight, finalWidth, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(this, this.ShortTypeName, curFrImg, sourcePath, i);
+                frame.LoadFileFrame(this, this, curFrImg, sourcePath, i);
                 frame.SetBitsPerColor(this.BitsPerPixel);
                 frame.SetColorsInPalette(this.ColorsInPalette);
                 frame.SetExtraInfo(generalInfo + specificInfo);

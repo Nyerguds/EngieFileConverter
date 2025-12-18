@@ -17,7 +17,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public Dictionary<String, Object> ExtraProps { get { return this.m_ExtraProps; }}
 
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String ShortTypeDescription { get { return (this.m_BaseType == null?  String.Empty : this.m_BaseType + " ") + "Frame"; } }
+        public override String ShortTypeDescription { get { return m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
         public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
         public override Int32 ColorsInPalette { get { return this.m_ColorsInPalette != - 1 ? this.m_ColorsInPalette : base.ColorsInPalette; } }
         public override Boolean[] TransparencyMask { get { return this.m_transparencyMask; } }
@@ -29,6 +29,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         protected String sourcePath;
         protected String frameName;
         protected String m_BaseType;
+        protected String m_Description;
         
         public void SetFrameFileName(String frameName)
         {
@@ -69,11 +70,39 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
         }
 
-        public void LoadFileFrame(SupportedFileType parent, String baseType, Bitmap image, String filename, Int32 frameNumber)
+        /// <summary>
+        /// Loads a frame as frame type of a parent class.
+        /// </summary>
+        /// <param name="parent">Parent object which contains this frame.</param>
+        /// <param name="typeParent">Parent type. The final description will be this type's ShortTypeName with "frame" added behind it.</param>
+        /// <param name="image">The image.</param>
+        /// <param name="filename">The filename this is loaded from.</param>
+        /// <param name="frameNumber">The frame number.</param>
+        public void LoadFileFrame(SupportedFileType parent, SupportedFileType typeParent, Bitmap image, String filename, Int32 frameNumber)
         {
             this.LoadFile(image, null);
             this.FrameParent = parent;
-            this.m_BaseType = baseType;
+            this.m_BaseType = typeParent.ShortTypeName;
+            this.sourcePath = filename;
+            // Set to -1 if it's actually loading from a frame file, so the automatic number adding is skipped.
+            this.frameName = frameNumber >= 0 ? frameNumber.ToString("D5") : null;
+            this.UpdateNames();
+        }
+
+
+        /// <summary>
+        /// Loads a frame with specific set type description
+        /// </summary>
+        /// <param name="parent">Parent object which contains this frame.</param>
+        /// <param name="shortTypeDescription">short type description.</param>
+        /// <param name="image">The image.</param>
+        /// <param name="filename">The filename this is loaded from.</param>
+        /// <param name="frameNumber">The frame number.</param>
+        public void LoadFileFrame(SupportedFileType parent, String shortTypeDescription, Bitmap image, String filename, Int32 frameNumber)
+        {
+            this.LoadFile(image, null);
+            this.FrameParent = parent;
+            this.m_Description = shortTypeDescription;
             this.sourcePath = filename;
             // Set to -1 if it's actually loading from a frame file, so the automatic number adding is skipped.
             this.frameName = frameNumber >= 0 ? frameNumber.ToString("D5") : null;
