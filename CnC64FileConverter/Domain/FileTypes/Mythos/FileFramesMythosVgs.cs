@@ -288,9 +288,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 heighths[i] = frame.Height;
                 // TODO Optimise X and Y offset here
                 if (optimiseX)
-                    frameBytes = ImageUtils.OptimizeXWidth(frameBytes, ref width, height, ref xOffset, true, bgCol, 0xFF);
+                    frameBytes = ImageUtils.OptimizeXWidth(frameBytes, ref width, height, ref xOffset, true, bgCol, 0xFF, true);
                 if (optimiseY)
-                    frameBytes = ImageUtils.OptimizeYHeight(frameBytes, width, ref height, ref yOffset, true, bgCol, 0xFF);
+                    frameBytes = ImageUtils.OptimizeYHeight(frameBytes, width, ref height, ref yOffset, true, bgCol, 0xFF, true);
                 if (compress)
                 {
                     // TODO figure out compression

@@ -29,7 +29,7 @@ namespace Nyerguds.GameData.Agos
             Int32 byteLength = buffer.Length;
             Int32 height = byteLength / stride;
             // Should not happen, but you never know...
-            if (byteLength > height * stride)
+            while (byteLength > height * stride)
                 height++;
             Byte[] buffer2 = new Byte[byteLength];
             // Pre-processing: Exchange rows and columns.

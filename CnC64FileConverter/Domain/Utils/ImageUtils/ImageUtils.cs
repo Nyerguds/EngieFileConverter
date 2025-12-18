@@ -703,16 +703,15 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
-        /// Copies a piece out of an 8-bit image.
+        /// Copies a piece out of an 8-bit image. The stride of the output will always equal the width.
         /// </summary>
         /// <param name="fileData">Byte data of the image.</param>
         /// <param name="width">Width of the image.</param>
         /// <param name="height">Height of the image.</param>
         /// <param name="stride">Stride of the image.</param>
-        /// <param name="copyStride">Outputs the stride of the copied data</param>
         /// <param name="copyArea">The area to copy.</param>
         /// <returns></returns>
-        public static Byte[] CopyFrom8bpp(Byte[] fileData, Int32 width, Int32 height, Int32 stride, out Int32 copyStride, Rectangle copyArea)
+        public static Byte[] CopyFrom8bpp(Byte[] fileData, Int32 width, Int32 height, Int32 stride, Rectangle copyArea)
         {
             Byte[] copiedPicture = new Byte[copyArea.Width * copyArea.Height];
             Int32 maxY = Math.Min(height - copyArea.Y, copyArea.Height);
@@ -729,7 +728,6 @@ namespace Nyerguds.ImageManipulation
                     copiedPicture[indexDest] = fileData[indexSource];
                 }
             }
-            copyStride = copyArea.Width;
             return copiedPicture;
         }
 
@@ -754,7 +752,7 @@ namespace Nyerguds.ImageManipulation
             Rectangle targetPos, Color[] transparencyGuide, Boolean modifyOrig)
         {
             if (targetPos.Width != pasteWidth || targetPos.Height != pasteHeight)
-                pasteFileData = CopyFrom8bpp(pasteFileData, pasteWidth, pasteHeight, pasteStride, out pasteStride, new Rectangle(0, 0, targetPos.Width, targetPos.Height));
+                pasteFileData = CopyFrom8bpp(pasteFileData, pasteWidth, pasteHeight, pasteStride, new Rectangle(0, 0, targetPos.Width, targetPos.Height));
             Byte[] finalFileData;
             if (modifyOrig)
             {
@@ -972,7 +970,7 @@ namespace Nyerguds.ImageManipulation
             return images.ToArray();
         }
 
-        /// <summary>Crop the image in Y-dimension and adjust the given Y offset to compensate.</summary>
+        /// <summary>Calculate the amount an image can be cropped in Y-dimension, and adjust the given height and Y offset to compensate.</summary>
         /// <param name="buffer">Image data buffer</param>
         /// <param name="width">Image width (technically stride).</param>
         /// <param name="height">Image height. Will be adjusted by this function.</param>
@@ -980,18 +978,19 @@ namespace Nyerguds.ImageManipulation
         /// <param name="AlsoTrimBottom">Trim both top and bottom of the image.</param>
         /// <param name="valueToTrim">Value to trim.</param>
         /// <param name="maxOffset">Maximum value that Y can contain in the file format it'll be saved to. Leave 0 to ignore.</param>
-        /// <returns>The trimmed image, and the adjusted width and x offset.</returns>
-        public static Byte[] OptimizeYHeight(Byte[] buffer, Int32 width, ref Int32 height, ref Int32 yOffset, Boolean AlsoTrimBottom, Int32 valueToTrim, Int32 maxOffset)
+        /// <param name="adjustBuffer">True to actually apply the change to the given buffer. False to only adjust the ref parameters.</param>
+        /// <returns>The trimmed image, if adjustBuffer is true.</returns>
+        public static Byte[] OptimizeYHeight(Byte[] buffer, Int32 width, ref Int32 height, ref Int32 yOffset, Boolean AlsoTrimBottom, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
         {
             // nothing to optimize.
             if (height == 0)
-                return new Byte[0];
+                return adjustBuffer? new Byte[0] : buffer;
             // Nothing to process
             if (width == 0)
             {
                 height = 0;
                 yOffset = 0;
-                return new Byte[0];
+                return adjustBuffer? new Byte[0] : buffer;
             }
             Int32 trimYMax = maxOffset != 0 ? Math.Min(maxOffset - yOffset, height) : height;
             Int32 trimmedYTop;
@@ -1020,12 +1019,15 @@ namespace Nyerguds.ImageManipulation
                 // Full width was trimmed; image is empty.
                 height = 0;
                 yOffset = 0;
-                return new Byte[0];
+                return adjustBuffer? new Byte[0] : buffer;
             }
-            // Vertical reduce is a simple array copy.
-            Byte[] buffer2 = new Byte[newHeight * width];
-            Array.Copy(buffer, trimmedYTop * width, buffer2, 0, newHeight * width);
-            buffer = buffer2;
+            if (adjustBuffer)
+            {
+                // Vertical reduce is a simple array copy.
+                Byte[] buffer2 = new Byte[newHeight * width];
+                Array.Copy(buffer, trimmedYTop * width, buffer2, 0, newHeight * width);
+                buffer = buffer2;
+            }
             height = newHeight;
             // Optimization: no need to keep Y if data is empty.
             if (height == 0)
@@ -1045,26 +1047,27 @@ namespace Nyerguds.ImageManipulation
         /// <param name="AlsoTrimRight">Trim both left and right side of the image.</param>
         /// <param name="valueToTrim">Value to trim.</param>
         /// <param name="maxOffset">Maximum value that Y can contain in the file format it'll be saved to. Leave 0 to ignore.</param>
-        /// <returns>The trimmed image, and the adjusted width and x offset.</returns>
-        public static Byte[] OptimizeXWidth(Byte[] buffer, ref Int32 width, Int32 height, ref Int32 xOffset, Boolean AlsoTrimRight, Int32 valueToTrim, Int32 maxOffset)
+        /// <param name="adjustBuffer">True to actually apply the change to the given buffer. False to only adjust the ref parameters.</param>
+        /// <returns>The trimmed image, if adjustBuffer is true.</returns>
+        public static Byte[] OptimizeXWidth(Byte[] buffer, ref Int32 width, Int32 height, ref Int32 xOffset, Boolean AlsoTrimRight, Int32 valueToTrim, Int32 maxOffset, Boolean adjustBuffer)
         {
             // nothing to optimize.
             if (width == 0)
-                return new Byte[0];
+                return adjustBuffer ? buffer : new Byte[0];
             // Nothing to process
             if (height == 0)
             {
                 width = 0;
                 xOffset = 0;
-                return new Byte[0];
+                return adjustBuffer ? buffer : new Byte[0];
             }
             Int32 trimXMax = maxOffset != 0 ? Math.Min(maxOffset - xOffset, width) : width;
             Int32 trimmedXLeft = 0;
             Int32 trimmedXRight = 0;
-            for (Int32 x = 0; x < width; x++)
+            for (Int32 x = 0; x < trimXMax; x++)
             {
                 Boolean empty = true;
-                for (Int32 y = 0; y < trimXMax; y++)
+                for (Int32 y = 0; y < height; y++)
                 {
                     if (buffer[y * width + x] != valueToTrim)
                     {
@@ -1084,7 +1087,7 @@ namespace Nyerguds.ImageManipulation
             }
             if (AlsoTrimRight)
             {
-                for (Int32 x = width - 1; x <= 0; x++)
+                for (Int32 x = width - 1; x >= 0; x--)
                 {
                     Boolean empty = true;
                     for (Int32 y = 0; y < height; y++)
@@ -1101,11 +1104,11 @@ namespace Nyerguds.ImageManipulation
                 }
             }
             Int32 newWidth = width - trimmedXLeft - trimmedXRight;
-            Int32 newStride;
-            buffer = CopyFrom8bpp(buffer, width, height, width, out newStride, new Rectangle(trimmedXLeft, 0, newWidth, height));
+            if(adjustBuffer)
+                buffer = CopyFrom8bpp(buffer, width, height, width, new Rectangle(trimmedXLeft, 0, newWidth, height));
             width = newWidth;
             // Optimization: no need to keep Y if data is empty.
-            if (height == 0)
+            if (width == 0)
                 xOffset = 0;
             else
                 xOffset += trimmedXLeft;

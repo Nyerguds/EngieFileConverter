@@ -27,14 +27,16 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
             Bitmap image = fileToSave == null ? null : fileToSave.GetBitmap();
-            if (image == null)
+            if (image == null || image.PixelFormat != PixelFormat.Format4bppIndexed)
                 return new SaveOption[0];
+            // Check if last line is completely made of colour #0 pixels. If so, suggest cutoff option.
+            Int32 width = image.Width;
+            Int32 height = image.Height;
             Int32 stride;
             Byte[] imageBytes = ImageUtils.GetImageData(image, out stride);
-            // Check if last line is completely made of colour #0 pixels.
-            Int32 lastLineOffs = stride * (image.Height - 1);
-            Byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, image.Width, 1, lastLineOffs, 4, true, ref stride);
-            for (Int32 x = 0; x < image.Width; x++)
+            Int32 lastLineOffs = stride * (height - 1);
+            Byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, width, 1, lastLineOffs, 4, true, ref stride);
+            for (Int32 x = 0; x < width; x++)
                 if (lastLine[x] != 0)
                     return new SaveOption[0];
             return new SaveOption[] { new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "1") };

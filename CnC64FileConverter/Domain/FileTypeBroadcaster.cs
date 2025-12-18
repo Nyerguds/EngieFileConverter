@@ -33,4 +33,15 @@ namespace Nyerguds.Util
             this.AttemptedLoadedType = attemptedLoadedType;
         }
     }
+
+    /// <summary>A specific subclass for header parse failure. Can be used for distinguishing internally between different versions of a type.</summary>
+    public class HeaderParseException : FileTypeLoadException
+    {
+        public HeaderParseException() { }
+        public HeaderParseException(String message) : base(message) { }
+        public HeaderParseException(String message, Exception innerException) : base(message, innerException) { }
+        public HeaderParseException(String message, String attemptedLoadedType) : base(message, attemptedLoadedType) { }
+        public HeaderParseException(String message, String attemptedLoadedType, Exception innerException) : base(message, attemptedLoadedType, innerException) { }
+    }
+
 }

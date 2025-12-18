@@ -113,8 +113,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 for (Int32 x = 0; x < matrixWidth; x++)
                 {
                     Int32 i = x * matrixHeight + y;
-                    Int32 frameStride;
-                    Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, out frameStride, new Rectangle(x * blockStride, y * blockHeight, blockStride, blockHeight));
+                    Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, new Rectangle(x * blockStride, y * blockHeight, blockStride, blockHeight));
                     allFrames[i] = frameData;
                     frameMatrix[i] = i;
                     UInt32 hash = Crc32.ComputeChecksum(frameData);

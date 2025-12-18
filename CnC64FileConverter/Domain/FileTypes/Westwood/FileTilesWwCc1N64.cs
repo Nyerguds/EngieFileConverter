@@ -123,8 +123,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Byte highByte = tileIdsFile[i * 2];
                 Byte lowByte = tileIdsFile[i * 2 + 1];
                 list[i] = new FileTileCc1N64(this, baseFileName, currentTile, highByte, lowByte, palIndexFile[i]);
-                Int32 tilesStrideOut;
-                m_rawTiles[i] = ImageUtils.CopyFrom8bpp(tilesData, tilesWidth, tilesHeight, tilesStride, out tilesStrideOut, new Rectangle(0, i * 24, 24, 24));
+                m_rawTiles[i] = ImageUtils.CopyFrom8bpp(tilesData, tilesWidth, tilesHeight, tilesStride, new Rectangle(0, i * 24, 24, 24));
             }
             this.m_tilesList = list;
         }

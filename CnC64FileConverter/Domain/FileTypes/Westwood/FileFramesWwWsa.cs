@@ -23,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
-        protected String[] formats = new String[] { "Dune II", "C&C", "Monopoly" };
+        protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "C&C"}; //, "Monopoly" };
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood WSA"; } }
         public override String[] FileExtensions { get { return new String[] { "wsa" }; } }
@@ -57,19 +57,21 @@ namespace CnC64FileConverter.Domain.FileTypes
                 FileFramesWwWsa toSave = (FileFramesWwWsa)fileToSave;
                 type = toSave.m_Version;
                 loop = toSave.m_HasLoopFrame;
-                if (type == WsaVersion.Dune2)
+                if (type == WsaVersion.Dune2 || type == WsaVersion.Dune2v1)
                     trim = false;
+                if (type == WsaVersion.Dune2v1)
+                    hasColors = false;
                 continues = toSave.m_Continues;
                 ignoreLast = toSave.m_DamagedLoopFrame;
             }
             SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
-            opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", hasColors ? "1" : "0");
             opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type", String.Join(",", formats), ((Int32)type).ToString());
+            opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette (not supported for Dune II v1)", hasColors ? "1" : "0");
             opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
             opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
             opts[4] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets (C&C type only)", null, trim ? "1" : "0");
             if (ignoreLast)
-                opts[5] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore input loop frame", String.Join(",", formats), "1");
+                opts[5] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
             return opts;
         }
 
@@ -87,6 +89,29 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
+            // Loop over all versions.
+            WsaVersion[] versions = Enum.GetValues(typeof (WsaVersion)).Cast<WsaVersion>().ToArray();
+            Int32 lenmax = versions.Length - 1;
+            for (Int32 i = 0; i <= lenmax; i++)
+            {
+                try
+                {
+                    this.LoadFromFileData(fileData, sourcePath, versions[i]);
+                    break;
+                }
+                catch (HeaderParseException)
+                {
+                    // Only catches the specific header file size check. If there are more items in the enum,
+                    // continue the detection process. If it's the last one, just throw the exception.
+                    // It subclasses FileTypeLoadException, so the global autodetect process will catch it.
+                    if (i == lenmax)
+                        throw;
+                }
+            }
+        }
+
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath, WsaVersion loadVersion)
+        {
             Int32 datalen = fileData.Length;
             if (datalen < 14)
                 throw new FileTypeLoadException("Bad header size.");
@@ -97,46 +122,62 @@ namespace CnC64FileConverter.Domain.FileTypes
             UInt16 height = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
             Int32 hdrOffset = 10;
             Int32 deltaLen = 2;
+            UInt32 deltaBufferSize;
+            UInt16 flags;
             // If the type is Dune 2, the "width" value actually contains the buffer size, so it's practically impossible this is below 320.
-            if ((width > 320 || height > 200 || width == 0 || height == 0) && xPos != 0 && yPos != 0)
+            switch (loadVersion)
             {
-                width = xPos;
-                height = yPos;
-                xPos=0;
-                yPos=0;
-                hdrOffset -= 4;
-                m_Version = WsaVersion.Dune2;
+                case WsaVersion.Dune2:
+                case WsaVersion.Dune2v1:
+                    width = xPos;
+                    height = yPos;
+                    xPos=0;
+                    yPos=0;
+                    hdrOffset -= 4;
+                    this.m_Version = WsaVersion.Dune2;
+                    deltaBufferSize = ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset, deltaLen, true);
+                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset + deltaLen, 2, true);
+                    if (loadVersion == WsaVersion.Dune2v1)
+                        hdrOffset -= 2;
+                    break;
+                case WsaVersion.Cnc:
+                    deltaBufferSize = ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset, deltaLen, true);
+                    flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset + deltaLen, 2, true);
+                    break;
+                default:
+                    // Might need specific poly handling here... but then I first need
+                    // accurate checks to distinguish c&c from poly.
+                    throw new FileTypeLoadException("Invalid image dimensions!");
             }
-            else if (width <= 320 && height <= 200)
-            {
-                m_Version = WsaVersion.Cnc;
-            }
-            else
-            {
-                //m_Version = WsaVersion.Poly;
-                //deltaLen = 4;
-                throw new FileTypeLoadException("Invalid image dimensions!");
-            }
-            String generalInfo = "Version: " + m_Version;
-            if (m_Version != WsaVersion.Dune2)
+            m_Version = loadVersion;
+            String generalInfo = "Version: " + formats[(Int32)m_Version];
+            if (m_Version != WsaVersion.Dune2 && m_Version != WsaVersion.Dune2v1)
                 generalInfo += "\nX-offset = " + xPos + "\nY-offset = " + yPos;
             this.ExtraInfo = generalInfo;
-            if (width == 0 || height == 0)
-                throw new FileTypeLoadException("Invalid image dimensions!");
-            m_Width = width;
-            m_Height = height;
 
-            UInt32 deltaBufferSize = ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset, deltaLen, true);
-            UInt16 flags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, hdrOffset + deltaLen, 2, true);
             Int32 dataIndexOffset = hdrOffset + 2 + deltaLen;
-            Int32 dataOffs = dataIndexOffset + (nrOfFrames + 2) * 4;
+            Int32 paletteOffset = dataIndexOffset + (nrOfFrames + 2) * 4;
             this.m_HasPalette = (flags & 1) == 1;
+            UInt32[] frameOffsets = new UInt32[nrOfFrames + 2];
+            for (Int32 i = 0; i < nrOfFrames + 2; i++)
+            {
+                if (fileData.Length <= dataIndexOffset + 4)
+                    throw new HeaderParseException("Data too short to contain frames info!");
+                frameOffsets[i] = ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
+                dataIndexOffset += 4;
+            }
+            m_HasLoopFrame = frameOffsets[nrOfFrames + 1] != 0;
+            UInt32 endOffset = frameOffsets[nrOfFrames + (this.m_HasLoopFrame ? 1 : 0)];
+            if (this.m_HasPalette)
+                endOffset += 0x300;
+            if (endOffset != fileData.Length)
+                throw new HeaderParseException("Data size does not correspond with file size!");
             if (this.m_HasPalette)
             {
-                if (fileData.Length < dataOffs + 0x300)
-                    throw new FileTypeLoadException("File is not longe enough for color palette!");
+                if (fileData.Length < paletteOffset + 0x300)
+                    throw new FileTypeLoadException("File is not long enough for color palette!");
                 Byte[] pal = new Byte[0x300];
-                Array.Copy(fileData, dataOffs, pal, 0, 0x300);
+                Array.Copy(fileData, paletteOffset, pal, 0, 0x300);
                 try
                 {
                     this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(pal));
@@ -148,52 +189,45 @@ namespace CnC64FileConverter.Domain.FileTypes
             }
             if (this.m_Palette == null)
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, null, false);
+            if (width == 0 || height == 0)
+                throw new FileTypeLoadException("Invalid image dimensions!");
+            m_Width = width;
+            m_Height = height;
             m_FramesList = new SupportedFileType[nrOfFrames + 1];
             Byte[] frameData = new Byte[width * height];
             Byte[] frame0Data = new Byte[width * height];
             Byte[] xorData = new Byte[deltaBufferSize + 37];
-            m_HasLoopFrame = false;
-            for (Int32 i = 0; i < nrOfFrames + 2; i++)
+            for (Int32 i = 0; i < nrOfFrames + 1; i++)
             {
                 String specificInfo = String.Empty;
-                UInt32 frameOffset = ArrayUtils.ReadIntFromByteArray(fileData, dataIndexOffset, 4, true);
-                dataIndexOffset += 4;
+                UInt32 frameOffset = frameOffsets[i];
                 UInt32 frameOffsetReal = frameOffset;
                 if (this.m_HasPalette)
                     frameOffsetReal += 0x300;
 
-                if (i == nrOfFrames + 1)
+                if (i == 0 && frameOffset == 0)
                 {
-                    m_HasLoopFrame = frameOffset != 0;
+                    m_Continues = true;
+                    Array.Clear(frameData, 0, frameData.Length);
+                    this.ExtraInfo += "\nContinues from a previous file";
+                    specificInfo = "\nContinues from a previous file";
+                }
+                if (frameOffsetReal == fileData.Length)
+                {
                     break;
                 }
-                if (frameOffset == 0 || frameOffsetReal == fileData.Length)
+                Int32 refOff = (Int32)frameOffsetReal;
+                try
                 {
-                    if (frameOffset == 0 && i == 0)
-                    {
-                        m_Continues = true;
-                        Array.Clear(frameData, 0, frameData.Length);
-                        specificInfo = "\nContinues from a previous file";
-                        this.ExtraInfo += specificInfo;
-                    }
-                    else
-                        continue;
+                    Int32 uncLen = WWCompression.LcwUncompress(fileData, ref refOff, xorData);
+                    WWCompression.ApplyXorDelta(frameData, xorData, uncLen);
                 }
-                else
+                catch (Exception ex)
                 {
-                    Int32 refOff = (Int32)frameOffsetReal;
-                    try
-                    {
-                        Int32 uncLen = WWCompression.LcwUncompress(fileData, ref refOff, xorData);
-                        WWCompression.ApplyXorDelta(frameData, xorData, uncLen);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new FileTypeLoadException("LCW Decompression failed: " + ex.Message, ex);
-                    }
-                    if (i == 0)
-                        Array.Copy(frameData, frame0Data, frameData.Length);
+                    throw new FileTypeLoadException("LCW Decompression failed: " + ex.Message, ex);
                 }
+                if (i == 0)
+                    Array.Copy(frameData, frame0Data, frameData.Length);
                 Byte[] finalFrameData = frameData;
                 Int32 finalWidth = width + xPos;
                 Int32 finalHeight = height + yPos;
@@ -264,15 +298,16 @@ namespace CnC64FileConverter.Domain.FileTypes
                     palette = frame.GetColors();
             }
             // Save options
-            Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 type;
             WsaVersion saveType;
             if (!Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "TYPE"), out type) || !Enum.IsDefined(typeof (WsaVersion), type))
                 saveType = WsaVersion.Cnc;
             else
                 saveType = (WsaVersion)type;
+
+            Boolean asPaletted = saveType != WsaVersion.Dune2v1 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Boolean loop = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "LOOP"));
-            Boolean crop = saveType != WsaVersion.Dune2 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CROP"));
+            Boolean crop = saveType != WsaVersion.Dune2v1 && saveType != WsaVersion.Dune2 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CROP"));
             Boolean cut = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
             Boolean continues = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CONT"));
 
@@ -325,13 +360,13 @@ namespace CnC64FileConverter.Domain.FileTypes
                 {
                     Int32 yOffs = 0;
                     Int32 trHeight = height;
-                    ImageUtils.OptimizeYHeight(framesDataUnc[i], width, ref trHeight, ref yOffs, true, 0, 0xFFFF);
+                    ImageUtils.OptimizeYHeight(framesDataUnc[i], width, ref trHeight, ref yOffs, true, 0, 0xFFFF, false);
                     minYTrimStart = Math.Min(minYTrimStart, yOffs);
                     maxYTrimEnd = Math.Max(maxYTrimEnd, yOffs + trHeight);
 
                     Int32 trWidth = width;
                     Int32 xOffs = 0;
-                    ImageUtils.OptimizeXWidth(framesDataUnc[i], ref trWidth, trHeight, ref xOffs, true, 0, 0xFFFF);
+                    ImageUtils.OptimizeXWidth(framesDataUnc[i], ref trWidth, height, ref xOffs, true, 0, 0xFFFF, false);
                     minXTrimStart = Math.Min(minXTrimStart, xOffs);
                     maxXTrimEnd = Math.Max(maxXTrimEnd, xOffs + trWidth);
                 }
@@ -343,10 +378,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32 newWidth = maxXTrimEnd - xOffset;
                     Int32 newheight = maxYTrimEnd - yOffset;
                     for (Int32 i = 0; i < writeFrames; i++)
-                    {
-                        Int32 outStride;
-                        framesDataUnc[i] = ImageUtils.CopyFrom8bpp(framesDataUnc[i], width, height, width, out outStride, new Rectangle(xOffset, yOffset, newWidth, newheight));
-                    }
+                        framesDataUnc[i] = ImageUtils.CopyFrom8bpp(framesDataUnc[i], width, height, width, new Rectangle(xOffset, yOffset, newWidth, newheight));
                     width = newWidth;
                     height = newheight;
                 }
@@ -401,8 +433,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             offset += 2;
             ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)deltaBufferSize);
             offset += 2;
-            ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)(asPaletted ? 1 : 0));
-            offset += 2;
+            if (saveType != WsaVersion.Dune2v1)
+            {
+                ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)(asPaletted ? 1 : 0));
+                offset += 2;
+            }
             foreach (Int32 frOffs in frameOffsets)
             {
                 ArrayUtils.WriteIntToByteArray(fileData, offset, 4, true, (UInt32)frOffs);
@@ -426,8 +461,9 @@ namespace CnC64FileConverter.Domain.FileTypes
 
     public enum WsaVersion
     {
-        Dune2 = 0,
-        Cnc = 1,
-        Poly=2,
+        Dune2v1 = 0,
+        Dune2 = 1,
+        Cnc = 2,
+        //Poly=3,
     }
 }

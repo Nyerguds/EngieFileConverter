@@ -93,7 +93,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="image">Image to save</param>
         /// <param name="filename">Target filename</param>
         /// <param name="paletteLength">Actual length of the palette.</param>
-        public static void SaveAsPng(Bitmap image, String filename, Int32 paletteLength)
+        public static void SaveAsPng(Image image, String filename, Int32 paletteLength)
         {
             Byte[] data = GetPngImageData(image, paletteLength);
             File.WriteAllBytes(filename, data);
@@ -104,7 +104,7 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="image">Image to save</param>
         /// <param name="paletteLength">Actual length of the palette. Use 0 to ignore.</param>
-        public static Byte[] GetPngImageData(Bitmap image, Int32 paletteLength)
+        public static Byte[] GetPngImageData(Image image, Int32 paletteLength)
         {
             Byte[] data;
             using (MemoryStream ms = new MemoryStream())

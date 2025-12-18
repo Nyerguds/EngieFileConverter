@@ -254,8 +254,8 @@ namespace Nyerguds.Util.GameData
             // Retrieve these in advance to avoid extra calls to getters.
             // These are made customizable because some implementations support larger codes. Technically
             // neither run-length 0 nor 1 are useful for repeat codes (0 should not exist, 1 is identical to copy),
-            // so these two values could be used as indicators for reading a larger value to repeat or copy.
-            // Some implementations also decrement the repeat code value to allow storing one or two more bytes.
+            // so the values are often decremented to allow storing one or two more bytes.
+            // Some implementations also use these values as indicators for reading a larger value to repeat or copy.
             UInt32 maxRepeat = this.MaxRepeatValue;
             UInt32 maxCopy = this.MaxCopyValue;
             // Standard RLE implementation:

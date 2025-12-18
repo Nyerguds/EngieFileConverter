@@ -229,8 +229,10 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 blockStride = ImageUtils.GetMinimumStride(blockWidth, this.m_bpp);
                 this.m_LoadedImage = ImageUtils.Tile8BitImages(matrixFrames, blockWidth, blockHeight, blockStride, matrixLen, this.m_Palette, matrixWidth);
                 m_IsMatrixImage = true;
-                ExtraInfo += "\nImage built from matrix chunk.";
-                ExtraInfo = ExtraInfo.Trim('\n');
+                ExtraInfo += "\nMatrix size: " + matrixWidth + " x " + matrixHeight
+                             + "\nBlock size: " + blockWidth + " x " + blockHeight
+                             + "\nMatrix ratio: " + frames + " / " + matrixLen + " = " + (frames * 100 / matrixLen) + "%";
+                ExtraInfo = ExtraInfo.Trim('\n');                             
             }
         }
 

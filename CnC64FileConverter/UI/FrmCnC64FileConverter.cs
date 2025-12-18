@@ -103,10 +103,7 @@ namespace CnC64FileConverter.UI
             if (image == null)
                 return;
             Bitmap bm = ImageUtils.PaintOn32bpp(image, this.m_BackgroundFillColor);
-            Clipboard.Clear();
-            DataObject data = new DataObject();
-            data.SetData(DataFormats.Bitmap, bm);
-            Clipboard.SetDataObject(data);
+            ClipboardImage.SetClipboardImage(image, bm, null);
         }
 
         private void Frm_DragEnter(object sender, DragEventArgs e)

@@ -80,6 +80,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 throw new NotSupportedException("Only 8-bit 320x240 images can be saved as KORT image file!");
             Int32 stride;
             Byte[] imageData = ImageUtils.GetImageData(image, out stride);
+            imageData = ImageUtils.CollapseStride(imageData, 320, 240, 8, ref stride);
             Int32 dataLen = imageData.Length;
             Byte[] flippedData = new Byte[dataLen];
             for (Int32 y = 0; y < this.Height; y++)

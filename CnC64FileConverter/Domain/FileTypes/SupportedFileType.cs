@@ -350,7 +350,7 @@ namespace CnC64FileConverter.Domain.FileTypes
     [Flags]
     public enum FileClass
     {
-        None=0,
+        None = 0,
         Image1Bit = 1,
         Image4Bit = 2,
         Image8Bit = 4,

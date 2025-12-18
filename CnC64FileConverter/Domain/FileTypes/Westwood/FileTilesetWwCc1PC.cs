@@ -96,8 +96,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 for (Int32 x = 0; x < nrOfFramesX; x++)
                 {
                     Int32 index = y * nrOfFramesX + x;
-                    Int32 frameStride;
-                    Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, out frameStride, new Rectangle(x * 24, y * 24, 24, 24));
+                    Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
                     if (frameData.All(b => b == 0))
                         finalIndices[index] = 0xFF;
                     else

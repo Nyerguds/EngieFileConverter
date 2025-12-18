@@ -54,7 +54,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileData.Length < 0x120)
                 throw new FileTypeLoadException("Not long enough.");
             if (fileData.Length % 0x120 != 0)
-                throw new FileTypeLoadException("Not a multiple of 1-bit 24x24 tiles.");
+                throw new FileTypeLoadException("Not a multiple of 4-bit 24x24 tiles.");
             Int32 frames = fileData.Length / 0x120;
             Byte[][] framesList = new Byte[frames][];
             this.m_FramesList = new SupportedFileType[frames];
@@ -109,7 +109,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (image.Width != 24 || inputFullHeight % 24 != 0)
                     throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked 24x24 pixel frames.");
                 if (image.PixelFormat != PixelFormat.Format4bppIndexed)
-                    throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input!");
+                    throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
                 frames = inputFullHeight / 24;
                 Byte[] imageData4 = ImageUtils.GetImageData(image, out stride);
                 imageDataFull8 = ImageUtils.ConvertTo8Bit(imageData4, 24, inputFullHeight, 0, 4, true, ref stride);
@@ -123,14 +123,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                     SupportedFileType frame = fileToSave.Frames[i];
                     Bitmap frameImage = frame.GetBitmap();
                     if (frameImage.Width != 24 || frameImage.Height != 24)
-                        throw new NotSupportedException("AdventureSoft icons format saved from a single image requires vertically stacked 24x24 pixel frames.");
+                        throw new NotSupportedException("AdventureSoft icons format needs 24x24 pixel frames.");
                     if (frameImage.PixelFormat != PixelFormat.Format4bppIndexed)
-                        throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input!");
+                        throw new NotSupportedException("AdventureSoft icons require 4 bits per pixel input.");
                     Byte[] imageData4 = ImageUtils.GetImageData(frameImage, out stride);
                     Byte[] imageData8 = ImageUtils.ConvertTo8Bit(imageData4, 24, 24, 0, 4, true, ref stride);
                     Array.Copy(imageData8, 0, imageDataFull8, framePixSize * i, framePixSize);
                 }
             }
+            // Create the 1-bit array with each frame split into four planes.
             Byte[] fileData8 = new Byte[imageDataFull8.Length * 4];
             for (Int32 i = 0; i < frames; i++)
             {
@@ -146,6 +147,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 }
             }
             stride = 24;
+            // Convert the array as if it is one long 1-bit image.
             return ImageUtils.ConvertFrom8Bit(fileData8, 24, frames * 24 * 4, 1, true, ref stride);
         }
     }
