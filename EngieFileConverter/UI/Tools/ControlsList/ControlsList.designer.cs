@@ -1,6 +1,6 @@
 ﻿namespace Nyerguds.Util.Ui
 {
-    partial class ControlsList<T,U>
+    partial class ControlsList<T,TU>
     {
         /// <summary> 
         /// Required designer variable.

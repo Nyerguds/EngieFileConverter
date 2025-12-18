@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nyerguds.GameData.Westwood
+namespace Nyerguds.FileData.Westwood
 {
     public static class WWCompression
     {
@@ -168,7 +168,7 @@ namespace Nyerguds.GameData.Westwood
 
                     //find out how long the run of matches goes for
                     Int32 i;
-                    for (i = 1; getp + i < getend; i++)
+                    for (i = 1; getp + i < getend; ++i)
                         if (input[offchk + i] != input[getp + i])
                             break;
                     if (i >= block_size)
@@ -416,6 +416,9 @@ namespace Nyerguds.GameData.Westwood
 			        }
 		        }
 	        }
+            // If buffer is full, make sure to skip end command!
+            if (writeOffset == writeEnd && readOffset < input.Length && input[readOffset] == 0x80)
+                readOffset++;
 	        return writeOffset;
         }
 

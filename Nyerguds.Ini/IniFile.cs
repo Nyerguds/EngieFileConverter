@@ -162,7 +162,7 @@ namespace Nyerguds.Ini
             this.m_RemovedSections = new List<String>();
             this.m_InitialCaps = initialCaps;
             this.m_TrimValues = trimValues;
-            ReadIniFile(filePath, textEncoding);
+            this.ReadIniFile(filePath, textEncoding);
         }
 
         /// <summary>
@@ -204,7 +204,7 @@ namespace Nyerguds.Ini
             this.m_TrimValues = trimValues;
             this.m_FileContents = filecontents.Replace("\r\n", "\n").Replace('\r', '\n');
             ReadOnlyCollection<String> initext = new List<String>(filecontents.Split('\n')).AsReadOnly();
-            this.m_IniSections = ReadIniContents(initext);
+            this.m_IniSections = this.ReadIniContents(initext);
         }
 
         /// <summary>
@@ -228,8 +228,8 @@ namespace Nyerguds.Ini
                 {
                     try
                     {
-                        ReadOnlyCollection<String> initext = ReadLinesFromTextStream(stream, charEncoding).AsReadOnly();
-                        this.m_IniSections = ReadIniContents(initext);
+                        ReadOnlyCollection<String> initext = this.ReadLinesFromTextStream(stream, charEncoding).AsReadOnly();
+                        this.m_IniSections = this.ReadIniContents(initext);
                     }
                     catch { /* ignore */ }
                 }
@@ -249,8 +249,10 @@ namespace Nyerguds.Ini
             try
             {
                 IniSection iniSection = null;
-                foreach (String input in initext)
+                Int32 initextLen = initext.Count;
+                for (Int32 i = 0; i < initextLen; ++i)
                 {
+                    String input = initext[i];
                     if (input.StartsWith("[") && input.Contains("]"))
                     {
                         String sectionName = input.Substring(1, input.IndexOf("]", StringComparison.Ordinal) - 1);
@@ -258,7 +260,8 @@ namespace Nyerguds.Ini
                         {
                             iniSection = null;
                             Int32 sectionIndex = -1;
-                            for (Int32 j = 0; j < readIniSections.Count; j++)
+                            Int32 sectionCount = readIniSections.Count;
+                            for (Int32 j = 0; j < sectionCount; ++j)
                             {
                                 IniSection testsec = readIniSections[j];
                                 if (testsec.GetName().Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))
@@ -287,10 +290,12 @@ namespace Nyerguds.Ini
             }
             catch (Exception) { /* ignore */ }
             // clear all Accessed and Modified statuses, since this is the initial read.
-            foreach (IniSection section in readIniSections)
+            Int32 nrOfSections = readIniSections.Count;
+            for (Int32 i = 0; i < nrOfSections; ++i)
             {
+                IniSection section = readIniSections[i];
                 section.ResetStatuses();
-                section.TrimValues = m_TrimValues;
+                section.TrimValues = this.m_TrimValues;
             }
             return readIniSections;
         }
@@ -304,7 +309,7 @@ namespace Nyerguds.Ini
         /// <returns>True if the save operation succeeded.</returns>
         public Boolean WriteIni()
         {
-            return WriteIni(this.m_FilePath, this.m_Encoding);
+            return this.WriteIni(this.m_FilePath, this.m_Encoding);
         }
 
         /// <summary>
@@ -324,22 +329,23 @@ namespace Nyerguds.Ini
             {
                 try
                 {
-                    //initext = new List<String>(File.ReadAllLines(iniFilePath, encoding));
                     StreamReader stream = null;
                     try
                     {
                         stream = new StreamReader(iniFilePath, charEncoding, false);
                     }
                     catch { /* ignore */ }
-                    initext = ReadLinesFromTextStream(stream, charEncoding);
+                    initext = this.ReadLinesFromTextStream(stream, charEncoding);
                 }
                 catch (Exception)
                 {
                     initext = new List<String>();
                 }
             }
-            foreach (IniSection section in this.m_IniSections)
+            Int32 nrOfSections = this.m_IniSections.Count;
+            for (Int32 i = 0; i < nrOfSections; ++i)
             {
+                IniSection section = this.m_IniSections[i];
                 // writes keys in original case
                 Dictionary<String, String> keypairs = section.GetKeyValuePairs();
                 Dictionary<String, Boolean> keypairsAccessed = section.GetKeyValuePairsAccessed(false);
@@ -348,19 +354,19 @@ namespace Nyerguds.Ini
                 foreach (KeyValuePair<String, String> iniPair in keypairs)
                 {
                     String newline = iniPair.Key;
-                    if (m_WriteMode == WriteMode.WRITE_ALL
-                        || ((m_WriteMode == WriteMode.WRITE_ALL_ACCESSED) && keypairsAccessed[newline])
-                        || ((m_WriteMode == WriteMode.WRITE_MODIFIED_ONLY) && keypairsChanged[newline]))
+                    if (this.m_WriteMode == WriteMode.WRITE_ALL
+                        || ((this.m_WriteMode == WriteMode.WRITE_ALL_ACCESSED) && keypairsAccessed[newline])
+                        || ((this.m_WriteMode == WriteMode.WRITE_MODIFIED_ONLY) && keypairsChanged[newline]))
                     {
                         if (this.m_InitialCaps)
                             newline = Char.ToUpper(newline[0]) + newline.Substring(1, newline.Length - 1);
                         newline += "=" + iniPair.Value;
-                        Int32 linenumber = FindLine(initext, sectionName, iniPair.Key);
+                        Int32 linenumber = this.FindLine(initext, sectionName, iniPair.Key);
                         if (linenumber >= 0)
                             initext[linenumber] = newline;
                         else
                         {
-                            linenumber = FindLastSectionLine(initext, sectionName, false) + 1;
+                            linenumber = this.FindLastSectionLine(initext, sectionName, false) + 1;
                             if (linenumber > 0)
                                 initext.Insert(linenumber, newline);
                             else
@@ -378,19 +384,19 @@ namespace Nyerguds.Ini
                 // Looks up keys as case insensitive.
                 Dictionary<String, String> keypairsUpper = section.GetKeyValuePairs(true);
                 List<String> removedKeys = section.GetRemovedKeys();
-                Int32 firstLine = FindLine(initext, sectionName, null);
-                Int32 lastLine = FindLastSectionLine(initext, sectionName, false);
+                Int32 firstLine = this.FindLine(initext, sectionName, null);
+                Int32 lastLine = this.FindLastSectionLine(initext, sectionName, false);
                 if (firstLine >= 0 && firstLine + keypairsUpper.Count < lastLine)
                 {
                     for (Int32 line = lastLine; line > firstLine; line--)
                     {
-                        String[] keyVal = GetKeyAndValue(initext[line]);
+                        String[] keyVal = this.GetKeyAndValue(initext[line]);
                         if (keyVal != null && keyVal.Length == 2)
                         {
                             String delkey = keyVal[0].ToUpperInvariant();
                             Boolean notpresent = !keypairsUpper.ContainsKey(delkey);
                             // only remove if either set to remove all changes, or if it's explicitly deleted
-                            if (notpresent && (m_WriteMode == WriteMode.WRITE_ALL || removedKeys.Contains(delkey)))
+                            if (notpresent && (this.m_WriteMode == WriteMode.WRITE_ALL || removedKeys.Contains(delkey)))
                             {
                                 initext.RemoveAt(line);
                             }
@@ -399,16 +405,17 @@ namespace Nyerguds.Ini
                 }
             }
             // Remove explicitly removed sections
-            foreach (String section in this.m_RemovedSections)
+            Int32 nrOfRemSections = this.m_RemovedSections.Count;
+            for (Int32 i = 0; i < nrOfRemSections; ++i)
             {
-                Int32 firstLine = FindLine(initext, section, null);
+                String section = this.m_RemovedSections[i];
+                Int32 firstLine = this.FindLine(initext, section, null);
                 if (firstLine > -1)
                 {
-                    Int32 lastLine = FindLastSectionLine(initext, section, true);
+                    Int32 lastLine = this.FindLastSectionLine(initext, section, true);
                     initext.RemoveRange(firstLine, lastLine - firstLine + 1);
                 }
             }
-
             // trim all empty lines off the end of the file
             while (initext.Count > 0 && initext[initext.Count - 1].Trim().Length == 0)
             {
@@ -419,10 +426,11 @@ namespace Nyerguds.Ini
             if (iniFilePath == null)
             {
                 StringBuilder sb = new StringBuilder();
-                foreach (String line in initext)
-                    sb.AppendLine(line);
+                Int32 nrOfLines = this.m_IniSections.Count;
+                for (Int32 i = 0; i < nrOfLines; ++i)
+                    sb.AppendLine(initext[i]);
                 this.m_FileContents = sb.ToString();
-                this.m_IniSections = ReadIniContents(initext.AsReadOnly());
+                this.m_IniSections = this.ReadIniContents(initext.AsReadOnly());
             }
             else
             {
@@ -430,8 +438,9 @@ namespace Nyerguds.Ini
                 try
                 {
                     sw = new StreamWriter(iniFilePath, false, charEncoding);
-                    foreach (String line in initext)
-                        sw.WriteLine(line);
+                    Int32 nrOfLines = initext.Count;
+                    for (Int32 i = 0; i < nrOfLines; i++)
+                        sw.WriteLine(initext[i]);
                 }
                 catch (IOException)
                 {
@@ -450,7 +459,7 @@ namespace Nyerguds.Ini
                     catch { /* ignore */ }
                 }
                 if (returnvalue)
-                    ReadIniFile(iniFilePath, charEncoding);
+                    this.ReadIniFile(iniFilePath, charEncoding);
             }
             return returnvalue;
         }
@@ -467,7 +476,8 @@ namespace Nyerguds.Ini
             if (inisection == null)
                 throw new ArgumentNullException("inisection");
             Boolean sectionfound = false;
-            for (Int32 linenumber = 0; linenumber < inifile.Count; linenumber++)
+            Int32 iniLines = inifile.Count;
+            for (Int32 linenumber = 0; linenumber < iniLines; ++linenumber)
             {
                 String s = inifile[linenumber];
                 if (s.StartsWith("[") && s.Contains("]"))
@@ -479,7 +489,7 @@ namespace Nyerguds.Ini
                 }
                 else if (sectionfound) // correct ini section was found
                 {
-                    String[] keyVal = GetKeyAndValue(s);
+                    String[] keyVal = this.GetKeyAndValue(s);
                     if (keyVal != null && keyVal[0].Equals(inikey, StringComparison.InvariantCultureIgnoreCase))
                         return linenumber;
                 }
@@ -498,7 +508,8 @@ namespace Nyerguds.Ini
             Boolean sectionfound = false;
             Boolean sectionwasfound = false;
             Int32 sectionLine = -1;
-            for (Int32 linenumber = 0; linenumber < inifile.Count; linenumber++)
+            Int32 iniLines = inifile.Count;
+            for (Int32 linenumber = 0; linenumber < iniLines; ++linenumber)
             {
                 String s = inifile[linenumber];
                 if (s.StartsWith("[") && s.Contains("]"))
@@ -521,7 +532,7 @@ namespace Nyerguds.Ini
             {
                 Int32 origLastLine = lastLine;
 
-                while (lastLine > sectionLine && !IsValidKeyLine(inifile[lastLine]))
+                while (lastLine > sectionLine && !this.IsValidKeyLine(inifile[lastLine]))
                     lastLine--;
 
                 if (!includeBlanks)
@@ -542,7 +553,7 @@ namespace Nyerguds.Ini
         /// <returns>A 2-element String array containing the key name and value, or null if the line was not valid.</returns>
         protected String[] GetKeyAndValue(String input)
         {
-            if (!IsValidKeyLine(input))
+            if (!this.IsValidKeyLine(input))
                 return null;
             Int32 separator = input.IndexOf('=');
             if (separator < 1)
@@ -561,7 +572,7 @@ namespace Nyerguds.Ini
         public String GetStringValue(String sectionName, String key, String defaultValue)
         {
             Boolean rb;
-            return GetStringValue(sectionName, key, defaultValue, out rb);
+            return this.GetStringValue(sectionName, key, defaultValue, out rb);
         }
 
         /// <summary>Gets a String from the ini file</summary>
@@ -572,14 +583,14 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public String GetStringValue(String sectionName, String key, String defaultValue, out Boolean success)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
             {
                 success = false;
                 return defaultValue;
             }
-            iniSection.TrimValues = m_TrimValues;
-            return iniSection.GetStringValue(key, defaultValue, m_TrimValues, out success);
+            iniSection.TrimValues = this.m_TrimValues;
+            return iniSection.GetStringValue(key, defaultValue, this.m_TrimValues, out success);
         }
 
         /// <summary>Sets a String value in the ini file. This action does not save the file.</summary>
@@ -588,8 +599,8 @@ namespace Nyerguds.Ini
         /// <param name="value">Value to write.</param>
         public void SetStringValue(String sectionName, String key, String value)
         {
-            IniSection iniSection = GetSection(sectionName, true);
-            iniSection.TrimValues = m_TrimValues;
+            IniSection iniSection = this.GetSection(sectionName, true);
+            iniSection.TrimValues = this.m_TrimValues;
             iniSection.SetStringValue(key, value);
         }
 
@@ -601,7 +612,7 @@ namespace Nyerguds.Ini
         public Int32 GetIntValue(String sectionName, String key, Int32 defaultValue)
         {
             Boolean rb;
-            return GetIntValue(sectionName, key, defaultValue, out rb);
+            return this.GetIntValue(sectionName, key, defaultValue, out rb);
         }
 
         /// <summary>Gets an Integer from the ini file.</summary>
@@ -612,13 +623,13 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Int32 GetIntValue(String sectionName, String key, Int32 defaultValue, out Boolean success)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
             {
                 success = false;
                 return defaultValue;
             }
-            iniSection.TrimValues = m_TrimValues;
+            iniSection.TrimValues = this.m_TrimValues;
             return iniSection.GetIntValue(key, defaultValue, out success);
         }
 
@@ -638,8 +649,8 @@ namespace Nyerguds.Ini
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetIntValue(String sectionName, String key, Int32 value, Boolean removeComments)
         {
-            IniSection iniSection = GetSection(sectionName, true);
-            iniSection.TrimValues = m_TrimValues;
+            IniSection iniSection = this.GetSection(sectionName, true);
+            iniSection.TrimValues = this.m_TrimValues;
             iniSection.SetIntValue(key, value, removeComments);
         }
 
@@ -651,7 +662,7 @@ namespace Nyerguds.Ini
         public Char GetCharValue(String sectionName, String key, Char defaultValue)
         {
             Boolean rb;
-            return GetCharValue(sectionName, key, defaultValue, out rb);
+            return this.GetCharValue(sectionName, key, defaultValue, out rb);
         }
 
         /// <summary>Gets a Character from the ini file.</summary>
@@ -662,13 +673,13 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Char GetCharValue(String sectionName, String key, Char defaultValue, out Boolean success)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
             {
                 success = false;
                 return defaultValue;
             }
-            iniSection.TrimValues = m_TrimValues;
+            iniSection.TrimValues = this.m_TrimValues;
             return iniSection.GetCharValue(key, defaultValue, out success);
         }
 
@@ -688,8 +699,8 @@ namespace Nyerguds.Ini
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetCharValue(String sectionName, String key, Char value, Boolean removeComments)
         {
-            IniSection iniSection = GetSection(sectionName, true);
-            iniSection.TrimValues = m_TrimValues;
+            IniSection iniSection = this.GetSection(sectionName, true);
+            iniSection.TrimValues = this.m_TrimValues;
             iniSection.SetCharValue(key, value, removeComments);
         }
 
@@ -700,7 +711,7 @@ namespace Nyerguds.Ini
         public Boolean GetBoolValue(String sectionName, String key, Boolean defaultValue)
         {
             Boolean rb;
-            return GetBoolValue(sectionName, key, defaultValue, out rb);
+            return this.GetBoolValue(sectionName, key, defaultValue, out rb);
         }
 
         /// <summary>
@@ -714,13 +725,13 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Boolean GetBoolValue(String sectionName, String key, Boolean defaultValue, out Boolean success)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
             {
                 success = false;
                 return defaultValue;
             }
-            iniSection.TrimValues = m_TrimValues;
+            iniSection.TrimValues = this.m_TrimValues;
             return iniSection.GetBoolValue(key, defaultValue, out success);
         }
 
@@ -752,8 +763,8 @@ namespace Nyerguds.Ini
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetBoolValue(String sectionName, String key, Boolean value, BooleanMode booleanmode, Boolean removeComments)
         {
-            IniSection iniSection = GetSection(sectionName, true);
-            iniSection.TrimValues = m_TrimValues;
+            IniSection iniSection = this.GetSection(sectionName, true);
+            iniSection.TrimValues = this.m_TrimValues;
             iniSection.SetBoolValue(key, value, booleanmode, removeComments);
         }
 
@@ -765,9 +776,9 @@ namespace Nyerguds.Ini
         /// <param name="booleanmode">The BooleanMode (True/False, Yes/No, 1/0, etc) to use for saving Booleans as String.</param>
         public void SetBoolValue(String sectionName, String key, Boolean value, BooleanMode booleanmode)
         {
-            IniSection iniSection = GetSection(sectionName, true);
-            iniSection.TrimValues = m_TrimValues;
-            iniSection.SetBoolValue(key, value, booleanmode, m_RemoveComments);
+            IniSection iniSection = this.GetSection(sectionName, true);
+            iniSection.TrimValues = this.m_TrimValues;
+            iniSection.SetBoolValue(key, value, booleanmode, this.m_RemoveComments);
         }
 
         /// <summary>Gets a floating point value from the ini file.</summary>
@@ -778,7 +789,7 @@ namespace Nyerguds.Ini
         public Double GetFloatValue(String sectionName, String key, Double defaultValue)
         {
             Boolean success;
-            return GetFloatValue(sectionName, key, defaultValue, out success);
+            return this.GetFloatValue(sectionName, key, defaultValue, out success);
         }
 
         /// <summary>Gets a floating point value from the ini file.</summary>
@@ -789,13 +800,13 @@ namespace Nyerguds.Ini
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
         public Double GetFloatValue(String sectionName, String key, Double defaultValue, out Boolean success)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
             {
                 success = false;
                 return defaultValue;
             }
-            iniSection.TrimValues = m_TrimValues;
+            iniSection.TrimValues = this.m_TrimValues;
             return iniSection.GetFloatValue(key, defaultValue, out success);
         }
 
@@ -839,8 +850,8 @@ namespace Nyerguds.Ini
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
         public void SetFloatValue(String sectionName, String key, Double value, Int32 precision, Boolean removeComments)
         {
-            IniSection iniSection = GetSection(sectionName, true);
-            iniSection.TrimValues = m_TrimValues;
+            IniSection iniSection = this.GetSection(sectionName, true);
+            iniSection.TrimValues = this.m_TrimValues;
             iniSection.SetFloatValue(key, value, precision, removeComments);
         }
 
@@ -849,7 +860,7 @@ namespace Nyerguds.Ini
         /// <param name="key">The name of the key.</param>
         public void RemoveKey(String sectionName, String key)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
                 return;
             iniSection.RemoveKey(key);
@@ -859,7 +870,7 @@ namespace Nyerguds.Ini
         /// <param name="sectionName">The name of the section.</param>
         public void RemoveAllKeys(String sectionName)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null) return;
             iniSection.Clear();
         }
@@ -870,7 +881,8 @@ namespace Nyerguds.Ini
         /// <param name="sectionName">The name of the section.</param>
         public void RemoveSection(String sectionName)
         {
-            for (Int32 i = 0; i < this.m_IniSections.Count; i++)
+            Int32 iniSecs = this.m_IniSections.Count;
+            for (Int32 i = 0; i < iniSecs; ++i)
             {
                 String secname = this.m_IniSections[i].GetName();
                 if (secname.Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))
@@ -884,14 +896,32 @@ namespace Nyerguds.Ini
         }
 
         /// <summary>
+        /// Removes a section from the ini file, and marks it for deletion on the next rewrite.
+        /// </summary>
+        /// <param name="sectionName">The name of the section.</param>
+        public Boolean ContainsSection(String sectionName)
+        {
+            Int32 iniSecs = this.m_IniSections.Count;
+            for (Int32 i = 0; i < iniSecs; ++i)
+            {
+                String secname = this.m_IniSections[i].GetName();
+                if (secname.Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Clears a section's keys.
         /// </summary>
         /// <param name="sectionName">The name of the section.</param>
         public void ClearSectionKeys(String sectionName)
         {
             IniSection section = null;
-            foreach (IniSection sec in this.m_IniSections)
+            Int32 nrOfSections = this.m_IniSections.Count;
+            for (Int32 i = 0; i < nrOfSections; i++)
             {
+                IniSection sec = this.m_IniSections[i];
                 String secname = sec.GetName();
                 if (secname.Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -917,7 +947,7 @@ namespace Nyerguds.Ini
         /// <returns>A list of all key names in the section.</returns>
         public List<String> GetSectionKeys(String sectionName, Boolean upperCaseKeys)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null) return new List<String>();
             if (upperCaseKeys)
                 return iniSection.GetUpperCaseKeys();
@@ -930,9 +960,9 @@ namespace Nyerguds.Ini
         /// <returns>A Map with the key-value pairs.</returns>
         public Dictionary<String, String> GetSectionContent(String sectionName)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null) return new Dictionary<String, String>();
-            iniSection.TrimValues = m_TrimValues;
+            iniSection.TrimValues = this.m_TrimValues;
             return iniSection.GetKeyValuePairs();
         }
 
@@ -942,10 +972,10 @@ namespace Nyerguds.Ini
         /// <returns>A Map with the key-value pairs.</returns>
         public Dictionary<String, String> GetSectionContent(String sectionName, Boolean upperCaseKeys)
         {
-            IniSection iniSection = GetSection(sectionName);
+            IniSection iniSection = this.GetSection(sectionName);
             if (iniSection == null)
                 return new Dictionary<String, String>();
-            iniSection.TrimValues = m_TrimValues;
+            iniSection.TrimValues = this.m_TrimValues;
             return iniSection.GetKeyValuePairs(upperCaseKeys);
         }
 
@@ -955,9 +985,10 @@ namespace Nyerguds.Ini
         /// <returns>a List of the names of all sections in the ini.</returns>
         public List<String> GetSectionNames()
         {
-            List<String> sectionNames = new List<String>();
-            foreach (IniSection section in this.m_IniSections)
-                sectionNames.Add(section.GetName());
+            Int32 nrOfSections = this.m_IniSections.Count;
+            List<String> sectionNames = new List<String>(nrOfSections);
+            for (Int32 i = 0; i < nrOfSections; i++)
+                sectionNames.Add(this.m_IniSections[i].GetName());
             return sectionNames;
         }
 
@@ -966,7 +997,7 @@ namespace Nyerguds.Ini
         /// <returns>The IniSection object, or null if not found.</returns>
         protected IniSection GetSection(String sectionName)
         {
-            return GetSection(sectionName, false);
+            return this.GetSection(sectionName, false);
         }
 
         /// <summary>Gets a section by name.</summary>
@@ -976,21 +1007,22 @@ namespace Nyerguds.Ini
         protected IniSection GetSection(String sectionName, Boolean createWhenNotFound)
         {
             IniSection iniSection = null;
-            foreach (IniSection testsec in this.m_IniSections)
+            Int32 nrOfSections = this.m_IniSections.Count;
+            for (Int32 i = 0; i < nrOfSections; i++)
             {
-                if (testsec.GetName().Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    iniSection = testsec;
-                    break;
-                }
+                IniSection testsec = this.m_IniSections[i];
+                if (!testsec.GetName().Equals(sectionName, StringComparison.InvariantCultureIgnoreCase))
+                    continue;
+                iniSection = testsec;
+                break;
             }
 
             if (iniSection == null && createWhenNotFound) // doesn't exist yet
             {
                 iniSection = new IniSection(sectionName);
-                iniSection.TrimValues = m_TrimValues;
+                iniSection.TrimValues = this.m_TrimValues;
                 this.m_IniSections.Add(iniSection);
-                m_RemovedSections.Remove(sectionName.ToUpperInvariant());
+                this.m_RemovedSections.Remove(sectionName.ToUpperInvariant());
             }
             return iniSection;
         }

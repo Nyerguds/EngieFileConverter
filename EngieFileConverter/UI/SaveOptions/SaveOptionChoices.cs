@@ -46,7 +46,8 @@ namespace EngieFileConverter.UI.SaveOptions
                 this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
                 String[] options = this.Info.InitValue.Split(',');
                 Char[] trim = " \t\r\n".ToCharArray();
-                for (Int32 i = 0; i < options.Length; i++)
+                Int32 nrOfOpts = options.Length;
+                for (Int32 i = 0; i < nrOfOpts; ++i)
                     options[i] = options[i].Trim(trim);
                 this.cmbChoices.DataSource = options;
                 this.SelectFromSaveData();

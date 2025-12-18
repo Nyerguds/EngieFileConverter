@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using Nyerguds.GameData.Agos;
+using Nyerguds.FileData.Agos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -82,7 +82,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 frames = offsets.Count;
             this.m_FramesList = new SupportedFileType[frames];
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 UInt32 imageOffset = offsets[i];
                 Int32 imageHeight = heights[i];
@@ -157,7 +157,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32[] heights = new Int32[nrOfFr];
             Boolean[] compressed = new Boolean[nrOfFr];
             Int32 offset = nrOfFr*8;
-            for (Int32 i = 0; i < nrOfFr; i++)
+            for (Int32 i = 0; i < nrOfFr; ++i)
             {
                 SupportedFileType frame = fileToSave.Frames[i];
                 Bitmap image = frame.GetBitmap();
@@ -197,7 +197,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             Byte[] finalFile = new Byte[offset];
-            for (Int32 i = 0; i < nrOfFr; i++)
+            for (Int32 i = 0; i < nrOfFr; ++i)
             {
                 Int32 indexOffset = i * 8;
                 ArrayUtils.WriteIntToByteArray(finalFile, indexOffset, 4, false, (UInt32)offsets[i]);

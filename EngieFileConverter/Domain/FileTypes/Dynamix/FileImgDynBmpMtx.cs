@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using Nyerguds.GameData.Dynamix;
+using Nyerguds.FileData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -121,9 +121,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32[] frameMatrix = new Int32[nrOfFrames];
             UInt32[] frameHashes = new UInt32[nrOfFrames];
             Dictionary<UInt32, List<Int32>> hashmap = new Dictionary<UInt32, List<Int32>>();
-            for (Int32 y = 0; y < matrixHeight; y++)
+            for (Int32 y = 0; y < matrixHeight; ++y)
             {
-                for (Int32 x = 0; x < matrixWidth; x++)
+                for (Int32 x = 0; x < matrixWidth; ++x)
                 {
                     Int32 i = x * matrixHeight + y;
                     Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, new Rectangle(x * blockStride, y * blockHeight, blockStride, blockHeight));
@@ -141,7 +141,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 currentActual = 0;
             Byte[][] allFramesActual = new Byte[nrOfFrames][];
             Int32[] translationTable = new Int32[nrOfFrames];
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 Byte[] curData = allFrames[i];
                 if (curData == null)
@@ -152,33 +152,45 @@ namespace EngieFileConverter.Domain.FileTypes
                 List<Int32> duplicates = hashmap[frameHashes[i]];
                 if (duplicates.Count < 2)
                     continue;
-                foreach (Int32 dupIndex in duplicates)
+                Int32 dupCount = duplicates.Count;
+                for (Int32 j = 0; j < dupCount; ++j)
                 {
+                    Int32 dupIndex = duplicates[j];
                     if (dupIndex == i)
                         continue;
                     Byte[] dupData = allFrames[dupIndex];
                     // double-check if crc-equal data is actually equal.
-                    if (dupData.SequenceEqual(curData))
+                    Int32 curDataLen = curData.Length;
+                    if (dupData.Length != curDataLen)
+                        continue;
+                    Boolean equal = true;
+                    for (Int32 k = 0; k < curDataLen; ++k)
                     {
-                        allFrames[dupIndex] = null;
-                        frameMatrix[dupIndex] = i;
+                        if (curData[k] == dupData[i])
+                            continue;
+                        equal = false;
+                        break;
                     }
+                    if (!equal)
+                        continue;
+                    allFrames[dupIndex] = null;
+                    frameMatrix[dupIndex] = i;
                 }
             }
             // Fix frame references to collapsed indices.
-            for (Int32 i = 0; i < frameMatrix.Length; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
                 frameMatrix[i] = translationTable[frameMatrix[i]];
             // Post-processing: Exchange rows and columns.
             Byte[] frameMatrixFinal = new Byte[4 + nrOfFrames * 2];
             ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 0, 2, true, (UInt32)matrixWidth);
             ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 2, 2, true, (UInt32)matrixHeight);
 
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
                 ArrayUtils.WriteIntToByteArray(frameMatrixFinal, 4 + i * 2, 2, true, (UInt32)frameMatrix[i] + 0);
             
             // Make FileImageFrames object filled with frames
             FileFrames frs = new FileFrames();
-            for (Int32 i = 0; i < currentActual; i++)
+            for (Int32 i = 0; i < currentActual; ++i)
             {
                 FileImageFrame fr = new FileImageFrame();
                 Bitmap frImage = ImageUtils.BuildImage(allFramesActual[i], blockWidth, blockHeight, blockStride, pf, palette, null);

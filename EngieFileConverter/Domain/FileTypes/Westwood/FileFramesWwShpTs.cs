@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -74,7 +74,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // Frames
             Int32 curOffs = hdrSize;
             Int32 fullFrameSize = hdrWidth * hdrHeight;
-            for (Int32 i = 0; i < hdrFrames; i++)
+            for (Int32 i = 0; i < hdrFrames; ++i)
             {
                 UInt16 frmX = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x00, 2, true);
                 UInt16 frmY = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x02, 2, true);
@@ -148,14 +148,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 width;
             Int32 height;
             Color[] palette;
-            PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
+            this.PerformPreliminaryChecks(ref fileToSave, out width, out height, out palette);
             SupportedFileType[] frames = fileToSave.Frames;
             Int32 frameLen = frames.Length;
             Boolean evenFrames = frameLen % 2 == 0;
             Boolean hasShadow = evenFrames;
             if (hasShadow)
             {
-                for (Int32 i = frameLen / 2; i < frameLen; i++)
+                for (Int32 i = frameLen / 2; i < frameLen; ++i)
                 {
                     Int32 stride;
                     Byte[] data = ImageUtils.GetImageData(frames[i].GetBitmap(), out stride, true);
@@ -186,7 +186,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 width;
             Int32 height;
             Color[] palette;
-            PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
+            this.PerformPreliminaryChecks(ref fileToSave, out width, out height, out palette);
             Boolean compress = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CMP"));
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean align = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "ALI"));
@@ -220,7 +220,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     frameDataOffset += 8 - alignment;
             }
             Byte[] dummy = trimDuplicates ? new Byte[0] : null;
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap bm = frame.GetBitmap();
@@ -235,7 +235,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 founddup = -1;
                 if (trimDuplicates)
                 {
-                    for (Int32 j = 0; j < i; j++)
+                    for (Int32 j = 0; j < i; ++j)
                     {
                         Byte[] prevFrame = framesDataCropped[j];
                         if (prevFrame.Length == 0 || !prevFrame.SequenceEqual(imageData))
@@ -317,35 +317,30 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] finalData = new Byte[frameDataOffset];
             header.CopyTo(finalData, 0);
             frameHeaders.CopyTo(finalData, hdrSize);
-            for (Int32 i = 0; i < frameOffsets.Length; i++)
+            for (Int32 i = 0; i < frameOffsets.Length; ++i)
                 framesDataCompressed[i].CopyTo(finalData, frameOffsets[i]);
             return finalData;
         }
 
-        private void PerformPreliminarychecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height, out Color[] palette)
+        private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height, out Color[] palette)
         {
             // Preliminary checks
             if (fileToSave == null)
                 throw new NotSupportedException("No source data given!");
-            SupportedFileType[] frames = fileToSave.Frames;
-            if (!fileToSave.IsFramesContainer || frames == null)
-            {
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-                frames = new SupportedFileType[] { fileToSave };
-            }
-            if (frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
             width = -1;
             height = -1;
             palette = null;
-            foreach (SupportedFileType frame in frames)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                if (frame == null)
+                SupportedFileType frame = frames[i];
+                if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("SHP can't handle empty frames!");
                 if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("Not all frames in input type are 8-bit images!");
+                    throw new NotSupportedException("This format needs 8bpp images.");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;
@@ -371,10 +366,12 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean[] remapRange = new Boolean[0x100];
             remapRange[0] = true;
             if (adjustForRemap)
-                for (Int32 i = 16; i < 32; i++)
+                for (Int32 i = 16; i < 32; ++i)
                     remapRange[i] = true;
-            foreach (Byte b in imageData)
+            Int32 imageDataLength = imageData.Length;
+            for (Int32 i = 0; i < imageDataLength; ++i)
             {
+                Byte b = imageData[i];
                 if (b == 0)
                     continue;
                 pixCount1++;
@@ -396,7 +393,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int64 allR2 = 0;
             Int64 allG2 = 0;
             Int64 allB2 = 0;
-            for (Int32 palCol = 1; palCol < 256; palCol++)
+            for (Int32 palCol = 1; palCol < 256; ++palCol)
             {
                 Color c = palette[palCol];
                 Int32 amount = colCount[palCol];
@@ -438,8 +435,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (pixCount2 == 0 || (adjustForRemap && forTiberium))
                 return all;
             ColorHSL nonRemap = Color.FromArgb((Byte)(allR2 / pixCount2), (Byte)(allG2 / pixCount2), (Byte)(allB2 / pixCount2));
-            ColorHSL hslAll = (ColorHSL)all;
-            return new ColorHSL(nonRemap.Hue, nonRemap.Saturation, hslAll.Luminosity);
+            return new ColorHSL(nonRemap.Hue, nonRemap.Saturation, ((ColorHSL)all).Luminosity);
         }
 
         public static void PreCheckSplitShadows(SupportedFileType file, Byte sourceShadowIndex, Byte destShadowIndex, Boolean forCombine)
@@ -453,7 +449,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 return;
             if (forCombine && frLen % 2 != 0)
                 throw new NotSupportedException("File does not contains an even number of frames!");
-            for (Int32 i = 0; i < frLen; i++)
+            for (Int32 i = 0; i < frLen; ++i)
             {
                 SupportedFileType frame = file.Frames[i];
                 if (frame == null || frame.GetBitmap() == null)
@@ -501,7 +497,7 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] shadowFrames = new SupportedFileType[frames];
             Boolean shadowFound = false;
             Color[] palette = null;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 SupportedFileType frame = file.Frames[i];
                 Bitmap bm = frame.GetBitmap();
@@ -519,10 +515,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 else
                 {
                     imageDataShadow = new Byte[imageData.Length];
-                    for (Int32 y = 0; y < height; y++)
+                    for (Int32 y = 0; y < height; ++y)
                     {
                         Int32 offs = y * stride;
-                        for (Int32 x = 0; x < width; x++)
+                        for (Int32 x = 0; x < width; ++x)
                         {
                             if (imageData[offs] == sourceShadowIndex)
                             {
@@ -555,8 +551,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 frameOnlyShadows.SetColorsInPalette(frame.ColorsInPalette);
                 shadowFrames[i] = frameOnlyShadows;
             }
-            foreach (SupportedFileType shadowFrame in shadowFrames)
-                newfile.AddFrame(shadowFrame);
+            for (Int32 i = 0; i < frames; ++i)
+                newfile.AddFrame(shadowFrames[i]);
             return newfile;
         }
 
@@ -588,7 +584,7 @@ namespace EngieFileConverter.Domain.FileTypes
             newfile.SetTransparencyMask(transMask);
             Int32 combinedFrames = file.Frames.Length / 2;
             Color[] palette = null;
-            for (Int32 i = 0; i < combinedFrames; i++)
+            for (Int32 i = 0; i < combinedFrames; ++i)
             {
                 SupportedFileType frame = file.Frames[i];
                 SupportedFileType shadowFrame = file.Frames[i + combinedFrames];

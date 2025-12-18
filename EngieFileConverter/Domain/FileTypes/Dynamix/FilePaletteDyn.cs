@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using Nyerguds.GameData.Dynamix;
+using Nyerguds.FileData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -77,7 +77,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (palEntries == null || palEntries.Length == 0)
                 throw new NotSupportedException(String.Empty);
             Color[] cols = new Color[256];
-            for (Int32 i = 0; i < cols.Length; i++)
+            for (Int32 i = 0; i < cols.Length; ++i)
             {
                 if (i < palEntries.Length)
                     cols[i] = palEntries[i];

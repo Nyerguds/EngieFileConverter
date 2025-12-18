@@ -1,7 +1,7 @@
 ﻿using System;
 using Nyerguds.Util;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.FileData.Dynamix
 {
     /// <summary>
     /// The Dynamix LZW decompression class.
@@ -33,9 +33,9 @@ namespace Nyerguds.GameData.Dynamix
         {
             this.dictTableStr = new Byte[0x4000][];
             this.dictTableLen = new Byte[0x4000];
-            //for (Int32 i = 256; i < this.dictTableStr.Length; i++)
+            //for (Int32 i = 256; i < this.dictTableStr.Length; ++i)
             //    dictTableStr[i] = new Byte[100];
-            for (Int32 lcv = 0; lcv < 256; lcv++)
+            for (Int32 lcv = 0; lcv < 256; ++lcv)
             {
                 this.dictTableLen[lcv] = 1;
                 this.dictTableStr[lcv] = new Byte[] {(Byte)lcv};
@@ -89,16 +89,16 @@ namespace Nyerguds.GameData.Dynamix
                 {
                     this.codeCur[this.codeLen++] = this.codeCur[0];
                     // write output - future expanded string
-                    for (UInt32 codelen = 0; codelen < this.codeLen; codelen++)
-                    //for (lastCodeValue = 0; lastCodeValue < this.codeLen; lastCodeValue++)
+                    for (UInt32 codelen = 0; codelen < this.codeLen; ++codelen)
+                    //for (lastCodeValue = 0; lastCodeValue < this.codeLen; ++lastCodeValue)
                         bufferOut[outPtr++] = this.codeCur[codelen];
                 }
                 else
                 {
                     // write output
                     Int32 len = this.dictTableLen[code];
-                    for (UInt32 codelen = 0; codelen < len; codelen++)
-                    //for (lastCodeValue = 0; lastCodeValue < len; lastCodeValue++)
+                    for (UInt32 codelen = 0; codelen < len; ++codelen)
+                    //for (lastCodeValue = 0; lastCodeValue < len; ++lastCodeValue)
                         bufferOut[outPtr++] = this.dictTableStr[code][codelen];
                     // expand current string
                     this.codeCur[this.codeLen++] = this.dictTableStr[code][0];
@@ -128,13 +128,13 @@ namespace Nyerguds.GameData.Dynamix
                     }
                     // add new entry
                     this.dictTableStr[lastCodeValue]= new Byte[this.codeLen];
-                    for (UInt32 codelen = 0; codelen < this.codeLen; codelen++)
+                    for (UInt32 codelen = 0; codelen < this.codeLen; ++codelen)
                         this.dictTableStr[lastCodeValue][codelen] = this.codeCur[codelen];
                     this.dictTableLen[lastCodeValue] = (Byte)this.codeLen;
                 }
                 // reset to current code.
-                for (UInt32 codelen = 0; codelen < this.dictTableLen[code]; codelen++)
-                //for (lastCodeValue = 0; lastCodeValue < this.dictTableLen[code]; lastCodeValue++)
+                for (UInt32 codelen = 0; codelen < this.dictTableLen[code]; ++codelen)
+                //for (lastCodeValue = 0; lastCodeValue < this.dictTableLen[code]; ++lastCodeValue)
                     this.codeCur[codelen] = this.dictTableStr[code][codelen];
                 this.codeLen = this.dictTableLen[code];
             }

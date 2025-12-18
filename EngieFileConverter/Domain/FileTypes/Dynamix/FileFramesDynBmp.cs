@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using Nyerguds.GameData.Dynamix;
+using Nyerguds.FileData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -99,7 +99,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         Byte[] palData = File.ReadAllBytes(palName);
                         palDyn.LoadFile(palData, palName);
                         this.m_Palette = palDyn.GetColors();
-                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
+                        PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                         this.m_loadedPalette = true;
                         this.LoadedFileName += "/PAL";
                     }
@@ -114,7 +114,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 fullDataSize8bit = 0;
             Int32 widthStart = 2;
             Int32 heightStart = frames * 2 + 2;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 widths[i] = (Int32)ArrayUtils.ReadIntFromByteArray(frameInfo, widthStart + i * 2, 2, true);
                 heights[i] = (Int32)ArrayUtils.ReadIntFromByteArray(frameInfo, heightStart + i * 2, 2, true);
@@ -205,7 +205,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] framesData = null;
             if (matrix != null)
                 framesData = new Byte[frames][];
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 Int32 stride = ImageUtils.GetMinimumStride(widths[i], this.m_bpp);
                 Int32 curSize = stride * heights[i];
@@ -239,7 +239,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if ((matrixData.Length - 4) / 2 != matrixLen)
                     return;
                 Byte[][] matrixFrames = new Byte[matrixLen][];
-                for (Int32 i = 0; i < matrixLen; i++)
+                for (Int32 i = 0; i < matrixLen; ++i)
                 {
                     Int32 frame = (Int16)ArrayUtils.ReadIntFromByteArray(matrixData, 4 + i * 2, 2, true);
                     // Switch rows and columns; write into corresponding column.
@@ -295,7 +295,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] frameBytes = new Byte[frames][];
             Int32[] frameWidths = new Int32[frames];
             Int32[] frameHeights = new Int32[frames];
-            for (Int32 i = 0; i < fileToSave.Frames.Length; i++)
+            for (Int32 i = 0; i < fileToSave.Frames.Length; ++i)
             {
                 SupportedFileType frame = fileToSave.Frames[i];
                 Bitmap bm = frame.GetBitmap();
@@ -328,7 +328,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 offset = 0;
             Int32 widthStart = 2;
             Int32 heightStart = frames * 2 + 2;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 ArrayUtils.WriteIntToByteArray(framesIndex, widthStart + i * 2, 2, true, (UInt32)frameWidths[i]);
                 ArrayUtils.WriteIntToByteArray(framesIndex, heightStart + i * 2, 2, true, (UInt32)frameHeights[i]);

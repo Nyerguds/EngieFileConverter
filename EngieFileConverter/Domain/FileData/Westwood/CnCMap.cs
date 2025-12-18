@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Nyerguds.GameData.Westwood
+namespace Nyerguds.FileData.Westwood
 {
     public class CnCMap
     {
@@ -46,8 +46,9 @@ namespace Nyerguds.GameData.Westwood
 
         public void WriteToStream(Stream stream)
         {
-            foreach (CnCMapCell cell in this.Cells)
+            for (Int32 i = 0; i < LENGTH; ++i)
             {
+                CnCMapCell cell = this.Cells[i];
                 stream.WriteByte(cell.HighByte);
                 stream.WriteByte(cell.LowByte);
             }
@@ -73,7 +74,7 @@ namespace Nyerguds.GameData.Westwood
             if (buffer.Length != FILELENGTH)
                 throw new ArgumentException("Buffer must be " + FILELENGTH + " bytes long.");
             this.Cells = new CnCMapCell[LENGTH];
-            for (Int32 i = 0; i < LENGTH; i++)
+            for (Int32 i = 0; i < LENGTH; ++i)
             {
                 Int32 pos = i * 2;
                 this.Cells[i] = new CnCMapCell(buffer[pos], buffer[pos + 1]);

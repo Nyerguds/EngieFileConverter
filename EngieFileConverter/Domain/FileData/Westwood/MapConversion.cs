@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace Nyerguds.GameData.Westwood
+namespace Nyerguds.FileData.Westwood
 {
     public static class MapConversion
     {
@@ -27,7 +27,7 @@ namespace Nyerguds.GameData.Westwood
             IniFile tilesetsFile2 = new IniFile(null, tilesetsData2, true, IniFile.ENCODING_DOS_US, true);
             Dictionary<Int32, TileInfo> tileInfo2 = new Dictionary<Int32, TileInfo>();
             //tilesets2.ini - new loading code
-            for (Int32 currentId = 0; currentId < 0xFF; currentId++)
+            for (Int32 currentId = 0; currentId < 0xFF; ++currentId)
             {
                 String sectionName = tilesetsFile2.GetStringValue("TileSets", currentId.ToString(), null);
                 if (sectionName == null)
@@ -38,15 +38,15 @@ namespace Nyerguds.GameData.Westwood
                 info.Height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
                 info.PrimaryHeightType = GeneralUtils.TryParseEnum(tilesetsFile2.GetStringValue(sectionName, "PrimaryType", null), TerrainTypeEnh.Clear, true);
                 Char[] types = new Char[info.Width * info.Height];
-                for (Int32 y = 0; y < info.Height; y++)
+                for (Int32 y = 0; y < info.Height; ++y)
                 {
                     String typechars = tilesetsFile2.GetStringValue(sectionName, "Terrain" + y, String.Empty);
                     Int32 len = typechars.Length;
-                    for (Int32 x = 0; x < info.Width; x++)
+                    for (Int32 x = 0; x < info.Width; ++x)
                         types[y * info.Width + x] = x >= len ? '?' : typechars[x];
                 }
                 TerrainTypeEnh[] typedCells = new TerrainTypeEnh[types.Length];
-                for (Int32 i = 0; i < types.Length; i++)
+                for (Int32 i = 0; i < types.Length; ++i)
                 {
                     switch (types[i])
                     {
@@ -131,7 +131,7 @@ namespace Nyerguds.GameData.Westwood
                 if (ms.Length != amount * 4)
                     throw new ArgumentException("file size must be divisible by 4!", "fileData");
                 Byte[] buffer = new Byte[4];
-                for (Int32 i = 0; i < amount; i++)
+                for (Int32 i = 0; i < amount; ++i)
                 {
                     if (ms.Read(buffer, 0, 4) == 4)
                     {
@@ -160,14 +160,16 @@ namespace Nyerguds.GameData.Westwood
             {
                 List<Int32> keys = new List<Int32>(mapping.Keys);
                 keys.Sort();
-                foreach (Int32 key in keys)
+                Int32 keyCount = keys.Count;
+                for (Int32 i = 0; i < keyCount; ++i)
                 {
-                    CnCMapCell N64cell = new CnCMapCell(key);
-                    CnCMapCell PCcell = mapping[key];
-                    ms.WriteByte(N64cell.HighByte);
-                    ms.WriteByte(N64cell.LowByte);
-                    ms.WriteByte(PCcell.HighByte);
-                    ms.WriteByte(PCcell.LowByte);
+                    Int32 key = keys[i];
+                    CnCMapCell n64Cell = new CnCMapCell(key);
+                    CnCMapCell pcCell = mapping[key];
+                    ms.WriteByte(n64Cell.HighByte);
+                    ms.WriteByte(n64Cell.LowByte);
+                    ms.WriteByte(pcCell.HighByte);
+                    ms.WriteByte(pcCell.LowByte);
                 }
                 ms.Flush();
                 return ms.ToArray();
@@ -182,11 +184,11 @@ namespace Nyerguds.GameData.Westwood
             if (toN64)
             {
                 CleanUpMapClearTerrain(newmap);
-                // Prevents snow cells from being seen as as errors. They are a known anomaly that is removed gracefully.
+                // Prevents snow cells from being seen as as errors. They are a known anomaly that can be removed gracefully.
                 RemoveSnow(newmap);
             }
             errorcells = new List<CnCMapCell>();
-            for (Int32 i = 0; i < newmap.Cells.Length; i++)
+            for (Int32 i = 0; i < CnCMap.LENGTH; ++i)
             {
                 Int32 cellvalue = newmap[i].Value;
                 if ((!toN64 && cellvalue == 0xFFFF) || (toN64 && cellvalue == 0xFF00))
@@ -237,7 +239,7 @@ namespace Nyerguds.GameData.Westwood
         public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData)
         {
             TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[64 * 64];
-            for (Int32 i = 0; i < mapData.Cells.Length; i++)
+            for (Int32 i = 0; i < mapData.Cells.Length; ++i)
             {
                 CnCMapCell cell = mapData.Cells[i];
                 TerrainTypeEnh terrain = TerrainTypeEnh.Clear;
@@ -257,6 +259,7 @@ namespace Nyerguds.GameData.Westwood
             }
             return simplifiedMap;
         }
+
         /// <summary>
         /// Cleans up wrongly saved blank terrain cells (either as 00XX or as FFFF)
         /// by replacing them by the real default FF00 terrain.
@@ -264,8 +267,9 @@ namespace Nyerguds.GameData.Westwood
         /// <param name="map">The map to fix.</param>
         public static void CleanUpMapClearTerrain(CnCMap map)
         {
-            foreach (CnCMapCell cell in map.Cells)
+            for (Int32 i = 0; i < CnCMap.LENGTH; ++i)
             {
+                CnCMapCell cell = map.Cells[i];
                 if (cell.HighByte == 0 // XCC
                     || (cell.HighByte == 0xFF && cell.LowByte == 0xFF)) // cncmap
                 {
@@ -281,134 +285,19 @@ namespace Nyerguds.GameData.Westwood
         /// <param name="map">Removes snow from a map, since the N64 version can't handle it.</param>
         public static void RemoveSnow(CnCMap map)
         {
-            foreach (CnCMapCell cell in map.Cells)
+            for (Int32 i = 0; i < CnCMap.LENGTH; ++i)
             {
+                CnCMapCell cell = map.Cells[i];
                 TileInfo tileInfo;
                 if (!TILEINFO.TryGetValue(cell.HighByte, out tileInfo))
                     continue;
-                if(tileInfo.TypedCells.Length <= cell.LowByte)
+                if (tileInfo.TypedCells.Length <= cell.LowByte)
                     continue;
-                if(tileInfo.TypedCells[cell.LowByte] != TerrainTypeEnh.Snow)
+                if (tileInfo.TypedCells[cell.LowByte] != TerrainTypeEnh.Snow)
                     continue;
                 cell.HighByte = 0xFF;
                 cell.LowByte = 0x00;
             }
         }
-
-        /*/
-        protected static Dictionary<Int32, TileInfo> ReadTileInfoOld()
-        {
-            //tilesets.ini - old loading code
-            String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets.ini");
-            String tilesetsData;
-            if (File.Exists(file))
-                tilesetsData = File.ReadAllText(file);
-            else
-                tilesetsData = global::EngieFileConverter.Properties.Resources.tilesets;
-            IniFile tilesetsFile = new IniFile(null, tilesetsData, true, IniFile.ENCODING_DOS_US, true);
-            Dictionary<Int32, TileInfo> tileInfo = new Dictionary<Int32, TileInfo>();
-            for (Int32 currentId = 0; currentId < 0xFF; currentId++)
-            {
-                String sectionName = tilesetsFile.GetStringValue("TileSets", currentId.ToString(), null);
-                if (sectionName == null)
-                    continue;
-                TileInfo info = new TileInfo();
-                info.TileName = sectionName;
-                info.SecondaryTypeCells = GetCellsList(tilesetsFile.GetStringValue(sectionName, "SecondaryTypeCells", null), ',');
-                info.SecondaryType = GeneralUtils.TryParseEnum(tilesetsFile.GetStringValue(sectionName, "SecondaryType", null), TerrainType.Clear, true);
-                info.Width = tilesetsFile.GetIntValue(sectionName, "X", 1);
-                info.Height = tilesetsFile.GetIntValue(sectionName, "Y", 1);
-                info.PrimaryType = GeneralUtils.TryParseEnum(tilesetsFile.GetStringValue(sectionName, "PrimaryType", null), TerrainType.Clear, true);
-                info.NameID = tilesetsFile.GetIntValue(sectionName, "NameID", 0);
-                if (IsRoad(info))
-                {
-                    if (info.PrimaryType == TerrainType.Clear)
-                        info.PrimaryType = TerrainType.Road;
-                    if (info.SecondaryType == TerrainType.Clear)
-                        info.SecondaryType = TerrainType.Road;
-                }
-                tileInfo.Add(currentId, info);
-            }
-            return tileInfo;
-        }
-
-        protected static void WriteTileInfo()
-        {
-            //tilesets2.ini - original saving code. To convert frmo tileinfo to tileinfo2
-            String saveFile = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
-            IniFile tileSaveFile = new IniFile(saveFile, true, IniFile.ENCODING_DOS_US, true);
-            //Unused = 0
-            //Clear = 1
-            //Water = 2
-            //Rock = 3 ([I]mpassable)
-            //Beach = 4
-            //Road = 5
-            String terrainTypes = "_CWIBR";
-            for (Int32 currentId = 0; currentId < 0xFF; currentId++)
-            {
-                TileInfo info;
-                if (!TILEINFO.TryGetValue(currentId, out info))
-                    continue;
-                tileSaveFile.SetStringValue("TileSets", currentId.ToString(), info.TileName);
-                tileSaveFile.SetIntValue(info.TileName, "X", info.Width);
-                tileSaveFile.SetIntValue(info.TileName, "Y", info.Height);
-
-                if (info.TileName == "S13")
-                {
-                    info.TileName += String.Empty;
-                }
-
-                String[] tileTerrainTypes = new String[info.Height];
-                for (Int32 y = 0; y < info.Height; y++)
-                {
-                    Char[] thisRow = new Char[info.Width];
-                    for (Int32 x = 0; x < info.Width; x++)
-                    {
-                        Int32 cell = y * info.Width + x;
-                        if (info.SecondaryTypeCells.Contains(cell))
-                            thisRow[x] = terrainTypes[(Int32)info.SecondaryType];
-                        else
-                            thisRow[x] = terrainTypes[(Int32)info.PrimaryType];
-                    }
-                    tileSaveFile.SetStringValue(info.TileName, "Terrain" + y, new String(thisRow));
-                }
-            }
-            tileSaveFile.WriteIni();
-        }
-
-        protected static List<Int32> GetCellsList(String inidata, Char separator)
-        {
-            List<Int32> secCellsInt = new List<Int32>();
-            if (!String.IsNullOrEmpty(inidata) && !"none".Equals(inidata.Trim(), StringComparison.InvariantCultureIgnoreCase))
-            {
-                String[] cells = inidata.Split(separator);
-                foreach (String cell in cells)
-                {
-                    String trimmedCell = cell.Trim();
-                    Boolean isHex = HEXREGEX.IsMatch(trimmedCell);
-                    if (isHex)
-                    {
-                        trimmedCell = trimmedCell.Substring(0, trimmedCell.Length - 1);
-                        secCellsInt.Add(Int32.Parse(trimmedCell, NumberStyles.HexNumber));
-                        continue;
-                    }
-                    if (GeneralUtils.IsNumeric(trimmedCell))
-                        secCellsInt.Add(Int32.Parse(trimmedCell));
-                }
-            }
-            return secCellsInt;
-        }
-
-        private static Boolean IsRoad(TileInfo info)
-        {
-            if (ROADREGEX1.IsMatch(info.TileName))
-                return true;
-            if (ROADREGEX2.IsMatch(info.TileName))
-                return true;
-            if (ROADREGEX3.IsMatch(info.TileName))
-                return true;
-            return false;
-        }
-        //*/
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.Util;
 
 namespace EngieFileConverter.Domain.FileTypes
@@ -33,7 +33,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
             Int32 len = fileData.Length / 2;
-            for (Int32 i = 0; i < len; i++)
+            for (Int32 i = 0; i < len; ++i)
             {
                 Byte hiByte = fileData[i * 2];
                 Byte loByte = fileData[i * 2 + 1];
@@ -55,6 +55,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
+            IniInfo iniInfo = this.GetIniInfo(filename, (Theater)0xFF, fileData);
+            if (iniInfo == null || !String.Equals(Path.GetFileName(iniInfo.File), Path.GetFileName(filename), StringComparison.InvariantCultureIgnoreCase))
+                throw new FileTypeLoadException("Not an ini file.");
             String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".map";
             if (!File.Exists(mapFilename))
                 throw new FileTypeLoadException("No .map file found for this ini file.");
@@ -62,8 +65,8 @@ namespace EngieFileConverter.Domain.FileTypes
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".map");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            Byte[] mapData = File.ReadAllBytes(mapFilename);
-            base.LoadFile(mapData, mapFilename, fileData);
+            Byte[] mapFileData = File.ReadAllBytes(mapFilename);
+            base.LoadFile(mapFileData, mapFilename, fileData, filename);
         }
     }
 }

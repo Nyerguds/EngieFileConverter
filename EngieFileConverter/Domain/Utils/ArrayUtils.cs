@@ -18,10 +18,10 @@ namespace Nyerguds.Util
             Int32 origWidth = original[0].Length;
 
             T[][] swapped = new T[origWidth][];
-            for (Int32 newHeight = 0; newHeight < origWidth; newHeight++)
+            for (Int32 newHeight = 0; newHeight < origWidth; ++newHeight)
             {
                 swapped[newHeight] = new T[origHeight];
-                for (Int32 newWidth = 0; newWidth < origHeight; newWidth++)
+                for (Int32 newWidth = 0; newWidth < origHeight; ++newWidth)
                     swapped[newHeight][newWidth] = original[newWidth][newHeight];
             }
             return swapped;
@@ -37,7 +37,7 @@ namespace Nyerguds.Util
                 return false;
             if (row1.Length != row2.Length)
                 return false;
-            for (Int32 i = 0; i < row1.Length; i++)
+            for (Int32 i = 0; i < row1.Length; ++i)
                 if (row1[i].Equals(row2[i]))
                     return false;
             return true;
@@ -52,20 +52,22 @@ namespace Nyerguds.Util
         public static T[] MergeArrays<T>(params T[][] arrays)
         {
             Int32 length = 0;
-            foreach (T[] array in arrays)
+            Int32 nrOfArrays = arrays.Length;
+            for (Int32 i = 0; i < nrOfArrays; ++i)
             {
+                T[] array = arrays[i];
                 if (array != null)
                     length += array.Length;
             }
             T[] result = new T[length];
             Int32 copyIndex = 0;
-            foreach (T[] array in arrays)
+            for (Int32 i = 0; i < nrOfArrays; ++i)
             {
-                if (array != null)
-                {
-                    array.CopyTo(result, copyIndex);
-                    copyIndex += array.Length;
-                }
+                T[] array = arrays[i];
+                if (array == null)
+                    continue;
+                array.CopyTo(result, copyIndex);
+                copyIndex += array.Length;
             }
             return result;
         }
@@ -75,10 +77,10 @@ namespace Nyerguds.Util
             Int32 lastByte = bytes - 1;
             if (data.Length < startIndex + bytes)
                 throw new ArgumentOutOfRangeException("startIndex", "Data array is too small to write a " + bytes + "-byte value at offset " + startIndex + ".");
-            for (Int32 index = 0; index < bytes; index++)
+            for (Int32 index = 0; index < bytes; ++index)
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                data[offs] = (Byte) (value >> (8*index) & 0xFF);
+                data[offs] = (Byte) (value >> (8 * index) & 0xFF);
             }
         }
 
@@ -88,10 +90,10 @@ namespace Nyerguds.Util
             if (data.Length < startIndex + bytes)
                 throw new ArgumentOutOfRangeException("startIndex", "Data array is too small to read a " + bytes + "-byte value at offset " + startIndex + ".");
             UInt64 value = 0;
-            for (Int32 index = 0; index < bytes; index++)
+            for (Int32 index = 0; index < bytes; ++index)
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
-                value += (UInt64) (data[offs] << (8*index));
+                value += (UInt64) (data[offs] << (8 * index));
             }
             return value;
         }
@@ -99,8 +101,8 @@ namespace Nyerguds.Util
         public static Int32 ReadBitsFromByteArray(Byte[] dataArr, ref Int32 bitIndex, Int32 codeLen, Int32 bufferInEnd)
         {
             Int32 intCode = 0;
-            Int32 byteIndex = bitIndex/8;
-            Int32 ignoreBitsAtIndex = bitIndex%8;
+            Int32 byteIndex = bitIndex / 8;
+            Int32 ignoreBitsAtIndex = bitIndex % 8;
             Int32 bitsToReadAtIndex = Math.Min(codeLen, 8 - ignoreBitsAtIndex);
             Int32 totalUsedBits = 0;
             while (codeLen > 0)
@@ -122,8 +124,8 @@ namespace Nyerguds.Util
 
         public static void WriteBitsToByteArray(Byte[] dataArr, Int32 bitIndex, Int32 codeLen, Int32 intCode)
         {
-            Int32 byteIndex = bitIndex/8;
-            Int32 usedBitsAtIndex = bitIndex%8;
+            Int32 byteIndex = bitIndex / 8;
+            Int32 usedBitsAtIndex = bitIndex % 8;
             Int32 bitsToWriteAtIndex = Math.Min(codeLen, 8 - usedBitsAtIndex);
             while (codeLen > 0)
             {
@@ -205,33 +207,37 @@ namespace Nyerguds.Util
             if (!tType.IsValueType)
                 return new Byte[0];
             if (tType.IsPrimitive)
-                return GetValueTypeBytes((IConvertible)obj, littleEndian);
+                return GetValueTypeBytes((IConvertible) obj, littleEndian);
 
             PropertyInfo[] pi = tType.GetProperties(BindingFlags.Public | BindingFlags.NonPublic).OrderBy(f => f.MetadataToken).ToArray();
             Dictionary<Int32, Byte[]> allValuesDict = new Dictionary<Int32, Byte[]>();
-            foreach (PropertyInfo info in pi)
+            Int32 nrOfProps = pi.Length;
+            for (Int32 i = 0; i < nrOfProps; ++i)
             {
+                PropertyInfo info = pi[i];
                 Byte[] b = null;
                 Type propertyType = info.PropertyType;
                 if (tType.IsPrimitive)
-                    b = GetValueTypeBytes((IConvertible)info.GetValue(obj, null), littleEndian);
+                    b = GetValueTypeBytes((IConvertible) info.GetValue(obj, null), littleEndian);
                 else if (propertyType.IsValueType)
                     b = GetStructBytes(info.GetValue(obj, null), littleEndian);
                 allValuesDict.Add(info.MetadataToken, b);
             }
             FieldInfo[] fi = tType.GetFields(BindingFlags.Public | BindingFlags.NonPublic).OrderBy(f => f.MetadataToken).ToArray();
-            foreach (FieldInfo info in fi)
+            Int32 nrOfFields = fi.Length;
+            for (Int32 i = 0; i < nrOfFields; ++i)
             {
+                FieldInfo info = fi[i];
                 Byte[] b = null;
                 Type propertyType = info.FieldType;
                 if (tType.IsPrimitive)
-                    b = GetValueTypeBytes((IConvertible)info.GetValue(obj), littleEndian);
+                    b = GetValueTypeBytes((IConvertible) info.GetValue(obj), littleEndian);
                 else if (propertyType.IsValueType)
                     b = GetStructBytes(info.GetValue(obj), littleEndian);
                 allValuesDict.Add(info.MetadataToken, b);
             }
             Byte[][] allValues = new Byte[allValuesDict.Count][];
-            for (Int32 i = 0; i < fi.Length; i++)
+            for (Int32 i = 0; i < nrOfFields; ++i)
             {
                 FieldInfo info = fi[i];
                 Type fieldType = info.FieldType;
@@ -256,20 +262,20 @@ namespace Nyerguds.Util
             {
                 Int32 len = Marshal.SizeOf(tType);
                 Byte[] ret = new Byte[len];
-                WriteIntToByteArray(ret, 0, len, littleEndian, ((IConvertible)obj).ToUInt64(null));
+                WriteIntToByteArray(ret, 0, len, littleEndian, ((IConvertible) obj).ToUInt64(null));
                 return ret;
             }
             Boolean le = BitConverter.IsLittleEndian;
             if (tType == typeof (Single))
             {
-                Byte[] sBytes = BitConverter.GetBytes(((IConvertible)obj).ToSingle(null));
+                Byte[] sBytes = BitConverter.GetBytes(((IConvertible) obj).ToSingle(null));
                 if (!le && littleEndian || !littleEndian)
                     Array.Reverse(sBytes);
                 return sBytes;
             }
             if (tType == typeof (Double))
             {
-                Byte[] dBytes = BitConverter.GetBytes(((IConvertible)obj).ToDouble(null));
+                Byte[] dBytes = BitConverter.GetBytes(((IConvertible) obj).ToDouble(null));
                 if (!le && littleEndian || !littleEndian)
                     Array.Reverse(dBytes);
                 return dBytes;

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using Nyerguds.GameData.Compression;
+using Nyerguds.FileData.Compression;
 
-namespace Nyerguds.GameData.Agos
+namespace Nyerguds.FileData.Agos
 {
     // Finally managed to convert this to an RleImplementation class.
     public class AgosCompression: RleImplementation<AgosCompression>
@@ -18,7 +18,7 @@ namespace Nyerguds.GameData.Agos
             // outBuffer is now the image, with its columns stored as rows.
             Byte[] outBuffer2 = new Byte[byteLength];
             // Post-processing: Exchange rows and columns.
-            for (Int32 i = 0; i < byteLength; i++)
+            for (Int32 i = 0; i < byteLength; ++i)
                 outBuffer2[i % height * stride + i / height] = outBuffer[i];
             // outBuffer2 is now the correct image.
             return outBuffer2;
@@ -33,7 +33,7 @@ namespace Nyerguds.GameData.Agos
                 height++;
             Byte[] buffer2 = new Byte[byteLength];
             // Pre-processing: Exchange rows and columns.
-            for (Int32 i = 0; i < byteLength; i++)
+            for (Int32 i = 0; i < byteLength; ++i)
                 buffer2[i] = buffer[i % height * stride + i / height];
             // buffer2 is now the image, with its columns stored as rows.
             // Perform actual compression.

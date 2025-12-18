@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using Nyerguds.GameData.Dynamix;
+using Nyerguds.FileData.Dynamix;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -240,7 +240,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (col.Length < 256)
                 return col.ToArray();
             Color[] fourbitpal = new Color[16];
-            for (Int32 i = 0; i < 16; i++)
+            for (Int32 i = 0; i < 16; ++i)
                 fourbitpal[i] = col[i * 16 + 3];
             return fourbitpal;
         }

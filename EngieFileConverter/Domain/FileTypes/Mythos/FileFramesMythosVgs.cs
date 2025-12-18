@@ -5,7 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Mythos;
+using Nyerguds.FileData.Mythos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -20,8 +20,8 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String COMPRESSION = "Compression: ";
         protected const String CHUNKS = "Chunks: ";
 
-        public override Int32 Width { get { return 0; } }
-        public override Int32 Height { get { return 0; } }
+        public override Int32 Width { get { return m_Width; } }
+        public override Int32 Height { get { return m_Height; } }
 
         public override FileClass FileClass { get { return this.m_fileClass; } }
         private FileClass m_fileClass = FileClass.FrameSet;
@@ -38,6 +38,8 @@ namespace EngieFileConverter.Domain.FileTypes
         protected String[] compressionTypes = new String[] { "No compression", "Flag-based RLE", "Collapsed transparency" };
         protected List<SupportedFileType> m_FramesList = new List<SupportedFileType>();
         protected Boolean m_PaletteSet;
+        protected Int32 m_Width = 0;
+        protected Int32 m_Height = 0;
 
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList.ToArray(); } }
@@ -46,8 +48,8 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return false; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return this.CreateTransparencyMask(); } }
-        
+        public override Boolean[] TransparencyMask { get { return PaletteUtils.MakePalTransparencyMask(8, TransparentIndex); } }
+
         // template.
         //public override SaveOption[] GetPostLoadInitOptions()
         //{
@@ -87,7 +89,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileData.Length < 0x8)
                 throw new FileTypeLoadException("Not long enough for header.");
             Int32 offset = 0;
-            Boolean[] transMask = this.CreateTransparencyMask();
+            Boolean[] transMask = this.TransparencyMask;
             this.m_FramesList.Clear();
             framesXY = asVideo ? new List<Point>() : null;
             this.m_PaletteSet = false;
@@ -186,16 +188,15 @@ namespace EngieFileConverter.Domain.FileTypes
                         Byte[] paletteData = new Byte[0x300];
                         Array.Copy(imageData, PAL_IDENTIFIER.Length + 1, paletteData, 0, 0x300);
                         this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(paletteData));
-                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, transMask);
+                        PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, transMask);
                         this.m_PaletteSet = true;
-                        this.ExtraInfo =  "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame";
+                        this.ExtraInfo =  "Palette loaded from \"" + PAL_IDENTIFIER + "\" frame.";
                         offset += skipLen;
                         if (asPalette)
                         {
-                            if (offset != fileData.Length && paletteStrict)
-                                throw new FileTypeLoadException("Not a single palette file!");
-                            else
+                            if (offset == fileData.Length || !paletteStrict)
                                 return;
+                            throw new FileTypeLoadException("Not a single palette file!");
                         }
                         continue;
                     }
@@ -214,7 +215,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 newWidth = frameWidth + xOffset;
                     Int32 newHeight = frameHeight + yOffset;
                     Byte[] adjustedData = new Byte[newWidth * newHeight];
-                    for (Int32 i = 0; i < adjustedData.Length; i++)
+                    for (Int32 i = 0; i < adjustedData.Length; ++i)
                         adjustedData[i] = TransparentIndex;
                     ImageUtils.PasteOn8bpp(adjustedData, newWidth, newHeight, newWidth, imageData, frameWidth, frameHeight, frameWidth,
                         new Rectangle(xOffset, yOffset, frameWidth, frameHeight), transMask, true);
@@ -236,8 +237,11 @@ namespace EngieFileConverter.Domain.FileTypes
                             Byte[] palData = File.ReadAllBytes(palName);
                             // Try loading the file as different palette types.
                             Type[] paletteTypes = {typeof(FileFramesMythosPal), typeof(FilePalette6Bit), typeof(FilePalette8Bit)};
-                            for (Int32 i = 0; i < paletteTypes.Length && this.m_Palette == null; i++)
+                            Int32 nrOfPalTypes = paletteTypes.Length;
+                            for (Int32 i = 0; i < nrOfPalTypes; ++i)
                             {
+                                if (this.m_Palette != null)
+                                    break;
                                 try
                                 {
                                     SupportedFileType palFile = (SupportedFileType)Activator.CreateInstance(paletteTypes[i]);
@@ -251,9 +255,9 @@ namespace EngieFileConverter.Domain.FileTypes
                             }
                             if (this.m_Palette != null)
                             {
-                                PaletteUtils.ApplyTransparencyGuide(this.m_Palette, transMask);
+                                PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, transMask);
                                 this.m_PaletteSet = true;
-                                this.ExtraInfo = "Palette loaded from \"" + Path.GetFileName(palName) + "\"";
+                                this.ExtraInfo = "Palette loaded from \"" + Path.GetFileName(palName) + "\".";
                                 this.LoadedFileName += "/PAL";
                             }
                         }
@@ -277,8 +281,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.ExtraInfo == null)
                 this.ExtraInfo = String.Empty;
             if (this.ExtraInfo.Length > 0)
-                this.ExtraInfo += "\n";
-            this.ExtraInfo += "Used compression: " + this.compressionTypes[this.CompressionType];
+                this.ExtraInfo += Environment.NewLine;
+            this.ExtraInfo += "Used compression: " + this.compressionTypes[this.CompressionType] + ".";
             if (offset != fileData.Length)
                 throw new FileTypeLoadException("Image load failed.");
             if (this.m_PaletteSet && this.m_FramesList.Count == 0)
@@ -288,7 +292,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_fileClass = FileClass.Image8Bit;
                 this.m_LoadedImage = this.m_FramesList[0].GetBitmap();
                 this.m_FramesList.Clear();
-                this.ExtraInfo += "\nTreated as single image.";
+                m_Width = m_LoadedImage.Width;
+                m_Height = m_LoadedImage.Height;
+
+                this.ExtraInfo += Environment.NewLine + "Treated as single full-screen image.";
             }
         }
         
@@ -303,12 +310,17 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 hasPal = fileVgs.m_PaletteSet;
                 compression = fileVgs.CompressionType;
-                foreach (SupportedFileType frame in fileVgs.Frames)
+                SupportedFileType[] frames = fileVgs.Frames;
+                Int32 nrOfFrames = frames.Length;
+                for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
+                    SupportedFileType frame = frames[i];
                     String[] extraInfo = frame.ExtraInfo.Split(new Char[] {'\n', '\r'}, StringSplitOptions.RemoveEmptyEntries);
                     // Kind of dirty but whatev.
-                    foreach (String info in extraInfo)
+                    Int32 extraInfoLines = extraInfo.Length;
+                    for (Int32 j = 0; j < extraInfoLines; ++j)
                     {
+                        String info = extraInfo[j];
                         if (info.StartsWith(X_OFFSET))
                             hasXOpt = true;
                         else if (info.StartsWith(Y_OFFSET))
@@ -333,18 +345,23 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            // Preliminary checks
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                if (fileToSave.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8-bit images!");
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
+                SupportedFileType sft = frames[i];
+                if (sft == null || sft.GetBitmap() == null)
+                    throw new NotSupportedException("Mythos VGS can't handle empty frames!");
+                if (sft.BitsPerPixel != 8)
+                    throw new NotSupportedException("This format needs 8bpp images.");
+                if (sft.Width != 320 || sft.Height != 200)
+                    throw new NotSupportedException("This format needs 320x200 frames.");
             }
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
-            if (fileToSave.Frames.Any(x => x.BitsPerPixel != 8))
-                throw new NotSupportedException("All frames in the target file must be 8-bit images!");
             Boolean asPaletted = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Boolean optimiseX = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPX"));
             Boolean optimiseY = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "OPY"));
@@ -354,38 +371,15 @@ namespace EngieFileConverter.Domain.FileTypes
                 compressionType = 0;
 
             Boolean paletteOnly = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PALONLY"));
-            Color[] palette;
             if (paletteOnly)
             {
                 asPaletted = true;
                 compressionType = 0;
+            }
+            Color[] palette = null;
+            if (asPaletted)
                 palette = this.CheckInputForColors(fileToSave, true);
-            }
-            else
-            {
-                palette = fileToSave.GetColors();
-                if (palette != null && palette.Length == 0)
-                    palette = null;
-            }
-            // Check all frames, and fetch the palette if needed.
-            foreach (SupportedFileType frame in fileToSave.Frames)
-            {
-                if (asPaletted && palette != null)
-                    break;
-                if (frame == null || frame.GetBitmap() == null)
-                    throw new NotSupportedException("Mythos VGS can't handle empty frames!");
-                Bitmap image = frame.GetBitmap();
-                if (image.PixelFormat != PixelFormat.Format8bppIndexed && image.PixelFormat != PixelFormat.Format4bppIndexed)
-                    throw new NotSupportedException("Mythos VGS requires 8-bit frames!");
-                // Take first frame's palette as colours.
-                if (asPaletted)
-                {
-                    palette = image.Palette.Entries;
-                    if (paletteOnly)
-                        break;
-                }
-            }
-            Int32 actualLen = paletteOnly ? 0 : fileToSave.Frames.Length;
+            Int32 actualLen = paletteOnly ? 0 : nrOfFrames;
             if (asPaletted)
                 actualLen++;
             Byte[][] frameData = new Byte[actualLen][];
@@ -412,17 +406,20 @@ namespace EngieFileConverter.Domain.FileTypes
                 xOffsets[0] = 0;
                 yOffsets[0] = 0;
             }
-            for (Int32 i = asPaletted ? 1 : 0; i < actualLen; i++)
+            for (Int32 i = asPaletted ? 1 : 0; i < actualLen; ++i)
             {
-                SupportedFileType frame = fileToSave.Frames[asPaletted ? i - 1 : i];
+                Int32 index = i;
+                if (asPaletted)
+                    --index;
+                SupportedFileType frame = frames[index];
                 Int32 stride;
                 Byte[] frameBytes = ImageUtils.GetImageData(frame.GetBitmap(), out stride, true);
                 Int32 width = frame.Width;
                 Int32 height = frame.Height;
                 Int32 xOffset = 0;
                 Int32 yOffset = 0;
-                widths[i] = frame.Width;
-                heighths[i] = frame.Height;
+                widths[i] = width;
+                heighths[i] = height;
                 if (optimiseX)
                     frameBytes = ImageUtils.OptimizeXWidth(frameBytes, ref width, height, ref xOffset, true, TransparentIndex, 0xFF, true);
                 if (optimiseY)
@@ -450,9 +447,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 xOffsets[i] = (Byte)xOffset;
                 yOffsets[i] = (Byte)yOffset;
             }
-            Byte[] finalData = new Byte[actualLen * 8 + frameData.Sum(sd => sd.Length)];
+            Int32 dataSum = 0;
+            for (Int32 i = 0; i < actualLen; ++i)
+                dataSum += frameData[i].Length;
+            Byte[] finalData = new Byte[actualLen * 8 + dataSum];
             Int32 offset = 0;
-            for (Int32 i = 0; i < actualLen; i++)
+            for (Int32 i = 0; i < actualLen; ++i)
             {
                 ArrayUtils.WriteIntToByteArray(finalData, offset + 0, 2, true, (UInt32)(widths[i] - 1));
                 ArrayUtils.WriteIntToByteArray(finalData, offset + 2, 2, true, (UInt32)(heighths[i]-1));
@@ -466,13 +466,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 offset += curSymbolData.Length;
             }
             return finalData;
-        }
-
-        protected Boolean[] CreateTransparencyMask()
-        {
-            Boolean[] mask = new Boolean[0x100];
-            mask[TransparentIndex] = true;
-            return mask;
         }
     }
 }

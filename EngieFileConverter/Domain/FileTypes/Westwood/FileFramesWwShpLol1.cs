@@ -5,8 +5,8 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Compression;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Compression;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -77,7 +77,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 try
                 {
                     this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, dataOffset));
-                    PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
+                    PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                 }
                 catch (ArgumentException argex)
                 {
@@ -154,7 +154,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            FileFramesWwShpD2.PerformPreliminarychecks(ref fileToSave);
+            FileFramesWwShpD2.PerformPreliminaryChecks(ref fileToSave);
             // If it is a non-image format which does contain colours, offer to save with palette
             FileFramesWwShpLol1 shp = fileToSave as FileFramesWwShpLol1;
             Int32 compression = shp != null ? shp.CompressionType : 4;
@@ -176,7 +176,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (width0 == width + 1 && height0 == height + 1 && !buffer.Any(b => b == 0) && width < 30)
                 {
                     // check if the other frames are all the same size.
-                    for (Int32 i = 1; i < fileToSave.Frames.Length; i++)
+                    for (Int32 i = 1; i < fileToSave.Frames.Length; ++i)
                     {
                         if (i == 16)
                             continue;

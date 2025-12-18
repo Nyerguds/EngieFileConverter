@@ -72,7 +72,8 @@ namespace Nyerguds.Ini
         /// </summary>
         internal void ResetStatuses()
         {
-            for (Int32 i = 0; i < m_iniKeys.Count; i++)
+            Int32 iniKeyCount = this.m_iniKeys.Count;
+            for (Int32 i = 0; i < iniKeyCount; ++i)
             {
                 m_iniKeysChanged[i] = false;
                 m_iniKeysAccessed[i] = false;
@@ -401,9 +402,13 @@ namespace Nyerguds.Ini
         /// <summary>Removes all keys in the ini section.</summary>
         public void Clear()
         {
-            foreach (String key in m_iniKeysUpper)
-                if (!m_iniKeysRemoved.Contains(key))
-                    m_iniKeysRemoved.Add(key);
+            Int32 nrOfKeys = this.m_iniKeysUpper.Count;
+            for (Int32 i = 0; i < nrOfKeys; i++)
+            {
+                String key = this.m_iniKeysUpper[i];
+                if (!this.m_iniKeysRemoved.Contains(key))
+                    this.m_iniKeysRemoved.Add(key);
+            }
             m_iniKeys.Clear();
             m_iniKeysUpper.Clear();
             m_iniValues.Clear();
@@ -438,7 +443,8 @@ namespace Nyerguds.Ini
         public Dictionary<String, String> GetKeyValuePairs(Boolean upperCaseKeys)
         {
             Dictionary<String, String> dictionary = new Dictionary<String, String>();
-            for (Int32 i = 0; i < m_iniKeys.Count; i++)
+            Int32 iniKeyCount = this.m_iniKeys.Count;
+            for (Int32 i = 0; i < iniKeyCount; ++i)
             {
                 String key = upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i];
                 String value = m_iniValues[i];
@@ -455,7 +461,8 @@ namespace Nyerguds.Ini
         public Dictionary<String, Boolean> GetKeyValuePairsAccessed(Boolean upperCaseKeys)
         {
             Dictionary<String, Boolean> dictionary = new Dictionary<String, Boolean>();
-            for (Int32 i = 0; i < m_iniKeys.Count; i++)
+            Int32 iniKeyCount = this.m_iniKeys.Count;
+            for (Int32 i = 0; i < iniKeyCount; ++i)
                 dictionary.Add((upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i]), m_iniKeysAccessed[i]);
             return dictionary;
         }
@@ -466,7 +473,8 @@ namespace Nyerguds.Ini
         public Dictionary<String, Boolean> GetKeyValuePairsChanged(Boolean upperCaseKeys)
         {
             Dictionary<String, Boolean> dictionary = new Dictionary<String, Boolean>();
-            for (Int32 i = 0; i < m_iniKeys.Count; i++)
+            Int32 iniKeyCount = this.m_iniKeys.Count;
+            for (Int32 i = 0; i < iniKeyCount; ++i)
                 dictionary.Add((upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i]), m_iniKeysChanged[i]);
             return dictionary;
         }

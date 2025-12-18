@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Ini;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 
 namespace Nyerguds.Util.UI
 {
@@ -31,7 +31,7 @@ namespace Nyerguds.Util.UI
             Color[] palette = new Color[expectedcolors];
             Int32 copiedColors = Math.Min(colors.Length, expectedcolors);
             Array.Copy(colors, palette, copiedColors);
-            for (Int32 i = copiedColors; i < expectedcolors; i++)
+            for (Int32 i = copiedColors; i < expectedcolors; ++i)
                 palette[i] = Color.Black;
             this.Colors = palette;
             this.ColorBackup = palette.ToArray();
@@ -45,14 +45,14 @@ namespace Nyerguds.Util.UI
         public Boolean IsChanged(Boolean[] currentTypeTransMask)
         {
             Color[] compareArr = this.ColorBackup.ToArray();
-            PaletteUtils.ApplyTransparencyGuide(compareArr, currentTypeTransMask);
+            PaletteUtils.ApplyPalTransparencyMask(compareArr, currentTypeTransMask);
             return !compareArr.SequenceEqual(this.Colors);
         }
 
         public void Revert(Boolean[] currentTypeTransMask)
         {
             Array.Copy(this.ColorBackup, this.Colors, this.Colors.Length);
-            PaletteUtils.ApplyTransparencyGuide(this.Colors, currentTypeTransMask);
+            PaletteUtils.ApplyPalTransparencyMask(this.Colors, currentTypeTransMask);
         }
 
         public void ClearRevert()
@@ -87,7 +87,7 @@ namespace Nyerguds.Util.UI
                 if (File.Exists(inipath))
                 {
                     IniFile paletteConfig = new IniFile(inipath);
-                    for (Int32 i = 0; i < 16; i++)
+                    for (Int32 i = 0; i < 16; ++i)
                     {
                         String name = paletteConfig.GetStringValue(INI_SECTION, i.ToString(), null);
                         Boolean hasName = !String.IsNullOrEmpty(name);

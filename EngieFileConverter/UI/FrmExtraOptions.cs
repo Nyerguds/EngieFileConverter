@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using EngieFileConverter.Domain.FileTypes;
@@ -21,8 +22,10 @@ namespace EngieFileConverter.UI
         {
             this.m_soi = soi;
             this.lstOptions.Populate(this.m_soi, this);
-            foreach (SaveOption option in this.m_soi.Properties)
-                this.UpdateControlInfo(option);
+            SaveOption[] props = this.m_soi.Properties;
+            Int32 nrOfProps = props.Length;
+            for (Int32 i = 0; i < nrOfProps; ++i)
+                this.UpdateControlInfo(props[i]);
         }
 
         public SaveOption[] GetSaveOptions()
@@ -32,49 +35,79 @@ namespace EngieFileConverter.UI
 
         public void UpdateControlInfo(SaveOption updateInfo)
         {
-            SaveOption current = this.m_soi.Properties.First(x => String.Equals(x.Code, updateInfo.Code));
+            SaveOption current = null;
+            SaveOption[] props = this.m_soi.Properties;
+            Int32 nrOfProps = props.Length;
+            String updCode = updateInfo.Code;
+            for (Int32 i = 0; i < nrOfProps; ++i)
+            {
+                SaveOption prop = props[i];
+                if (String.Equals(prop.Code, updCode))
+                {
+                    current = prop;
+                    break;
+                }
+            }
             if (current == null)
                 return;
             current.SaveData = updateInfo.SaveData;
-
             this.UpdateControlChildren(current);
         }
 
-        public void UpdateControlChildren(SaveOption updateInfo)
+        public void UpdateControlChildren(SaveOption dependingOn)
         {
-            SaveOption[] children = this.m_soi.Properties.Where(x => x.Filters.Any(f => f.CheckOption == updateInfo.Code)).ToArray();
-            if (children.Length == 0)
-                return;
-            foreach (SaveOption child in children)
+            String checkCode = dependingOn.Code;
+            SaveOption[] dependentControls = this.m_soi.Properties;
+            Int32 nrOfDependentControls = dependentControls.Length;
+            for (Int32 i = 0; i < nrOfDependentControls; ++i)
             {
-                SaveOptionControl soc = this.lstOptions.GetListedControlByInfoObject(child);
+                SaveOption dependentControl = dependentControls[i];
+                SaveEnableFilter[] filters = dependentControl.Filters;
+                Int32 nrOfFilters = filters.Length;
+                Boolean hasFilter = false;
+                for (Int32 f = 0; f < nrOfFilters; f++)
+                {
+                    if (filters[f].CheckOption != checkCode)
+                        continue;
+                    hasFilter = true;
+                    break;
+                }
+                if (!hasFilter)
+                    continue;
+                SaveOptionControl soc = this.lstOptions.GetListedControlByInfoObject(dependentControl);
                 if (soc == null)
                     continue;
                 Boolean matches = true;
-                foreach (SaveEnableFilter filter in child.Filters)
+                for (Int32 f = 0; f < nrOfFilters; f++)
                 {
-                    if (!EvaluateFilter(filter))
-                    {
-                        matches = false;
-                        break;
-                    }
+                    if (this.EvaluateFilter(filters[f]))
+                        continue;
+                    matches = false;
+                    break;
                 }
                 soc.DisableValue(matches);
-                this.UpdateControlChildren(child);
-                
+                this.UpdateControlChildren(dependentControl);
             }
         }
 
         private Boolean EvaluateFilter(SaveEnableFilter filter)
         {
-            SaveOption checkOpt = this.m_soi.Properties.FirstOrDefault(p => p.Code == filter.CheckOption);
-            if (checkOpt == null)
-                return false;
-            SaveOptionControl checkSoc = this.lstOptions.GetListedControlByInfoObject(checkOpt);
-            if (!checkSoc.Enabled)
-                return false;
-            Boolean curMatches = filter.CheckValues.Contains(checkOpt.SaveData);
-            return (!filter.CheckInverted && curMatches) || (filter.CheckInverted && !curMatches);
+            String checkCode = filter.CheckOption;
+            SaveOption[] saveOpts = this.m_soi.Properties;
+            Int32 nrOfOpts = saveOpts.Length;
+            for (Int32 i = 0; i < nrOfOpts; ++i)
+            {
+                SaveOption opt = saveOpts[i];
+                if (opt.Code != checkCode)
+                    continue;
+                SaveOptionControl checkSoc = this.lstOptions.GetListedControlByInfoObject(opt);
+                // A control that can't be modified automatically fails the test.
+                if (!checkSoc.Enabled)
+                    return false;
+                Boolean curMatches = filter.CheckValues.Contains(opt.SaveData);
+                return (!filter.CheckInverted && curMatches) || (filter.CheckInverted && !curMatches);
+            }
+            return false;
         }
 
         private void FrmExtraOptions_Load(Object sender, EventArgs e)

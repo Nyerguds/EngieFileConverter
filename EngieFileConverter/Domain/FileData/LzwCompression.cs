@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Nyerguds.GameData.Compression
+namespace Nyerguds.FileData.Compression
 {
     /// <summary>
     /// LZW-based compressor/decompressor - basic algorithm used as described on Mark Nelson's website:
@@ -76,7 +76,7 @@ namespace Nyerguds.GameData.Compression
                     this.Initialize();
                     Int32 next_code = 256;
                     Int32 character;
-                    for (Int32 i = 0; i < this.TABLE_SIZE; i++) // blank out table
+                    for (Int32 i = 0; i < this.TABLE_SIZE; ++i) // blank out table
                         this.code_value[i] = -1;
                     Int32 string_code = inStream.ReadByte();
                     while ((character = inStream.ReadByte()) != -1) // read until we reach end of file

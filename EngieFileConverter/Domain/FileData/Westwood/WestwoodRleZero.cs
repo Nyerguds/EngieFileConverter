@@ -2,7 +2,7 @@
 using System.IO;
 using Nyerguds.Util;
 
-namespace Nyerguds.GameData.Westwood
+namespace Nyerguds.FileData.Westwood
 {
     /// <summary>
     /// Class for the transparency-collapsing RLE methods used in Dune II and Tiberian Sun.
@@ -15,7 +15,7 @@ namespace Nyerguds.GameData.Westwood
             Byte[] finalImage = new Byte[frameWidth * frameHeight];
             Int32 datalen = fileData.Length;
             Int32 outLineOffset = 0;
-            for (Int32 y = 0; y < frameHeight; y++)
+            for (Int32 y = 0; y < frameHeight; ++y)
             {
                 Int32 outOffset = outLineOffset;
                 Int32 nextLineOffset = outLineOffset + frameWidth;
@@ -28,7 +28,7 @@ namespace Nyerguds.GameData.Westwood
                 // Skip header
                 offset += 2;
                 Boolean readZero = false;
-                for (; offset < end; offset++)
+                for (; offset < end; ++offset)
                 {
                     if (outOffset >= nextLineOffset)
                         throw new ArgumentException("Bad line alignment in RLE-Zero data!");
@@ -58,7 +58,7 @@ namespace Nyerguds.GameData.Westwood
             using (MemoryStream ms = new MemoryStream())
             {
                 Int32 inputLineOffset = 0;
-                for (Int32 y = 0; y < frameHeight; y++)
+                for (Int32 y = 0; y < frameHeight; ++y)
                 {
                     Int64 lineStartOffs = ms.Position;
                     ms.Position = lineStartOffs + 2;
@@ -71,7 +71,7 @@ namespace Nyerguds.GameData.Westwood
                         {
                             Int32 startOffs = inputOffset;
                             Int32 max = Math.Min(startOffs + 256, nextLineOffset);
-                            for (; inputOffset < max && imageData[inputOffset] == 0; inputOffset++) { }
+                            for (; inputOffset < max && imageData[inputOffset] == 0; ++inputOffset) { }
                             ms.WriteByte(0);
                             Int32 skip = inputOffset - startOffs;
                             ms.WriteByte((Byte)(skip));
@@ -103,12 +103,12 @@ namespace Nyerguds.GameData.Westwood
             Byte[] finalImage = new Byte[fullLength];
             Int32 datalen = fileData.Length;
             Int32 outLineOffset = 0;
-            for (Int32 y = 0; y < frameHeight; y++)
+            for (Int32 y = 0; y < frameHeight; ++y)
             {
                 Int32 outOffset = outLineOffset;
                 Int32 nextLineOffset = outLineOffset + frameWidth;
                 Boolean readZero = false;
-                for (; offset < datalen; offset++)
+                for (; offset < datalen; ++offset)
                 {
                     if (outOffset >= nextLineOffset)
                         break;
@@ -138,7 +138,7 @@ namespace Nyerguds.GameData.Westwood
             using (MemoryStream ms = new MemoryStream())
             {
                 Int32 inputLineOffset = 0;
-                for (Int32 y = 0; y < frameHeight; y++)
+                for (Int32 y = 0; y < frameHeight; ++y)
                 {
                     Int32 inputOffset = inputLineOffset;
                     Int32 nextLineOffset = inputOffset + frameWidth;
@@ -149,7 +149,7 @@ namespace Nyerguds.GameData.Westwood
                         {
                             Int32 startOffs = inputOffset;
                             Int32 max = Math.Min(startOffs + 256, nextLineOffset);
-                            for (; inputOffset < max && imageData[inputOffset] == 0; inputOffset++) { }
+                            for (; inputOffset < max && imageData[inputOffset] == 0; ++inputOffset) { }
                             ms.WriteByte(0);
                             Int32 skip = inputOffset - startOffs;
                             ms.WriteByte((Byte)(skip));

@@ -239,7 +239,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 paletteColors = colors;
                 paletteData = new Byte[paletteColors * 2];
                 Int32 maxEntry = Math.Min(pal.Length, paletteColors);
-                for (Int32 i = 0; i < maxEntry; i++)
+                for (Int32 i = 0; i < maxEntry; ++i)
                     Format16BitRgba5551Be.WriteColor(paletteData, i * 2, pal[i]);
             }
             Int32 paletteOffset = paletteColors == 0 ? 0 : 16 + imageData.Length;
@@ -315,7 +315,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 palSize = maxPalSize;
             Int32 palLen = saveFullPal ? maxPalSize : palSize;
             Color[] entries = new Color[palLen];
-            for (Int32 i = palSize; i < palLen; i++)
+            for (Int32 i = 0; i < palLen; ++i)
             {
                 if (i < palSize)
                     entries[i] = Format16BitRgba5551Be.GetColor(paletteData, i * 2);

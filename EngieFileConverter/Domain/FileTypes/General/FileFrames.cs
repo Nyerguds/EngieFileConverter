@@ -148,7 +148,7 @@ namespace EngieFileConverter.Domain.FileTypes
             baseName = Path.Combine(folder, frName + ext);
             UInt64 fullRange = maxNum - minNum + 1;
             String[] allNames = new String[fullRange];
-            for (UInt64 i = 0; i < fullRange; i++)
+            for (UInt64 i = 0; i < fullRange; ++i)
                 allNames[i] = Path.Combine(folder, namepart + (minNum + i).ToString(numpartFormat) + ext);
             return allNames;
         }
@@ -162,24 +162,26 @@ namespace EngieFileConverter.Domain.FileTypes
             hasEmptyFrames = false;
             String[] frameNames = GetFrameFilesRange(path, out baseName);
             // No file or only one file; not a range. Abort.
-            if (frameNames == null || frameNames.Length == 1)
+            Int32 nrOfFrames;
+            if (frameNames == null || (nrOfFrames = frameNames.Length) == 1)
                 return null;
             if (currentType != null && currentType.IsFramesContainer)
                 return null;
             minName = Path.GetFileName(frameNames[0]);
-            maxName = Path.GetFileName(frameNames[frameNames.Length - 1]);
+            maxName = Path.GetFileName(frameNames[nrOfFrames - 1]);
 
             FileFrames framesContainer = new FileFrames();
             framesContainer.SetFileNames(baseName);
             if (currentType == null)
             {
-                foreach (String framePath in frameNames)
+                for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
+                    String framePath = frameNames[i];
                     if (new FileInfo(framePath).Length == 0)
                         continue;
                     SupportedFileType[] possibleTypes = FileDialogGenerator.IdentifyByExtension<SupportedFileType>(AutoDetectTypes, framePath);
                     List<FileTypeLoadException> loadErrors;
-                    currentType = LoadFileAutodetect(framePath, possibleTypes, out loadErrors, false);
+                    currentType = LoadFileAutodetect(framePath, possibleTypes, false, out loadErrors);
                     break;
                 }
                 // All frames are empty. Not gonna support that.
@@ -191,8 +193,9 @@ namespace EngieFileConverter.Domain.FileTypes
             // 'common palette' logic is started by setting it to True when there is a palette.
             Boolean commonPalette = pal != null && currentType.ColorsInPalette > 0;
             Boolean nullPalette = currentType.ColorsInPalette == 0 || pal == null;
-            foreach (String currentFrame in frameNames)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
+                String currentFrame = frameNames[i];
                 if (new FileInfo(currentFrame).Length == 0)
                 {
                     hasEmptyFrames = true;
@@ -214,6 +217,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     frame.SetBitsPerColor(frameFile.BitsPerPixel);
                     frame.SetFileClass(frameFile.FileClass);
                     frame.SetColorsInPalette(frameFile.ColorsInPalette);
+                    frame.SetExtraInfo(frameFile.ExtraInfo);
                     framesContainer.AddFrame(frame);
                     if (commonPalette)
                         commonPalette = frameFile.GetColors() != null && frameFile.ColorsInPalette > 0 && pal.SequenceEqual(frameFile.GetColors());
@@ -268,11 +272,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean equalPal = framesContainer.FramesHaveCommonPalette;
             Color[] framePal = null;
             Int32 frameBpp = 0;
+            SupportedFileType[] frames = framesContainer.Frames;
+            Int32 nrOfFrames = frames.Length;
             if (!equalPal)
             {
                 Boolean isEqual = true;
-                foreach (SupportedFileType frame in framesContainer.Frames)
+                for (Int32 i = 0; i < nrOfFrames; ++i)
                 {
+                    SupportedFileType frame = frames[i];
                     if (frame == null)
                         continue;
                     if (framePal == null)
@@ -312,9 +319,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 framesToHandle = framesRange.Length;
             Int32 nextPasteFrameIndex = 0;
 
-            for (Int32 i = 0; i < framesContainer.Frames.Length; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                SupportedFileType frame = framesContainer.Frames[i];
+                SupportedFileType frame = frames[i];
                 if (frame == null)
                     continue;
                 Bitmap frBm = frame.GetBitmap();
@@ -384,7 +391,7 @@ namespace EngieFileConverter.Domain.FileTypes
                                 if (!keepInd)
                                 {
                                     imTransMask = imData.Select(px => imPalTrans[px]).ToArray();
-                                    imData = ImageUtils.Match8BitDataToPalette(imData, imStride, imHeight, imPalette, frPalette);
+                                    imData = ImageUtils.Match8BitDataToPalette(imData, imPalette, frPalette);
                                 }
                             }
                             if (keepInd)
@@ -460,7 +467,7 @@ namespace EngieFileConverter.Domain.FileTypes
             newfile.SetPalette(imPalette);
             newfile.SetColorsInPalette(colorsInPal);
             newfile.SetTransparencyMask(null);
-            for (Int32 i = 0; i < framesArr.Length; i++)
+            for (Int32 i = 0; i < framesArr.Length; ++i)
             {
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(newfile, newfile, framesArr[i], imagePath, i);

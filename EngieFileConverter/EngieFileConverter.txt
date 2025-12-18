@@ -78,6 +78,17 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.4.4: (05/06/2019 19:00)
+-Single-image Visage files no longer show their dimensions as 0×0.
+-Optimised the drawing of the palette control.
+-Fixed bug where WSA files continuing from a previous file added messy pixels on the first frame.
+-Fixed bug where zooming out from level 2 using mouse scroll or arrows went to -2 instead of 1.
+-Added support for the Interactive Girls DMP image format.
+-Added support for the DaisyField PIC images format.
+-Added support for the Cover Girl Strip Poker NOVA image format.
+-Added support for the 15 Move Hole BIF image format.
+-Added reading support for the SexTris image format.
+
 v1.4.3: (22/01/2019 18:47)
 -Simplified internal workings of the palette panel
 -Added support for Playstation and Amiga palettes.
@@ -85,7 +96,7 @@ v1.4.3: (22/01/2019 18:47)
 
 v1.4.2: (28/11/2018 12:25)
 -Fixed several issues with CPS and WSA loading.
--Added support for toonStruck 640x480 CPS format.
+-Added support for ToonStruck 640x480 CPS format.
 
 v1.4.1: (16/10/2018 14:42)
 -Compacted the UI to allow showing more additional info.
@@ -93,9 +104,6 @@ v1.4.1: (16/10/2018 14:42)
 -Optimised Dune II and Lands of Lore SHP; they no longer store duplicate frames.
 -Fixed image to frames splitting for indexed images of types lower than 256 colour.
 -Splitting an indexed image into frames now also sets the palette on empty frames.
--Added support for the font format used in C&C1/RA1.
--Added support for the font format used in Tiberian Sun.
--Added support for the font format used in Dune 2000.
 -Added option to save Tiberian Sun SHP as uncompressed; required for the mouse cursor.
 
 v1.4.0: (07/09/2018 13:00)

@@ -55,7 +55,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean equalPalettes = true;
             Byte[] testFrame = ImageUtils.CopyFrom8bpp(imageData, 320, 200, 320, new Rectangle(0, 192, 320, 8));
             Boolean expandBottomFrames = testFrame.Any(p => p != 0);
-            for (Int32 i = 0; i < images; i++)
+            for (Int32 i = 0; i < images; ++i)
             {
                 Int32 index = i * 160;
                 Int32 offsetX = index % 320;
@@ -105,7 +105,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] bottomstrip = ImageUtils.CopyFrom8bpp(imageData, 320, 200, 320, new Rectangle(0, 192, 320, 8));
             Boolean expandBottomFrames = bottomstrip.Any(p => p != 0);
             // Combine images by making each one use a different 32-colour slice of the palette.
-            for (Int32 i = 0; i < amigaPalCount; i++)
+            for (Int32 i = 0; i < amigaPalCount; ++i)
             {
                 Int32 palOffset = i * 32;
                 Int32 index = i * 160;
@@ -116,10 +116,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 offsetYEnd = offsetY + usedFrHeight;
 
                 Int32 offsetRow = offsetY * 320 + offsetX;
-                for (Int32 y = offsetY; y < offsetYEnd; y++)
+                for (Int32 y = offsetY; y < offsetYEnd; ++y)
                 {
                     Int32 offset = offsetRow;
-                    for (Int32 x = offsetX; x < offsetXEnd; x++)
+                    for (Int32 x = offsetX; x < offsetXEnd; ++x)
                     {
                         adjustedData[offset] = (Byte)(imageData[offset] + palOffset);
                         offset++;
@@ -159,9 +159,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 nrOfFrames = fileToSave.Frames.Length;
             Color[] fullPalette = new Color[nrOfFrames*32];
             Byte[] imageData = new Byte[64000];
-            for (Int32 c = 0; c < fullPalette.Length; c++)
+            for (Int32 c = 0; c < fullPalette.Length; ++c)
                 fullPalette[c] = Color.Black;
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap frImage = frame.GetBitmap();

@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new HeaderParseException("No images in given icon.");
                 Int32 offset = hdrSize;
                 this.m_FramesList = new SupportedFileType[nrOfImages];
-                for (Int32 i = 0; i < nrOfImages; i++)
+                for (Int32 i = 0; i < nrOfImages; ++i)
                 {
                     // 0 image width (is 0 for "256")
                     Byte dirEntryWidth = fileData[offset];
@@ -248,7 +248,8 @@ namespace EngieFileConverter.Domain.FileTypes
             List<Int32> bpp = new List<Int32>();
             Int32 maxDim = Math.Max(inputBitmap.Width, inputBitmap.Height);
             // Generate bitmaps for all the sizes and toss them in streams
-            for (Int32 i = 0; i < sizes.Length; i++)
+            Int32 sizesLen = sizes.Length;
+            for (Int32 i = 0; i < sizesLen; ++i)
             {
                 Int32 size = Math.Min(sizes[i], 0x100);
                 if (!upscale && size > maxDim)
@@ -263,7 +264,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte saveWidth = (Byte)(Math.Min(makeSquare ? size : width, 0x100) & 0xFF);
                 Byte saveHeight = (Byte)(Math.Min(makeSquare ? size : height, 0x100) & 0xFF);
                 Boolean skip = false;
-                for (Int32 si = 0; si < images.Count; si++)
+                Int32 imgCount = images.Count;
+                for (Int32 si = 0; si < imgCount; ++si)
                 {
                     if (widths[si] == saveWidth && heights[si] == saveHeight)
                     {
@@ -282,9 +284,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     bpp.Add(Image.GetPixelFormatSize(newBitmap.PixelFormat));
                 }
             }
-            using (BinaryWriter iconWriter = new BinaryWriter(output))
+            using (BinaryWriter iconWriter = new BinaryWriter(new NonDisposingStream(output)))
             {
                 Int32 offset = 0;
+                Int32 imgCount = images.Count;
 
                 // 0-1 reserved, 0
                 iconWriter.Write((Byte)0);
@@ -292,10 +295,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 // 2-3 image type, 1 = icon, 2 = cursor
                 iconWriter.Write((Int16)1);
                 // 4-5 number of images
-                iconWriter.Write((Int16)images.Count);
-                offset += 6 + (16 * images.Count);
-
-                for (Int32 i = 0; i < images.Count; i++)
+                iconWriter.Write((Int16)imgCount);
+                offset += 6 + (16 * imgCount);
+                for (Int32 i = 0; i < imgCount; ++i)
                 {
                     // image entry 1
                     // 0 image width
@@ -316,11 +318,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     iconWriter.Write(offset);
                     offset += images[i].Length;
                 }
-                foreach (Byte[] img in images)
+                for (Int32 i = 0; i < imgCount; i++)
                 {
                     // write image data
                     // png data must contain the whole png data file
-                    iconWriter.Write(img);
+                    iconWriter.Write(images[i]);
                 }
                 iconWriter.Flush();
             }

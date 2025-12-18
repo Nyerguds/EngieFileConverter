@@ -58,8 +58,9 @@ namespace EngieFileConverter.UI.SaveOptions
                 {
                     m_paletteBpp = Int32.Parse(m.Groups[1].Value);
                     String[] paletteStr = m.Groups[2].Value.Split(',');
-                    this.m_Palette = new Color[paletteStr.Length];
-                    for (Int32 i = 0; i < paletteStr.Length; i++)
+                    Int32 palStrLen = paletteStr.Length;
+                    this.m_Palette = new Color[palStrLen];
+                    for (Int32 i = 0; i < palStrLen; ++i)
                         this.m_Palette[i] = ColorUtils.ColorFromHexString(paletteStr[i].Trim());
                 }
                 this.SelectFromSaveData();

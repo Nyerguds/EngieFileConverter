@@ -80,7 +80,7 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void btnOk_Click(object sender, EventArgs e)
+        private void btnOk_Click(Object sender, EventArgs e)
         {
             this.Alpha = (Int32)numAlpha.Value;
         }

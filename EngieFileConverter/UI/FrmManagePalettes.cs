@@ -52,8 +52,10 @@ namespace Nyerguds.Util.UI
         {
             this.subPalettes = new Dictionary<String, List<PaletteDropDownInfo>>();
             FileInfo[] files = new DirectoryInfo(this.appPath).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
-            foreach (FileInfo file in files)
+            Int32 filesLength = files.Length;
+            for (Int32 i = 0; i < filesLength; ++i)
             {
+                FileInfo file = files[i];
                 if (file.Length != 0x300)
                     continue;
                 String name = file.Name;
@@ -62,25 +64,25 @@ namespace Nyerguds.Util.UI
                     // Attempt to read as palette
                     ColorUtils.ReadSixBitPaletteFile(file.FullName);
                 }
-                catch (ArgumentException) { continue; }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
                 List<PaletteDropDownInfo> currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
                 String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(name)) + ".ini";
-                if (this.bpp == 4)
-                {
-                    if (!File.Exists(inipath))
-                        continue;
-                    //IniFile paletteConfig = new IniFile(inipath);
-                    // Trim all unused entries off the end
-                    this.TrimSubPalettes(currentSubPals);
-                }
-                else if (this.bpp == 8)
-                {
-                    if (File.Exists(inipath))
-                        continue;
-                    currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
-                }
-                else
+                if (File.Exists(inipath))
                     continue;
+                switch (this.bpp)
+                {
+                    case 4:
+                        this.TrimSubPalettes(currentSubPals);
+                        break;
+                    case 8:
+                        currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
+                        break;
+                    default:
+                        continue;
+                }
                 this.subPalettes.Add(name, currentSubPals);
             }
             foreach (String key in this.subPalettes.Keys)
@@ -107,6 +109,7 @@ namespace Nyerguds.Util.UI
                 Int32 items = this.ListSubPalettes((this.cmbPalettes.SelectedItem ?? String.Empty).ToString());
                 //this.lbSubPalettes.Focus();
                 this.lbSubPalettes.SelectedIndex = items > 0 ? 0 : -1;
+                return;
             }
             // "Create new" item was selected.
             // Give "save as" dialog? Maybe not, it only works from the program's folder. Just name + existence check, then?
@@ -137,6 +140,7 @@ namespace Nyerguds.Util.UI
             if (isNull)
             {
                 this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count > 1 ? 0 : -1;
+                return;
             }
             if (!newPaletteName.EndsWith(".pal"))
                 newPaletteName += ".pal";
@@ -303,8 +307,8 @@ namespace Nyerguds.Util.UI
 
             Int32 pos = this.lbSubPalettes.SelectedIndex + 1;
             subList.Insert(pos, new PaletteDropDownInfo(newPaletteName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), selectedPal, pos, true, false));
-
-            for (Int32 i = 0; i < subList.Count; i++)
+            Int32 subListCount = subList.Count;
+            for (Int32 i = 0; i < subListCount; ++i)
             {
                 PaletteDropDownInfo info = subList[i];
                 info.Entry = i;
@@ -349,11 +353,11 @@ namespace Nyerguds.Util.UI
             DialogResult dr2 = MessageBox.Show(this, "Are you sure you want to remove this entry?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (dr2 == DialogResult.No)
                 return;
-            String palette = currentPal.SourceFile;
             Int32 entry = currentPal.Entry;
             subList.RemoveAt(this.lbSubPalettes.SelectedIndex);
             this.lbSubPalettes.Items.RemoveAt(this.lbSubPalettes.SelectedIndex);
-            for (Int32 i = 0; i < subList.Count; i++)
+            Int32 subListCount = subList.Count;
+            for (Int32 i = 0; i < subListCount; ++i)
             {
                 PaletteDropDownInfo info = subList[i];
                 info.Entry = i;
@@ -446,8 +450,12 @@ namespace Nyerguds.Util.UI
                 else
                     thisFullPal = Enumerable.Repeat(Color.Black, 256).ToArray();
                 List<PaletteDropDownInfo> subPals = this.subPalettes[palName];
-                foreach (PaletteDropDownInfo subpal in subPals)
+                Int32 subPalsCount = subPals.Count;
+                for (Int32 i = 0; i < subPalsCount; ++i)
+                {
+                    PaletteDropDownInfo subpal = subPals[i];
                     Array.Copy(subpal.Colors, 0, thisFullPal, subpal.Entry * this.nrOfColorsPerPal, this.nrOfColorsPerPal);
+                }
                 ColorUtils.WriteSixBitPaletteFile(thisFullPal, pfile.FullName);
                 String iniPath = Path.Combine(this.appPath, palName.Substring(0, palName.Length - 4)) + ".ini";
                 if (this.bpp == 8)
@@ -460,7 +468,7 @@ namespace Nyerguds.Util.UI
                     IniFile inifile = new IniFile(iniPath);
                     inifile.WriteBackMode = WriteMode.WRITE_ALL;
                     inifile.ClearSectionKeys(INISECTION);
-                    for (Int32 i = 0; i < this.nrOfSubPalettes; i++)
+                    for (Int32 i = 0; i < this.nrOfSubPalettes; ++i)
                     {
                         PaletteDropDownInfo subPal = subPals.Find(x => x.Entry == i);
                         if (subPal != null)

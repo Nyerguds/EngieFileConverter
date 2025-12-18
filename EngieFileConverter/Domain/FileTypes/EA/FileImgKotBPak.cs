@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Imaging;
-using Nyerguds.GameData.Compression;
+using Nyerguds.FileData.Compression;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -33,7 +33,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imageBytes = ImageUtils.GetImageData(image, out stride);
             Int32 lastLineOffs = stride * (height - 1);
             Byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, width, 1, lastLineOffs, 4, true, ref stride);
-            for (Int32 x = 0; x < width; x++)
+            for (Int32 x = 0; x < width; ++x)
                 if (lastLine[x] != 0)
                     return new SaveOption[0];
             return new SaveOption[] { new SaveOption("CUT", SaveOptionType.Boolean, "Trim 0-value lines off the end.", "1") };
@@ -81,6 +81,9 @@ namespace EngieFileConverter.Domain.FileTypes
             // two pixels per byte. So the actual image width is (real stride * 2), or, put differently, (byte width * 8).
             // As mentioned, the bits in such a line of data are four blocks of 1-bpp data, and the single bits of these
             // four lines need to be combined by x-offset, giving the final 4-bit pixel values.
+            
+
+
 
             // Single line length for horizontally-composed image is
             // four "bit frames" with a stride equal to the given byte width.
@@ -96,20 +99,33 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 endHeight = (decompressedLength - 2) / fourLinesStride;
             if (endHeight < imgHeight)
                 this.ExtraInfo = "Data cut off at " + endHeight + " lines";
+
+            Int32 stride;
+            Byte[] imageData = ImageUtils.PlanarLinesToLinear(decompressed, 2, imgWidth, endHeight, 4, byteWidth, 1, 4, out stride);
+            if (endHeight < imgHeight)
+            {
+                Byte[] imageDataExpanded = new Byte[stride * imgHeight];
+                Array.Copy(imageData, 0, imageDataExpanded, 0, imageData.Length);
+                imageData = imageDataExpanded;
+            }
+            this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
+            this.m_LoadedImage = ImageUtils.BuildImage(imageData, imgWidth, imgHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+            
+            /*/
             // Final 1-bit image is four times the image width. Convert to 1 byte per bit for editing convenience.
             Byte[] oneBitQuadImage = ImageUtils.ConvertTo8Bit(decompressed, imgWidth * 4, endHeight, 2, 1, true, ref fourLinesStride);
             // Array for 4-bit image where each byte is one pixel. Will be converted to true 4bpp later.
             Byte[] pixelImage = new Byte[imgWidth * imgHeight];
             // Combine the bits into the new array.
             Int32 lineOffset = 0;
-            for (Int32 y = 0; y < endHeight; y++)
+            for (Int32 y = 0; y < endHeight; ++y)
             {
                 Int32 offset1 = fourLinesStride * y;
                 Int32 offset2 = offset1 + imgWidth;
                 Int32 offset3 = offset2 + imgWidth;
                 Int32 offset4 = offset3 + imgWidth;
                 Int32 realOffset = lineOffset;
-                for (Int32 x = 0; x < imgWidth; x++)
+                for (Int32 x = 0; x < imgWidth; ++x)
                 {
                     // Take the 4 bits by skipping imgWidth bytes for each next one.
                     Byte bit1 = oneBitQuadImage[offset1 + x];
@@ -125,6 +141,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] fourbitImage = ImageUtils.ConvertFrom8Bit(pixelImage, imgWidth, imgHeight, 4, true, ref stride);
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
             this.m_LoadedImage = ImageUtils.BuildImage(fourbitImage, imgWidth, imgHeight, stride, PixelFormat.Format4bppIndexed, this.m_Palette, null);
+            //*/
         }
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
@@ -160,7 +177,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     Int32 offset = stride * y;
                     Boolean isEmpty = true;
-                    for (Int32 x = 0; x < stride; x++)
+                    for (Int32 x = 0; x < stride; ++x)
                     {
                         if (eightbitImage[offset + x] == 0)
                             continue;
@@ -174,14 +191,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             Byte[] oneBitQuadImage = new Byte[eightBitWidth * imgHeight];
-            for (Int32 y = 0; y < imgHeight; y++)
+            for (Int32 y = 0; y < imgHeight; ++y)
             {
                 Int32 offset = alignedWidth * y;
                 Int32 finalOffset = eightBitWidth * y;
-                for (Int32 x = 0; x < alignedWidth; x++)
+                for (Int32 x = 0; x < alignedWidth; ++x)
                 {
                     // Split up and write the 4 bits.
-                    for (Int32 i = 0; i < 4; i++)
+                    for (Int32 i = 0; i < 4; ++i)
                         oneBitQuadImage[finalOffset + imgWidth * i + x] = (Byte)((eightbitImage[offset + x] >> i) & 1);
                 }
             }

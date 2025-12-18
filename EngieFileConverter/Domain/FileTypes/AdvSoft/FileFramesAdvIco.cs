@@ -64,7 +64,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_FramesList = new SupportedFileType[frames];
             this.m_Palette = PaletteUtils.GenerateGrayPalette(4, null, false);
             Int32 frameSize = iconWidth * iconHeight;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 Int32 offset = i * iconDataSize;
                 Byte[] frameData = new Byte[iconDataSize];
@@ -73,7 +73,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] frame8bit1 = ImageUtils.ConvertTo8Bit(frameData, iconWidth, iconDataHeight, 0, 1, true, ref stride);
                 Byte[] frame8bit4 = new Byte[frameSize];
                 // Go over all pixels of the image, and combine them per 4.
-                for (Int32 fr = 0; fr < frameSize; fr++)
+                for (Int32 fr = 0; fr < frameSize; ++fr)
                 {
                     frame8bit4[fr] = (Byte)((frame8bit1[fr] << 3) | (frame8bit1[frameSize + fr] << 2) | (frame8bit1[frameSize * 2 + fr] << 1) | frame8bit1[frameSize * 3 + fr]);
                 }
@@ -132,7 +132,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 frames = fileToSave.Frames.Length;
                 imageDataFull8 = new Byte[frames * framePixSize];
-                for (Int32 i = 0; i < fileToSave.Frames.Length; i++)
+                for (Int32 i = 0; i < fileToSave.Frames.Length; ++i)
                 {
                     SupportedFileType frame = fileToSave.Frames[i];
                     Bitmap frameImage = frame.GetBitmap();
@@ -147,11 +147,11 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             // Create the 1-bit array with each frame split into four planes.
             Byte[] fileData8 = new Byte[imageDataFull8.Length * 4];
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 Int32 frameAddr = framePixSize * i;
                 Int32 frameAddr4 = frameAddr * 4;
-                for (Int32 j = 0; j < framePixSize; j++)
+                for (Int32 j = 0; j < framePixSize; ++j)
                 {
                     Byte fourbitpixel = imageDataFull8[frameAddr + j];
                     fileData8[frameAddr4 /* + framePixSize * 0 */ + j] = (Byte)((fourbitpixel >> 3) & 1);

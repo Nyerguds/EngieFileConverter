@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 rep = fileData[i+1];
                 if (rep == 0)
                     throw new FileTypeLoadException("Repetition value 0 encountered. Not a KORT image file.");
-                for (UInt32 replen = 0; replen < rep; replen++)
+                for (UInt32 replen = 0; replen < rep; ++replen)
                 {
                     if (destOffs >= len)
                         throw new FileTypeLoadException("Decoded image does not fit in 320×240!");
@@ -79,7 +79,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] imageData = ImageUtils.GetImageData(image, out stride, true);
             Int32 dataLen = imageData.Length;
             Byte[] flippedData = new Byte[dataLen];
-            for (Int32 y = 0; y < this.Height; y++)
+            for (Int32 y = 0; y < this.Height; ++y)
                 Array.Copy(imageData, (this.Height - 1 - y) * this.Width, flippedData, y * this.Width, this.Width);
             Byte[] comprData = new Byte[dataLen * 2];
             Int32 inPtr = 0;
@@ -89,7 +89,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 start = inPtr;
                 Int32 end = Math.Min(inPtr + 0xFF, dataLen);
                 Byte cur = flippedData[inPtr];
-                for (; inPtr < end && flippedData[inPtr] == cur; inPtr++) { }
+                for (; inPtr < end && flippedData[inPtr] == cur; ++inPtr) { }
                 comprData[outPtr++] = cur;
                 comprData[outPtr++] = (Byte)(inPtr - start);
             }

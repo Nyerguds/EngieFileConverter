@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -98,7 +98,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 try
                 {
                     this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, hdrSize + offsSize * (hdrFrames + 2)));
-                    PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
+                    PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                 }
                 catch (ArgumentException argex)
                 {
@@ -127,7 +127,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 lastKeyFrameNr = 0;
             OffsetInfo lastKeyFrame = currentFrame;
             Int32 frameOffs = currentFrame.DataOffset;
-            for (Int32 i = 0; i < hdrFrames; i++)
+            for (Int32 i = 0; i < hdrFrames; ++i)
             {
                 Int32 realIndex = -1;
                 if (!offsetIndices.ContainsKey(currentFrame.DataOffset))
@@ -228,7 +228,11 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         extraInfo.Append("XOR ");
                         if (frameOffsFormat == CcShpFrameFormat.XorChain)
-                            extraInfo.Append("chained from frame ").Append(refIndex20);
+                        {
+                            extraInfo.Append("chained from ").Append(refIndex20);
+                            if (refIndex20 != i - 1)
+                                extraInfo.Append(" - ").Append(i - 1);
+                        }
                         else if (refIndex >= 0)
                             extraInfo.Append("with key frame " + refIndex);
                         else
@@ -261,6 +265,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate LCW frames", "1"),
                 new SaveOption("FDL", SaveOptionType.Boolean, "Save all frames that have duplicates as LCW to allow more trimming. Useful on small graphics with many duplicates.", null, "0", new SaveEnableFilter("TDL", false, "1")),
+                new SaveOption("LMX", SaveOptionType.Boolean, "Limit XOR chaining length by comparing full XOR chain size to the size of its XOR base frame", null, "1")
             };
         }
 
@@ -271,6 +276,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.PerformPreliminaryChecks(ref fileToSave, out width, out height);
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean forceDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "FDL"));
+            Boolean chainedSizeCheck = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "LMX"));
 
             Int32 frames = fileToSave.Frames.Length;
             Int32 hdrSize = 0x0E;
@@ -290,10 +296,10 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32[] frameOffsets = new Int32[frames];
             Int32[] framesDup = new Int32[frames];
             Boolean[] framesDupSrc = new Boolean[frames];
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
                 framesDup[i] = -1;
             // Get these in advance. Will need them all in the end anyway.
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 Int32 stride;
                 Byte[] uncompr = ImageUtils.GetImageData(fileToSave.Frames[i].GetBitmap(), out stride, true);
@@ -301,7 +307,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 // Detect identical frames.
                 if (!trimDuplicates)
                     continue;
-                for (Int32 j = 0; j < i; j++)
+                for (Int32 j = 0; j < i; ++j)
                 {
                     if (framesDup[j] != -1 || !uncompr.SequenceEqual(framesUncompr[j]))
                         continue;
@@ -319,6 +325,9 @@ namespace EngieFileConverter.Domain.FileTypes
             frameOffsets[0] = curDataOffs;
             curDataOffs += comprLCW.Length;
 
+            Int32 lastChainStartLen = 0;//comprLCW.Length;
+            Int32 curChainLen = 0;
+
             // Overall strategy:
             // -Check compression and see which is smallest:
             //    1. LCW -> new keyframe
@@ -326,7 +335,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //    3. XORChain with previous if previous is XORBase or XORChain: XORChain -> chain back and store index of XORBase frame in ref field of OffsetInfo
             // -Take smallest result.
 
-            for (Int32 i = 1; i < frames; i++)
+            for (Int32 i = 1; i < frames; ++i)
             {
                 Int32 duplicate = framesDup[i];
                 // Currently only doing this for LCW frames since compressed lcw of the same frame data is guaranteed to be the same, which is not true for XOR.
@@ -351,7 +360,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 comprLCWLen = comprLCW.Length;
                 Int32 comprXORBaseLen = comprXORBase == null ? Int32.MaxValue : comprXORBase.Length;
                 Int32 comprXORChainLen = comprXORChain == null ? Int32.MaxValue : comprXORChain.Length;
-                Int32 comprMin = Math.Min(Math.Min(comprLCWLen, comprXORBaseLen), comprXORChainLen);
+                Int32 comprMin = Math.Min(comprLCWLen, comprXORBaseLen);
+                if (comprXORChainLen != Int32.MaxValue && (!chainedSizeCheck || comprXORChainLen + curChainLen < lastChainStartLen))
+                    comprMin = Math.Min(comprMin, comprXORChainLen);
                 // Possible extra optimisation: check all previous entries in framescompr and see if any are identical to the data in any of these 3 methods.
                 // Would take some time, though.
                 if (comprLCWLen == comprMin)
@@ -360,12 +371,16 @@ namespace EngieFileConverter.Domain.FileTypes
                     framesIndex[i] = new OffsetInfo(curDataOffs, CcShpFrameFormat.Lcw, 0, CcShpFrameFormat.Empty);
                     framescompr[i] = comprLCW;
                     keyFrame = i;
+                    //lastChainStartLen = comprLCWLen;
                 }
                 else if (comprXORBaseLen == comprMin)
                 {
                     //XOR against key frame: XORBase
                     framesIndex[i] = new OffsetInfo(curDataOffs, CcShpFrameFormat.XorBase, frameOffsets[keyFrame], CcShpFrameFormat.Lcw);
                     framescompr[i] = comprXORBase;
+                    lastChainStartLen = comprXORBaseLen;
+                    //curChainLen = comprXORBaseLen;
+                    curChainLen = 0;
                 }
                 else if (comprXORChainLen == comprMin)
                 {
@@ -375,6 +390,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         xorChainBase--;
                     framesIndex[i] = new OffsetInfo(curDataOffs, CcShpFrameFormat.XorChain, xorChainBase, CcShpFrameFormat.XorChainRef);
                     framescompr[i] = comprXORChain;
+                    curChainLen += comprXORChainLen;
                 }
                 frameOffsets[i] = curDataOffs;
                 curDataOffs += comprMin;
@@ -387,7 +403,7 @@ namespace EngieFileConverter.Domain.FileTypes
             ArrayUtils.WriteIntToByteArray(header, 0x0A, 2, true, (UInt16) maxDeltaSize);
             header.CopyTo(finalData, 0);
             Int32 indexOffs = hdrSize;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 framesIndex[i].Write(finalData, indexOffs);
                 indexOffs += 8;
@@ -403,22 +419,21 @@ namespace EngieFileConverter.Domain.FileTypes
         private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height)
         {
             // Preliminary checks
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-            {
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-            }
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
+            if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
             width = -1;
             height = -1;
-            foreach (SupportedFileType frame in fileToSave.Frames)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                if (frame == null)
+                SupportedFileType frame = frames[i];
+                if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("SHP can't handle empty frames!");
                 if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("Not all frames in input type are 8-bit images!");
+                    throw new NotSupportedException("This format needs 8bpp images.");
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;

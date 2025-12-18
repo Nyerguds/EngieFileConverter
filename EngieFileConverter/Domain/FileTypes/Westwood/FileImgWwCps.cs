@@ -2,8 +2,8 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
-using Nyerguds.GameData.Compression;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Compression;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System.Text;
@@ -222,7 +222,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     Color[] pal = new Color[32];
                     Int32 offs = 40000;
-                    for (Int32 i = 0; i < 32; i++)
+                    for (Int32 i = 0; i < 32; ++i)
                     {
                         pal[i] = Format16BitRgbX444Be.GetColor(imageData, offs);
                         offs += 2;
@@ -233,10 +233,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] imageData8bit = new Byte[64000];
                 Int32[] frameOffs = new Int32[5];
                 Int32 planeSize = 8000;
-                for (Int32 i = 0; i < 5; i++)
+                for (Int32 i = 0; i < 5; ++i)
                     frameOffs[i] = i * planeSize;
 
-                for (Int32 i = 0; i < imageData8bit.Length; i++)
+                for (Int32 i = 0; i < imageData8bit.Length; ++i)
                 {
 
                     Int32 bytePos = i >> 3; // Bitwise optimisation of 'i / 8'
@@ -321,9 +321,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 Byte[] imageDataPlanes = new Byte[bufSize];
                 Int32[] frameOffs = new Int32[5];
                 Int32 planeSize = 8000;
-                for (Int32 i = 0; i < 5; i++)
+                for (Int32 i = 0; i < 5; ++i)
                     frameOffs[i] = i * planeSize;
-                for (Int32 i = 0; i < imageData.Length; i++)
+                for (Int32 i = 0; i < imageData.Length; ++i)
                 {
                     Int32 bytePos = i >> 3; // Bitwise optimisation of 'i / 8'
                     Int32 bitPos = 7 - (i & 7); // Bitwise optimisation of '7 - (i % 8)'
@@ -342,7 +342,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (amigaPal)
                 {
                     Int32 palOffset = 40000;
-                    for (Int32 i = 0; i < 32; i++)
+                    for (Int32 i = 0; i < 32; ++i)
                     {
                         UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
                         ArrayUtils.WriteIntToByteArray(imageDataPlanes, palOffset, 2, false, col);
@@ -409,7 +409,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     Int32 palLen = savePalettes * 32;
                     palData = new Byte[palLen * 2];
-                    for (Int32 i = 0; i < palLen; i++)
+                    for (Int32 i = 0; i < palLen; ++i)
                     {
                         UInt16 col = (UInt16)Format16BitRgbX444Be.GetValueFromColor(palette[i]);
                         ArrayUtils.WriteIntToByteArray(palData, i * 2, 2, false, col);

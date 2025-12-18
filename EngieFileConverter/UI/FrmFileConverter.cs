@@ -11,6 +11,7 @@ using System.Threading;
 using System.Windows.Forms;
 using EngieFileConverter.Domain.FileTypes;
 using EngieFileConverter.Domain.HeightMap;
+using System.Text;
 
 namespace EngieFileConverter.UI
 {
@@ -47,7 +48,8 @@ namespace EngieFileConverter.UI
         {
             this.InitializeComponent();
             this.Text = GetTitle(true);
-            PalettePanel.InitPaletteControl(0, this.palColorViewer, new Color[0], PALETTE_DIM);
+            PalettePanel.InitPaletteControl(8, this.palColorViewer, new Color[256], PALETTE_DIM);
+            this.palColorViewer.Visible = false;
             this.m_DefaultPalettes = this.LoadDefaultPalettes();
             this.m_ReadPalettes = this.LoadExtraPalettes();
             this.RefreshPalettes(false, false);
@@ -165,7 +167,7 @@ namespace EngieFileConverter.UI
                     if (selectedType == null)
                     {
                         List<FileTypeLoadException> loadErrors;
-                        loadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, out loadErrors, error != null);
+                        loadedFile = SupportedFileType.LoadFileAutodetect(fileData, path, preferredTypes, error != null, out loadErrors);
                         if (loadedFile != null)
                             error = null;
                         else
@@ -246,9 +248,11 @@ namespace EngieFileConverter.UI
             SupportedFileType fr = FileFrames.CheckForFrames(path, currentType, out minName, out maxName, out hasEmptyFrames);
             if (fr == null)
                 return currentType;
-            String emptywarning = hasEmptyFrames ? "\nSome of these frames are empty files. Not every save format supports empty frames." : String.Empty;
-            String message = "The file appears to be part of a range (" + minName + " - " + maxName + ")." + emptywarning + "\n\nDo you wish to load the frames from all files?";
-            DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            StringBuilder message = new StringBuilder("The file appears to be part of a range (").Append(minName).Append(" - ").Append(maxName).Append(").");
+            if (hasEmptyFrames)
+                message.Append("\nSome of these frames are empty files. Not every save format supports empty frames.");
+            message.Append("\n\nDo you wish to load the frames from all files?");
+            DialogResult dr = (DialogResult)this.Invoke(new InvokeDelegateMessageBox(this.ShowMessageBox), message.ToString(), MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (dr == DialogResult.Yes)
             {
                 currentType.Dispose();
@@ -269,13 +273,18 @@ namespace EngieFileConverter.UI
             Int32 maxHeight = maxSize.Height;
             Int32 minZoomFactor = Int32.MaxValue;
             // Build list of images to check
-            List<Bitmap> framesToCheck = new List<Bitmap>();
-            framesToCheck.Add(this.m_LoadedFile.GetBitmap());
+            List<SupportedFileType> framesToCheck = new List<SupportedFileType>();
+            framesToCheck.Add(this.m_LoadedFile);
             if (this.m_LoadedFile.Frames != null)
-                framesToCheck.AddRange(this.m_LoadedFile.Frames.Select(x => x == null ? null : x.GetBitmap()));
-            foreach (Bitmap image in framesToCheck)
+                framesToCheck.AddRange(this.m_LoadedFile.Frames);
+            Int32 nrToCheck = framesToCheck.Count;
+            for (Int32 i = 0; i < nrToCheck; ++i)
             {
-                Int32 zoomFactor = image == null ? Int32.MaxValue : Math.Max(1, Math.Min(maxWidth / image.Width, maxHeight / image.Height));
+                SupportedFileType sf = framesToCheck[i];
+                Bitmap image;
+                if (sf == null || (image = sf.GetBitmap()) == null)
+                    continue;
+                Int32 zoomFactor = Math.Max(1, Math.Min(maxWidth / image.Width, maxHeight / image.Height));
                 minZoomFactor = Math.Min(zoomFactor, minZoomFactor);
             }
             if (minZoomFactor == Int32.MaxValue)
@@ -345,8 +354,8 @@ namespace EngieFileConverter.UI
                 this.btnResetPalette.Enabled = false;
                 this.btnSavePalette.Enabled = false;
                 this.pzpImage.Image = null;
-                PalettePanel.InitPaletteControl(0, this.palColorViewer, new Color[0], PALETTE_DIM);
-                this.palColorViewer.MaxColors = 0;
+                PalettePanel.InitPaletteControl(8, this.palColorViewer, new Color[256], PALETTE_DIM);
+                this.palColorViewer.Visible = false;
                 this.RemoveProcessingLabel();
                 return;
             }
@@ -359,7 +368,7 @@ namespace EngieFileConverter.UI
             Color[] palette = loadedFile.GetColors();
             Int32 exposedColours = loadedFile.ColorsInPalette;
             Int32 actualColors = palette == null ? 0 : palette.Length;
-            Boolean needsPalette = bpc != 0 && bpc <= 8 && exposedColours != actualColors;
+            Boolean needsPalette = loadedFile.NeedsPalette();
             this.lblValColorsInPal.Text = actualColors + (needsPalette ? " (" + exposedColours + " in file)" : String.Empty);
             this.lblValInfo.Text = GeneralUtils.DoubleFirstAmpersand(loadedFile.ExtraInfo);
             this.cmbPalettes.Enabled = needsPalette;
@@ -396,7 +405,7 @@ namespace EngieFileConverter.UI
                 this.m_ReadPalettes = this.LoadExtraPalettes();
             allPalettes.AddRange(this.m_ReadPalettes.Where(p => p.BitsPerPixel == bpp));
             foreach (PaletteDropDownInfo info in allPalettes)
-                info.Colors = PaletteUtils.ApplyTransparencyGuide(info.Colors, typeTransModifier);
+                info.Colors = PaletteUtils.ApplyPalTransparencyMask(info.Colors, typeTransModifier);
             return allPalettes;
         }
 
@@ -405,8 +414,9 @@ namespace EngieFileConverter.UI
             List<PaletteDropDownInfo> palettes = new List<PaletteDropDownInfo>();
             String appFolder = Path.GetDirectoryName(Application.ExecutablePath);
             FileInfo[] files = new DirectoryInfo(appFolder).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
-            foreach (FileInfo file in files)
-                palettes.AddRange(PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(file, false, false, true));
+            Int32 filesLength = files.Length;
+            for (Int32 i = 0; i < filesLength; ++i)
+                palettes.AddRange(PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(files[i], false, false, true));
             return palettes;
         }
 
@@ -438,6 +448,7 @@ namespace EngieFileConverter.UI
             SupportedFileType loadedFile = isFrame ? this.m_LoadedFile.Frames[(Int32) this.numFrame.Value] : this.m_LoadedFile;
             Type selectType = frames ? typeof (FileImagePng) : loadedFile.GetType();
             Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
+            Int32 nrOfSaveTypes = saveTypes.Length;
             FileClass loadedFileType = loadedFile.FileClass;
             FileClass frameFileType = FileClass.None;
             if (hasFrames && !isFrame)
@@ -447,8 +458,9 @@ namespace EngieFileConverter.UI
                     frameFileType = first.FileClass;
             }
             List<Type> filteredTypes = new List<Type>();
-            foreach (Type saveType in saveTypes)
+            for (Int32 i = 0; i < nrOfSaveTypes; ++i)
             {
+                Type saveType = saveTypes[i];
                 SupportedFileType tmpsft = (SupportedFileType) Activator.CreateInstance(saveType);
                 FileClass diff = tmpsft.InputFileClass & (frames ? frameFileType : loadedFileType);
                 if ((diff & ~FileClass.FrameSet) != 0 || (!frames && (tmpsft.FrameInputFileClass & frameFileType) != 0))
@@ -474,19 +486,20 @@ namespace EngieFileConverter.UI
             String filename = FileDialogGenerator.ShowSaveFileFialog(this, selectType, filteredTypes.ToArray(), false, true, loadedFile.LoadedFile, out selectedItem);
             if (filename == null || selectedItem == null)
                 return;
-            SaveOption[] saveOptions = selectedItem.GetSaveOptions(loadedFile, filename);
+            SaveOption[] saveOptions;
             try
             {
+                saveOptions = selectedItem.GetSaveOptions(loadedFile, filename);
                 if (saveOptions != null && saveOptions.Length > 0)
                 {
                     SaveOptionInfo soi = new SaveOptionInfo();
                     soi.Name = GeneralUtils.DoubleFirstAmpersand("Extra save options for " + selectedItem.ShortTypeDescription);
                     soi.Properties = saveOptions;
-                    FrmExtraOptions extraopts = new FrmExtraOptions();
-                    extraopts.Init(soi);
-                    if (extraopts.ShowDialog(this) != DialogResult.OK)
+                    FrmExtraOptions frmExtraOpts = new FrmExtraOptions();
+                    frmExtraOpts.Init(soi);
+                    if (frmExtraOpts.ShowDialog(this) != DialogResult.OK)
                         return;
-                    saveOptions = extraopts.GetSaveOptions();
+                    saveOptions = frmExtraOpts.GetSaveOptions();
                 }
             }
             catch (NotSupportedException ex)
@@ -494,6 +507,7 @@ namespace EngieFileConverter.UI
                 String message = "Cannot save " + (frames ? "frame of " : String.Empty) + "type " + loadedFile.ShortTypeName
                                  + " as type " + selectedItem.ShortTypeName + (String.IsNullOrEmpty(ex.Message) ? "." : ":\n" + ex.Message);
                 MessageBox.Show(this, message, GetTitle(false), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
             Object[] arrParams =
                 {//Arguments: func returning SupportedFileType, reload as new, reset auto-zoom, process type indication string.
@@ -516,7 +530,7 @@ namespace EngieFileConverter.UI
                         return null;
                     String framename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename));
                     String extension = Path.GetExtension(filename);
-                    for (Int32 i = 0; i < loadedFile.Frames.Length; i++)
+                    for (Int32 i = 0; i < loadedFile.Frames.Length; ++i)
                     {
                         SupportedFileType frame = loadedFile.Frames[i];
                         String framePath = framename + "-" + i.ToString("D5") + extension;
@@ -638,7 +652,10 @@ namespace EngieFileConverter.UI
             {
                 bpp = 0;
             }
-            PalettePanel.InitPaletteControl(bpp, this.palColorViewer, pal, PALETTE_DIM);
+            Boolean showPal = bpp > 0 && bpp <= 8;
+            palColorViewer.Visible = showPal;
+            if (showPal)
+                PalettePanel.InitPaletteControl(bpp, this.palColorViewer, pal, PALETTE_DIM);
         }
         
         private void numFrame_ValueChanged(Object sender, EventArgs e)
@@ -1055,16 +1072,28 @@ namespace EngieFileConverter.UI
 
         private void TsmiFramesToSingleImageClick(Object sender, EventArgs e)
         {
-            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0)
+            if (this.m_LoadedFile == null)
                 return;
-            Bitmap[] frameImages = this.m_LoadedFile.Frames.Select(fr => fr.GetBitmap()).ToArray();
+            SupportedFileType[] frames = m_LoadedFile.Frames;
+            Int32 nrOfframes;
+            if (frames == null || (nrOfframes = frames.Length) == 0)
+                return;
+            Bitmap[] frameImages = new Bitmap[nrOfframes];
             PixelFormat highestPf = PixelFormat.Undefined;
             Int32 highestBpp = 0;
             Color[] palette = null;
-            foreach (Bitmap img in frameImages)
+            Int32 maxWidth = 0;
+            Int32 maxHeight = 0;
+            for (Int32 i = 0; i < nrOfframes; ++i)
             {
+                Bitmap img = frames[i].GetBitmap();
                 if (img == null)
                     continue;
+                frameImages[i] = img;
+                if (img.Width > maxWidth)
+                    maxWidth = img.Width;
+                if (img.Height > maxHeight)
+                    maxHeight = img.Height;
                 PixelFormat curPf = img.PixelFormat;
                 Int32 curBpp = Image.GetPixelFormatSize(curPf);
                 if (curBpp <= highestBpp)
@@ -1076,9 +1105,6 @@ namespace EngieFileConverter.UI
             }
             if (highestBpp == 0)
                 return;
-            Int32 maxWidth = frameImages.Select(p => p == null ? 0 : p.Width).Max();
-            Int32 maxHeight = frameImages.Select(p => p == null ? 0 : p.Height).Max();
-            Int32 frames = frameImages.Length;
             SaveOption[] so = new SaveOption[4];
             Boolean hasAlpha = true;
             Boolean hasSimpleTrans = false;
@@ -1098,7 +1124,7 @@ namespace EngieFileConverter.UI
             }
             so[0] = new SaveOption("FRW", SaveOptionType.Number, "Frame width", maxWidth + ",", maxWidth.ToString());
             so[1] = new SaveOption("FRH", SaveOptionType.Number, "Frame height", maxHeight + ",", maxHeight.ToString());
-            so[2] = new SaveOption("FPL", SaveOptionType.Number, "Frames per line", "1," + frames, ((Int32) Math.Sqrt(frames)).ToString());
+            so[2] = new SaveOption("FPL", SaveOptionType.Number, "Frames per line", "1," + nrOfframes, ((Int32)Math.Sqrt(nrOfframes)).ToString());
             if (highestBpp <= 8)
                 so[3] = new SaveOption("BGI", SaveOptionType.Palette, "Background colour around frames", highestBpp + "|" + paletteStr, "0");
             else
@@ -1450,212 +1476,12 @@ namespace EngieFileConverter.UI
             return MessageBox.Show(this, message, GetTitle(false), buttons, icon);
         }
 
-#if DEBUG
-        private void ViewKortExeIcons()
-        {
-            // Icons data from inside the King Arthur's K.O.R.T. exe file.
-            Byte[] oneBppImage = new Byte[] {
-                0xFF, 0x1F, 0xFF, 0x0F, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFF, 0x00, 0x7F, 0x00, 0x3F, 0x00, 
-                0x1F, 0x00, 0x3F, 0x00, 0xFF, 0x01, 0xFF, 0x01, 0xFF, 0xE0, 0xFF, 0xF0, 0xFF, 0xF8, 0xFF, 0xF8, 
-                0x00, 0x00, 0x00, 0x40, 0x00, 0x60, 0x00, 0x70, 0x00, 0x78, 0x00, 0x7C, 0x00, 0x7E, 0x00, 0x7F, 
-                0x80, 0x7F, 0x00, 0x7C, 0x00, 0x4C, 0x00, 0x06, 0x00, 0x06, 0x00, 0x03, 0x00, 0x03, 0x00, 0x00, 
-                0xF0, 0xFF, 0xE0, 0xFF, 0xC0, 0xFF, 0x81, 0xFF, 0x03, 0xFF, 0x07, 0x06, 0x0F, 0x00, 0x1F, 0x00, 
-                0x3F, 0x80, 0x7F, 0xC0, 0xFF, 0xE0, 0xFF, 0xF1, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
-                0x00, 0x00, 0x06, 0x00, 0x0C, 0x00, 0x18, 0x00, 0x30, 0x00, 0x60, 0x00, 0xC0, 0x70, 0x80, 0x39, 
-                0x00, 0x1F, 0x00, 0x0E, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-                0x1F, 0xF0, 0x0F, 0xE0, 0x07, 0xC0, 0x03, 0x80, 0x41, 0x04, 0x61, 0x0C, 0x81, 0x03, 0x81, 0x03, 
-                0x81, 0x03, 0x61, 0x0C, 0x41, 0x04, 0x03, 0x80, 0x07, 0xC0, 0x0F, 0xE0, 0x10, 0xF0, 0xFF, 0xFF, 
-                0x00, 0x00, 0xC0, 0x07, 0x20, 0x09, 0x10, 0x11, 0x08, 0x21, 0x04, 0x40, 0x04, 0x40, 0x3C, 0x78, 
-                0x04, 0x40, 0x04, 0x40, 0x08, 0x21, 0x10, 0x11, 0x20, 0x09, 0xC0, 0x07, 0x00, 0x00, 0x00, 0x00, 
-                0xFF, 0xF3, 0xFF, 0xE1, 0xFF, 0xE1, 0xFF, 0xE1, 0xFF, 0xE1, 0x49, 0xE0, 0x00, 0xE0, 0x00, 0x80, 
-                0x00, 0x00, 0x00, 0x00, 0xFC, 0x07, 0xF8, 0x07, 0xF9, 0x9F, 0xF1, 0x8F, 0x03, 0xC0, 0x00, 0xE0, 
-                0x00, 0x0C, 0x00, 0x12, 0x00, 0x12, 0x00, 0x12, 0x00, 0x12, 0xB6, 0x13, 0x49, 0x12, 0x49, 0x72, 
-                0x49, 0x92, 0x01, 0x90, 0x01, 0x90, 0x01, 0x80, 0x02, 0x40, 0x02, 0x40, 0x04, 0x20, 0xF8, 0x1F, 
-                0xFF, 0x8F, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFB, 0x80, 0x71, 0xC0, 0x31, 0xE0, 0x11, 0xF0, 
-                0x01, 0xF8, 0x03, 0xFC, 0x07, 0xFE, 0x03, 0xFF, 0x01, 0xF8, 0x20, 0xF0, 0x70, 0xF8, 0xF9, 0xFF, 
-                0x00, 0x00, 0x00, 0x70, 0x00, 0x78, 0x00, 0x5C, 0x00, 0x2E, 0x04, 0x17, 0x84, 0x0B, 0xC4, 0x05, 
-                0xEC, 0x02, 0x78, 0x01, 0xB0, 0x00, 0x68, 0x00, 0xD4, 0x00, 0x8A, 0x07, 0x04, 0x00, 0x00, 0x00, 
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
-                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 
-                0x00, 0x00, 0x6A, 0x69, 0x4C, 0x49, 0x4C, 0x49, 0x6A, 0x6D, 0x00, 0x00, 0xE0, 0x0E, 0xA0, 0x04, 
-                0xA0, 0x04, 0xE0, 0x04, 0x00, 0x00, 0xAE, 0x6E, 0xA4, 0x4A, 0xE4, 0x4A, 0xA4, 0x6E, 0x00, 0x00 };
-
-            Color[] palette = new Color[4];
-            palette[0] = Color.Black;
-            palette[1] = Color.FromArgb(0, Color.Fuchsia);
-            palette[2] = Color.White;
-            palette[3] = Color.Red;
-            ColorPalette pal = BitmapHandler.GetPalette(palette);
-            Int32 frames = oneBppImage.Length / 64;
-            Int32 fullWidth = 16;
-            Int32 fullHeight = frames * 16;
-            Int32 fullStride = 16;
-            Byte[] fullImage = new Byte[fullStride * fullHeight];
-            FileFrames framesContainer = new FileFrames();
-            for (Int32 i = 0; i < frames; i ++)
-            {
-                Int32 start = i * 64;
-                Int32 start2 = start + 32;
-                Byte[] curImage1 = new Byte[32];
-                for (Int32 j = 0; j < 32; j += 2)
-                {
-                    curImage1[j] = oneBppImage[start + j + 1];
-                    curImage1[j + 1] = oneBppImage[start + j];
-                }
-                Int32 stride1 = 2;
-                curImage1 = ImageUtils.ConvertTo8Bit(curImage1, 16, 16, 0, 1, true, ref stride1);
-
-                Byte[] curImage2 = new Byte[32];
-                for (Int32 j = 0; j < 32; j += 2)
-                {
-                    curImage2[j] = oneBppImage[start2 + j + 1];
-                    curImage2[j + 1] = oneBppImage[start2 + j];
-                }
-                Int32 stride2 = 2;
-                curImage2 = ImageUtils.ConvertTo8Bit(curImage2, 16, 16, 0, 1, true, ref stride2);
-
-                Byte[] imageFinal = new Byte[256];
-                Int32 strideFinal = 16;
-                for (Int32 j = 0; j < 256; j++)
-                {
-                    imageFinal[j] = (Byte)((curImage2[j] << 1) | curImage1[j]);
-                }
-                ImageUtils.PasteOn8bpp(fullImage, fullWidth, fullHeight, fullWidth, imageFinal, 16, 16, strideFinal, new Rectangle(0, i * 16, 16, 16), null, true);
-                imageFinal = ImageUtils.ConvertFrom8Bit(imageFinal, 16, 16, 4, true, ref strideFinal);
-                Bitmap frameImage = ImageUtils.BuildImage(imageFinal, 16,16,strideFinal, PixelFormat.Format4bppIndexed, palette, Color.Empty);
-                frameImage.Palette = pal;
-                
-
-                FileImageFrame frame = new FileImageFrame();
-                frame.LoadFileFrame(framesContainer, "Icon", frameImage, "Icon" + i.ToString("D3") + ".png", -1);
-                frame.SetBitsPerColor(2);
-                frame.SetFileClass(FileClass.Image4Bit);
-                frame.SetColorsInPalette(4);
-                framesContainer.AddFrame(frame);
-            }
-            fullImage = ImageUtils.ConvertFrom8Bit(fullImage, fullWidth, fullHeight, 4, true, ref fullStride);
-            Bitmap composite = ImageUtils.BuildImage(fullImage, fullWidth, fullHeight, fullStride, PixelFormat.Format4bppIndexed, palette, Color.Empty);
-            composite.Palette = pal;
-            framesContainer.SetCompositeFrame(composite);
-            framesContainer.SetBitsPerColor(2);
-            framesContainer.SetPalette(pal.Entries);
-            framesContainer.SetColorsInPalette(4);
-            framesContainer.SetCommonPalette(true);
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = framesContainer;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            if (oldFile != null)
-                oldFile.Dispose();
-        }
-
-        private void CreateSierpinskiImage()
-        {
-            FileImage loadImage = new FileImagePng();
-            // Replace this with something creating/loading a bitmap
-            using (Bitmap sierpinskiImage = new Bitmap(800, 600))
-            using(MemoryStream ms = new MemoryStream())
-            {
-                sierpinskiImage.Save(ms, ImageFormat.Png);
-                loadImage.LoadFile(ms.ToArray(), ".\\image.png");
-            }
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = loadImage;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            if (oldFile != null)
-                oldFile.Dispose();
-        }
-
-        private void LoadByteArrayImage()
-        {
-            Byte[] imageBytes = {0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 
-                            0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80 };
-            
-            
-            Color[] palette = new Color[256];
-            for (Int32 i = 0; i < palette.Length; i++)
-                palette[i] = Color.FromArgb(i, i, i);
-
-            FileImage loadImage = new FileImagePng();
-            // Replace this with something creating/loading a bitmap
-            using (Bitmap img = ImageUtils.BuildImage(imageBytes, 10, 20, 10, PixelFormat.Format8bppIndexed,palette, null))
-            using (MemoryStream ms = new MemoryStream())
-            {
-                img.Save(ms, ImageFormat.Png);
-                loadImage.LoadFile(ms.ToArray(), ".\\image.png");
-            }
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = loadImage;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            if (oldFile != null)
-                oldFile.Dispose();
-        }
-        private void CombineHue()
-        {
-            String filenameImage = "tank-b.png";
-            String filenameColors = "tank-c.png";
-            if (!File.Exists(filenameImage) || !File.Exists(filenameColors))
-                return;
-            // image data
-            Bitmap im = BitmapHandler.LoadBitmap(filenameImage);
-            // colour data
-            Bitmap col = BitmapHandler.LoadBitmap(filenameColors);
-            if (im.Width != col.Width || im.Height != col.Height)
-                return;
-            Int32 iStride;
-            Byte[] imageData = ImageUtils.GetImageData(im, out iStride, PixelFormat.Format32bppArgb);
-            Int32 cStride;
-            Byte[] colourData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
-            if (imageData.Length != colourData.Length || iStride != cStride)
-                return;
-            for (Int32 i = 0; i < imageData.Length; i+=4)
-            {
-                ColorHSL curPix = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(imageData, i, 4, true));
-                ColorHSL curCol = Color.FromArgb((Int32)ArrayUtils.ReadIntFromByteArray(colourData, i, 4, true));
-                ColorHSL newCol = new ColorHSL(curCol.Hue, curCol.Saturation, curPix.Luminosity);
-                UInt32 val = (UInt32)((Color)newCol).ToArgb();
-                ArrayUtils.WriteIntToByteArray(imageData, i, 4, true, val);
-            }
-
-            FileImage loadImage = new FileImagePng();
-            // Replace this with something creating/loading a bitmap
-            using (Bitmap img = ImageUtils.BuildImage(imageData, im.Width, im.Height, iStride, PixelFormat.Format32bppArgb, null, null))
-            using (MemoryStream ms = new MemoryStream())
-            {
-                img.Save(ms, ImageFormat.Png);
-                loadImage.LoadFile(ms.ToArray(), ".\\image.png");
-            }
-            SupportedFileType oldFile = this.m_LoadedFile;
-            this.m_LoadedFile = loadImage;
-            this.AutoSetZoom();
-            this.ReloadUi(true);
-            if (oldFile != null)
-                oldFile.Dispose();
-        }
-#endif
-        // I put this at the end here to make generated functions not end up in the #debug piece above.
         private void TsmiTestBed(Object sender, EventArgs e)
         {
 #if DEBUG
-            // any test code can be linked in here
-            //this.ViewKortExeIcons();
-            //this.LoadByteArrayImage();
-            this.CombineHue();
-            //this.CreateSierpinskiImage();
+            this.ExecuteTestCode();
 #endif
         }
     }
+
 }

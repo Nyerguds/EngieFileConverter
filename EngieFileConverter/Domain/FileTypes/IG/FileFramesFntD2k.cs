@@ -85,7 +85,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // Read the rest of the symbols.
             Int32 readOffset = 0x408;
             Int32 datalen = fileData.Length;
-            for (Int32 i = 0; i < 0x100; i++)
+            for (Int32 i = 0; i < 0x100; ++i)
             {
                 Byte currentSymbol = (Byte)((firstSymbol + i) & 0xFF);
                 if (readOffset + 8 > datalen)
@@ -178,9 +178,10 @@ namespace EngieFileConverter.Domain.FileTypes
         private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 height)
         {
             // Preliminary checks
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            SupportedFileType[] frames = fileToSave.Frames;
+            if (!fileToSave.IsFramesContainer || frames == null)
                 throw new NotSupportedException("No frames found in source data!");
-            Int32 frameLen = fileToSave.Frames.Length;
+            Int32 frameLen = frames.Length;
             if (frameLen == 0)
                 throw new NotSupportedException("No frames found in source data!");
             if (frameLen < 32)
@@ -188,9 +189,9 @@ namespace EngieFileConverter.Domain.FileTypes
             if (frameLen > 256)
                 throw new NotSupportedException("Dune 2000 font can only handle up to 256 frames!");
             height = -1;
-            for (Int32 i = 0; i < frameLen; i++)
+            for (Int32 i = 0; i < frameLen; ++i)
             {
-                SupportedFileType frame = fileToSave.Frames[i];
+                SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
                     throw new NotSupportedException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!");
                 height = Math.Max(height, frame.Height);
@@ -208,14 +209,13 @@ namespace EngieFileConverter.Domain.FileTypes
             // Override the one from the preliminary check.
             fontHeight = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "FHE"));
 
-            Int32 origFrameLen = fileToSave.Frames.Length;
-            if (fileToSave.Frames.Length < 256)
+            SupportedFileType[] frames = fileToSave.Frames;
+            Int32 origFrameLen = frames.Length;
+            if (origFrameLen < 0x100)
             {
-                FileFrames frameSave = new FileFrames();
-                foreach (SupportedFileType frame in fileToSave.Frames)
-                    frameSave.AddFrame(frame);
-                // Fill up to 256
-                for (Int32 i = origFrameLen; i < 256; i++)
+                SupportedFileType[] newFrames = new SupportedFileType[0x100];
+                Array.Copy(frames, 0, newFrames, 0, origFrameLen);
+                for (Int32 i = origFrameLen; i < 0x100; ++i)
                 {
                     FileImageFrame framePic = new FileImageFrame();
                     framePic.LoadFileFrame(fileToSave, fileToSave, null, null, i);
@@ -223,20 +223,20 @@ namespace EngieFileConverter.Domain.FileTypes
                     framePic.SetFileClass(fileToSave.FrameInputFileClass);
                     framePic.SetColorsInPalette(fileToSave.ColorsInPalette);
                     framePic.SetColors(fileToSave.GetColors());
-                    frameSave.AddFrame(fileToSave);
+                    newFrames[i] = fileToSave;
                 }
-                fileToSave = frameSave;
+                frames = newFrames;
             }
             SupportedFileType[] baseList = new SupportedFileType[0x100];
             Byte[][] framesList = new Byte[0x100][];
-            Byte spaceWidth = (Byte)fileToSave.Frames[0x20].Width;
+            Byte spaceWidth = (Byte)frames[0x20].Width;
             // Final saved data does in fact contain a 0x0 dummy entry for the space character... further invalidating the whole optimisation effort.
             Byte firstSymbol = 0x21;
             // this is FF and not 100 because the space itself is omitted.
             Int32 remainingSymbols = 0x100 - firstSymbol; // 222 ?
 
-            Array.Copy(fileToSave.Frames, firstSymbol, baseList, 0, remainingSymbols);
-            Array.Copy(fileToSave.Frames, 0, baseList, remainingSymbols, firstSymbol);
+            Array.Copy(frames, firstSymbol, baseList, 0, remainingSymbols);
+            Array.Copy(frames, 0, baseList, remainingSymbols, firstSymbol);
             // Remove space. don't want to make a new object for this; I'll just check on null.
             baseList[0xFF] = null;
 
@@ -244,7 +244,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // This space is trimmed off and added in the header instead.
             // Start from max that can be trimmed off the space, since it's not in the list.
             Int32 globalOpenSpace = spaceWidth;
-            for (Int32 i = 0; i < baseList.Length; i++)
+            for (Int32 i = 0; i < 0x100; ++i)
             {
                 SupportedFileType frame = baseList[i];
                 // ignore completely empty characters; they'd reduce it to 0 for no reason.
@@ -256,7 +256,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 width = frame.Width;
                 Int32 height = frame.Height;
                 Int32 minOpenSpace = width;
-                for (Int32 y = 0; y < height; y++)
+                for (Int32 y = 0; y < height; ++y)
                 {
                     Byte[] line = new Byte[width];
                     Array.Copy(byteData, y * stride, line, 0, width);
@@ -269,7 +269,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (globalOpenSpace > 0)
             {
                 spaceWidth -= (Byte)globalOpenSpace;
-                for (Int32 i = 0; i < framesList.Length; i++)
+                for (Int32 i = 0; i < 0x100; ++i)
                 {
                     SupportedFileType frame = baseList[i];
                     if (frame == null || frame.Width == 0 && frame.Height == 0 || frame.GetBitmap() == null)
@@ -280,7 +280,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     byteData = ImageUtils.ChangeStride(byteData, width, height, width - globalOpenSpace, false, 0);
                     framesList[i] = byteData;
                 }
-                // font width should not be reduced by globalOpenSpace; it is unused in the saving process.
+                // The global font width is not actually saved, so there's no use in adjusting it too.
             }
             Int32 fileLen = 0x408 + framesList.Select(x => (x == null ? 0 : x.Length) + 8).Sum();
             Byte[] fileData = new Byte[fileLen];
@@ -294,7 +294,7 @@ namespace EngieFileConverter.Domain.FileTypes
             //fileData[7] = 0x00;
             //0x08 => 0x408: giant load of crap. Leave empty, I guess?
             Int32 writeOffset = 0x408;
-            for (Int32 i = 0; i < baseList.Length; i++)
+            for (Int32 i = 0; i < 0x100; ++i)
             {
                 SupportedFileType frame = baseList[i];
                 Int32 width = frame == null || frame.Width == 0 ? 0 : (frame.Width - globalOpenSpace);

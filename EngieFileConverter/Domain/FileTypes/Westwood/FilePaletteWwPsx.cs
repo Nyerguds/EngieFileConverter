@@ -10,9 +10,9 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FilePaletteWwPsx : SupportedFileType
     {
         protected SupportedFileType[] m_FramesList;
-        public override FileClass FileClass { get { return FileClass.Image4Bit | FileClass.FrameSet; } }
-        public override FileClass InputFileClass { get { return FileClass.Image4Bit | FileClass.FrameSet; } }
-        public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit; } }
+        public override FileClass FileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "WW PSX Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
@@ -30,6 +30,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
         public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
+        public override Boolean FramesHaveCommonPalette { get { return false; } }
 
         protected Int32 m_Height;
 
@@ -53,39 +54,50 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Incorrect file size: not a multiple of 32.");
             Int32 palSize = len / 2;
             m_Height = palSize / 16;
+            Int32 nrOfPalettes = (m_Height + 15) / 16;
             //Format seems to be 16 bit LE ABGR.
             PixelFormatter pf = new PixelFormatter(2, 0x8000, 0x1F, 0x3E0, 0x7C00, true);
-            Color[][] palettes = new Color[m_Height][];
-            for (Int32 i = 0; i < m_Height; i++)
+            Color[][] palettes = new Color[nrOfPalettes][];
+
+            Int32 curHeight = 0;
+            for (Int32 i = 0; i < nrOfPalettes; ++i)
             {
-                Int32 offset = i << 5;
+                Int32 curPalRows = Math.Min(m_Height - curHeight, 16);
+                Int32 offset = i << 9; // = (* 256 * 16bit);
                 // Check starting bytes. All PSX palettes start with a 00 00 colour.
-                if (fileData[offset] != 0 || fileData[offset + 1] != 0)
-                    throw new FileTypeLoadException("Incorrect data: PSX palettes always start with a transparent value.");
-                palettes[i] = pf.GetColorPalette(fileData, offset, 16);
+                for (Int32 j = 0; j < curPalRows; ++j)
+                    if (ArrayUtils.ReadIntFromByteArray(fileData, offset + (j << 5), 2, true) != 0)
+                        throw new FileTypeLoadException("Incorrect data: PSX palettes always start with a transparent value.");
+                palettes[i] = pf.GetColorPalette(fileData, offset, 16 * curPalRows);
+                curHeight += curPalRows;
             }
-            this.m_FramesList = new SupportedFileType[m_Height];
-            //if (palettes.Any(pal => pal[0].ToArgb() != 0))
-            //    throw new FileTypeLoadException("Incorrect data: PSX palettes always start with a transparent value.");
-            Int32 stride = 4;
-            Byte[] imageData = ImageUtils.ConvertFrom8Bit(Enumerable.Range(0, 16).Select(x => (Byte) x).ToArray(), 4, 4, 4, true, ref stride);
-            for (Int32 i = 0; i < m_Height; i++)
+            this.m_FramesList = new SupportedFileType[nrOfPalettes];
+            Int32 stride = 16;
+            Byte[] imageData = Enumerable.Range(0, 256).Select(x => (Byte) x).ToArray();
+
+            Int32 remainingHeight = m_Height;
+            for (Int32 i = 0; i < nrOfPalettes; ++i)
             {
-                Bitmap paletteImage = ImageUtils.BuildImage(imageData, 4, 4, stride, PixelFormat.Format4bppIndexed, palettes[i], Color.Empty);
+                if (remainingHeight < 16)
+                    imageData = imageData.Take(16 * remainingHeight).ToArray();
+                Bitmap paletteImage = ImageUtils.BuildImage(imageData, 16, Math.Min(remainingHeight, 16), stride, PixelFormat.Format8bppIndexed, palettes[i], Color.Empty);
+                if (remainingHeight < 16)
+                    paletteImage.Palette = BitmapHandler.GetPalette(palettes[i]);
                 // Make frame
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, paletteImage, sourcePath, i);
-                frame.SetBitsPerColor(4);
+                frame.SetBitsPerColor(8);
                 frame.SetFileClass(this.FrameInputFileClass);
-                frame.SetColorsInPalette(16);
+                frame.SetColorsInPalette(Math.Min(remainingHeight * 16, 256));
                 frame.SetExtraInfo("");
                 this.m_FramesList[i] = frame;
+                remainingHeight -= 16;
             }
             Byte[] fileData2 = fileData.ToArray();
             ImageUtils.ReorderBits(fileData2, 16, m_Height, 32, pf, PixelFormatter.Format16BitArgb1555);
             Bitmap fullImage = ImageUtils.BuildImage(fileData2, 16, m_Height, 32, PixelFormat.Format16bppArgb1555, null, null);
             this.m_LoadedImage = fullImage;
-            this.ExtraInfo = "Contains " + m_Height + " colour palettes";
+            this.ExtraInfo = "Contains " + nrOfPalettes + " colour palette" + (nrOfPalettes != 1 ? "s" : String.Empty);
             this.m_Palette = null;
         }
 
@@ -99,16 +111,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("PSX palettes must be 256 colours!");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
-            for (Int32 i = 0; i < cols.Length; i++)
+            for (Int32 i = 0; i < cols.Length; ++i)
                 pf.WriteColor(outBytes, i << 1, cols[i]);
             return outBytes;
             //*/
-        }
-
-        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
-        {
-            Color[] cols = this.CheckInputForColors(fileToSave, expandToFullSize);
-            return ColorUtils.GetEightBitPaletteData(cols, expandToFullSize);
         }
     }
 }

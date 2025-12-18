@@ -35,7 +35,7 @@ namespace EngieFileConverter.Domain.FileTypes
             List<Point> framesXY;
             this.LoadFromFileData(fileData, filename, true, true, false, out framesXY, false);
             Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
-            PaletteUtils.ApplyTransparencyGuide(this.m_Palette, null);
+            PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, null);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, m_Palette, Color.Black);
         }
 

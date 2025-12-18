@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -65,8 +65,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (this.m_palIndexFile.Length != entries)
                 throw new FileTypeLoadException("Tileset load failed: amount of entries in " + this.ExtPalIndex + "file does not match those in " + this.ExtData + " file." );
             Int32 maxPalIndex = 0;
-            foreach (Byte ind in this.m_palIndexFile)
-                maxPalIndex = Math.Max(maxPalIndex, ind);
+            for (Int32 i = 0; i < entries; ++i)
+                maxPalIndex = Math.Max(maxPalIndex, this.m_palIndexFile[i]);
             FilePaletteWwCc1N64 palette = this.PaletteType;
             try
             {
@@ -105,7 +105,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 tilesHeight = this.m_rawTiles.Length * 24;
             Int32 tilesStride = ImageUtils.GetMinimumStride(tilesWidth, this.Bpp);
             Byte[] tilesData = this.AdjustTo8BitPalette(dataFile, this.m_palIndexFile, 24, tilesHeight, ref tilesStride);
-            for (Int32 i = 0; i < tiles; i++)
+            for (Int32 i = 0; i < tiles; ++i)
             {
                 Int32 index = i * tileSize;
                 Color[] subPalette = new Color[singlePalSize];
@@ -151,10 +151,10 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             Int32 singlePalSize = 1 << this.Bpp;
             Byte[] imageData = ImageUtils.ConvertTo8Bit(dataFile, width, height, 0, this.Bpp, true, ref stride);
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 increase = palIndexFile[y / 24] * singlePalSize;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     Int32 index = y * stride + x;
                     imageData[index] = (Byte)(imageData[index] + increase);
@@ -171,8 +171,10 @@ namespace EngieFileConverter.Domain.FileTypes
             if (outputType is FileImageJpg)
                 throw new NotSupportedException("JPEG? No. Fuck off. Don't do that to those poor 24×24 paletted images.");
             String ext = "." + outputType.FileExtensions[0];
-            foreach (FileTileCc1N64 tile in this.m_tilesList)
+            Int32 nrOfTiles = this.m_tilesList.Length;
+            for (Int32 i = 0; i < nrOfTiles; ++i)
             {
+                FileTileCc1N64 tile = this.m_tilesList[i];
                 TileInfo ti;
                 if (!MapConversion.TILEINFO.TryGetValue(tile.CellData.HighByte, out ti))
                     throw new NotSupportedException("Bad mapping in " + this.ExtTileIds + " file!");

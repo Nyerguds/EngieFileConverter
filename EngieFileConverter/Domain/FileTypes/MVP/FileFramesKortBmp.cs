@@ -58,7 +58,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             Int32 offset = 4;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
-            for (Int32 i = 0; i < nrOfFrames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 if (offset + 12 >= datalen)
                     throw new FileTypeLoadException("File is too short to contain frame header " + i);
@@ -92,47 +92,43 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-            {
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-            }
-            if (fileToSave.Frames.Length == 0)
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
                 throw new NotSupportedException("No frames found in source data!");
-            foreach (SupportedFileType frame in fileToSave.Frames)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
+                SupportedFileType frame = frames[i];
                 if (frame == null)
                     throw new NotSupportedException("KORT BMP can't handle empty frames!");
                 if (frame.BitsPerPixel != 8)
                     throw new NotSupportedException("Not all frames in input type are 8-bit images!");
             }
-            Int32 frames = fileToSave.Frames.Length;
-            Byte[][] frameData = new Byte[frames][];
-            Int32[] widths = new Int32[frames];
-            Int32[] heights = new Int32[frames];
-            Int32[] strides = new Int32[frames];
-            for (Int32 i = 0; i < frames; i++)
+            Byte[][] frameData = new Byte[nrOfFrames][];
+            Int32[] widths = new Int32[nrOfFrames];
+            Int32[] heights = new Int32[nrOfFrames];
+            Int32[] strides = new Int32[nrOfFrames];
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                Bitmap bm = fileToSave.Frames[i].GetBitmap();
+                Bitmap bm = frames[i].GetBitmap();
                 Int32 stride;
                 Byte[] frameDataRaw = ImageUtils.GetImageData(bm, out stride);
                 Int32 width = bm.Width;
                 Int32 height = bm.Height;
                 Byte[] flippedData = new Byte[width * height];
-                for (Int32 y = 0; y < height; y++)
+                for (Int32 y = 0; y < height; ++y)
                     Array.Copy(frameDataRaw, (height - 1 - y) * stride, flippedData, y * width, width);
                 frameData[i] = flippedData;
                 widths[i] = width;
                 heights[i] = height;
                 strides[i] = width;
             }
-            Int32 fullSize = 4 + frames * 12 + frameData.Sum(x => x.Length);
+            Int32 fullSize = 4 + nrOfFrames * 12 + frameData.Sum(x => x.Length);
             Byte[] fullData = new Byte[fullSize];
-            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32)frames);
+            ArrayUtils.WriteIntToByteArray(fullData, 0, 2, true, (UInt32)nrOfFrames);
             ArrayUtils.WriteIntToByteArray(fullData, 2, 2, true, 0x16);
             Int32 offset = 4;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 ArrayUtils.WriteIntToByteArray(fullData, offset + 0, 2, true, (UInt32)i);
                 ArrayUtils.WriteIntToByteArray(fullData, offset + 2, 2, true, (UInt32)widths[i]);

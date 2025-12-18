@@ -44,9 +44,16 @@ namespace Nyerguds.Util.UI
         protected Boolean m_ShowColorToolTips = true;
         protected Boolean m_ShowColorToolTipsAlpha;
         protected Boolean m_ShowRemappedPalette;
+        protected Int32 m_LastAdjustedMaxDimension = -1;
+        protected Int32 m_LastAdjustedBpp = -1;
 
         public static void InitPaletteControl(Int32 bitsPerPixel, PalettePanel palPanel, Color[] palette, Int32 maxDimension)
         {
+            if (palPanel.m_LastAdjustedMaxDimension == maxDimension && palPanel.m_LastAdjustedBpp == bitsPerPixel)
+            {
+                palPanel.Palette = palette;
+                return;
+            }
             Boolean disable = bitsPerPixel <= 0 || bitsPerPixel > 8;
             Int32 colors = disable ? 1 : 1 << bitsPerPixel;
             palPanel.MaxColors = disable ? 0 : colors;
@@ -63,6 +70,8 @@ namespace Nyerguds.Util.UI
             palPanel.ColorTableWidth = squaresPerRow;
             palPanel.LabelSize = new Size(sqrWidth, sqrWidth);
             palPanel.PadBetween = new Point(padding, padding);
+            palPanel.m_LastAdjustedMaxDimension = maxDimension;
+            palPanel.m_LastAdjustedBpp = bitsPerPixel;
             palPanel.Palette = palette;
         }
 
@@ -206,8 +215,8 @@ namespace Nyerguds.Util.UI
                         this.m_SelectedIndicesArr[1] = value.Length > 1 ? value[1] : (this.m_SelectedIndicesArr[0] == 0 ? 1 : 0);
                         break;
                     case ColorSelMode.Multi:
-                        foreach (Int32 i in value.Where(i => i >= 0 && i < this.m_MaxColors && !this.m_SelectedIndicesList.Contains(i)))
-                            this.m_SelectedIndicesList.Add(i);
+                        this.m_SelectedIndicesList.Clear();
+                        this.m_SelectedIndicesList.AddRange(value.Where(ind => ind >= 0 && ind < this.m_MaxColors).Distinct());
                         break;
                 }
                 if (this.ColorSelectionChanged != null)
@@ -427,7 +436,8 @@ namespace Nyerguds.Util.UI
         {
             if (this.m_ColorLabels == null)
                 return;
-            for (Int32 i = 0; i < this.m_ColorLabels.Length; i++)
+            Int32 nrOfLabels = this.m_ColorLabels.Length;
+            for (Int32 i = 0; i < nrOfLabels; ++i)
                 if (colorLabelIndices.Contains(i))
                     this.m_ColorLabels[i].Visible = visible;
                 else
@@ -437,6 +447,8 @@ namespace Nyerguds.Util.UI
 
         private void ResetSize()
         {
+            this.m_LastAdjustedMaxDimension = -1;
+            this.m_LastAdjustedBpp = -1;
             Int32 rows = this.m_MaxColors / this.m_ColorTableWidth + (this.m_MaxColors % this.m_ColorTableWidth > 0 ? 1 : 0);
             Int32 sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
             Int32 sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
@@ -485,7 +497,8 @@ namespace Nyerguds.Util.UI
         {
             if (this.m_ShowColorToolTips)
             {
-                for (Int32 i = 0; i < this.m_ColorLabels.Length; i++)
+                Int32 nrOfLabels = this.m_ColorLabels.Length;
+                for (Int32 i = 0; i < nrOfLabels; ++i)
                 {
                     Color col = Color.Empty;
                     Boolean emptyCol = false;
@@ -513,7 +526,8 @@ namespace Nyerguds.Util.UI
                 this.m_ColorLabels = new Label[this.m_MaxColors];
             else
             {
-                for (Int32 i = this.m_MaxColors; i < this.m_ColorLabels.Length; i++)
+                Int32 nrOfLabels = this.m_ColorLabels.Length;
+                for (Int32 i = this.m_MaxColors; i < nrOfLabels; ++i)
                 {
                     Label colorLabel = this.m_ColorLabels[i];
                     this.Controls.Remove(colorLabel);
@@ -525,9 +539,9 @@ namespace Nyerguds.Util.UI
                 this.m_ColorLabels = newLabels;
             }
             Color emptyCol = Color.FromArgb(this.m_EmptyItemBackColor.R, this.m_EmptyItemBackColor.G, this.m_EmptyItemBackColor.B);
-            for (Int32 y = 0; y < rows; y++)
+            for (Int32 y = 0; y < rows; ++y)
             {
-                for (Int32 x = 0; x < this.m_ColorTableWidth; x++)
+                for (Int32 x = 0; x < this.m_ColorTableWidth; ++x)
                 {
                     Int32 index = y * this.m_ColorTableWidth + x;
                     if (index >= this.m_MaxColors)

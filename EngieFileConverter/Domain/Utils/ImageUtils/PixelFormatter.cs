@@ -190,7 +190,7 @@ namespace Nyerguds.ImageManipulation
         private Byte BitsFromMask(UInt32 mask)
         {
             UInt32 bits = 0;
-            for (Int32 bitloc = 0; bitloc < 32; bitloc++)
+            for (Int32 bitloc = 0; bitloc < 32; ++bitloc)
                 bits += ((mask >> bitloc) & 1);
             return (Byte) bits;
         }
@@ -205,7 +205,7 @@ namespace Nyerguds.ImageManipulation
         {
             UInt32 curVal = 0;
             Int32 outIndex = 0;
-            for (Int32 bitloc = 0; bitloc < 32; bitloc++)
+            for (Int32 bitloc = 0; bitloc < 32; ++bitloc)
             {
                 if (((mask >> bitloc) & 1) != 1)
                     continue;
@@ -228,7 +228,7 @@ namespace Nyerguds.ImageManipulation
             Int32 inIndex = 0;
             // Clear affected bits, so 1-bits already on destvalue that fall inside the mask don't change the added value.
             destValue = (destValue & (~mask));
-            for (Int32 bitloc = 0; bitloc < 32; bitloc++)
+            for (Int32 bitloc = 0; bitloc < 32; ++bitloc)
             {
                 if (((mask >> bitloc) & 1) != 1)
                     continue;
@@ -339,7 +339,7 @@ namespace Nyerguds.ImageManipulation
         public Color GetColorFromValue(UInt32 readValue)
         {
             Byte[] components = new Byte[4];
-            for (Int32 i = 0; i < 4; i++)
+            for (Int32 i = 0; i < 4; ++i)
                 components[i] = this.GetChannelFromValue(readValue, (ColorComponent) i);
             return Color.FromArgb(components[(Int32) ColorComponent.Alpha],
                                   components[(Int32) ColorComponent.Red],
@@ -356,7 +356,7 @@ namespace Nyerguds.ImageManipulation
         public UInt32[] GetRawComponentsFromValue(UInt32 readValue)
         {
             UInt32[] components = new UInt32[4];
-            for (Int32 i = 0; i < 4; i++)
+            for (Int32 i = 0; i < 4; ++i)
                 components[i] = this.GetRawChannelFromValue(readValue, (ColorComponent) i);
             return components;
         }
@@ -396,7 +396,7 @@ namespace Nyerguds.ImageManipulation
         {
             Byte[] components = new Byte[] { color.A, color.R, color.G, color.B };
             UInt32 val = 0;
-            for (Int32 i = 0; i < 4; i++)
+            for (Int32 i = 0; i < 4; ++i)
             {
                 Double tempValD = components[i]/this.multipliers[i];
                 UInt32 tempVal = (UInt32) Math.Min(this.maxChan[i], Math.Round(tempValD, MidpointRounding.AwayFromZero));
@@ -413,10 +413,10 @@ namespace Nyerguds.ImageManipulation
         public UInt32 GetValueFromRawComponents(UInt32[] components)
         {
             UInt32[] componentsChecked = new UInt32[4];
-            for (Int32 i = 0; i < 4; i++)
+            for (Int32 i = 0; i < 4; ++i)
                 componentsChecked[i] = (i < components.Length) ? components[i] : this.defaultsChan[i];
             UInt32 val = 0;
-            for (Int32 i = 0; i < 4; i++)
+            for (Int32 i = 0; i < 4; ++i)
                 val = this.AddValueWithMask(val, this.limitMasks[i], componentsChecked[i]);
             return val;
         }

@@ -4,14 +4,19 @@ using System.Windows.Forms;
 
 namespace Nyerguds.Util.Ui
 {
-    public abstract class CustomControlInfo<T, U> where T : Control
+    /// <summary>
+    /// Information for a custom control managed by an information object.
+    /// </summary>
+    /// <typeparam name="T">Type of the user controls with which to populate the list.</typeparam>
+    /// <typeparam name="TU">Type of the information objects that contain all information to create/manage a listed control.</typeparam>
+    public abstract class CustomControlInfo<T, TU> where T : Control
     {
         public String Name { get; set; }
         public String ClassName { get; set; }
-        public U[] Properties { get; set; }
+        public TU[] Properties { get; set; }
 
-        public abstract T MakeControl(U property, ListedControlController<U> controller);
-        public abstract T GetControlByProperty(U property, IEnumerable<T> controls);
+        public abstract T MakeControl(TU property, ListedControlController<TU> controller);
+        public abstract T GetControlByProperty(TU property, IEnumerable<T> controls);
 
         public override String ToString()
         {

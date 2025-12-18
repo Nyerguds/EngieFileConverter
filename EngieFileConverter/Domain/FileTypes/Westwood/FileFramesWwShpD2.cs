@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -104,7 +104,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 readLen = isVersion107 ? 4 : 2;
             Color[] palette = PaletteUtils.GenerateGrayPalette(8, new Boolean[] { true }, false);
             Int32 nextOFfset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
-            for (Int32 i = 0; i < hdrFrames; i++)
+            for (Int32 i = 0; i < hdrFrames; ++i)
             {
                 // Set current read address to previously-fetched "next entry" address
                 Int32 readOffset = nextOFfset;
@@ -196,7 +196,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     Byte[] remap = remapTable;
                     Int32 remapLen = remap.Length;
-                    for(Int32 j = 0; j < fullFrame.Length; j++)
+                    for(Int32 j = 0; j < fullFrame.Length; ++j)
                     {
                         Byte val = fullFrame[j];
                         if (val < remapLen)
@@ -248,7 +248,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override SaveOption[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            PerformPreliminarychecks(ref fileToSave);
+            PerformPreliminaryChecks(ref fileToSave);
             FileFramesWwShpD2 d2File = fileToSave as FileFramesWwShpD2;
             Boolean isdune100shape = d2File != null && !d2File.IsVersion107;
             Boolean hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
@@ -266,7 +266,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
-            PerformPreliminarychecks(ref fileToSave);
+            PerformPreliminaryChecks(ref fileToSave);
             // VErsions: 1.00, 1.07 and Lands of Lore (which is 1.07 without LCW compression)
             Int32 version;
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "VER"), out version);
@@ -278,21 +278,26 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "RMA"));
             String remapSpecificStr = SaveOption.GetSaveOptionValue(saveOptions, "RMS");
             Boolean remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
-            Int32[] remappedIndices = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
+            Int32[] remappedFrames = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
 
             Int32 frames = fileToSave.Frames.Length;
-            Boolean[] remapIndex = new Boolean[frames];
+            Boolean[] remapFrame = new Boolean[frames];
             if (addRemap)
             {
                 if (remapAll)
                 {
-                    for (Int32 i = 0; i < frames; i++)
-                        remapIndex[i] = true;
+                    for (Int32 i = 0; i < frames; ++i)
+                        remapFrame[i] = true;
                 }
-                else if (remappedIndices != null)
+                else if (remappedFrames != null)
                 {
-                    foreach (Int32 remappedIndex in remappedIndices.Where(remappedIndex => remappedIndex >= 0 && remappedIndex < frames))
-                        remapIndex[remappedIndex] = true;
+                    Int32 remapLen = remappedFrames.Length;
+                    for (Int32 i = 0; i < remapLen; ++i)
+                    {
+                        Int32 remappedFrameIndex = remappedFrames[i];
+                        if (remappedFrameIndex >= 0 && remappedFrameIndex < frames)
+                            remapFrame[remappedFrameIndex] = true;
+                    }
                 }
             }
             Int32 addressSize = isVersion107 ? 4 : 2;
@@ -305,7 +310,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] frameHeaders = new Byte[frames][];
             Byte[][] frameData = new Byte[frames][];
             //ArrayUtils.WriteIntToByteArray(header, 0, 2, true, (UInt64)frames);
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 SupportedFileType frame = fileToSave.Frames[i];
                 Bitmap bm = frame.GetBitmap();
@@ -313,13 +318,44 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 frmHeight = bm.Height;
                 Int32 stride;
                 Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
-                Boolean remapThis = addRemapAuto ? imageData.Any(b => b >= 144 && b <= 150) : remapIndex[i];
+                Int32 imageDataLength = imageData.Length;
+                Boolean remapThis;
+                if (addRemapAuto)
+                {
+                    remapThis = false;
+                    for (Int32 j = 0; j < imageDataLength; ++j)
+                    {
+                        Byte b = imageData[i];
+                        if (b < 144 || b > 150)
+                            continue;
+                        remapThis = true;
+                        break;
+                    }
+                }
+                else
+                    remapThis = remapFrame[i];
                 frameRemapped[i] = remapThis;
+                // Check if any of the already-handled frames equals this one.
                 Int32 dupeIndex = -1;
-                for (Int32 j = 0; j < i; j++)
+                for (Int32 j = 0; j < i; ++j)
                 {
                     SupportedFileType prevFrame = fileToSave.Frames[j];
-                    if (prevFrame.Width != frmWidth || prevFrame.Height != frmHeight || frameRemapped[j] != remapThis || !frameImage[j].SequenceEqual(imageData))
+                    if (prevFrame.Width != frmWidth || prevFrame.Height != frmHeight || frameRemapped[j] != remapThis)
+                        continue;
+                    Byte[] prevFrameData = frameImage[j];
+                    Int32 prevFrameDataLen = prevFrameData.Length;
+                    // Should never happen, since they all use minimum stride, but, better be sure...
+                    if (prevFrameDataLen != imageDataLength)
+                        continue;
+                    Boolean frameEquals = true;
+                    for (Int32 k = 0; k < imageDataLength; ++k)
+                    {
+                        if (prevFrameData[i] == imageData[i])
+                            continue;
+                        frameEquals = true;
+                        break;
+                    }
+                    if (!frameEquals)
                         continue;
                     dupeIndex = j;
                     break;
@@ -333,7 +369,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     continue;
                 }
                 // Needs to be a duplicate; otherwise the remapping system messes up the reference array.
-                frameImage[i] = imageData.ToArray();
+                frameImage[i] = new Byte[imageDataLength];
+                Array.Copy(imageData, frameImage, imageDataLength);
                 Byte[] remapTable;
                 Boolean largeTable;
                 if (!remapThis)
@@ -350,9 +387,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     Array.Copy(noZeroRemapTable, 0, remapTable, 1, noZeroRemapTable.Length);
                     // Remap the image data
                     Byte[] reverseTable = new Byte[0x100];
-                    for (Int32 r = 1; r < tableLength; r++)
+                    for (Int32 r = 1; r < tableLength; ++r)
                         reverseTable[remapTable[r]] = (Byte) r;
-                    for (Int32 j = 0; j < imageData.Length; j++)
+                    for (Int32 j = 0; j < imageData.Length; ++j)
                         imageData[j] = reverseTable[imageData[j]];
                     largeTable = tableLength > 16;
                 }
@@ -407,7 +444,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] finalData = new Byte[actualLen];
             ArrayUtils.WriteIntToByteArray(finalData, 0, 2, true, (UInt16) frames);
             Int32 headerOffset = 2;
-            for (Int32 i = 0; i < frames; i++)
+            for (Int32 i = 0; i < frames; ++i)
             {
                 Int32 currentOffset = header[i];
                 ArrayUtils.WriteIntToByteArray(finalData, headerOffset, addressSize, true, (UInt32) currentOffset);
@@ -427,23 +464,22 @@ namespace EngieFileConverter.Domain.FileTypes
             return finalData;
         }
 
-        public static void PerformPreliminarychecks(ref SupportedFileType fileToSave)
+        public static void PerformPreliminaryChecks(ref SupportedFileType fileToSave)
         {
             // Preliminary checks
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-            }
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
-            foreach (SupportedFileType frame in fileToSave.Frames)
-            {
+                SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("SHP can't handle empty frames!");
                 if (frame.BitsPerPixel != 8)
-                    throw new NotSupportedException("Not all frames in input type are 8-bit images!");
+                    throw new NotSupportedException("This format needs 8bpp images.");
             }
         }
         

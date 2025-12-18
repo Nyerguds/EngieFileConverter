@@ -16,9 +16,13 @@ namespace Nyerguds.Util
     {
         public static Boolean IsNumeric(String str)
         {
-            foreach (Char c in str)
+            Int32 strLEn = str.Length;
+            for (Int32 i = 0; i < strLEn; ++i)
+            {
+                Char c = str[i];
                 if (c < '0' || c > '9')
                     return false;
+            }
             return true;
         }
 
@@ -209,8 +213,10 @@ namespace Nyerguds.Util
             groupsSeparator = groupsSeparator.Trim();
             String[] parts = input.Split(new String[] { groupsSeparator }, StringSplitOptions.RemoveEmptyEntries);
             List<Int32> numbers = new List<Int32>();
-            foreach (String part in parts)
+            Int32 nrOfParts = parts.Length;
+            for (Int32 i = 0; i < nrOfParts; ++i)
             {
+                String part = parts[i];
                 String edPart = part.Trim(trimVals);
                 if (edPart.Length == 0)
                     continue;

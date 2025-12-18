@@ -4,7 +4,6 @@ using EngieFileConverter.Domain.FileTypes;
 using Nyerguds.Util;
 using Nyerguds.Util.Ui;
 using System.Windows.Forms;
-using System.Globalization;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util.UI;
 
@@ -99,7 +98,7 @@ namespace EngieFileConverter.UI.SaveOptions
             this.pnlColorControls.Width = newWidthTxt;
         }
 
-        private void LblColorKeyPress(object sender, KeyPressEventArgs e)
+        private void LblColorKeyPress(Object sender, KeyPressEventArgs e)
         {
             if (e.KeyChar == ' ' || e.KeyChar == '\r' || e.KeyChar == '\n')
                 this.LblColorClick(sender, e);
@@ -113,24 +112,23 @@ namespace EngieFileConverter.UI.SaveOptions
             cdl.Color = lbl.TrueBackColor;
             cdl.FullOpen = true;
             DialogResult res = cdl.ShowDialog(this);
-            if (res == DialogResult.OK || res == DialogResult.Yes)
-            {
-                lbl.TrueBackColor = cdl.Color;
-                if (chkTransparent.Enabled)
-                    chkTransparent.Checked = false;
-                else if (numAlpha.Enabled && numAlpha.Value == 0)
-                    numAlpha.Value = 0xFF;
-                UpdateController();
-            }
+            if (res != DialogResult.OK && res != DialogResult.Yes)
+                return;
+            lbl.TrueBackColor = cdl.Color;
+            if (this.chkTransparent.Enabled)
+                this.chkTransparent.Checked = false;
+            else if (this.numAlpha.Enabled && this.numAlpha.Value == 0)
+                this.numAlpha.Value = 0xFF;
+            this.UpdateController();
         }
 
-        private void chkTransparent_CheckedChanged(object sender, EventArgs e)
+        private void chkTransparent_CheckedChanged(Object sender, EventArgs e)
         {
             if (!m_Loading)
                 UpdateController();
         }
 
-        private void numAlpha_ValueChanged(object sender, EventArgs e)
+        private void numAlpha_ValueChanged(Object sender, EventArgs e)
         {
             if (!m_Loading)
                 UpdateController();

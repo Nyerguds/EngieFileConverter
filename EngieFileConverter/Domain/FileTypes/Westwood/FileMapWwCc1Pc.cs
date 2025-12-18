@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text.RegularExpressions;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Ini;
 using Nyerguds.Util;
@@ -91,16 +91,24 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
-            this.LoadFile(fileData, filename, null);
+            this.LoadFile(fileData, filename, null, null);
         }
 
-        public virtual void LoadFile(Byte[] fileData, String filename, Byte[] iniContents)
+        public virtual void LoadFile(Byte[] fileData, String filename, Byte[] iniContents, String iniFile)
         {
-            IniInfo iniInfo = this.GetIniInfo(filename, (Theater)0xFF, iniContents);
-            Theater theater = iniInfo.Theater;
+            IniInfo iniInfo = this.GetIniInfo(iniFile ?? filename, (Theater)0xFF, iniContents);
+            Theater theater = iniInfo == null ? (Theater)0xFF : iniInfo.Theater;
             this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, filename);
-            if (!String.IsNullOrEmpty(iniInfo.Name))
-                this.ExtraInfo = "Mission name: " + iniInfo.Name;
+            if (iniInfo != null)
+            {
+                this.ExtraInfo = "Ini info loaded from \"" + Path.GetFileName(iniInfo.File) + "\"" + Environment.NewLine
+                    + "Map width: " + iniInfo.Width + Environment.NewLine
+                    + "Map height: " + iniInfo.Height + Environment.NewLine
+                    + "Map X: " + iniInfo.X + Environment.NewLine
+                    + "Map Y: " + iniInfo.Y;
+                if (!String.IsNullOrEmpty(iniInfo.Name))
+                    this.ExtraInfo += Environment.NewLine + "Mission name: " + iniInfo.Name;
+            }
             this.SetFileNames(filename);
         }
 
@@ -138,20 +146,24 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     String iniStr = IniFile.ENCODING_DOS_US.GetString(iniData);
                     inifile = new IniFile(inipath, iniStr, IniFile.ENCODING_DOS_US);
-                    
+                    inipath = filename;
                 }
                 else if (File.Exists(inipath))
                 {
                     inifile = new IniFile(inipath, IniFile.ENCODING_DOS_US);
                 }
-                if (inifile != null)
-                {
-                    String th = inifile.GetStringValue("Map", "Theater", null);
-                    info.Theater = GeneralUtils.TryParseEnum(th, defaultTheater, true);
-                    info.Name = inifile.GetStringValue("Basic", "Name", null);
-                }
+                if (inifile == null || (!inifile.ContainsSection("Basic") && !inifile.ContainsSection("Map")))
+                    return null;
+                String th = inifile.GetStringValue("Map", "Theater", null);
+                info.Theater = GeneralUtils.TryParseEnum(th, defaultTheater, true);
+                info.Name = inifile.GetStringValue("Basic", "Name", null);
+                info.Width = inifile.GetIntValue("Map", "Width", 64);
+                info.Height = inifile.GetIntValue("Map", "Height", 64);
+                info.X = inifile.GetIntValue("Map", "X", 0);
+                info.Y = inifile.GetIntValue("Map", "Y", 0);
+                info.File = inipath;                
             }
-            catch { /* ignore */ }
+            catch { return null; }
             return info;
         }
 
@@ -189,7 +201,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     break;
             }
             Byte[] imageData = new Byte[64 * 64];
-            for (Int32 i = 0; i < simplifiedMap.Length; i++)
+            for (Int32 i = 0; i < simplifiedMap.Length; ++i)
             {
                 imageData[i] = (Byte)simplifiedMap[i];
             }
@@ -264,6 +276,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override void LoadFile(Byte[] fileData, String filename)
         {
+            IniInfo iniInfo = this.GetIniInfo(filename, (Theater)0xFF, fileData);
+            if (iniInfo == null || !String.Equals(Path.GetFileName(iniInfo.File), Path.GetFileName(filename), StringComparison.InvariantCultureIgnoreCase))
+                throw new FileTypeLoadException("Not an ini file.");
             String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".bin";
             if (!File.Exists(mapFilename))
                 throw new FileTypeLoadException("No .bin file found for this ini file.");
@@ -272,7 +287,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
             Byte[] mapFileData = File.ReadAllBytes(mapFilename);
-            base.LoadFile(mapFileData, mapFilename, fileData);
+            base.LoadFile(mapFileData, mapFilename, fileData, filename);
         }
 
     }
@@ -281,5 +296,10 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         public Theater Theater { get; set; }
         public String Name { get; set; }
+        public String File { get; set; }
+        public Int32 Width;
+        public Int32 Height;
+        public Int32 X;
+        public Int32 Y;
     }
 }

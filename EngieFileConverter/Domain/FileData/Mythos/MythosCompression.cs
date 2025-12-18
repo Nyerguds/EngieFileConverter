@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Nyerguds.GameData.Mythos
+namespace Nyerguds.FileData.Mythos
 {
     public class MythosCompression
     {
@@ -110,7 +110,7 @@ namespace Nyerguds.GameData.Mythos
                     // Already checked these in the RepeatingAhead function.
                     inPtr += detectedRepeat;
                     // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr] == cur; inPtr++) { }
+                    for (; inPtr < end && buffer[inPtr] == cur; ++inPtr) { }
                     UInt32 repeat = inPtr - start;
                     // check buffer overflow
                     if (outLen <= outPtr + 3)
@@ -259,7 +259,7 @@ namespace Nyerguds.GameData.Mythos
                     UInt32 start = inPtr;
                     UInt32 end = Math.Min(inPtr + 0xFF, curLineEnd);
                     // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr] == transparentIndex; inPtr++) { }
+                    for (; inPtr < end && buffer[inPtr] == transparentIndex; ++inPtr) { }
                     // write repeat value
                     bufferOut[outPtr++] = (Byte) (inPtr - start);
                 }
@@ -269,7 +269,7 @@ namespace Nyerguds.GameData.Mythos
                     UInt32 start = inPtr;
                     UInt32 end = Math.Min(inPtr + 0xFF, curLineEnd);
                     // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr] != transparentIndex; inPtr++) { }
+                    for (; inPtr < end && buffer[inPtr] != transparentIndex; ++inPtr) { }
                     // write repeat value
                     Byte copySize = (Byte) (inPtr - start);
                     bufferOut[outPtr++] = copySize;
@@ -325,7 +325,7 @@ namespace Nyerguds.GameData.Mythos
         protected static UInt32 RepeatingAhead(Byte[] buffer, UInt32 max, UInt32 ptr, UInt32 minAmount)
         {
             Byte cur = buffer[ptr];
-            for (UInt32 i = 1; i < minAmount; i++)
+            for (UInt32 i = 1; i < minAmount; ++i)
                 if (ptr + i >= max || buffer[ptr + i] != cur)
                     return i;
             return minAmount;

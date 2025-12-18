@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Nyerguds.GameData.Compression;
+using Nyerguds.FileData.Compression;
 using Nyerguds.Util;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.FileData.Dynamix
 {
     /// <summary>
     /// Dynamix compression / decompression class. Offers functionality to decompress chunks using RLE or LZW decompression,
@@ -21,7 +21,7 @@ namespace Nyerguds.GameData.Dynamix
             // for the VGA chunk alone can be constructed by taking a palette slice where each colour is 16 entries apart.
 
             // This VGA data [AB] gets "ennobled" to 8-bit by adding detail data [ab] from the BIN chunk, to get bytes [Aa Bb].
-            for (Int32 i = 0; i < vgaData.Length; i++)
+            for (Int32 i = 0; i < vgaData.Length; ++i)
             {
                 Int32 offs = i * 2;
                 // This can be written much simpler, but I expanded it to clearly show each step.
@@ -44,7 +44,7 @@ namespace Nyerguds.GameData.Dynamix
         {
             vgaData = new Byte[(imageData.Length + 1) / 2];
             binData = new Byte[(imageData.Length + 1) / 2];
-            for (Int32 i = 0; i < imageData.Length; i++)
+            for (Int32 i = 0; i < imageData.Length; ++i)
             {
                 Byte pixData = imageData[i];
                 Int32 pixHi = pixData & 0xF0;
@@ -173,7 +173,7 @@ namespace Nyerguds.GameData.Dynamix
         /// <param name="imageData">Image data to process.</param>
         public static void SwitchBackground(Byte[] imageData)
         {
-            for (Int32 i = 0; i < imageData.Length; i++)
+            for (Int32 i = 0; i < imageData.Length; ++i)
             {
                 if (imageData[i] == 0x00)
                     imageData[i] = 0xFF;

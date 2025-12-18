@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using Nyerguds.Util;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.FileData.Dynamix
 {
     public class DynamixChunk
     {
@@ -106,8 +106,12 @@ namespace Nyerguds.GameData.Dynamix
             Int32 fullDataSize = contents.Sum(x => x.Length);
             Byte[] fullData = new Byte[fullDataSize];
             Int32 offset = 0;
-            foreach (DynamixChunk chunk in contents)
+            Int32 contentLength = contents.Length;
+            for (Int32 i = 0; i < contentLength; ++i)
+            {
+                DynamixChunk chunk = contents[i];
                 offset = chunk.WriteChunk(fullData, offset);
+            }
             mainChunk.m_data = fullData;
             mainChunk.IsContainer = true;
             return mainChunk;

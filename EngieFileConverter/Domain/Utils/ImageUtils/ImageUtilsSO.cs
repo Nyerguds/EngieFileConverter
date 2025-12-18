@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#if DEBUG
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -17,6 +17,26 @@ namespace Nyerguds.ImageManipulation
     /// </remarks>
     public static class ImageUtilsSO
     {
+
+        public static Bitmap MatrixToGrayImage(Byte[] matrix, Int32 width, Int32 height)
+        {
+            Bitmap bmp = new Bitmap(width, height, PixelFormat.Format8bppIndexed);
+            BitmapData data = bmp.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, PixelFormat.Format8bppIndexed);
+            Int64 scan0 = data.Scan0.ToInt64();
+            for (Int32 y = 0; y < height; ++y)
+                Marshal.Copy(matrix, y * width, new IntPtr(scan0 + y * data.Stride), width);
+            bmp.UnlockBits(data);
+            // Add palette:
+            // Get original palette. Note that this makes a COPY of the ColorPalette object.
+            ColorPalette pal = bmp.Palette;
+            // Generate grayscale colours:
+            for (Int32 i = 0; i < 256; ++i)
+                pal.Entries[i] = Color.FromArgb(i, i, i);
+            // Assign the edited palette to the bitmap.
+            bmp.Palette = pal;
+            return bmp;
+        }
+
         /// <summary>
         /// Create bitmap from two-dimensional Int32 array.
         /// Written for a StackOverflow question.
@@ -30,9 +50,9 @@ namespace Nyerguds.ImageManipulation
             Int32 height = data.GetLength(1);
             Int32 byteIndex = 0;
             Byte[] dataBytes = new Byte[height * width * 4];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // UInt32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
                     UInt32 val = (UInt32)data[x, y];
@@ -62,9 +82,9 @@ namespace Nyerguds.ImageManipulation
             Int32 height = data.GetLength(1);
             Int32 byteIndex = 0;
             Byte[] dataBytes = new Byte[height * width];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // Int32 0xAARRGGBB = Byte[] { BB, GG, RR, AA }
                     // This uses the lowest byte, which is the blue component.
@@ -73,8 +93,8 @@ namespace Nyerguds.ImageManipulation
                     byteIndex++;
                 }
             }
-            Color[] palette = new Color[256];
-            for (Int32 i = 0; i < palette.Length; i++)
+            Color[] palette = new Color[0x100];
+            for (Int32 i = 0; i < 0x100; ++i)
                 palette[i] = Color.FromArgb(i, i, i);
             return ImageUtils.BuildImage(dataBytes, width, height, width, PixelFormat.Format8bppIndexed, palette, null);
         }
@@ -124,11 +144,11 @@ namespace Nyerguds.ImageManipulation
             Int32 curRowOffs = 0;
             Int32 height = bitmap.Height;
             Int32 width = bitmap.Height;
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 // Set offset to start of current row
                 Int32 curOffs = curRowOffs;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     Byte b = data[curOffs];
                     Byte g = data[curOffs + 1];
@@ -163,9 +183,9 @@ namespace Nyerguds.ImageManipulation
             if (width == 0 || height == 0)
                 return null;
             Byte[] patternArray = new Byte[width * height];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     Int32 offset = x + y * height;
                     patternArray[offset] = (((x + y) % 2 == 0) ? color1 : color2);
@@ -203,7 +223,7 @@ namespace Nyerguds.ImageManipulation
             Int32 height = bottom - top;
             // This removes the top-bottom stuff; the new array is compact.
             String[][] values = new String[height][];
-            for (Int32 i = top; i < bottom; i++)
+            for (Int32 i = top; i < bottom; ++i)
                 values[i - top] = lines[i].Split(',');
             // Find width: maximum csv line length minus the amount of columns to skip.
             Int32 width = values.Max(line => line.Length) - startColumn;
@@ -213,15 +233,17 @@ namespace Nyerguds.ImageManipulation
             Byte[] imageArray = new Byte[width * height];
             // Parse all values into the array
             // Y = lines, X = csv values
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 offset = y * width;
                 // Skip indices before "startColumn". Target offset starts from the start of the line anyway.
-                for (Int32 x = startColumn; x < values[y].Length; x++)
+                String[] yValues = values[y];
+                Int32 yValuesLen = yValues.Length;
+                for (Int32 x = startColumn; x < yValuesLen; ++x)
                 {
                     Int32 val;
                     // Don't know if Trim is needed here. Depends on the file.
-                    if (Int32.TryParse(values[y][x].Trim(), out val))
+                    if (Int32.TryParse(yValues[x].Trim(), out val))
                         imageArray[offset] = (Byte)Math.Max(0, Math.Min(val, maxValue));
                     offset++;
                 }
@@ -229,7 +251,7 @@ namespace Nyerguds.ImageManipulation
             // generate gray palette for the given range, by calculating the factor to multiply by.
             Double mulFactor = 255d / maxValue;
             Color[] palette = new Color[maxValue + 1];
-            for (Int32 i = 0; i <= maxValue; i++)
+            for (Int32 i = 0; i <= maxValue; ++i)
             {
                 // Away from zero rounding: 2.4 => 2 ; 2.5 => 3
                 Byte v = (Byte)Math.Round(i * mulFactor, MidpointRounding.AwayFromZero);
@@ -256,10 +278,10 @@ namespace Nyerguds.ImageManipulation
             Byte[] data = new Byte[stride * b.Height];
             Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
             // iterate
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 offset = y * stride;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     Byte colB = data[offset + 0]; // B
                     Byte colG = data[offset + 1]; // G
@@ -318,11 +340,11 @@ namespace Nyerguds.ImageManipulation
             Int32 actualHeight = height - 1;
             Int32 actualStride = actualWidth * 3;
             Byte[] result = new Byte[actualStride * actualHeight];
-            for (Int32 y = 0; y < actualHeight; y++)
+            for (Int32 y = 0; y < actualHeight; ++y)
             {
                 Int32 curPtr = y * stride;
                 Int32 resPtr = y * actualStride;
-                for (Int32 x = 0; x < actualWidth; x++)
+                for (Int32 x = 0; x < actualWidth; ++x)
                 {
                     // Get correct colour components from sliding window
                     Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1);
@@ -382,11 +404,11 @@ namespace Nyerguds.ImageManipulation
             Int32 lastRow = processHeight;
             Int32 actualStride = width * 3;
             Byte[] result = new Byte[actualStride * height];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 curPtr = y * stride;
                 Int32 resPtr = y * actualStride;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // Get correct colour components from sliding window
                     Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1); // all corner colours and center are green.
@@ -448,11 +470,11 @@ namespace Nyerguds.ImageManipulation
             Int32 lastRow = height - 1;
             Int32 actualStride = width * 3;
             Byte[] result = new Byte[actualStride * height];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 curPtr = y * stride;
                 Int32 resPtr = y * actualStride;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     // Get correct colour components from sliding window
                     Boolean isGreen = (x + y) % 2 == (greenFirst ? 0 : 1); // all corner colours and center are green.
@@ -505,11 +527,12 @@ namespace Nyerguds.ImageManipulation
         private static Byte GetAverageCol(params Byte?[] cols)
         {
             Int32 colsCount = 0;
-            foreach (Byte? col in cols)
-                if (col.HasValue) colsCount++;
+            Int32 colsLength = cols.Length;
+            for (Int32 i = 0; i < colsLength; ++i)
+                if (cols[i].HasValue) colsCount++;
             Int32 avgVal = 0;
-            foreach (Byte? col in cols)
-                avgVal += col.GetValueOrDefault();
+            for (Int32 i = 0; i < colsLength; ++i)
+                avgVal += cols[i].GetValueOrDefault();
             return colsCount == 0 ? (Byte)0x80 : (Byte)(avgVal / colsCount);
         }
 
@@ -530,10 +553,10 @@ namespace Nyerguds.ImageManipulation
             Int32 stride;
             Byte[] dataBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format24bppRgb);
             Int32[,] channel = new Int32[height, width];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 Int32 offset = y * stride;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     channel[y, x] = dataBytes[offset + channelNr];
                     offset += 3;
@@ -592,11 +615,11 @@ namespace Nyerguds.ImageManipulation
             // stride is the actual line width in bytes.
             Int32 bytes = stride * height;
             Byte[] PixelValues = new Byte[bytes];
-            for (Int32 y = 0; y < height; y++)
+            for (Int32 y = 0; y < height; ++y)
             {
                 // use stride to get the start offset of each line
                 Int32 offset = y * stride;
-                for (Int32 x = 0; x < width; x++)
+                for (Int32 x = 0; x < width; ++x)
                 {
                     PixelValues[offset + 0] = (Byte)blueChannel[y, x];
                     PixelValues[offset + 1] = (Byte)greenChannel[y, x];
@@ -647,7 +670,7 @@ namespace Nyerguds.ImageManipulation
             Int64 sourcePos = sourceData.Scan0.ToInt64();
             Int64 destPos = targetData.Scan0.ToInt64();
             // Copy line by line, skipping by stride but copying actual data width
-            for (Int32 y = 0; y < h; y++)
+            for (Int32 y = 0; y < h; ++y)
             {
                 Marshal.Copy(new IntPtr(sourcePos), imageData, 0, actualDataWidth);
                 Marshal.Copy(imageData, 0, new IntPtr(destPos), actualDataWidth);
@@ -658,93 +681,7 @@ namespace Nyerguds.ImageManipulation
             source.UnlockBits(sourceData);
             return dest;
         }
-
-        /// <summary>
-        /// Detects darker or brighter spots on the image by brightness threshold, and returns their center points.
-        /// </summary>
-        /// <param name="image">Input image.</param>
-        /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
-        /// <param name="brightnessThreshold">Brightness threshold needed to see a pixel as "bright".</param>
-        /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
-        /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
-        /// <returns>A list of points indicating the centers of all found spots.</returns>
-        public static List<Point> FindPoints(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold, Boolean getEdgesOnly)
-        {
-            List<List<Point>> blobs = FindBlobs(image, detectDark, brightnessThreshold, mergeThreshold, getEdgesOnly);
-            return blobs.Select(BlobDetection.GetBlobCenter).ToList();
-        }
-
-        /// <summary>
-        /// Detects darker or brighter spots on the image by brightness threshold, and returns their list of points.
-        /// </summary>
-        /// <param name="image">Input image.</param>
-        /// <param name="detectDark">Detect dark spots. False to detect bright drops.</param>
-        /// <param name="brightnessThreshold">Brightness threshold. Use -1 to attempt automatic levelling.</param>
-        /// <param name="mergeThreshold">The found spots are merged based on their square bounds. This is the amount of added pixels when checking these bounds. Use -1 to disable all merging.</param>
-        /// <param name="getEdgesOnly">True to make the returned lists only contain the edges of the blobs. This saves a lot of memory.</param>
-        /// <returns>A list of points indicating the centers of all found spots.</returns>
-        public static List<List<Point>> FindBlobs(Bitmap image, Boolean detectDark, Single brightnessThreshold, Int32 mergeThreshold, Boolean getEdgesOnly)
-        {
-            Boolean detectVal = !detectDark;
-            Int32 width = image.Width;
-            Int32 height = image.Height;
-            // Binarization: get 32-bit data
-            Int32 stride;
-            Byte[] data = ImageUtils.GetImageData(image, out stride, PixelFormat.Format32bppArgb);
-            // Binarization: get brightness
-            Single[,] brightness = new Single[height, width];
-            Int32 offset = 0;
-            Byte groups = 255;
-            for (Int32 y = 0; y < height; y++)
-            {
-                // use stride to get the start offset of each line
-                Int32 usedOffset = offset;
-                for (Int32 x = 0; x < width; x++)
-                {
-                    // get colour
-                    Byte blu = data[usedOffset + 0];
-                    Byte grn = data[usedOffset + 1];
-                    Byte red = data[usedOffset + 2];
-                    Color c = Color.FromArgb(red, grn, blu);
-                    brightness[y, x] = c.GetBrightness();
-                    usedOffset += 4;
-                }
-                offset += stride;
-            }
-            if (brightnessThreshold < 0)
-            {
-                Dictionary<Byte, Int32> histogram = new Dictionary<Byte, Int32>();
-                for (Int32 y = 0; y < height; y++)
-                {
-                    for (Int32 x = 0; x < width; x++)
-                    {
-                        Byte val = (Byte)(brightness[y, x] * groups);
-                        Int32 num;
-                        histogram.TryGetValue(val, out num);
-                        histogram[val] = num + 1;
-                    }
-                }
-                List<KeyValuePair<Byte, Int32>> sortedHistogram = histogram.OrderBy(x => x.Value).ToList();
-                sortedHistogram.Reverse();
-                sortedHistogram = sortedHistogram.Take(groups * 9 / 10).ToList();
-                Byte maxBrightness = sortedHistogram.Max(x => x.Key);
-                Byte minBrightness = sortedHistogram.Min(x => x.Key);
-                // [............m.............T.............M............]
-                // still not very good... need to find some way to detect image highlights. Probably needs K-means clustering...
-                brightnessThreshold = (minBrightness + (maxBrightness - minBrightness) * .5f) / groups;
-            }
-            // Binarization: convert to 1-byte-per-pixel array of 1/0 values based on a brightness threshold
-            Boolean[,] dataBw = new Boolean[height, width];
-            for (Int32 y = 0; y < height; y++)
-                for (Int32 x = 0; x < width; x++)
-                    dataBw[y, x] = brightness[y, x] > brightnessThreshold;
-
-            // Detect blobs.
-            // Coult technically simplify the required Func<> to remove the imgData and directly reference dataBw, but meh.
-            Func<Boolean[,], Int32, Int32, Boolean> clearsThreshold = (imgData, yVal, xVal) => imgData[yVal, xVal] == detectVal;
-            return BlobDetection.FindBlobs(dataBw, width, height, clearsThreshold, true, mergeThreshold, getEdgesOnly);
-        }
-
+        
         /// <summary>
         /// From https://stackoverflow.com/q/52900883/395685
         /// </summary>
@@ -757,7 +694,7 @@ namespace Nyerguds.ImageManipulation
             Random r = new Random();
             Point p = new Point(r.Next(0, width), r.Next(0, width));
             Byte[] data = new Byte[len];
-            for (Int64 i = 0; i < len; i++)
+            for (Int64 i = 0; i < len; ++i)
             {
                 Point tp;
                 switch (r.Next(0, 3))
@@ -775,7 +712,43 @@ namespace Nyerguds.ImageManipulation
                 data[tp.Y * width + tp.X] = 1;
                 p = tp;
             }
-            return BuildImage(data, width, height, width, PixelFormat.Format8bppIndexed, new[] { Color.Black, Color.White }, Color.Black);
+            return ImageUtils.BuildImage(data, width, height, width, PixelFormat.Format8bppIndexed, new[] { Color.Black, Color.White }, Color.Black);
         }
+
+        public static Byte GetIndexedPixel(Bitmap b, Int32 x, Int32 y)
+        {
+            if ((b.PixelFormat & PixelFormat.Indexed) == 0) throw new ArgumentException("Image does not have an indexed format!");
+            if (x < 0 || x >= b.Width) throw new ArgumentOutOfRangeException("x", String.Format("x should be in 0-{0}", b.Width));
+            if (y < 0 || y >= b.Height) throw new ArgumentOutOfRangeException("y", String.Format("y should be in 0-{0}", b.Height));
+            BitmapData data = b.LockBits(new Rectangle(x, y, 1, 1), ImageLockMode.ReadOnly, b.PixelFormat);
+            try
+            {
+                Byte[] pixel = new Byte[1];
+                Marshal.Copy(data.Scan0, pixel, 0, 1);
+                return pixel[0];
+            }
+            finally
+            {
+                if (data != null) b.UnlockBits(data);
+            }
+        }
+        /*/
+        public static unsafe Byte GetIndexedPixelUnsafe(Bitmap b, Int32 x, Int32 y)
+        {
+            if (x < 0 || x >= b.Width) throw new ArgumentOutOfRangeException("x", string.Format("x should be in 0-{0}", b.Width));
+            if (y < 0 || y >= b.Height) throw new ArgumentOutOfRangeException("y", string.Format("y should be in 0-{0}", b.Height));
+            BitmapData data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadOnly, b.PixelFormat);
+            try
+            {
+                Byte* scan0 = (Byte*)data.Scan0;
+                return scan0[x + y * data.Stride];
+            }
+            finally
+            {
+                if (data != null) b.UnlockBits(data);
+            }
+        }
+        //*/
     }
 }
+#endif

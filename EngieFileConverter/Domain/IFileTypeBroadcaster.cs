@@ -2,7 +2,7 @@
 
 namespace Nyerguds.Util
 {
-    public interface FileTypeBroadcaster
+    public interface IFileTypeBroadcaster
     {
         /// <summary>Very short code name for this type.</summary>
         String ShortTypeName { get; }
@@ -17,7 +17,14 @@ namespace Nyerguds.Util
     /// <summary>File load exceptions. These are typically ignored in favour of checking the next type to try.</summary>
     public class FileTypeLoadException : Exception
     {
-        public String AttemptedLoadedType { get; set; }
+        protected readonly String DataAttemptedLoadedType = "AttemptedLoadedType";
+
+        /// <summary>File type that was attempted to be loaded and threw this exception.</summary>
+        public String AttemptedLoadedType
+        {
+            get { return this.Data[this.DataAttemptedLoadedType] as String; }
+            set { this.Data[this.DataAttemptedLoadedType] = value; }
+        }
 
         public FileTypeLoadException() { }
         public FileTypeLoadException(String message) : base(message) { }

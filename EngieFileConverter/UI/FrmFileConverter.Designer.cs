@@ -202,7 +202,7 @@
             this.tsmiOpen.Name = "tsmiOpen";
             this.tsmiOpen.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
             this.tsmiOpen.Size = new System.Drawing.Size(200, 22);
-            this.tsmiOpen.Text = "&Open file";
+            this.tsmiOpen.Text = "&Open file...";
             this.tsmiOpen.Click += new System.EventHandler(this.TsmiOpen_Click);
             // 
             // tsmiSave
@@ -474,7 +474,6 @@
             this.palColorViewer.Size = new System.Drawing.Size(226, 226);
             this.palColorViewer.TabIndex = 122;
             this.palColorViewer.TransItemBackColor = System.Drawing.Color.Empty;
-            this.palColorViewer.TransItemCharColor = System.Drawing.Color.Transparent;
             this.palColorViewer.ColorLabelMouseDoubleClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseDoubleClick);
             this.palColorViewer.ColorLabelMouseClick += new Nyerguds.Util.UI.PaletteClickEventHandler(this.PalColorViewer_ColorLabelMouseClick);
             // 

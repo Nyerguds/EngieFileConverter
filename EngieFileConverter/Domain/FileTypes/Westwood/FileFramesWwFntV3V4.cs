@@ -100,10 +100,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("File data too short for symbol heights list!");
             //FontDataOffset
             Int32[] fontDataOffsetsList = new Int32[length];
-            for (Int32 i = 0; i < length; i++)
+            for (Int32 i = 0; i < length; ++i)
                 fontDataOffsetsList[i] = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, fontDataOffsetsListOffset + i * 2, 2, true) + (isV4 ? fontDataOffset : 0);
             List<Byte> widthsList = new List<Byte>();
-            for (Int32 i = 0; i < length; i++)
+            for (Int32 i = 0; i < length; ++i)
             {
                 Byte width = fileData[widthsListOffset + i];
                 if (width > this.Width)
@@ -112,7 +112,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             List<Byte> yOffsetsList = new List<Byte>();
             List<Byte> heightsList = new List<Byte>();
-            for (Int32 i = 0; i < length; i++)
+            for (Int32 i = 0; i < length; ++i)
             {
                 yOffsetsList.Add(fileData[heightsListOffset + i * 2]);
                 Byte height = fileData[heightsListOffset + i * 2 + 1];
@@ -124,7 +124,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 bitsLength = this.BitsPerPixel;
             Boolean[] transMask = this.TransparencyMask;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, transMask, false);
-            for (Int32 i = 0; i < length; i++)
+            for (Int32 i = 0; i < length; ++i)
             {
                 Int32 start = fontDataOffsetsList[i];
                 Byte width = widthsList[i];
@@ -194,7 +194,7 @@ namespace EngieFileConverter.Domain.FileTypes
             };
         }
 
-        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             return this.SaveV3V4Font(fileToSave, saveOptions, false);
         }
@@ -210,8 +210,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("Westwood Font v" + (this.BitsPerPixel == 4 ? 3 : 4) + " can only handle up to 256 frames!");
             width = -1;
             height = -1;
-            foreach (SupportedFileType frame in fileToSave.Frames)
+            SupportedFileType[] frames = fileToSave.Frames;
+            Int32 nrOfFrames = frames.Length;
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
+                SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
                     throw new NotSupportedException("Not all frames in input type are " + this.BitsPerPixel + "-bit images!");
                 width = Math.Max(width, frame.Width);
@@ -240,7 +243,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 heightsListOffset = widthsListOffset + imagesCount;
             Int32 fontOffsetStart = (!forV4) ? widthsListOffset + imagesCount : heightsListOffset + imagesCount * 2;
             Int32 bitsLength = forV4 ? 8 : 4;
-            for (Int32 i = 0; i < imagesCount; i++)
+            for (Int32 i = 0; i < imagesCount; ++i)
             {
                 Bitmap bm = fileToSave.Frames[i].GetBitmap();
                 Int32 imgWidth = bm == null ? 0 : bm.Width;
@@ -293,12 +296,14 @@ namespace EngieFileConverter.Domain.FileTypes
             Array.Copy(fontDataOffsetsList, 0, fullData, offsetsListOffset, fontDataOffsetsList.Length);
             Array.Copy(widthsList, 0, fullData, widthsListOffset, widthsList.Length);
             Int32 imageDataOffs = fontOffsetStart;
-            foreach (Byte[] symbolImgData in imageData)
+            for (Int32 i = 0; i < imagesCount; ++i)
             {
+                Byte[] symbolImgData = imageData[i];
                 if (symbolImgData == null || symbolImgData.Length == 0)
                     continue;
-                Array.Copy(symbolImgData, 0, fullData, imageDataOffs, symbolImgData.Length);
-                imageDataOffs += symbolImgData.Length;
+                Int32 dataLen = symbolImgData.Length;
+                Array.Copy(symbolImgData, 0, fullData, imageDataOffs, dataLen);
+                imageDataOffs += dataLen;
             }
             // at this point, heightsListOffset should equal imageDataOffs, and the next operation should exactly fill up the array.
             Array.Copy(heightsList, 0, fullData, heightsListOffset, heightsList.Length);
@@ -322,12 +327,12 @@ namespace EngieFileConverter.Domain.FileTypes
         protected Byte[] CreateImageIndex(Byte[][] imageData, Int32 startIndex, Boolean reduce, ref Int32 dataOffset, Boolean usesNullOffset, Boolean optimise, Boolean unsigned)
         {
             Int32 maxValue = unsigned ? (Int32)UInt16.MaxValue : Int16.MaxValue;
-            Int32[] refslist = optimise ? this.CreateOptimizedRefsList(imageData, startIndex) : null;
+            Int32[] refslist = optimise ? this.CreateOptimizedRefsList(imageData, startIndex, false) : null;
             Int32 symbols = imageData.Length;
             Int32 writeDiff = reduce ? -startIndex : 0;
             Byte[] fontDataOffsetsList = new Byte[(reduce ? symbols - startIndex : symbols) * 2];
 
-            for (Int32 i = startIndex; i < symbols; i++)
+            for (Int32 i = startIndex; i < symbols; ++i)
             {
                 Int32 replacei = optimise ? refslist[i] : i;
                 if (usesNullOffset && imageData[i].Length == 0)
@@ -362,21 +367,37 @@ namespace EngieFileConverter.Domain.FileTypes
         /// </summary>
         /// <param name="imageData">Image data array</param>
         /// <param name="startIndex">Start index in the array.</param>
+        /// <param name="fillInBeforeStart">True to fill indices before startIndex with their own index.</param>
         /// <returns></returns>
-        protected Int32[] CreateOptimizedRefsList(Byte[][] imageData, Int32 startIndex)
+        protected Int32[] CreateOptimizedRefsList(Byte[][] imageData, Int32 startIndex, Boolean fillInBeforeStart)
         {
             Int32 imagesCount = imageData.Length;
             Int32[] refsList = new Int32[imagesCount];
-            for (Int32 checkedEntry = startIndex; checkedEntry < imagesCount; checkedEntry++)
+            for (Int32 i = fillInBeforeStart ? 0 : startIndex; i < imagesCount; ++i)
+                refsList[i] = i;
+            for (Int32 i = startIndex; i < imagesCount; ++i)
             {
-                for (Int32 dupetest = startIndex; dupetest < imagesCount; dupetest++)
+                // Already detected as duplicate of something else; skip it.
+                if (refsList[i] != i)
+                    continue;
+                // Only check the entries after this one. The ones before it are already processed anyway, and did not find this one as dupe.
+                for (Int32 dupetest = i + 1; dupetest < imagesCount; ++dupetest)
                 {
-                    if (dupetest == checkedEntry || imageData[checkedEntry].SequenceEqual(imageData[dupetest]))
+                    Byte[] currData = imageData[i];
+                    Byte[] testData = imageData[dupetest];
+                    Int32 currDataLen = currData.Length;
+                    if (currDataLen != testData.Length)
+                        continue;
+                    Boolean dataEqual = true;
+                    for (Int32 b = 0; b < currDataLen; ++b)
                     {
-                        // reached the own index, or the data matches. Either way, set ref and continue with next one.
-                        refsList[checkedEntry] = dupetest;
+                        if (currData[b] == testData[b])
+                            continue;
+                        dataEqual = false;
                         break;
                     }
+                    if (dataEqual)
+                        refsList[i] = dupetest;
                 }
             }
             return refsList;
@@ -403,7 +424,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             return this.SaveV3V4Font(fileToSave, saveOptions, true);
         }

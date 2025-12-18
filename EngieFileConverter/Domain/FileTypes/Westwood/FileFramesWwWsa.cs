@@ -5,7 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -165,15 +165,24 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[] lastFrameData = LoadFromOtherExtFile(loadChain, new FileImgWwCps(), out lastFrameWidth, out lastFrameHeight);
             if (lastFrameData == null)
                 lastFrameData = LoadFromOtherExtFile(loadChain, new FileImage(), out lastFrameWidth, out lastFrameHeight);
-            foreach (String chainFilePath in loadChain)
+            Int32 loadChainLength = loadChain.Count;
+            for (Int32 i = 0; i < loadChainLength; ++i)
             {
+                String chainFilePath = loadChain[i];
                 Byte[] chainFileBytes = File.ReadAllBytes(chainFilePath);
                 using (FileFramesWwWsa chainFile = new FileFramesWwWsa())
                 {
-                    try { chainFile.LoadFromFileData(chainFileBytes, chainFilePath, m_Version, lastFrameData, lastFrameWidth, lastFrameHeight, false); }
-                    catch { return; }
+                    try
+                    {
+                        chainFile.LoadFromFileData(chainFileBytes, chainFilePath, this.m_Version, lastFrameData, lastFrameWidth, lastFrameHeight, false);
+                    }
+                    catch
+                    {
+                        // Chain file was not a WSA.
+                        return;
+                    }
                     Int32 lastFrameIndex = chainFile.Frames.Length - 1;
-                    if (lastFrameIndex  < 0)
+                    if (lastFrameIndex < 0)
                         return;
                     Bitmap lastFrame = chainFile.Frames[lastFrameIndex].GetBitmap();
                     if (lastFrame == null)
@@ -245,7 +254,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // Loop over all versions.
             WsaVersion[] versions = Enum.GetValues(typeof(WsaVersion)).Cast<WsaVersion>().Reverse().ToArray();
             Int32 lenmax = versions.Length - 1;
-            for (Int32 i = 0; i <= lenmax; i++)
+            for (Int32 i = 0; i <= lenmax; ++i)
             {
                 try
                 {
@@ -329,7 +338,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_HasPalette = (flags & 1) != 0;
             Boolean forceSixBitPal = loadVersion == WsaVersion.Poly && (flags & 2) != 0;
             UInt32[] frameOffsets = new UInt32[nrOfFrames + 2];
-            for (Int32 i = 0; i < nrOfFrames + 2; i++)
+            for (Int32 i = 0; i < nrOfFrames + 2; ++i)
             {
                 if (fileData.Length <= dataIndexOffset + 4)
                     throw new HeaderParseException("Data too short to contain frames info!");
@@ -359,7 +368,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPaletteFile(pal));
                     else
                         this.m_Palette = ColorUtils.ReadEightBitPalette(pal, true);
-                    PaletteUtils.ApplyTransparencyGuide(this.m_Palette, this.TransparencyMask);
+                    PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, this.TransparencyMask);
                 }
                 catch (NotSupportedException e)
                 {
@@ -378,7 +387,7 @@ namespace EngieFileConverter.Domain.FileTypes
             // all nice for detecting bad files, but some GOOD files manage to have a delta buffer larger than the XORWorstCase.
             Int32 xorWorstCase = Math.Max((Int32)deltaBufferSize, WWCompression.XORWorstCase(xorWidth * xorHeight));
             Byte[] xorData = new Byte[xorWorstCase];
-            for (Int32 i = 0; i < nrOfFrames + 1; i++)
+            for (Int32 i = 0; i < nrOfFrames + 1; ++i)
             {
                 String specificInfo = String.Empty;
                 UInt32 frameOffset = frameOffsets[i];
@@ -411,29 +420,32 @@ namespace EngieFileConverter.Domain.FileTypes
                     return;
                 if (frameOffsetReal == fileData.Length)
                     break;
-                Int32 refOff = (Int32)frameOffsetReal;
-                Int32 uncLen;
-                Boolean bufferOverrun;
-                try
+                if (frameOffset != 0)
                 {
-                    uncLen = WWCompression.LcwDecompress(fileData, ref refOff, xorData, (Int32)frameEndOffset);
-                    bufferOverrun = uncLen > deltaBufferSize;
-                }
-                catch (Exception ex)
-                {
-                    throw new HeaderParseException("LCW Decompression failed: " + ex.Message, ex);
-                }
-                specificInfo += "\nData: " + (refOff - frameOffsetReal) + (" bytes @ 0x") + frameOffsetReal.ToString("X");
-                if (bufferOverrun)
-                    specificInfo += "\nFrame has buffer overrun";
-                try
-                {
-                    refOff = 0;
-                    WWCompression.ApplyXorDelta(frameData, xorData, ref refOff, uncLen);
-                }
-                catch (Exception ex)
-                {
-                    throw new HeaderParseException("XOR Delta merge failed: " + ex.Message, ex);
+                    Int32 refOff = (Int32)frameOffsetReal;
+                    Int32 uncLen;
+                    Boolean bufferOverrun;
+                    try
+                    {
+                        uncLen = WWCompression.LcwDecompress(fileData, ref refOff, xorData, (Int32)frameEndOffset);
+                        bufferOverrun = uncLen > deltaBufferSize;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new HeaderParseException("LCW Decompression failed: " + ex.Message, ex);
+                    }
+                    specificInfo += "\nData: " + (refOff - frameOffsetReal) + (" bytes @ 0x") + frameOffsetReal.ToString("X");
+                    if (bufferOverrun)
+                        specificInfo += "\nFrame has buffer overrun";
+                    try
+                    {
+                        refOff = 0;
+                        WWCompression.ApplyXorDelta(frameData, xorData, ref refOff, uncLen);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new HeaderParseException("XOR Delta merge failed: " + ex.Message, ex);
+                    }
                 }
                 if (i == 0)
                     Array.Copy(frameData, frame0Data, frameData.Length);
@@ -522,20 +534,19 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             // Preliminary checks
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
-            {
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-            }
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
+            if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
             Int32 width = -1;
             Int32 height = -1;
-            Color[] palette = null;
-            foreach (SupportedFileType frame in fileToSave.Frames)
+            Color[] palette = fileToSave.GetColors();
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                if (frame == null)
+                SupportedFileType frame = frames[i];
+                if (frame == null || frame.GetBitmap() == null)
                     throw new NotSupportedException("WSA can't handle empty frames!");
                 if (frame.BitsPerPixel != 8)
                     throw new NotSupportedException("Not all frames in input type are 8-bit images!");
@@ -546,7 +557,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else if (width != frame.Width || height != frame.Height)
                     throw new NotSupportedException("Not all frames in input type are the same size!");
-                if (palette == null)
+                if (palette == null || palette.Length == 0)
                     palette = frame.GetColors();
             }
             // Save options
@@ -556,7 +567,6 @@ namespace EngieFileConverter.Domain.FileTypes
                 saveType = WsaVersion.Cnc;
             else
                 saveType = (WsaVersion)type;
-
             Boolean asPaletted = saveType != WsaVersion.Dune2v1 && GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL"));
             Boolean saveSixBitPal = saveType != WsaVersion.Poly || GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "PAL6"));
 
@@ -565,10 +575,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean cut = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CUT"));
             Boolean continues = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CONT"));
 
-
             // Fetch and compress data
-            Int32 readFrames = fileToSave.Frames.Length;
-            Int32 writeFrames = readFrames;
+            Int32 readFrames = nrOfFrames;
+            Int32 writeFrames = nrOfFrames;
             if (cut)
             {
                 readFrames--;
@@ -581,12 +590,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 writeFrames++;
             Byte[][] framesDataUnc = new Byte[writeFrames][];
             Byte[] firstFrameData = continues ? new Byte[width * height] : null;
-            for (Int32 i = 0; i < writeFrames; i++)
+            for (Int32 i = 0; i < writeFrames; ++i)
             {
                 Byte[] frameDataRaw;
                 if (i < readFrames)
                 {
-                    Bitmap bm = fileToSave.Frames[i].GetBitmap();
+                    Bitmap bm = frames[i].GetBitmap();
                     Int32 stride;
                     frameDataRaw = ImageUtils.GetImageData(bm, out stride, true);
                 }
@@ -609,7 +618,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 checkEnd = writeFrames;
                 if (loop)
                     checkEnd--;
-                for (Int32 i = 0; i < checkEnd; i++)
+                for (Int32 i = 0; i < checkEnd; ++i)
                 {
                     Int32 yOffs = 0;
                     Int32 trHeight = height;
@@ -630,7 +639,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     yOffset = minYTrimStart;
                     Int32 newWidth = maxXTrimEnd - xOffset;
                     Int32 newheight = maxYTrimEnd - yOffset;
-                    for (Int32 i = 0; i < writeFrames; i++)
+                    for (Int32 i = 0; i < writeFrames; ++i)
                         framesDataUnc[i] = ImageUtils.CopyFrom8bpp(framesDataUnc[i], width, height, width, new Rectangle(xOffset, yOffset, newWidth, newheight));
                     width = newWidth;
                     height = newheight;
@@ -639,7 +648,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] framesData = new Byte[writeFrames][];
             Int32 deltaBufferSize = 0;
             Byte[] previousFrame = new Byte[width*height];
-            for (Int32 i = 0; i < writeFrames; i++)
+            for (Int32 i = 0; i < writeFrames; ++i)
             {
                 Byte[] currentFrame = framesDataUnc[i];
                 Byte[] frameData = WWCompression.GenerateXorDelta(currentFrame, previousFrame);
@@ -665,10 +674,11 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 fileSize = headerSize + indexSize + paletteSize + dataSize;
             Byte[] fileData = new Byte[fileSize];
             Int32 curOffs = headerSize + indexSize;
-            Int32[] frameOffsets = new Int32[readFrames + 2];
+            Int32 nrOfOffsets = readFrames + 2;
+            Int32[] frameOffsets = new Int32[nrOfOffsets];
             // Initial offset. Set to 0 if there is no first frame.
             frameOffsets[0] = continues ? 0 : curOffs;
-            for (Int32 i = 0; i < writeFrames; i++)
+            for (Int32 i = 0; i < writeFrames; ++i)
             {
                 curOffs += framesData[i].Length;
                 frameOffsets[i + 1] = curOffs;
@@ -698,9 +708,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 ArrayUtils.WriteIntToByteArray(fileData, offset, 2, true, (UInt32)flags);
                 offset += 2;
             }
-            foreach (Int32 frOffs in frameOffsets)
+            for (Int32 i = 0; i < nrOfOffsets; ++i)
             {
-                ArrayUtils.WriteIntToByteArray(fileData, offset, 4, true, (UInt32)frOffs);
+                ArrayUtils.WriteIntToByteArray(fileData, offset, 4, true, (UInt32) frameOffsets[i]);
                 offset += 4;
             }
             if (asPaletted)
@@ -713,10 +723,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 Array.Copy(palBytes, 0, fileData, offset, Math.Min(0x300, palBytes.Length));
                 offset += 0x300;
             }
-            foreach (Byte[] frame in framesData)
+            for (Int32 i = 0; i < writeFrames; ++i)
             {
-                Array.Copy(frame, 0, fileData, offset, frame.Length);
-                offset += frame.Length;
+                Byte[] frame = framesData[i];
+                Int32 frameLen = frame.Length;
+                Array.Copy(frame, 0, fileData, offset, frameLen);
+                offset += frameLen;
             }
             return fileData;
         }

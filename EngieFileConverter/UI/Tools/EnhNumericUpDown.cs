@@ -1,5 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Globalization;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -85,8 +87,9 @@ namespace Nyerguds.Util.UI
             System.Media.SystemSounds.Beep.Play();
             StringBuilder text = new StringBuilder();
             String txt = this.Text;
+            Int32 txtLen = txt.Length;
             Int32 firstIllegalChar = 0;
-            for (Int32 i = 0; i < txt.Length; i++)
+            for (Int32 i = 0; i < txtLen; ++i)
             {
                 Char c = txt[i];
                 if ((c < '0' || c > '9') && (!allowminus || i > 0 || c != '-'))
@@ -103,7 +106,7 @@ namespace Nyerguds.Util.UI
             {
                 value = Math.Max((Int32)this.Minimum, Math.Min(this.Maximum, value));
                 // will trigger this function again, but that's okay, it'll immediately fail the regex and abort.
-                this.Text = value.ToString();
+                this.Text = value.ToString(CultureInfo.InvariantCulture);
             }
             else
                 this.Text = filteredText;
@@ -202,14 +205,12 @@ namespace Nyerguds.Util.UI
         public override void DownButton()
         {
             base.DownButton();
-            Decimal value = this.Value;
-            if (_zoomMode && this.Value <= 1 && this.Value > -2 && value > -2)
-                value = -2;
-            this.Value = Math.Max(this.Minimum, value);
+            //Decimal value = this.Value;
+            //this.Value = Math.Max(this.Minimum, value);
             if (this.UpDownValidatesEnter)
                 this.ValidateValue();
             if (this.ValueUpDown != null)
-                this.ValueUpDown(this, new UpDownEventArgs(UpDownAction.Up));
+                this.ValueUpDown(this, new UpDownEventArgs(UpDownAction.Down));
         }
 
         /// <summary>
@@ -218,14 +219,34 @@ namespace Nyerguds.Util.UI
         public override void UpButton()
         {
             base.UpButton();
-            Decimal value = this.Value;
-            if (_zoomMode && this.Value < 1 && this.Value >= -2 && value <= 1)
-                value = 1;
-            this.Value = Math.Min(this.Maximum, value);
+            //Decimal value = this.Value;
+            //this.Value = Math.Min(this.Maximum, value);
             if (this.UpDownValidatesEnter)
                 this.ValidateValue();
             if (this.ValueUpDown != null)
-                this.ValueUpDown(this, new UpDownEventArgs(UpDownAction.Down));
+                this.ValueUpDown(this, new UpDownEventArgs(UpDownAction.Up));
+        }
+
+        // Sets the value without triggering the "OnValueChanged" event.
+        protected void SetInternalValue(Int32 value)
+        {
+            Type numUpDownType = this.GetType();
+            FieldInfo init = numUpDownType.GetField("initializing");
+            Boolean initializing = (Boolean)init.GetValue(this);
+
+            if (!initializing && ((value < Minimum) || (value > Maximum)))
+            {
+                // Let the system take care of the 'out of range' exception.
+                this.Value = value;
+            }
+            else
+            {
+                FieldInfo val = numUpDownType.GetField("currentValue");
+                val.SetValue(this, value);
+                FieldInfo valChanged = numUpDownType.GetField("currentValueChanged");
+                valChanged.SetValue(this, true);
+                UpdateEditText();
+            } 
         }
     }
 

@@ -87,7 +87,8 @@ namespace Nyerguds.Util
             Int32[] clustering = new Int32[numTuples];
             for (Int32 i = 0; i < numClusters; ++i) // make sure each cluster has at least one tuple
                 clustering[i] = i;
-            for (UInt32 i = numClusters; i < clustering.Length; ++i)
+            Int32 clusteringLength = clustering.Length;
+            for (UInt32 i = numClusters; i < clusteringLength; ++i)
                 clustering[i] = random.Next(0, (Int32)numClusters); // other assignments random
             return clustering;
         }
@@ -103,13 +104,13 @@ namespace Nyerguds.Util
             Int32 numClusters = means.Length;
             Int32 numData = data.Length;
             Int32[] clusterCounts = new Int32[numClusters];
-            for (Int32 i = 0; i < numData; i++)
+            for (Int32 i = 0; i < numData; ++i)
             {
                 Int32 cluster = clustering[i];
                 clusterCounts[cluster]++;
             }
 
-            for (Int32 k = 0; k < numClusters; k++)
+            for (Int32 k = 0; k < numClusters; ++k)
                 if (clusterCounts[k] == 0)
                     return false; // Bad clustering. No change to means[][]
 
@@ -117,7 +118,7 @@ namespace Nyerguds.Util
             for (Int32 k = 0; k < numClusters; ++k)
                 this.ClearMeans(means, k);
 
-            for (Int32 k = 0; k < numClusters; k++)
+            for (Int32 k = 0; k < numClusters; ++k)
             {
                 Int32 count = 0;
                 for (Int32 i = 0; i < numData; ++i)
@@ -125,7 +126,7 @@ namespace Nyerguds.Util
                         count++;
                 Tdata[] subData = new Tdata[count];
                 count = 0;
-                for (Int32 i = 0; i < data.Length; ++i)
+                for (Int32 i = 0; i < numData; ++i)
                     if (clustering[i] == k)
                         subData[count++] = data[i];
                 means[k] = this.CalculateClusterAverage(subData);
@@ -143,14 +144,15 @@ namespace Nyerguds.Util
             Int32 numClusters = means.Length;
             Boolean changed = false;
 
-            Int32[] newClustering = new Int32[clustering.Length]; // proposed result
-            Array.Copy(clustering, newClustering, clustering.Length);
+            Int32 clusteringLength = clustering.Length;
+            Int32[] newClustering = new Int32[clusteringLength]; // proposed result
+            Array.Copy(clustering, newClustering, clusteringLength);
 
             Double[] distances = new Double[numClusters]; // distances from curr tuple to each mean
-
-            for (Int32 i = 0; i < data.Length; ++i) // walk thru each tuple
+            Int32 dataLength = data.Length;
+            for (Int32 i = 0; i < dataLength; ++i) // walk thru each tuple
             {
-                for (Int32 k = 0; k < numClusters; k++)
+                for (Int32 k = 0; k < numClusters; ++k)
                     distances[k] = this.CalculateDistance(data[i], means[k]); // compute distances from curr tuple to all k means
 
                 Int32 newClusterID = MinIndex(distances); // find closest mean ID
@@ -165,7 +167,7 @@ namespace Nyerguds.Util
 
             // check proposed clustering[] cluster counts
             Int32[] clusterCounts = new Int32[numClusters];
-            for (Int32 i = 0; i < data.Length; ++i)
+            for (Int32 i = 0; i < dataLength; ++i)
             {
                 Int32 cluster = newClustering[i];
                 ++clusterCounts[cluster];
@@ -185,7 +187,8 @@ namespace Nyerguds.Util
             // helper for UpdateClustering()
             Int32 indexOfMin = 0;
             Double smallDist = distances[0];
-            for (Int32 k = 0; k < distances.Length; ++k)
+            Int32 distancesCount = distances.Length;
+            for (Int32 k = 0; k < distancesCount; ++k)
             {
                 if (!(distances[k] < smallDist))
                     continue;

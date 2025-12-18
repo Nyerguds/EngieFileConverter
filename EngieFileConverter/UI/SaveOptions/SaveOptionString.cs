@@ -87,8 +87,9 @@ namespace EngieFileConverter.UI.SaveOptions
                 Int32 caret = textbox.SelectionStart;
                 Int32 len1 = textbox.Text.Length;
                 Char[] text = textbox.Text.Replace("\n", String.Empty).Replace("\r", String.Empty).ToCharArray();
+                Int32 txtLen = text.Length;
                 if (m_AllowedMask != null)
-                    for (Int32 i = 0; i < text.Length; i++)
+                    for (Int32 i = 0; i < txtLen; ++i)
                         if (!this.m_AllowedMask.Contains(text[i]))
                             text[i] = '\0';
                 textbox.Text = new String(text).Replace("\0", String.Empty);

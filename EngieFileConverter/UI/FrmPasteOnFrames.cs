@@ -49,9 +49,11 @@ namespace EngieFileConverter.UI
         {
             Type[] saveTypes = SupportedFileType.SupportedSaveTypes;
             List<Type> filteredTypes = new List<Type>();
-            foreach (Type saveType in saveTypes)
+            Int32 nrOfSaveTypes = saveTypes.Length;
+            for (Int32 i = 0; i < nrOfSaveTypes; ++i)
             {
-                SupportedFileType tmpsft = (SupportedFileType)Activator.CreateInstance(saveType);
+                Type saveType = saveTypes[i];
+                SupportedFileType tmpsft = (SupportedFileType) Activator.CreateInstance(saveType);
                 if ((tmpsft.InputFileClass & FileClass.Image) != 0)
                     filteredTypes.Add(saveType);
             }
@@ -68,7 +70,7 @@ namespace EngieFileConverter.UI
                 {
                     SupportedFileType[] sft = filteredTypes.Select(ft => new FileDialogItem<SupportedFileType>(ft).ItemObject).ToArray();
                     List<FileTypeLoadException> loadErrors;
-                    selectedType = SupportedFileType.LoadFileAutodetect(fileData, filename, sft, out loadErrors, true);
+                    selectedType = SupportedFileType.LoadFileAutodetect(fileData, filename, sft, true, out loadErrors);
                     if (selectedType == null)
                     {
                         String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());

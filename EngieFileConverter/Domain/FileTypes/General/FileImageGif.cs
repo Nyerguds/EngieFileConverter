@@ -59,7 +59,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Int32 tempStride;
                     this.m_rawframes = new Byte[tilesList.Length][];
                     this.m_TilesList = new FileImageGif[tilesList.Length];
-                    for (Int32 i = 0; i < m_rawframes.Length; i++)
+                    for (Int32 i = 0; i < m_rawframes.Length; ++i)
                     {
                         using (Bitmap frame = new Bitmap(tilesList[i]))
                         {

@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using Nyerguds.GameData.Westwood;
+using Nyerguds.FileData.Westwood;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -46,7 +46,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public Byte[][] GetRawTiles()
         {
             Byte[][] tiles = new Byte[this.m_Tiles.Length][];
-            for (Int32 i = 0; i < tiles.Length; i++)
+            for (Int32 i = 0; i < tiles.Length; ++i)
                 tiles[i] = this.m_Tiles[i].ToArray();
             return tiles;
         }
@@ -109,7 +109,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_Tiles = new Byte[this.hdrNrOfTiles][];
             this.m_TileUseList = new Boolean[imagesList.Length];
             Byte[] extraInfoList = new Byte[imagesList.Length];
-            for (Int32 i = 0; i < imagesList.Length; i++)
+            for (Int32 i = 0; i < imagesList.Length; ++i)
             {
                 Byte dataIndex = imagesList[i];
                 Boolean used = dataIndex != 0xFF;
@@ -216,9 +216,9 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] tempFrames = new Byte[nrOfFrames][];
             Byte[] finalIndices = new Byte[nrOfFrames];
             Int32 actualFrames = 0;
-            for (Int32 y = 0; y < nrOfFramesY; y++)
+            for (Int32 y = 0; y < nrOfFramesY; ++y)
             {
-                for (Int32 x = 0; x < nrOfFramesX; x++)
+                for (Int32 x = 0; x < nrOfFramesX; ++x)
                 {
                     Int32 index = y * nrOfFramesX + x;
                     Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
@@ -227,7 +227,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     else
                     {
                         Int32 foundIndex = -1;
-                        for (Int32 i = 0; i < actualFrames; i++)
+                        for (Int32 i = 0; i < actualFrames; ++i)
                         {
                             if (tempFrames[i].SequenceEqual(frameData))
                             {
@@ -269,7 +269,7 @@ namespace EngieFileConverter.Domain.FileTypes
             ArrayUtils.WriteIntToByteArray(finalData, 0x18, 4, true, (UInt32)indexImages);
             ArrayUtils.WriteIntToByteArray(finalData, 0x1C, 4, true, (UInt32)indexTilesetImagesList);
 
-            for (Int32 i = 0; i < actualFrames; i++)
+            for (Int32 i = 0; i < actualFrames; ++i)
                 Array.Copy(tempFrames[i], 0, finalData, indexImgStart + tileLength * i, tileLength);
             // Not done: write data to offset indexImages. Because, no one really knows what it does.
             Array.Copy(finalIndices, 0, finalData, indexTilesetImagesList, finalIndices.Length);

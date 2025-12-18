@@ -28,7 +28,7 @@ namespace Nyerguds.ImageManipulation
 
         public static Color GetInvertedColor(Color color)
         {
-            return Color.FromArgb((Int32)(0x00FFFFFFu ^ (UInt32)color.ToArgb()));
+            return Color.FromArgb(color.A, Color.FromArgb((Int32)(0x00FFFFFFu ^ (UInt32)color.ToArgb())));
         }
 
         public static Boolean HasGrayPalette(Bitmap image)
@@ -41,7 +41,7 @@ namespace Nyerguds.ImageManipulation
             Color[] pal = image.Palette.Entries;
             if (pal.Length != grayPalette.Length)
                 return false;
-            for (Int32 i = 0; i < 256; i++)
+            for (Int32 i = 0; i < 256; ++i)
             {
                 Color palcol = pal[i];
                 Color graycol = grayPalette[i];
@@ -67,13 +67,16 @@ namespace Nyerguds.ImageManipulation
             colorPalette.CopyTo(palette, 0);
 
             Boolean[] excludedFrom = new Boolean[0x100];
-            foreach (Int32 index in exclIndSrc)
+            for (Int32 i = 0; i < 0x100; ++i)
+            {
+                Int32 index = exclIndSrc[i];
                 if (index >= 0 && index < 0x100)
                     excludedFrom[index] = true;
+            }
             Byte[] interlaceTable = new Byte[0x10000];
-            for (Int32 y = 0; y < 0x100; y++)
+            for (Int32 y = 0; y < 0x100; ++y)
             {
-                for (Int32 x = y; x < 0x100; x++)
+                for (Int32 x = y; x < 0x100; ++x)
                 {
                     Byte value;
                     Boolean equal = y == x;
@@ -104,7 +107,7 @@ namespace Nyerguds.ImageManipulation
         public static Color[] GetEightBitColorPalette(ColorSixBit[] sixbitpalette)
         {
             Color[] eightbitpalette = new Color[sixbitpalette.Length];
-            for (Int32 i = 0; i < sixbitpalette.Length; i++)
+            for (Int32 i = 0; i < sixbitpalette.Length; ++i)
                 eightbitpalette[i] = sixbitpalette[i].GetAsColor();
             return eightbitpalette;
         }
@@ -112,7 +115,7 @@ namespace Nyerguds.ImageManipulation
         public static ColorSixBit[] GetSixBitColorPalette(Color[] eightbitpalette)
         {
             ColorSixBit[] sixbitpalette = new ColorSixBit[eightbitpalette.Length];
-            for (Int32 i = 0; i < eightbitpalette.Length; i++)
+            for (Int32 i = 0; i < eightbitpalette.Length; ++i)
                 sixbitpalette[i] = new ColorSixBit(eightbitpalette[i]);
             return sixbitpalette;
         }
@@ -133,7 +136,7 @@ namespace Nyerguds.ImageManipulation
         {
             Byte[] pal = new Byte[768];
             Int32 end = Math.Min(768, palette.Length);
-            for (Int32 i = 0; i < end; i++)
+            for (Int32 i = 0; i < end; ++i)
             {
                 Int32 index = i * 3;
                 pal[index] = palette[i].R;
@@ -153,7 +156,7 @@ namespace Nyerguds.ImageManipulation
         {
             Int32 end = expandTo256 ? 256 : Math.Min(256, palette.Length);
             Byte[] pal = new Byte[end * 3];
-            for (Int32 i = 0; i < end; i++)
+            for (Int32 i = 0; i < end; ++i)
             {
                 Int32 index = i * 3;
                 Color col;
@@ -193,7 +196,7 @@ namespace Nyerguds.ImageManipulation
             ColorSixBit[] pal = new ColorSixBit[colors];
             try
             {
-                for (Int32 i = 0; i < colors; i++)
+                for (Int32 i = 0; i < colors; ++i)
                 {
                     Int32 index = start + i * 3;
                     pal[i] = new ColorSixBit(paletteData[index], paletteData[index + 1], paletteData[index + 2]);
@@ -218,14 +221,20 @@ namespace Nyerguds.ImageManipulation
             Int32 dataLength = paletteData.Length;
             if (dataLength % 3 != 0)
                 throw new ArgumentException("This is not a valid palette file.");
-            Color[] pal = new Color[readFull ? 256 : dataLength / 3];
-            for (Int32 i = 0; i < pal.Length; i++)
+            return ReadEightBitPaletteFrom(paletteData, 0, readFull ? 256 : dataLength / 3);
+        }
+
+        public static Color[] ReadEightBitPaletteFrom(Byte[] data, Int32 index, Int32 length)
+        {
+            Color[] pal = new Color[length];
+            Int32 dataEnd = Math.Min(data.Length, index + length * 3);
+            for (Int32 i = 0; i < length; ++i)
             {
-                Int32 index = i * 3;
-                if (index + 2 > dataLength)
+                if (index + 2 > dataEnd)
                     pal[i] = Color.Empty;
                 else
-                    pal[i] = Color.FromArgb(paletteData[index], paletteData[index + 1], paletteData[index + 2]);
+                    pal[i] = Color.FromArgb(data[index], data[index + 1], data[index + 2]);
+                index += 3;
             }
             return pal;
         }
@@ -237,7 +246,7 @@ namespace Nyerguds.ImageManipulation
             Int32 red = col.R;
             Int32 green = col.G;
             Int32 blue = col.B;
-            for (Int32 i = 0; i < colorPalette.Length; i++)
+            for (Int32 i = 0; i < colorPalette.Length; ++i)
             {
                 if (excludedindices != null && excludedindices.Contains(i))
                     continue;

@@ -84,7 +84,7 @@ namespace Nyerguds.Util.UI
 
         [Browsable(true)]
         [DefaultValue(true)]
-        public new bool TabStop
+        public new Boolean TabStop
         {
             get { return m_TabStop; }
             set
@@ -149,7 +149,7 @@ namespace Nyerguds.Util.UI
             base.OnMouseUp(e);
         }
 
-        protected override bool IsInputKey(Keys keyData)
+        protected override Boolean IsInputKey(Keys keyData)
         {
             if (keyData == Keys.Enter || keyData == Keys.Space) return true;
             return base.IsInputKey(keyData);

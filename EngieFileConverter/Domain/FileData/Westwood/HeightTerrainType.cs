@@ -1,4 +1,4 @@
-﻿namespace Nyerguds.GameData.Westwood
+﻿namespace Nyerguds.FileData.Westwood
 {
     public enum TerrainTypeEnh
     {

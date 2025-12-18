@@ -60,8 +60,17 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Domain\FileData\IGC\IgcRle.cs" />
+    <Compile Include="Domain\FileData\NullSoft\PcxCompression.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileImgBif.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileImgStris.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
     <Compile Include="Domain\FileTypes\EA\FileImgKotBPak.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileImgNova.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileImgIgcDmp.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileFramesIgcSlb.cs" />
+    <Compile Include="Domain\FileTypes\Xtra\FileFramesDfPic.cs" />
+    <Compile Include="Domain\FileTypes\General\FileImagePcx.cs" />
     <Compile Include="Domain\FileTypes\General\FilePalette8Bit.cs" />
     <Compile Include="Domain\FileTypes\General\FileIcon.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVda.cs" />
@@ -69,7 +78,7 @@
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
     <Compile Include="Domain\FileTypes\IG\FileFramesFntD2k.cs" />
-    <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwPsx2.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileImgWwMhwanh.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwPsx.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwAmiga.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwFntV3V4.cs" />
@@ -81,14 +90,14 @@
     <Compile Include="Domain\FileTypes\Westwood\FileTblWwPal.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpCc.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwWsa.cs" />
-    <Compile Include="Domain\GameData\Agos\AgosCompression.cs" />
-    <Compile Include="Domain\GameData\LzssHuffDecoder.cs" />
-    <Compile Include="Domain\GameData\LzwCompression.cs" />
-    <Compile Include="Domain\GameData\Mythos\MythosCompression.cs" />
-    <Compile Include="Domain\GameData\RleCompression.cs" />
-    <Content Include="Domain\GameData\Westwood\Ra1TemplateTypeClass.cs" />
-    <Compile Include="Domain\GameData\Westwood\WestwoodRleZero.cs" />
-    <Compile Include="Domain\GameData\Westwood\WWCompression.cs" />
+    <Compile Include="Domain\FileData\Agos\AgosCompression.cs" />
+    <Compile Include="Domain\FileData\LzssHuffDecoder.cs" />
+    <Compile Include="Domain\FileData\LzwCompression.cs" />
+    <Compile Include="Domain\FileData\Mythos\MythosCompression.cs" />
+    <Compile Include="Domain\FileData\RleCompression.cs" />
+    <Content Include="Domain\FileData\Westwood\Ra1TemplateTypeClass.cs" />
+    <Compile Include="Domain\FileData\Westwood\WestwoodRleZero.cs" />
+    <Compile Include="Domain\FileData\Westwood\WWCompression.cs" />
     <Compile Include="Domain\FileTypes\General\FileImageFrame.cs" />
     <Compile Include="Domain\FileTypes\General\FileFrames.cs" />
     <Compile Include="Domain\FileTypes\MVP\FileFramesKortBmp.cs" />
@@ -103,13 +112,13 @@
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwLcw.cs" />
     <Content Include="Domain\FileTypes\Westwood\FileMapWwRa1Pc.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynScr.cs" />
-    <Compile Include="Domain\GameData\Westwood\HeightTerrainType.cs" />
-    <Compile Include="Domain\GameData\Westwood\TerrainType.cs" />
-    <Compile Include="Domain\GameData\Westwood\Theater.cs" />
+    <Compile Include="Domain\FileData\Westwood\HeightTerrainType.cs" />
+    <Compile Include="Domain\FileData\Westwood\TerrainType.cs" />
+    <Compile Include="Domain\FileData\Westwood\Theater.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTilesWwCc1N64.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FilePaletteWwCc1N64.cs" />
     <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
-    <Compile Include="Domain\GameData\Westwood\WestwoodRle.cs" />
+    <Compile Include="Domain\FileData\Westwood\WestwoodRle.cs" />
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BlobDetection.cs" />
     <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
@@ -125,21 +134,22 @@
     <EmbeddedResource Include="UI\Tools\PixelZoomPanel.resx">
       <DependentUpon>PixelZoomPanel.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="Domain\Utils\ImageUtils\ImageUtilsSO.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\ImageUtilsSO.cs" />
     <Compile Include="Domain\Utils\ImageUtils\WindowsGraphics2d.cs" />
     <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
-    <None Include="Domain\Utils\UtilsSO.cs" />
+    <Compile Include="Domain\Utils\UtilsSO.cs" />
+    <Compile Include="Domain\Utils\NonDisposingStream.cs" />
     <Compile Include="HeightMap\HeightMapGenerator.cs" />
     <Compile Include="HeightMap\TerrainHeight.cs" />
     <Compile Include="Domain\Utils\ArrayUtils.cs" />
-    <Compile Include="Domain\GameData\Dynamix\DynamixChunk.cs" />
-    <Compile Include="Domain\GameData\Dynamix\DynamixCompression.cs" />
-    <Compile Include="Domain\GameData\Dynamix\DynamixLzwDecoder.cs" />
-    <Compile Include="Domain\GameData\Dynamix\DynamixLzwEncoder.cs" />
+    <Compile Include="Domain\FileData\Dynamix\DynamixChunk.cs" />
+    <Compile Include="Domain\FileData\Dynamix\DynamixCompression.cs" />
+    <Compile Include="Domain\FileData\Dynamix\DynamixLzwDecoder.cs" />
+    <Compile Include="Domain\FileData\Dynamix\DynamixLzwEncoder.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorHSL.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorUtils.cs" />
     <Compile Include="Domain\Utils\ImageUtils\ColorSixBit.cs" />
-    <Compile Include="Domain\FileTypeBroadcaster.cs" />
+    <Compile Include="Domain\IFileTypeBroadcaster.cs" />
     <Compile Include="Domain\Utils\Crc32.cs" />
     <Compile Include="Domain\Utils\GeneralUtils.cs" />
     <Compile Include="Domain\FileTypes\General\FileImageJpg.cs" />
@@ -153,9 +163,9 @@
     <Compile Include="Domain\FileTypes\General\FileImage.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwN64.cs" />
     <Compile Include="Domain\Utils\ImageUtils\BitmapHandler.cs" />
-    <Compile Include="Domain\GameData\Westwood\CnCMap.cs" />
-    <Compile Include="Domain\GameData\Westwood\MapConversion.cs" />
-    <Compile Include="Domain\GameData\Westwood\TileInfo.cs" />
+    <Compile Include="Domain\FileData\Westwood\CnCMap.cs" />
+    <Compile Include="Domain\FileData\Westwood\MapConversion.cs" />
+    <Compile Include="Domain\FileData\Westwood\TileInfo.cs" />
     <Compile Include="Domain\Utils\ImageUtils\PaletteUtils.cs" />
     <Compile Include="Domain\Utils\ImageUtils\PixelFormatter.cs" />
     <Compile Include="Domain\Utils\KMeans.cs" />
@@ -278,6 +288,9 @@
     </Compile>
     <Compile Include="UI\FrmFileConverter.Designer.cs">
       <DependentUpon>FrmFileConverter.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\FrmFileConverterTests.cs">
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="FileConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

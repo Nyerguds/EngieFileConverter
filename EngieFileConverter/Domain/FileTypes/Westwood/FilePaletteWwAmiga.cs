@@ -76,7 +76,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new NotSupportedException("Amiga palettes must be a multiple of 16 colours!");
             Byte[] outBytes = new Byte[cols.Length * 2];
             PixelFormatter pf = FileImgWwCps.Format16BitRgbX444Be;
-            for (Int32 i = 0; i < cols.Length; i++)
+            for (Int32 i = 0; i < cols.Length; ++i)
                 pf.WriteColor(outBytes, i << 1, cols[i]);
             return outBytes;
         }

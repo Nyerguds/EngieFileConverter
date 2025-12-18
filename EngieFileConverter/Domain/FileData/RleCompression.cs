@@ -1,13 +1,16 @@
 ﻿using System;
 
-namespace Nyerguds.GameData.Compression
+namespace Nyerguds.FileData.Compression
 {
     #region Implementation
+
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Repeat code.
     /// The used run length is always (code & 0x7F).
     /// </summary>
     public class RleCompressionHighBitRepeat : RleImplementation<RleCompressionHighBitRepeat> { }
+
+
 
     /// <summary>
     /// Basic implementation of Run-Length Encoding with the highest bit set for the Copy code.
@@ -215,7 +218,7 @@ namespace Nyerguds.GameData.Compression
                     if (inPtr >= inPtrEnd)
                         break;
                     Int32 repeatVal = buffer[inPtr++];
-                    for (; outPtr < runEnd; outPtr++)
+                    for (; outPtr < runEnd; ++outPtr)
                         bufferOut[outPtr] = (Byte)repeatVal;
                     if (outPtr == maxOutLen)
                         break;
@@ -224,7 +227,7 @@ namespace Nyerguds.GameData.Compression
                 else
                 {
                     Boolean abort = false;
-                    for (; outPtr < runEnd; outPtr++)
+                    for (; outPtr < runEnd; ++outPtr)
                     {
                         if (inPtr >= inPtrEnd)
                         {
@@ -288,7 +291,7 @@ namespace Nyerguds.GameData.Compression
                     // Already checked these in the RepeatingAhead function.
                     inPtr += detectedRepeat;
                     // Increase inptr to the last repeated.
-                    for (; inPtr < end && buffer[inPtr] == cur; inPtr++) { }
+                    for (; inPtr < end && buffer[inPtr] == cur; ++inPtr) { }
                     // WriteCode is split off into a function to allow overriding it in specific implementations.
                     if (!this.WriteCode(bufferOut, ref outPtr, bufLen, true, (inPtr - start)) || outPtr + 1 >= bufLen)
                         break;
@@ -346,7 +349,7 @@ namespace Nyerguds.GameData.Compression
                         if (abort)
                             break;
                         // Add values to copy
-                        for (UInt32 i = start; i < inPtr; i++)
+                        for (UInt32 i = start; i < inPtr; ++i)
                             bufferOut[outPtr++] = buffer[i];
                     }
                     if (abort)
@@ -379,7 +382,7 @@ namespace Nyerguds.GameData.Compression
         protected static UInt32 RepeatingAhead(Byte[] buffer, UInt32 max, UInt32 ptr, UInt32 minAmount)
         {
             Byte cur = buffer[ptr];
-            for (UInt32 i = 1; i < minAmount; i++)
+            for (UInt32 i = 1; i < minAmount; ++i)
                 if (ptr + i >= max || buffer[ptr + i] != cur)
                     return i;
             return minAmount;

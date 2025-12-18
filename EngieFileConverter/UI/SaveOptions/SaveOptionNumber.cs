@@ -76,7 +76,7 @@ namespace EngieFileConverter.UI.SaveOptions
             this.numValue.Select();
         }
 
-        private void numValue_ValueChanged(object sender, EventArgs e)
+        private void numValue_ValueChanged(Object sender, EventArgs e)
         {
             // Update controller
             if (this.Info == null)

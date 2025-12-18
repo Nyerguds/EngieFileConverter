@@ -1,0 +1,149 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Linq;
+using Nyerguds.ImageManipulation;
+using Nyerguds.Util;
+
+namespace EngieFileConverter.Domain.FileTypes
+{
+    /// <summary>
+    /// DaisyField pictures, from SeXoniX.
+    /// Interesting format in that it "encrypts" the image and its palette using a remapping table.
+    /// </summary>
+    public class FileFramesDfPic : SupportedFileType
+    {
+        public override FileClass FileClass { get { return FileClass.FrameSet; } }
+        public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
+        public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
+        protected SupportedFileType[] m_FramesList;
+
+        public override Int32 Width { get { return 320; } }
+        public override Int32 Height { get { return 200; } }
+        /// <summary>Very short code name for this type.</summary>
+        public override String ShortTypeName { get { return "DaisyField Pictures"; } }
+        public override String[] FileExtensions { get { return new String[] { "pic" }; } }
+        public override String ShortTypeDescription { get { return "DaisyField Pictures File"; } }
+        public override Int32 ColorsInPalette { get { return 0; } }
+        public override Boolean FramesHaveCommonPalette { get { return false; } }
+        public override Int32 BitsPerPixel { get { return 8; } }
+        /// <summary>Retrieves the sub-frames inside this file.</summary>
+        public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
+
+        protected static Byte[] ImageMappingBasis = new Byte[] { 0x5, 0x4, 0x7, 0x6, 0x1, 0x0, 0x3, 0x2, 0xD, 0xC, 0xF, 0xE, 0x9, 0x8, 0xB, 0xA };
+        protected static Byte[] ImageMapping;
+        protected static Byte[] ReverseImageMapping;
+
+        static FileFramesDfPic()
+        {
+            ImageMapping = new Byte[0x100];
+            ReverseImageMapping = new Byte[0x100];
+            for (Int32 i = 0; i < 0x100; ++i)
+            {
+                Int32 val = ((ImageMappingBasis[i / 0x10] << 4) & 0xF0 | ImageMappingBasis[i % 0x10] & 0x0F);
+                ImageMapping[i] = (Byte) val;
+                ReverseImageMapping[val] = (Byte) i;
+            }
+            //String fullMapping = String.Join(", ", ImageMapping.Select(b => "0x" + b.ToString("X2")).ToArray());
+        }
+
+        public override void LoadFile(Byte[] fileData)
+        {
+            this.LoadFromFileData(fileData, null);
+        }
+
+        public override void LoadFile(Byte[] fileData, String filename)
+        {
+            this.LoadFromFileData(fileData, filename);
+            this.SetFileNames(filename);
+        }
+        
+        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        {
+            const Int32 palSize = 0x300;
+            Int32 frameSize = Width * Height;
+            Int32 frameDataSize = frameSize + palSize;
+            Int32 fileDataLength = fileData.Length;
+            if (fileDataLength % frameDataSize != 0)
+                throw new FileTypeLoadException("Not a DaisyField PIC file!");
+            Int32 nrOfFrames = fileDataLength / frameDataSize;
+            m_FramesList = new SupportedFileType[nrOfFrames];
+            Int32 readIndex = 0;
+            for (Int32 f = 0; f < nrOfFrames; ++f)
+            {
+                Int32 palReadIndex = readIndex;
+                Int32 imgReadIndex = readIndex + palSize;
+                //*/
+                Byte[] framePalData = new Byte[palSize];
+                Array.Copy(fileData, palReadIndex, framePalData, 0, palSize);
+                Byte[] frameData = new Byte[frameSize];
+                Array.Copy(fileData, imgReadIndex, frameData, 0, frameSize);
+                for (Int32 i = 0; i < palSize; i++)
+                {
+                    Byte curVal = framePalData[i];
+                    // All values are between 0x40 and 0x80;
+                    if (curVal < 0x40 || curVal >= 0x80)
+                        throw new FileTypeLoadException("Not a DaisyField PIC file!");
+                    framePalData[i] = ImageMapping[curVal];
+                }
+                Color[] frPalette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(framePalData, 0));
+                for (Int32 i = 0; i < frameSize; i++)
+                    frameData[i] = ImageMapping[frameData[i]];
+                Bitmap curFrImg = ImageUtils.BuildImage(frameData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, frPalette, null);
+                FileImageFrame framePic = new FileImageFrame();
+                framePic.LoadFileFrame(this, this, curFrImg, sourcePath, f);
+                framePic.SetBitsPerColor(this.BitsPerPixel);
+                framePic.SetFileClass(this.FrameInputFileClass);
+                framePic.SetColorsInPalette(this.ColorsInPalette);
+                this.m_FramesList[f] = framePic;
+                readIndex += frameDataSize;
+            }
+        }
+
+        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
+        {
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames;
+            if (frames == null || (nrOfFrames = frames.Length) == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
+            for (Int32 i = 0; i < nrOfFrames; ++i)
+            {
+                SupportedFileType frame = frames[i];
+                if (frame == null || frame.GetBitmap() == null)
+                    throw new NotSupportedException("This format can't handle empty frames!");
+                if (frame.BitsPerPixel != 8)
+                    throw new NotSupportedException("This format needs 8bpp images.");
+                if (frame.Width != 320 || frame.Height != 200)
+                    throw new NotSupportedException("This format needs 320x200 images.");
+            }
+            const Int32 palSize = 0x300;
+            Int32 frameSize = Width * Height;
+            Int32 frameDataSize = frameSize + palSize;
+            Int32 fileDataLength = nrOfFrames * frameDataSize;
+            Byte[] outBytes = new Byte[fileDataLength];
+            Int32 writeOffset = 0;
+            for (Int32 i = 0; i < nrOfFrames; ++i)
+            {
+                SupportedFileType frame = frames[i];
+                Bitmap fr = frame.GetBitmap();
+                Byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(ColorUtils.GetSixBitColorPalette(fr.Palette.Entries));
+                for (Int32 j = 0; j < palSize; j++)
+                    sixBitCols[j] = ReverseImageMapping[sixBitCols[j]];
+                Array.Copy(sixBitCols, 0, outBytes, writeOffset, palSize);
+                writeOffset += palSize;
+                Int32 stride;
+                Byte[] imageBytes = ImageUtils.GetImageData(fr, out stride, true);
+                for (Int32 j = 0; j < frameSize; j++)
+                    imageBytes[j] = ReverseImageMapping[imageBytes[j]];
+                Array.Copy(imageBytes, 0, outBytes, writeOffset, frameSize);
+                writeOffset += frameSize;
+            }
+            return outBytes;
+        }
+
+    }
+
+}

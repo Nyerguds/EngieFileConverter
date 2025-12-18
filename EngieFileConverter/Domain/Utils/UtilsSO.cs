@@ -1,5 +1,9 @@
-﻿using System;
+﻿#if DEBUG
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace Nyerguds.Util
 {
@@ -18,6 +22,17 @@ namespace Nyerguds.Util
             const Int32 bottom = 0x058730;
             const Int32 range = 0x4F1A0;
             return (Int32)((degrees + 180.0) / 360.0 * range) + bottom;
+        }
+        
+        public static List<Int32> ExtractInts(String filePath)
+        {
+            String input = File.ReadAllText(filePath);
+            List<Int32> ints = new List<Int32>();
+            Regex r = new Regex(" = (\\d+)");
+            MatchCollection mc = r.Matches(input);
+            foreach(Match m in mc)
+                ints.Add(Int32.Parse(m.Groups[1].Value));
+            return ints;
         }
 
     }
@@ -52,3 +67,4 @@ namespace Nyerguds.Util
     }
 
 }
+#endif

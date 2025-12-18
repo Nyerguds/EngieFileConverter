@@ -9,6 +9,8 @@ namespace Nyerguds.Util.UI
 {
     public partial class PixelZoomPanel : UserControl
     {
+        private bool m_updating;
+
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue(typeof(Color), "Fuchsia")]
         public Color BackgroundFillColor
@@ -27,7 +29,7 @@ namespace Nyerguds.Util.UI
         
         protected virtual void OnBackgroundFillColorChanged(EventArgs e)
         {
-            EventHandler handler = BackgroundFillColorChanged;
+            EventHandler handler = this.BackgroundFillColorChanged;
             if (handler != null)
                 handler(this, e);
         }
@@ -41,7 +43,7 @@ namespace Nyerguds.Util.UI
             {
                 this.SetMaxZoom(value);
                 this.picImage.Image = value;
-                RefreshImage(false);
+                this.RefreshImage(false);
             }
         }
 
@@ -72,7 +74,7 @@ namespace Nyerguds.Util.UI
 
         public PixelZoomPanel()
         {
-            InitializeComponent();
+            this.InitializeComponent();
             ContextMenu cmCopyPreview = new ContextMenu();
             MenuItem mniCopy = new MenuItem("Copy");
             mniCopy.Click += this.PicImage_CopyPreview;
@@ -112,19 +114,39 @@ namespace Nyerguds.Util.UI
 
         private void NumZoomValueChanged(Object sender, EventArgs e)
         {
-            this.RefreshImage(true);
+            if (this.m_updating)
+                return;
+            try
+            {
+                this.m_updating = true;
+                this.RefreshImage(true);
+            }
+            finally
+            {
+                this.m_updating = false;
+            }
         }
 
         public void RefreshImage()
         {
-            RefreshImage(false);
+            if (this.m_updating)
+                return;
+            try
+            {
+                this.m_updating = true;
+                this.RefreshImage(false);
+            }
+            finally
+            {
+                this.m_updating = false;
+            }
         }
 
         private void RefreshImage(Boolean adaptZoom)
         {
-            Image bm = picImage.Image;
+            Image bm = this.picImage.Image;
             Boolean loadOk = bm != null;
-            picImage.Visible = loadOk;
+            this.picImage.Visible = loadOk;
             // Centering zoom code: save all information before image resize
             Double currentZoom = this.ZoomFactor;
             if (this.ZoomFactor == 0 || this.ZoomFactor == -1)
@@ -133,37 +155,37 @@ namespace Nyerguds.Util.UI
                 currentZoom = -1 / (Double)this.ZoomFactor;
 
             if (currentZoom < -1)
-                picImage.InterpolationMode = InterpolationMode.Default;
+                this.picImage.InterpolationMode = InterpolationMode.Default;
             else
-                picImage.InterpolationMode = InterpolationMode.NearestNeighbor;
+                this.picImage.InterpolationMode = InterpolationMode.NearestNeighbor;
 
-            Int32 oldWidth = picImage.Width;
-            Int32 oldHeight = picImage.Height;
+            Int32 oldWidth = this.picImage.Width;
+            Int32 oldHeight = this.picImage.Height;
             Int32 newWidth = loadOk ? (Int32)(bm.Width * currentZoom) : 100;
             Int32 newHeight = loadOk ? (Int32)(bm.Height * currentZoom) : 100;
-            Int32 frameLeftVal = pnlImageScroll.DisplayRectangle.X;
-            Int32 frameUpVal = pnlImageScroll.DisplayRectangle.Y;
+            Int32 frameLeftVal = this.pnlImageScroll.DisplayRectangle.X;
+            Int32 frameUpVal = this.pnlImageScroll.DisplayRectangle.Y;
             // Get previous zoom factor from current image size on the control.
             Double prevZoom = oldWidth * currentZoom / newWidth;
-            Int32 visibleCenterXOld = Math.Min(oldWidth, pnlImageScroll.ClientRectangle.Width) / 2;
-            Int32 visibleCenterYOld = Math.Min(oldHeight, pnlImageScroll.ClientRectangle.Height) / 2;
+            Int32 visibleCenterXOld = Math.Min(oldWidth, this.pnlImageScroll.ClientRectangle.Width) / 2;
+            Int32 visibleCenterYOld = Math.Min(oldHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
 
-            picImage.Width = newWidth;
-            picImage.Height = newHeight;
-            picImage.PerformLayout();
+            this.picImage.Width = newWidth;
+            this.picImage.Height = newHeight;
+            this.picImage.PerformLayout();
 
             if (!adaptZoom || !loadOk || prevZoom <= 0 || ((Int32)prevZoom == (Int32)currentZoom && (Int32)(1 / prevZoom) == (Int32)(1 / currentZoom)))
                 return;
             // Centering zoom code: Image resized. Apply zoom centering.
             // ClientRectangle data is fetched again since it changes when scrollbars appear and disappear.
-            Int32 visibleCenterXNew = Math.Min(newWidth, pnlImageScroll.ClientRectangle.Width) / 2;
-            Int32 visibleCenterYNew = Math.Min(newHeight, pnlImageScroll.ClientRectangle.Height) / 2;
+            Int32 visibleCenterXNew = Math.Min(newWidth, this.pnlImageScroll.ClientRectangle.Width) / 2;
+            Int32 visibleCenterYNew = Math.Min(newHeight, this.pnlImageScroll.ClientRectangle.Height) / 2;
             Int32 viewCenterActualX = (Int32)((-frameLeftVal + visibleCenterXOld) / prevZoom);
             Int32 viewCenterActualY = (Int32)((-frameUpVal + visibleCenterYOld) / prevZoom);
             Int32 frameLeftValNew = (Int32)(visibleCenterXNew - (viewCenterActualX * currentZoom));
             Int32 frameUpValNew = (Int32)(visibleCenterYNew - (viewCenterActualY * currentZoom));
-            pnlImageScroll.SetDisplayRectLocation(frameLeftValNew, frameUpValNew);
-            pnlImageScroll.PerformLayout();
+            this.pnlImageScroll.SetDisplayRectLocation(frameLeftValNew, frameUpValNew);
+            this.pnlImageScroll.PerformLayout();
         }
 
         private void PicImageClick(Object sender, EventArgs e)
@@ -195,7 +217,7 @@ namespace Nyerguds.Util.UI
             if (res != DialogResult.OK && res != DialogResult.Yes)
                 return;
             Color col = cdl.Color;
-            BackgroundFillColor = col;
+            this.BackgroundFillColor = col;
             this.RefreshImage(false);
         }
 
@@ -221,6 +243,23 @@ namespace Nyerguds.Util.UI
                 if (args != null)
                     args.Handled = true;
             }
+        }
+
+        /// <summary>
+        /// Ensures that zoom level 0 and -1 are skipped when using mouse scroll or arrows.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void numZoom_ValueUpDown(Object sender, UpDownEventArgs e)
+        {
+            EnhNumericUpDown zoom = sender as EnhNumericUpDown;
+            if (zoom == null)
+                return;
+            Decimal val = zoom.Value;
+            if (e.Direction == UpDownAction.Down && val < 1 && val > -2)
+                zoom.Value = -2;
+            else if (e.Direction == UpDownAction.Up && val <= 1 && val > -2)
+                zoom.Value = val <= -1 ? 1 : 2;
         }
     }
 }

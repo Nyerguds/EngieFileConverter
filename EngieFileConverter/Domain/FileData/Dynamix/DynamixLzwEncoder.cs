@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Nyerguds.Util;
 
-namespace Nyerguds.GameData.Dynamix
+namespace Nyerguds.FileData.Dynamix
 {
     // Doesn't work yet...
 
@@ -23,13 +23,15 @@ namespace Nyerguds.GameData.Dynamix
             if (seqLen == 1)
                 return sequence[0];
             // 256 is not used; it's the "reset" code.
-            for (Int32 i = 257; i < this.dictKeys.Count; i++)
+            Int32 dicKeyCount = this.dictKeys.Count;
+            for (Int32 i = 257; i < dicKeyCount; ++i)
             {
                 Byte[] check = this.dictKeys[i];
-                if (seqLen != check.Length)
+                Int32 checkLen = check.Length;
+                if (seqLen != checkLen)
                     continue;
                 Boolean noMatch = false;
-                for (Int32 bi = 0; bi < check.Length; bi++)
+                for (Int32 bi = 0; bi < checkLen; ++bi)
                 {
                     if (sequence[bi] == check[bi])
                         continue;
@@ -50,7 +52,7 @@ namespace Nyerguds.GameData.Dynamix
 
         public DynamixLzwEncoder()
         {
-            for (Int32 i = 0; i < 256; i++)
+            for (Int32 i = 0; i < 256; ++i)
             {
                 this.dictKeys.Add(new Byte[] { (Byte)i });
                 this.dictCodes.Add(i);
@@ -67,7 +69,8 @@ namespace Nyerguds.GameData.Dynamix
             Int32 outbuffSize = buffer.Length * 2;
             Byte[] outbuff = new Byte[outbuffSize];
             Int32 addedSize = 0;
-            for (Int32 i = 0; i < buffer.Length; i++)
+            Int32 buffLen = buffer.Length;
+            for (Int32 i = 0; i < buffLen; ++i)
             {
                 Byte b = buffer[i];
                 // increase code length to amount of bits needed by intCode.
@@ -91,8 +94,10 @@ namespace Nyerguds.GameData.Dynamix
             Byte[] match = new Byte[0];
             Int32[] compressed = new Int32[(buffer.Length * 2) / 3];
             Int32 index = 0;
-            foreach (Byte b in buffer)
+            Int32 buffLen = buffer.Length;
+            for (Int32 i = 0; i < buffLen; ++i)
             {
+                Byte b = buffer[i];
                 Int32 oldLen = match.Length;
                 Byte[] nextMatch = new Byte[oldLen + 1];
                 nextMatch[oldLen] = b;

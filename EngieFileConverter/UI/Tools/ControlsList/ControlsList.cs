@@ -9,11 +9,11 @@ namespace Nyerguds.Util.Ui
     /// Offers the ability to list user controls, which can send updates of their child controls back to a controller.
     /// </summary>
     /// <typeparam name="T">Type of the user controls with which to populate the list.</typeparam>
-    /// <typeparam name="U">Type of the information objects that contain all information to create/manage a listed control.</typeparam>
-    public abstract partial class ControlsList<T,U> : UserControl where T : Control
+    /// <typeparam name="TU">Type of the information objects that contain all information to create/manage a listed control.</typeparam>
+    public abstract partial class ControlsList<T,TU> : UserControl where T : Control
     {
         protected List<T> m_Contents = new List<T>();
-        protected CustomControlInfo<T, U> m_CustomControlInfo;
+        protected CustomControlInfo<T, TU> m_CustomControlInfo;
 
         protected ControlsList()
         {
@@ -25,7 +25,7 @@ namespace Nyerguds.Util.Ui
         /// </summary>
         /// <param name="cci">Contains a list of information objects with which to create the custom controls.</param>
         /// <param name="ebc">The controller to assign to the created custom controls.</param>
-        public void Populate(CustomControlInfo<T, U> cci, ListedControlController<U> ebc)
+        public void Populate(CustomControlInfo<T, TU> cci, ListedControlController<TU> ebc)
         {
             this.Reset();
             if (cci == null)
@@ -33,19 +33,23 @@ namespace Nyerguds.Util.Ui
             this.m_CustomControlInfo = cci;
             this.SuspendLayout();
             this.lblTypeName.Text = cci.Name;
-            foreach (U vsi in cci.Properties)
+            TU[] props = cci.Properties;
+            Int32 nrOfProps = props.Length;
+            for (Int32 i = 0; i < nrOfProps; ++i)
             {
                 try
                 {
-                    T eb = cci.MakeControl(vsi, ebc);
-                    this.AddControl(eb, false);
+                    this.AddControl(cci.MakeControl(props[i], ebc), false);
                 }
-                catch (NotImplementedException) { /* ignore */ }
+                catch (NotImplementedException)
+                {
+                    /* ignore */
+                }
             }
             this.PerformLayout();
         }
 
-        public virtual T GetListedControlByInfoObject(U infoObject)
+        public virtual T GetListedControlByInfoObject(TU infoObject)
         {
             if (this.m_CustomControlInfo == null)
                 return null;
@@ -98,8 +102,10 @@ namespace Nyerguds.Util.Ui
         {
             this.SuspendLayout();
             this.lblTypeName.Text = String.Empty;
-            foreach (T c in this.m_Contents)
+            Int32 contentsCount = this.m_Contents.Count;
+            for (Int32 i = 0; i < contentsCount; ++i)
             {
+                T c = this.m_Contents[i];
                 this.Controls.Remove(c);
                 c.Dispose();
             }
@@ -110,8 +116,12 @@ namespace Nyerguds.Util.Ui
         protected void EffectBarList_Resize(Object sender, EventArgs e)
         {
             this.SuspendLayout();
-            foreach (T c in this.m_Contents)
+            Int32 contentsCount = this.m_Contents.Count;
+            for (Int32 i = 0; i < contentsCount; ++i)
+            {
+                T c = this.m_Contents[i];
                 c.Size = new Size(this.DisplayRectangle.Width, c.Size.Height);
+            }
             this.PerformLayout();
         }
     }

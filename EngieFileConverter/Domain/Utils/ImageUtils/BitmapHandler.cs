@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using Nyerguds.Util;
 
@@ -57,7 +58,7 @@ namespace Nyerguds.ImageManipulation
                 if (loadedImage.Palette.Entries.Length != 0 && transparencyData != null)
                 {
                     ColorPalette pal = loadedImage.Palette;
-                    for (Int32 i = 0; i < pal.Entries.Length; i++)
+                    for (Int32 i = 0; i < pal.Entries.Length; ++i)
                     {
                         if (i >= transparencyData.Length)
                             break;
@@ -128,10 +129,10 @@ namespace Nyerguds.ImageManipulation
             {
                 changedPal = image.Palette;
                 palette = image.Palette.Entries;
-                for (Int32 i = 0; i < palette.Length; i++)
+                for (Int32 i = 0; i < palette.Length; ++i)
                     changedPal.Entries[i] = Color.FromArgb(0xFF, palette[i]);
                 if (!noPalTrans)
-                    for (Int32 i = 0; i < paletteLength; i++)
+                    for (Int32 i = 0; i < paletteLength; ++i)
                         transparencyData[i] = palette[i].A;
             }
             using (MemoryStream ms = new MemoryStream())
@@ -215,11 +216,22 @@ namespace Nyerguds.ImageManipulation
         /// <returns>A color palette containing the given colors.</returns>
         public static ColorPalette GetPalette(Color[] colors)
         {
+            return GetPalette(colors, colors.Length);
+        }
+
+        /// <summary>
+        /// Creates a custom-sized color palette by creating an empty png with a limited palette and extracting its palette.
+        /// </summary>
+        /// <param name="colors">The colors to convert into a palette.</param>
+        /// <param name="amount">Amount of colours in the new palette.</param>
+        /// <returns>A color palette containing the given colors.</returns>
+        public static ColorPalette GetPalette(Color[] colors, Int32 amount)
+        {
             // Silliest idea ever, but it works, lol.
             const Int32 chunkExtraLen = 0x0C;
             Int32 lenPng = PNG_IDENTIFIER.Length;
             const Int32 lenHdr = 0x0D;
-            Int32 lenPal = Math.Min(colors.Length, 0x100)*3;
+            Int32 lenPal = Math.Min(amount, 0x100) * 3;
             Int32 lenData = PNG_BLANK.Length;
             Int32 fullLen = lenPng + lenHdr + chunkExtraLen + lenPal + chunkExtraLen + lenData + chunkExtraLen + chunkExtraLen;
             Int32 offset = 0;
@@ -248,7 +260,7 @@ namespace Nyerguds.ImageManipulation
             using (Bitmap loadedImage = new Bitmap(ms))
             {
                 ColorPalette pal = loadedImage.Palette;
-                for (Int32 i = 0; i < pal.Entries.Length; i++)
+                for (Int32 i = 0; i < pal.Entries.Length; ++i)
                     pal.Entries[i] = colors[i];
                 return pal;
             }

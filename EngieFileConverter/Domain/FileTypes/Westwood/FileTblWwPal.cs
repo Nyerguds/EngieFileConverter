@@ -58,8 +58,10 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             String[] indices = excl.Split(new Char[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries);
             List<Int32> indicesInt = new List<Int32>();
-            foreach (String index in indices)
+            Int32 indicesLength = indices.Length;
+            for (Int32 i = 0; i < indicesLength; ++i)
             {
+                String index = indices[i];
                 try { indicesInt.Add(Byte.Parse(index)); }
                 catch (Exception e) { throw new NotSupportedException("Given indices contain illegal values!", e); }
             }
@@ -71,9 +73,9 @@ namespace EngieFileConverter.Domain.FileTypes
             const Int32 reqSize = 0x10000;
             if (fileData.Length != reqSize)
                 throw new FileTypeLoadException("File is not " + reqSize + " bytes long!");
-            for (Int32 y = 0; y < 256; y++)
+            for (Int32 y = 0; y < 256; ++y)
             {
-                for (Int32 x = y; x < 256; x++)
+                for (Int32 x = y; x < 256; ++x)
                 {
                     if (fileData[x*256 + y] != fileData[y*256 + x])
                         throw new FileTypeLoadException("File format redundancy check failed!");

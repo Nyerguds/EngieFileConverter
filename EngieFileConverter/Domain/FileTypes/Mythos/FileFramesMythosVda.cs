@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using Nyerguds.GameData.Mythos;
+using Nyerguds.FileData.Mythos;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -18,7 +18,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override String ShortTypeName { get { return "Mythos Visage Animation"; } }
         public override String ShortTypeDescription { get { return "Mythos Visage Animation file"; } }
         public override String[] FileExtensions { get { return new String[] { "vda", "vdx" }; } }
-        public override Boolean[] TransparencyMask { get { return (!this._isFramed || (this._noFirstFrame && !this._isChained)) ? this.CreateTransparencyMask() : new Boolean[0]; } }
+        public override Boolean[] TransparencyMask { get { return (!this._isFramed || (this._noFirstFrame && !this._isChained)) ? base.TransparencyMask : new Boolean[0]; } }
 
         public override void LoadFile(Byte[] fileData)
         {
@@ -89,7 +89,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         return null;
                     Int32 badPalMatches = 0;
                     Color[] testPal = testFile.GetColors();
-                    for (Int32 p = 0; p < 256; p++)
+                    for (Int32 p = 0; p < 256; ++p)
                         if (testPal[p] != this.m_Palette[p])
                             badPalMatches++;
                     // Check if palette matches. Some small changes will be ignored since they happen in the Serrated Scalpel files.
@@ -169,7 +169,7 @@ namespace EngieFileConverter.Domain.FileTypes
             String firstName = loadChain.First();
             Int32 lastIndex = loadChain.Count - 1;
             Boolean fromPng = false;
-            for (Int32 i = 0; i <= lastIndex; i++)
+            for (Int32 i = 0; i <= lastIndex; ++i)
             {
                 String chainFilePath = loadChain[i];
                 try
@@ -276,7 +276,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this._isFramed = vdxBytes != null;
             this._isChained = initialFrameData != null;
             this.LoadFromFileData(vdaBytes, vdaName, false, false, true, out framesXY, false);
-            this.m_Palette = PaletteUtils.ApplyTransparencyGuide(this.m_Palette, null);
+            this.m_Palette = PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, null);
             Int32 chunks = this.m_FramesList.Count;
             if (this._isFramed)
             {
@@ -367,8 +367,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (initialFrameData != null && initialFrameData.Length != arraySize)
                 throw new FileTypeLoadException("Bad start frame data length!");
             Byte[] imageData = initialFrameData == null ? null : initialFrameData.ToArray();
-            
-            Boolean[] pasteTransMask = this.CreateTransparencyMask();
+
+            Boolean[] pasteTransMask = base.TransparencyMask;
             Boolean[] imageTransMask = pasteTransMask;
             if (initialFrameData != null)
             {
@@ -398,7 +398,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         if (testFirstFrame)
                             return null;
                         imageData = new Byte[arraySize];
-                        for (Int32 i = 0; i < arraySize; i++)
+                        for (Int32 i = 0; i < arraySize; ++i)
                             imageData[i] = TransparentIndex;
                     }
                     if (testFirstFrame)
@@ -407,7 +407,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         if (!noFirstFrame || initialFrameData != null)
                             imageTransMask = null;
-                        PaletteUtils.ApplyTransparencyGuide(this.m_Palette, imageTransMask);
+                        PaletteUtils.ApplyPalTransparencyMask(this.m_Palette, imageTransMask);
                     }
                     Bitmap curImage = ImageUtils.BuildImage(imageData, imageWidth, imageHeight, imageStride, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                     FileImageFrame frame = new FileImageFrame();
@@ -505,28 +505,24 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileToSave == null)
                 return null;
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames.Length;
+             if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                if (fileToSave.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8-bit images!");
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
-            }
-            else
-            {
-                if (fileToSave.Frames.Length == 0)
-                    throw new NotSupportedException("This format needs at least one frame.");
-                if (fileToSave.Frames.Any(x => x.BitsPerPixel != 8))
-                    throw new NotSupportedException("All frames in the target file must be 8-bit images!");
-            }
-            foreach(SupportedFileType sft in fileToSave.Frames)
+                SupportedFileType sft = frames[i];
                 if (sft.BitsPerPixel != 8)
                     throw new NotSupportedException("This format needs 8bpp images.");
-            Int32 firstFrameW = fileToSave.Frames[0].Width;
-            Int32 firstFrameH = fileToSave.Frames[0].Height;
-            foreach (SupportedFileType frame in fileToSave.Frames.Skip(1))
+                if (sft.Width != 320 || sft.Height != 200)
+                    throw new NotSupportedException("This format needs 320x200 frames.");
+            }
+            SupportedFileType firstFrame = frames[0];
+            Int32 firstFrameW = firstFrame.Width;
+            Int32 firstFrameH = firstFrame.Height;
+            for (Int32 i = 1; i < nrOfFrames; ++i)
             {
+                SupportedFileType frame = frames[i];
                 if (frame.Width != firstFrameW || frame.Height != firstFrameH)
                     throw new NotSupportedException("All frames should have the same dimensions.");
             }
@@ -586,19 +582,30 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions, out Byte[] vdxFile)
         {
-            if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
+            // Preliminary checks
+            if (fileToSave == null)
+                throw new NotSupportedException("No source data given!");
+            SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
+            Int32 nrOfFrames = frames.Length;
+            if (nrOfFrames == 0)
+                throw new NotSupportedException("This format needs at least one frame.");
+            Color[] palette = fileToSave.GetColors();
+            SupportedFileType palFile = fileToSave;
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
-                if (fileToSave.BitsPerPixel != 8)
-                    throw new NotSupportedException("This format needs 8-bit images!");
-                FileFrames frameSave = new FileFrames();
-                frameSave.AddFrame(fileToSave);
-                fileToSave = frameSave;
+                SupportedFileType sft = frames[i];
+                if (sft.BitsPerPixel != 8)
+                    throw new NotSupportedException("This format needs 8bpp images.");
+                if (sft.Width != 320 || sft.Height != 200)
+                    throw new NotSupportedException("This format needs 320x200 frames.");
+                if (palette == null || palette.Length == 0)
+                {
+                    palette = sft.GetColors();
+                    palFile = sft;
+                }
             }
-            if (fileToSave.Frames.Length == 0)
-                throw new NotSupportedException("No frames found in source data!");
-            if (fileToSave.Frames.Any(x => x.BitsPerPixel != 8))
-                throw new NotSupportedException("All frames in the source file must be 8-bit images!");
-
+            if (palFile == null)
+                throw new NotSupportedException("This format needs a colour palette.");
             Boolean useChunks = Int32.Parse(SaveOption.GetSaveOptionValue(saveOptions, "OPT")) == 1;
             Boolean chunkDiag = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CH8"));
             Boolean chunkRects = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "CHR"));
@@ -607,38 +614,37 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32.TryParse(SaveOption.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             if (compressionType < 0 || compressionType > 2)
                 compressionType = 0;
-            Bitmap origImage = fileToSave.Frames[0].GetBitmap();
+            Bitmap origImage = frames[0].GetBitmap();
             // Forcing this to 320x200 for now.
-            Int32 origWidth = 320; //origImage.Width;
-            Int32 origHeight = 200; //origImage.Height;
-            if (fileToSave.Frames.Any(x => x.Width != origWidth || x.Height != origHeight))
-                throw new NotSupportedException("All frames in the source file must be 320×200!"); // have the same dimensions!");
+            Int32 origWidth = 320;
+            Int32 origHeight = 200;
             Int32 fullImageStride;
             Byte[] previousImageData = ImageUtils.GetImageData(origImage, out fullImageStride, true);
             Boolean[] previousImageNonTransIndex = previousImageData.Select(b => b != TransparentIndex).ToArray();
             Int32 previousImageStride = fullImageStride;
-            List<List<VideoChunk>> frames = new List<List<VideoChunk>>();
+            List<List<VideoChunk>> saveFrames = new List<List<VideoChunk>>();
 
             if (!cutfirstFrame)
             {
                 VideoChunk chunk = new VideoChunk(previousImageData, new Rectangle(0, 0, origWidth, origHeight));
-                frames.Add(new List<VideoChunk>() { chunk });
+                saveFrames.Add(new List<VideoChunk>() { chunk });
             }
-            foreach (SupportedFileType frame in fileToSave.Frames.Skip(1))
+            for (Int32 i = 0; i < nrOfFrames; ++i)
             {
+                SupportedFileType frame = frames[i];
                 Int32 stride;
                 Bitmap currentImage = frame.GetBitmap();
                 Byte[] imageData = ImageUtils.GetImageData(currentImage, out stride, true);
                 Byte[] imageDataOpt = imageData.ToArray();
                 Int32 prevOffs = 0;
                 Int32 frameOffs = 0;
-                for (Int32 y = 0; y < origHeight; y++)
+                for (Int32 y = 0; y < origHeight; ++y)
                 {
                     Int32 curFrameOffs = frameOffs;
                     Int32 curPrevOffs = prevOffs;
-                    for (Int32 x = 0; x < origWidth; x++)
+                    for (Int32 x = 0; x < origWidth; ++x)
                     {
-                        if (imageData[curFrameOffs] == 0xFF)
+                        if (imageData[curFrameOffs] == TransparentIndex)
                         {
                             if (previousImageNonTransIndex[curPrevOffs])
                                 throw new NotSupportedException("adding pixels of colour #255 on new locations after frame 0 is not supported!");
@@ -661,36 +667,38 @@ namespace EngieFileConverter.Domain.FileTypes
                     imageDataOpt = ImageUtils.OptimizeXWidth(imageDataOpt, ref newWidth, newHeight, ref xOffset, true, TransparentIndex, 0xFF, true);
                     imageDataOpt = ImageUtils.OptimizeYHeight(imageDataOpt, newWidth, ref newHeight, ref yOffset, true, TransparentIndex, 0xFFFF, true);
                     VideoChunk chunk = new VideoChunk(imageDataOpt, new Rectangle(xOffset, yOffset, newWidth, newHeight));
-                    frames.Add(new List<VideoChunk>() { chunk });
+                    saveFrames.Add(new List<VideoChunk>() {chunk});
                 }
                 else
                 {
                     List<Boolean[,]> inBlobs;
+                    Boolean[,] fullBlobs;
                     Func<Byte[], Int32, Int32, Boolean> clearsThreshold = (bytes, y, x) => bytes[y * stride + x] != TransparentIndex;
-                    List<List<Point>> blobs = BlobDetection.FindBlobs(imageDataOpt, origWidth, origHeight, clearsThreshold, chunkDiag, true, out inBlobs);
+                    List<List<Point>> blobs = BlobDetection.FindBlobs(imageDataOpt, origWidth, origHeight, clearsThreshold, chunkDiag, true, out inBlobs, out fullBlobs);
                     if (chunkRects)
                         BlobDetection.MergeBlobs(blobs, origWidth, origHeight, null, 0);
 
                     List<VideoChunk> frameChunks = new List<VideoChunk>();
-                    for (Int32 i = 0; i < blobs.Count; i++)
+                    Int32 blobsCount = blobs.Count;
+                    for (Int32 b = 0; b < blobsCount; ++b)
                     {
-                        List<Point> blob = blobs[i];
-                        Boolean[,] inBlob = inBlobs[i];
+                        List<Point> blob = blobs[b];
+                        Boolean[,] inBlob = inBlobs[b];
                         Rectangle rect = BlobDetection.GetBlobBounds(blob);
                         Byte[] img = ImageUtils.CopyFrom8bpp(imageDataOpt, origWidth, origHeight, stride, rect);
                         if (!chunkRects)
                         {
-                            // Remove pixels from the rectangle that are not part of the chunk.
+                            // Remove pixels from the rectangle that are not part of the blob.
                             Int32 lineIndex = 0;
                             Int32 rectW = rect.Width;
                             Int32 rectX = rect.X;
                             Int32 rectY = rect.Y;
                             Int32 maxH = rectY + rect.Height;
                             Int32 maxW = rectX + rectW;
-                            for (Int32 y = rectY; y < maxH; y++)
+                            for (Int32 y = rectY; y < maxH; ++y)
                             {
                                 Int32 byteIndex = lineIndex;
-                                for (Int32 x = rectX; x < maxW; x++)
+                                for (Int32 x = rectX; x < maxW; ++x)
                                 {
                                     if (!inBlob[y, x])
                                         img[byteIndex] = TransparentIndex;
@@ -702,7 +710,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         VideoChunk chunk = new VideoChunk(img, rect);
                         frameChunks.Add(chunk);
                     }
-                    frames.Add(frameChunks);
+                    saveFrames.Add(frameChunks);
                 }
                 previousImageData = imageData;
                 previousImageNonTransIndex = previousImageData.Select(b => b != TransparentIndex).ToArray();
@@ -711,10 +719,14 @@ namespace EngieFileConverter.Domain.FileTypes
             // Add unique chunks to a single list, and add all rects used for each unique chunk to the rect.
             List<VideoChunk> finalChunks = new List<VideoChunk>();
             List<List<Rectangle>> allImageRects = new List<List<Rectangle>>();
-            foreach (List<VideoChunk> frameChunks in frames)
+            Int32 framesCount = saveFrames.Count;
+            for (Int32 i = 0; i < framesCount; ++i)
             {
-                foreach (VideoChunk frameChunk in frameChunks)
+                List<VideoChunk> frameChunks = saveFrames[i];
+                Int32 frameChunksCount = frameChunks.Count;
+                for (Int32 j = 0; j < frameChunksCount; ++j)
                 {
+                    VideoChunk frameChunk = frameChunks[j];
                     // Find which index in the already-added chunks equals the current chunk.
                     // This can only match one entry since this mechanism makes sure only uniques are put in that final list.
                     Int32[] found = Enumerable.Range(0, finalChunks.Count).Where(c => frameChunk.Equals(finalChunks[c])).ToArray();
@@ -732,26 +744,30 @@ namespace EngieFileConverter.Domain.FileTypes
                         VideoChunk finalFrameChunk = new VideoChunk(frameChunk.ImageData, frameChunk.ImageRect);
                         frameChunk.FinalIndex = finalChunks.Count;
                         finalChunks.Add(finalFrameChunk);
-                        allImageRects.Add(new List<Rectangle>() { finalFrameChunk.ImageRect });
-                        if (finalChunks.Count > 0x7FFE)
-                            throw new NotSupportedException("Chunk count exceeds " + 0x7FFE + "!");
+                        allImageRects.Add(new List<Rectangle>() {finalFrameChunk.ImageRect});
+                        if (finalChunks.Count > 0x7FFD)
+                            throw new NotSupportedException("Chunk count exceeds " + 0x7FFD + "!");
                     }
                     // clear this so it can get cleaned up on the copied chunks. It's no longer needed anyway; the reference to the final frame is set.
                     frameChunk.ImageData = null;
                 }
             }
             // Set ImageRect to the most occurring image rect in the group. This minimises the use of the 3-byte offset-reassigning command in the vdx file.
-            for (Int32 i = 0; i < finalChunks.Count; i++)
+            Int32 finalChunksCount = finalChunks.Count;
+            for (Int32 i = 0; i < finalChunksCount; ++i)
                 finalChunks[i].ImageRect = allImageRects[i].GroupBy(r => r).OrderByDescending(grp => grp.Count()).Select(grp => grp.Key).First();
 
             // BinaryWriter specs say it writes UInt16 as little-endian, meaning it is independent from system endianness.
             using (MemoryStream ms = new MemoryStream())
             using (BinaryWriter bw = new BinaryWriter(ms))
             {
-                foreach (List<VideoChunk> frameChunks in frames)
+                for (Int32 i = 0; i < framesCount; ++i)
                 {
-                    foreach (VideoChunk frameChunk in frameChunks)
+                    List<VideoChunk> frameChunks = saveFrames[i];
+                    Int32 frChunkCount = frameChunks.Count;
+                    for (Int32 j = 0; j < frChunkCount; ++j)
                     {
+                        VideoChunk frameChunk = frameChunks[j];
                         UInt16 index = (UInt16) frameChunk.FinalIndex;
                         VideoChunk baseChunk = finalChunks[index];
                         if (baseChunk.ImageRect == frameChunk.ImageRect)
@@ -763,7 +779,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             bw.Write((UInt16) (frameChunk.ImageRect.Y));
                         }
                     }
-                    bw.Write((UInt16)0xFFFF);
+                    bw.Write((UInt16) 0xFFFF);
                 }
                 bw.Write((UInt16)0xFFFE);
                 bw.Flush();
@@ -772,8 +788,9 @@ namespace EngieFileConverter.Domain.FileTypes
             // Compress chunks
             if (compressionType > 0)
             {
-                foreach (VideoChunk chunk in finalChunks)
+                for (Int32 i = 0; i < finalChunksCount; ++i)
                 {
+                    VideoChunk chunk = finalChunks[i];
                     Byte[] compressedBytes = null;
                     MythosCompression mc = new MythosCompression();
                     try
@@ -797,18 +814,19 @@ namespace EngieFileConverter.Domain.FileTypes
             // Add palette, the easy way.
             Byte[] palData;
             using (FileFramesMythosPal pal = new FileFramesMythosPal())
-                palData = pal.SaveToBytesAsThis(fileToSave, null);
+                palData = pal.SaveToBytesAsThis(palFile, null);
             // Full length: headers and data for all chunks.
-            Int32 fullLength = palData.Length + finalChunks.Count * 0x08 + finalChunks.Sum(x => x.ImageData.Length);
+            Int32 fullLength = palData.Length + finalChunksCount * 0x08 + finalChunks.Sum(x => x.ImageData.Length);
             Byte[] vdaFile = new Byte[fullLength];
             palData.CopyTo(vdaFile, 0);
             Int32 offset = palData.Length;
-            foreach (VideoChunk chunk in finalChunks)
+            for (Int32 i = 0; i < finalChunksCount; ++i)
             {
+                VideoChunk chunk = finalChunks[i];
                 ArrayUtils.WriteIntToByteArray(vdaFile, offset + 0, 2, true, (UInt16) (chunk.ImageRect.Width - 1));
                 ArrayUtils.WriteIntToByteArray(vdaFile, offset + 2, 2, true, (UInt16) (chunk.ImageRect.Height - 1));
                 vdaFile[offset + 4] = (Byte) (chunk.Compressed ? 0x02 : 0x00);
-                ArrayUtils.WriteIntToByteArray(vdaFile, offset + 5, 2, true, (UInt16)(chunk.ImageRect.X));
+                ArrayUtils.WriteIntToByteArray(vdaFile, offset + 5, 2, true, (UInt16) (chunk.ImageRect.X));
                 vdaFile[offset + 7] = (Byte) (chunk.ImageRect.Y & 0xFF);
                 offset += 8;
                 Byte[] chunkData = chunk.ImageData;

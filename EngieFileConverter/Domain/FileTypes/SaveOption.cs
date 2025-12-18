@@ -35,8 +35,12 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public static String GetSaveOptionValue(SaveOption[] list, String code)
         {
-            foreach (SaveOption option in list)
+            Int32 listLength = list.Length;
+            for (Int32 i = 0; i < listLength; ++i)
             {
+                SaveOption option = list[i];
+                if (option == null)
+                    continue;
                 if (String.Equals(option.Code, code, StringComparison.InvariantCultureIgnoreCase))
                     return option.SaveData;
             }
