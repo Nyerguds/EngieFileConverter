@@ -42,3 +42,6 @@ v1.2.1: (20/11/2016 16:00)
 -Optimized palette viewer, and added an indicator for transparency.
 -Version number is shown on the title bar.
 -Fixed a bug in the viewer that made it shift the image slightly up.
+
+v1.2.2: (03/02/2017 08:00)
+-Fixed a crash in the zooming panel arrow keys scrolling.

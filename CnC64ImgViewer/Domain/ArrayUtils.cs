@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 
-namespace ColorManipulation
+namespace CnC64ImgViewer.Domain
 {
     public static class ArrayUtils
     {
