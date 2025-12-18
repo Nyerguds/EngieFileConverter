@@ -23,7 +23,7 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
-        protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "C&C"}; //, "Monopoly" };
+        protected String[] formats = new String[] { "Dune II v1.00", "Dune II v1.07", "Command & Conquer"}; //, "Monopoly" };
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood WSA"; } }
         public override String[] FileExtensions { get { return new String[] { "wsa" }; } }
@@ -419,11 +419,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                 ignoreLast = toSave.m_DamagedLoopFrame;
             }
             SaveOption[] opts = new SaveOption[ignoreLast ? 6 : 5];
-            opts[1] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type:", String.Join(",", this.formats), ((Int32)type).ToString());
-            opts[0] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette (not supported for Dune II v1)", hasColors ? "1" : "0");
+            opts[0] = new SaveOption("TYPE", SaveOptionType.ChoicesList, "Type:", String.Join(",", this.formats), ((Int32)type).ToString());
+            opts[1] = new SaveOption("PAL", SaveOptionType.Boolean, "Include palette", null, hasColors ? "1" : "0", "TYPE", "0", true);
             opts[2] = new SaveOption("LOOP", SaveOptionType.Boolean, "Loop", null, loop ? "1" : "0");
             opts[3] = new SaveOption("CONT", SaveOptionType.Boolean, "Don't save initial frame", null, continues ? "1" : "0");
-            opts[4] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets (C&C type only)", null, trim ? "1" : "0");
+            opts[4] = new SaveOption("CROP", SaveOptionType.Boolean, "Crop to X and Y offsets", null, trim ? "1" : "0", "TYPE", "2", false);
             if (ignoreLast)
                 opts[5] = new SaveOption("CUT", SaveOptionType.Boolean, "Ignore broken input loop frame", null, "1");
             return opts;

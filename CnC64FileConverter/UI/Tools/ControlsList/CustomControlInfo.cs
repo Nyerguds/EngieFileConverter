@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace Nyerguds.Util.Ui
@@ -10,6 +11,7 @@ namespace Nyerguds.Util.Ui
         public U[] Properties { get; set; }
 
         public abstract T MakeControl(U property, ListedControlController<U> controller);
+        public abstract T GetControlByProperty(U property, IEnumerable<T> controls);
 
         public override String ToString()
         {

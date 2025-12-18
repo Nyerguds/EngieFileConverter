@@ -60,7 +60,6 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Domain\GameData\Westwood\CnCShp.cs" />
     <Compile Include="Domain\FileTypes\Dynamix\FileImgDynBmpMtx.cs" />
     <Compile Include="Domain\FileTypes\EA\FileImgKotBPak.cs" />
     <Compile Include="Domain\FileTypes\General\FilePalette8Bit.cs" />
@@ -69,6 +68,7 @@
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosPal.cs" />
     <Compile Include="Domain\FileTypes\Mythos\FileFramesMythosVgs.cs" />
     <Compile Include="Domain\FileTypes\SaveOption.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpD2.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpTs.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTblWwPal.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpCc.cs" />
@@ -103,7 +103,9 @@
     <Compile Include="Domain\FileTypes\SupportedFileType.cs" />
     <Compile Include="Domain\GameData\Westwood\WestwoodRle.cs" />
     <Compile Include="Domain\Utils\ClipboardImage.cs" />
+    <Compile Include="Domain\Utils\ImageUtils\BlobDetection.cs" />
     <Compile Include="Domain\Utils\ImageUtils\DibHandler.cs" />
+    <None Include="Domain\Utils\ImageUtils\ImageUtilsSO.cs" />
     <Compile Include="Domain\Utils\ImageUtils\WindowsGraphics2d.cs" />
     <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
     <Compile Include="HeightMap\HeightMapGenerator.cs" />

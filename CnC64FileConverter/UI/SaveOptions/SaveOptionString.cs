@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using CnC64FileConverter.Domain.FileTypes;
 using Nyerguds.Util;
@@ -15,6 +16,8 @@ namespace CnC64FileConverter.UI.SaveOptions
         private Int32 m_PadLeft;
         private Int32 m_PadMiddle;
         private Int32 m_PadRight;
+        private Boolean m_Loading;
+        private Char[] m_AllowedMask;
 
         public SaveOptionString() : this(null, null) { }
 
@@ -39,45 +42,69 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public override void UpdateInfo(SaveOption info)
         {
-            this.m_Info = info;
-            this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
-            this.txtValue.Text = this.m_Info.SaveData;
+            this.Info = info;
+            this.lblDescription.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+            this.m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
+            this.txtValue.Text = this.Info.SaveData;
         }
         
         public override void FocusValue()
         {
             this.txtValue.Select();
-        }        
+        }
+
+        public override void DisableValue(Boolean enabled)
+        {
+            try
+            {
+                this.m_Loading = true;
+                this.Enabled = enabled;
+                if (enabled)
+                    this.txtValue.Text = this.Info.SaveData;
+                else
+                    this.txtValue.Text = String.Empty;
+            }
+            finally
+            {
+                this.m_Loading = false;
+            }
+        }
 
         private void TextBoxCheckLines(Object sender, EventArgs e)
         {
+            if (this.m_Loading)
+                return;
             const String editing = "editing";
-            if (sender is TextBox)
+            TextBox textbox = sender as TextBox;
+            if (textbox == null)
+                return;
+            if (editing.Equals(textbox.Tag))
+                return;
+            try
             {
-                TextBox textbox = (TextBox)sender;
-                if (editing.Equals(textbox.Tag))
-                    return;
-                try
-                {
-                    // Remove any line breaks.
-                    textbox.Tag = editing;
-                    Int32 caret = textbox.SelectionStart;
-                    Int32 len1 = textbox.Text.Length;
-                    textbox.Text = textbox.Text.Replace("\n", String.Empty).Replace("\r", String.Empty);
-                    Int32 len2 = textbox.Text.Length;
-                    textbox.SelectionStart = Math.Min(caret - (len1 - len2), textbox.Text.Length);
+                // Remove any line breaks.
+                textbox.Tag = editing;
+                Int32 caret = textbox.SelectionStart;
+                Int32 len1 = textbox.Text.Length;
+                Char[] text = textbox.Text.Replace("\n", String.Empty).Replace("\r", String.Empty).ToCharArray();
+                if (m_AllowedMask != null)
+                    for (Int32 i = 0; i < text.Length; i++)
+                        if (!this.m_AllowedMask.Contains(text[i]))
+                            text[i] = '\0';
+                textbox.Text = new String(text).Replace("\0", String.Empty);
+                Int32 len2 = textbox.Text.Length;
+                textbox.SelectionStart = Math.Min(caret - (len1 - len2), textbox.Text.Length);
                     
-                    // Update controller
-                    if (this.m_Info == null)
-                        return;
-                    this.m_Info.SaveData = textbox.Text;
-                    if (this.m_Controller != null)
-                        this.m_Controller.UpdateControlInfo(this.m_Info);
-                }
-                finally
-                {
-                    textbox.Tag = null;
-                }
+                // Update controller
+                if (this.Info == null)
+                    return;
+                this.Info.SaveData = textbox.Text;
+                if (this.m_Controller != null)
+                    this.m_Controller.UpdateControlInfo(this.Info);
+            }
+            finally
+            {
+                textbox.Tag = null;
             }
         }
 

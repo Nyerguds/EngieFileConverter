@@ -56,15 +56,16 @@ namespace Nyerguds.GameData.Westwood
         private void ReadFromFile(String filename)
         {
             if (String.IsNullOrEmpty(filename))
-                throw new ArgumentNullException("filename","No filename given!");
+                throw new ArgumentNullException("filename", "No filename given!");
+            Byte[] buffer;
             using (FileStream fs = File.OpenRead(filename))
             {
                 if (fs.Length != FILELENGTH)
                     throw new ArgumentException("File must be " + FILELENGTH + " bytes long.");
-                Byte[] buffer = new Byte[FILELENGTH];
+                buffer = new Byte[FILELENGTH];
                 fs.Read(buffer, 0, FILELENGTH);
-                this.FillFromBuffer(buffer);
             }
+            this.FillFromBuffer(buffer);
         }
 
         private void FillFromBuffer(Byte[] buffer)
@@ -84,6 +85,7 @@ namespace Nyerguds.GameData.Westwood
     {
         public Byte HighByte { get; set; }
         public Byte LowByte { get; set; }
+        public Int32 Value { get { return this.HighByte << 8 | this.LowByte; } }
 
         public CnCMapCell(Byte highByte, Byte lowByte)
         {
@@ -97,11 +99,6 @@ namespace Nyerguds.GameData.Westwood
                 throw new ArgumentOutOfRangeException("value");
             this.HighByte = (Byte)((value >> 8) & 0xFF);
             this.LowByte = (Byte)(value & 0xFF);
-        }
-
-        public Int32 Value
-        {
-            get { return this.HighByte * 0x100 + this.LowByte; }
         }
 
         public Boolean Equals(CnCMapCell cell)
@@ -121,10 +118,10 @@ namespace Nyerguds.GameData.Westwood
 
         public Int32 CompareTo(Object obj)
         {
-            if (obj is CnCMapCell)
-                return this.CompareTo((CnCMapCell)obj);
-            else
-                return this.Value.CompareTo(obj);
+            CnCMapCell cell = obj as CnCMapCell;
+            if (cell != null)
+                return this.CompareTo(cell);
+            return this.Value.CompareTo(obj);
         }
 
         public override Int32 GetHashCode()

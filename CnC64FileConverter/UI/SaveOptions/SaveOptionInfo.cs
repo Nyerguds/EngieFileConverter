@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using CnC64FileConverter.Domain.FileTypes;
 using CnC64FileConverter.UI.SaveOptions;
 using Nyerguds.Util.Ui;
@@ -29,5 +30,18 @@ namespace CnC64FileConverter.UI
                     return null;
             }
         }
+
+        public override SaveOptionControl GetControlByProperty(SaveOption property, IEnumerable<SaveOptionControl> controls)
+        {
+            if (property == null || controls == null)
+                return null;
+            foreach (SaveOptionControl soc in controls)
+            {
+                if (soc.Info != null && soc.Info.Code == property.Code)
+                    return soc;
+            }
+            return null;
+        }
+
     }
 }

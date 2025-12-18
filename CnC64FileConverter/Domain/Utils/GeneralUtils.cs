@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -117,6 +119,80 @@ namespace Nyerguds.Util
             if (ver.FilePrivatePart > 0)
                 version += "." + ver.FilePrivatePart;
             return version;
+        }
+
+        /// <summary>
+        /// Groups numbers into ranges and returns  the result as String. Example: [1,2,3,5,7,8,9] becomes "1-3, 5, 7-9".
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="numbers">The array of numbers.</param>
+        /// <returns>The resulting String.</returns>
+        /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
+        public static String GroupNumbers<T>(IEnumerable<T> numbers) where T : IComparable, IConvertible
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendNumbersGrouped(numbers);
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Groups numbers into ranges and writes the result to a given StringBuilder. Example: [1,2,3,5,7,8,9] becomes "1-3, 5, 7-9".
+        /// Duplicates in the given numbers range are ignored.
+        /// </summary>
+        /// <param name="sb">String builder to write the result to.</param>
+        /// <param name="numbers">The array of numbers.</param>
+        /// <returns>The given string builder arg, for convenience for further appending.</returns>
+        /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
+        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers) where T : IComparable, IConvertible
+        {
+            T[] numbersArr = numbers.Distinct().OrderBy(x => x).ToArray();
+            Int64 len = numbersArr.LongLength;
+            Int64 index = 0;
+            while (index < len)
+            {
+                if (index > 0)
+                    sb.Append(", ");
+                T cur = numbersArr[index];
+                Int64 curIndex = index;
+                sb.Append(cur);
+                while (index + 1 < len && numbersArr[index].ToInt64(CultureInfo.InvariantCulture) + 1 == numbersArr[index + 1].ToInt64(CultureInfo.InvariantCulture))
+                    index++;
+                if (index > curIndex)
+                    sb.Append("-").Append(numbersArr[index]);
+                index++;
+            }
+            return sb;
+        }
+
+        public static Int32[] GetRangedNumbers(String input)
+        {
+            if (String.IsNullOrEmpty(input))
+                return new Int32[0];
+            Char[] trimVals = ",- \t".ToCharArray();
+            input = input.Trim(trimVals);
+            if (input.Length == 0)
+                return new Int32[0];
+            String[] parts = input.Split(new Char[] {','}, StringSplitOptions.RemoveEmptyEntries);
+            List<Int32> numbers = new List<Int32>();
+            foreach (String part in parts)
+            {
+                String edPart = part.Trim(trimVals);
+                if (edPart.Length == 0)
+                    continue;
+                String[] range = edPart.Split(new Char[] { '-' }, StringSplitOptions.RemoveEmptyEntries);
+                List<Int32> rangeNumbers = new List<Int32>();
+                foreach (String rangePart in range)
+                {
+                    String edRangePart = rangePart.Trim(trimVals);
+                    Int32 num;
+                    if (Int32.TryParse(edRangePart, out num))
+                        rangeNumbers.Add(num);
+                }
+                Int32 lowest = rangeNumbers.Min();
+                Int32 highest = rangeNumbers.Max();
+                numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
+            }
+            return numbers.Distinct().ToArray();
         }
 
         public static String DoubleFirstAmpersand(String input)

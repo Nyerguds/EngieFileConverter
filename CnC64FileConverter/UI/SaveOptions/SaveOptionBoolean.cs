@@ -7,6 +7,7 @@ namespace CnC64FileConverter.UI.SaveOptions
 {
     public partial class SaveOptionBoolean : SaveOptionControl
     {
+        private Boolean m_Loading;
 
         public SaveOptionBoolean() : this(null, null) { }
 
@@ -18,9 +19,9 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public override void UpdateInfo(SaveOption info)
         {
-            this.m_Info = info;
-            this.chkOption.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
-            this.chkOption.Checked = GeneralUtils.IsTrueValue(this.m_Info.SaveData);
+            this.Info = info;
+            this.chkOption.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+            this.chkOption.Checked = GeneralUtils.IsTrueValue(this.Info.SaveData);
         }
         
         public override void FocusValue()
@@ -28,13 +29,27 @@ namespace CnC64FileConverter.UI.SaveOptions
             this.chkOption.Select();
         }
 
+        public override void DisableValue(Boolean enabled)
+        {
+            try
+            {
+                m_Loading = true;
+                this.Enabled = enabled;
+                this.chkOption.Checked = enabled && GeneralUtils.IsTrueValue(this.Info.SaveData);
+            }
+            finally
+            {
+                m_Loading = false;
+            }
+        }
+
         private void chkOption_CheckedChanged(Object sender, EventArgs e)
         {
-            if (this.m_Info == null)
+            if (m_Loading || this.Info == null)
                 return;
-            this.m_Info.SaveData = this.chkOption.Checked ? "1" : "0";
+            this.Info.SaveData = this.chkOption.Checked ? "1" : "0";
             if (this.m_Controller != null)
-                this.m_Controller.UpdateControlInfo(this.m_Info);
+                this.m_Controller.UpdateControlInfo(this.Info);
         }
     }
 }

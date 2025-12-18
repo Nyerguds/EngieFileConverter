@@ -503,10 +503,10 @@ namespace CnC64FileConverter.Domain.FileTypes
             return new SaveOption[]
             {
                 new SaveOption("OPT", SaveOptionType.ChoicesList, "Optimisation:", "Save simple cropped diff frames,Optimise to chunks", "1"),
-                new SaveOption("CH8", SaveOptionType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", "1"),
-                new SaveOption("CHR", SaveOptionType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", "1"),
+                new SaveOption("CH8", SaveOptionType.Boolean, "Chunks: include diagonal neighbours in chunk flood fill detection", null, "1", "OPT", "1", false),
+                new SaveOption("CHR", SaveOptionType.Boolean, "Chunks: merge chunks with overlapping rectangle bounds", null, "1", "OPT", "1", false),
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
-                new SaveOption("CUT", SaveOptionType.Boolean, "Leave off the first frame (difference frames only)", noFirstFrame? "1" : "0"),
+                new SaveOption("CUT", SaveOptionType.Boolean, "Leave off the first frame (save differences without initial state)", noFirstFrame? "1" : "0"),
             };
         }
 
@@ -626,16 +626,17 @@ namespace CnC64FileConverter.Domain.FileTypes
                 else
                 {
                     List<Boolean[,]> inBlobs;
-                    List<List<Point>> blobs = ImageUtils.FindBlobs(imageDataOpt, origWidth, origHeight, (bytes, y, x) => bytes[y * stride + x] != TransparentIndex, chunkDiag, true, out inBlobs);
+                    Func<Byte[], Int32, Int32, Boolean> clearsThreshold = (bytes, y, x) => bytes[y * stride + x] != TransparentIndex;
+                    List<List<Point>> blobs = BlobDetection.FindBlobs(imageDataOpt, origWidth, origHeight, clearsThreshold, chunkDiag, true, out inBlobs);
                     if (chunkRects)
-                        ImageUtils.MergeBlobs(blobs, origWidth, origHeight, null, 0);
+                        BlobDetection.MergeBlobs(blobs, origWidth, origHeight, null, 0);
 
                     List<VideoChunk> frameChunks = new List<VideoChunk>();
                     for (Int32 i = 0; i < blobs.Count; i++)
                     {
                         List<Point> blob = blobs[i];
                         Boolean[,] inBlob = inBlobs[i];
-                        Rectangle rect = ImageUtils.GetBlobBounds(blob);
+                        Rectangle rect = BlobDetection.GetBlobBounds(blob);
                         Byte[] img = ImageUtils.CopyFrom8bpp(imageDataOpt, origWidth, origHeight, stride, rect);
                         if (!chunkRects)
                         {
@@ -679,14 +680,15 @@ namespace CnC64FileConverter.Domain.FileTypes
                     Int32[] found = Enumerable.Range(0, finalChunks.Count).Where(c => frameChunk.Equals(finalChunks[c])).ToArray();
                     if (found.Length > 0)
                     {
+                        // Earlier match was found; treat as copy. Add this one's rectangle to the 'allImageRects' list of the found index.
                         Int32 index = found[0];
-                        //VideoChunk foundChunk = chunks[index];
                         allImageRects[index].Add(frameChunk.ImageRect);
                         frameChunk.FinalIndex = index;
                     }
                     else
                     {
-                        // copy chunk! Otherwise later messing with the ImageRect will modify one of the frames.
+                        // Copy to new chunk! Otherwise later messing with the ImageRect will modify one of the frames.
+                        // Image data can be set by reference since these are the final unique entries.
                         VideoChunk finalFrameChunk = new VideoChunk(frameChunk.ImageData, frameChunk.ImageRect);
                         frameChunk.FinalIndex = finalChunks.Count;
                         finalChunks.Add(finalFrameChunk);
@@ -694,7 +696,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                         if (finalChunks.Count > 0x7FFE)
                             throw new NotSupportedException("Chunk count exceeds " + 0x7FFE + "!");
                     }
-                    // clear this so it can get cleaned up. It's no longer needed anyway; the reference to the final frame is set.
+                    // clear this so it can get cleaned up on the copied chunks. It's no longer needed anyway; the reference to the final frame is set.
                     frameChunk.ImageData = null;
                 }
             }
@@ -745,15 +747,14 @@ namespace CnC64FileConverter.Domain.FileTypes
                     }
                 }
             }
-            // Add palette
+            // Add palette, the easy way.
             Byte[] palData;
             using (FileFramesMythosPal pal = new FileFramesMythosPal())
                 palData = pal.SaveToBytesAsThis(fileToSave, null);
-
             // Full length: headers and data for all chunks.
             Int32 fullLength = palData.Length + finalChunks.Count * 0x08 + finalChunks.Sum(x => x.ImageData.Length);
             Byte[] vdaFile = new Byte[fullLength];
-            Array.Copy(palData, 0, vdaFile, 0, palData.Length);
+            palData.CopyTo(vdaFile, 0);
             Int32 offset = palData.Length;
             foreach (VideoChunk chunk in finalChunks)
             {
@@ -771,6 +772,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             return vdaFile;
         }
 
+        /// <summary>
+        /// Contains the data for a chunk of VDA video data.
+        /// </summary>
         private class VideoChunk: IEqualityComparer<VideoChunk>
         {
             public Byte[] ImageData { get; set; }

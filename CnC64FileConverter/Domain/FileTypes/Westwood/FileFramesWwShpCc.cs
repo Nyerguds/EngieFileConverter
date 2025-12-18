@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -52,18 +53,17 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            // Throw a HeaderParseException from the moment it's detected as a specific type that's not the requested one.
             // OffsetInfo / ShapeFileHeader
             Int32 hdrSize = 0x0E;
             if (fileData.Length < hdrSize)
                 throw new FileTypeLoadException("Not long enough for header.");
-            UInt16 hdrFrames = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
+            UInt16 hdrFrames = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0, 2, true);
             //UInt16 hdrXPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
             //UInt16 hdrYPos = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-            UInt16 hdrWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
-            UInt16 hdrHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
+            UInt16 hdrWidth = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
+            UInt16 hdrHeight = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 8, 2, true);
             //UInt16 hdrDeltaSize = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0A, 2, true);
-            UInt16 hdrFlags = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 0x0C, 2, true);
+            UInt16 hdrFlags = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 0x0C, 2, true);
             if (hdrFrames == 0) // Can be TS SHP; it identifies with an empty first byte IIRC.
                 throw new FileTypeLoadException("Not a C&C1/RA1 SHP file!");
             if (hdrWidth == 0 || hdrHeight == 0)
@@ -74,7 +74,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             OffsetInfo[] offsets = new OffsetInfo[hdrFrames];
             Dictionary<Int32, Int32> offsetIndices = new Dictionary<Int32, Int32>();
             Int32 offsSize = 8;
-            Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, hdrSize + palSize + offsSize * hdrFrames, 3, true);
+            Int32 fileSize = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, hdrSize + palSize + offsSize * hdrFrames, 3, true);
             if (fileData.Length != fileSize)
                 throw new FileTypeLoadException("File size does not match size value in header!");
             if (fileData.Length < hdrSize + palSize + offsSize * (hdrFrames + 2))
@@ -82,13 +82,21 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Read palette if flag enabled. No games I know support using it, but, might as well be complete.
             if (m_HasPalette)
             {
-                try { this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, hdrSize)); }
-                catch (ArgumentException argex) { throw new FileTypeLoadException("Illegal values in embedded palette.", argex);}
+                try
+                {
+                    this.m_Palette = ColorUtils.GetEightBitColorPalette(ColorUtils.ReadSixBitPalette(fileData, hdrSize));
+                }
+                catch (ArgumentException argex)
+                {
+                    throw new FileTypeLoadException("Illegal values in embedded palette.", argex);
+                }
             }
             else
             {
                 this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             }
+            List<CcShpFrameFormat> frameFormats = Enum.GetValues(typeof(CcShpFrameFormat)).Cast<CcShpFrameFormat>().ToList();
+
             this.m_FramesList = new SupportedFileType[hdrFrames];
             this.m_Width = hdrWidth;
             this.m_Height = hdrHeight;
@@ -96,10 +104,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 curOffs = hdrSize + palSize;
             Int32 frameSize = hdrWidth * hdrHeight;
             OffsetInfo currentFrame = OffsetInfo.Read(fileData, curOffs);
+            if (!frameFormats.Contains(currentFrame.DataFormat) || !frameFormats.Contains(currentFrame.ReferenceFormat))
+                throw new FileTypeLoadException("Cannot parse SHP frame info: in valid frame format.");
             Int32 lastKeyFrameNr = 0;
             OffsetInfo lastKeyFrame = currentFrame;
             Int32 frameOffs = currentFrame.DataOffset;
-
             for (Int32 i = 0; i < hdrFrames; i++)
             {
                 Int32 realIndex = -1;
@@ -110,6 +119,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                 offsets[i] = currentFrame;
                 curOffs += offsSize;
                 OffsetInfo nextFrame = OffsetInfo.Read(fileData, curOffs);
+                if (!frameFormats.Contains(nextFrame.DataFormat) || !frameFormats.Contains(nextFrame.ReferenceFormat))
+                    throw new FileTypeLoadException("Cannot parse SHP frame info: in valid frame format.");
                 Int32 frameOffsEnd = nextFrame.DataOffset;
                 Int32 frameStart = frameOffs;
                 Int32 frameEnd;
@@ -192,7 +203,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 frDataSize = frameEnd - frameStart;
                 extraInfo.Append("\nData size: ").Append(frDataSize).Append(" bytes");
                 if (frDataSize > 0)
-                    extraInfo.Append(" @ 0x").Append(frameStart.ToString("X")); ;
+                    extraInfo.Append(" @ 0x").Append(frameStart.ToString("X"));
                 framePic.SetExtraInfo(extraInfo.ToString());
                 this.m_FramesList[i] = framePic;
                 if (frameOffsEnd == fileData.Length)
@@ -207,20 +218,19 @@ namespace CnC64FileConverter.Domain.FileTypes
         {
             Int32 width;
             Int32 height;
-            PerformPreliminarychecks(ref fileToSave, out width, out height);
+            this.PerformPreliminaryChecks(ref fileToSave, out width, out height);
             return new SaveOption[]
             {
                 new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate LCW frames", "1"),
-                new SaveOption("FDL", SaveOptionType.Boolean, "Save frames that have duplicates as LCW for more trimming. Useful on small graphics with many duplicates.", "0"),
+                new SaveOption("FDL", SaveOptionType.Boolean, "Save all frames that have duplicates as LCW to allow more trimming. Useful on small graphics with many duplicates.", null, "0", "TDL", "1", false),
             };
         }
-
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, SaveOption[] saveOptions)
         {
             Int32 width;
             Int32 height;
-            PerformPreliminarychecks(ref fileToSave, out width, out height);
+            this.PerformPreliminaryChecks(ref fileToSave, out width, out height);
             Boolean trimDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "TDL"));
             Boolean forceDuplicates = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "FDL"));
 
@@ -228,11 +238,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 hdrSize = 0x0E;
             Byte[] header = new Byte[hdrSize];
 
-            ArrayUtils.WriteIntToByteArray(header, 0, 2, true, (UInt16)frames);
+            ArrayUtils.WriteIntToByteArray(header, 0, 2, true, (UInt16) frames);
             //ArrayUtils.WriteIntToByteArray(header, 2, 2, true, 0); // XPos
             //ArrayUtils.WriteIntToByteArray(header, 4, 2, true, 0); // YPos
-            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16)width);
-            ArrayUtils.WriteIntToByteArray(header, 8, 2, true, (UInt16)height);
+            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16) width);
+            ArrayUtils.WriteIntToByteArray(header, 8, 2, true, (UInt16) height);
             //ArrayUtils.WriteIntToByteArray(header, 0x0A, 2, true, (UInt16)DeltaSize);
             //ArrayUtils.WriteIntToByteArray(header, 0x0C, 2, true, 0); // Flags
 
@@ -336,7 +346,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 size = curDataOffs;
             Byte[] finalData = new Byte[size];
             Int32 maxDeltaSize = framescompr.Max(f => f.Length);
-            ArrayUtils.WriteIntToByteArray(header, 0x0A, 2, true, (UInt16)maxDeltaSize);
+            ArrayUtils.WriteIntToByteArray(header, 0x0A, 2, true, (UInt16) maxDeltaSize);
             header.CopyTo(finalData, 0);
             Int32 indexOffs = hdrSize;
             for (Int32 i = 0; i < frames; i++)
@@ -348,11 +358,11 @@ namespace CnC64FileConverter.Domain.FileTypes
                     continue;
                 frameCompr.CopyTo(finalData, frameOffsets[i]);
             }
-            ArrayUtils.WriteIntToByteArray(finalData, sizeOffs, 3, true, (UInt32)size);
+            ArrayUtils.WriteIntToByteArray(finalData, sizeOffs, 3, true, (UInt32) size);
             return finalData;
         }
 
-        private void PerformPreliminarychecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height)
+        private void PerformPreliminaryChecks(ref SupportedFileType fileToSave, out Int32 width, out Int32 height)
         {
             // Preliminary checks
             if (!fileToSave.IsFramesContainer || fileToSave.Frames == null)
@@ -387,7 +397,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             public CcShpFrameFormat DataFormat { get; set; }
             public Int32 ReferenceOffset { get; set; }
             public CcShpFrameFormat ReferenceFormat { get; set; }
-
+ 
             public OffsetInfo(Int32 dataOffset, CcShpFrameFormat dataFormat, Int32 referenceOffset, CcShpFrameFormat referenceFormat)
             {
                 this.DataOffset = dataOffset;
@@ -398,29 +408,29 @@ namespace CnC64FileConverter.Domain.FileTypes
 
             public static OffsetInfo Read(Byte[] fileData, Int32 offset)
             {
-                Int32 dataOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset, 3, true);
-                CcShpFrameFormat dataFormat = (CcShpFrameFormat)ArrayUtils.ReadIntFromByteArray(fileData, offset + 3, 1, true);
-                Int32 referenceOffset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 3, true);
-                CcShpFrameFormat referenceFormat = (CcShpFrameFormat)ArrayUtils.ReadIntFromByteArray(fileData, offset + 7, 1, true);
+                Int32 dataOffset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, offset, 3, true);
+                CcShpFrameFormat dataFormat = (CcShpFrameFormat) ArrayUtils.ReadIntFromByteArray(fileData, offset + 3, 1, true);
+                Int32 referenceOffset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, offset + 4, 3, true);
+                CcShpFrameFormat referenceFormat = (CcShpFrameFormat) ArrayUtils.ReadIntFromByteArray(fileData, offset + 7, 1, true);
                 return new OffsetInfo(dataOffset, dataFormat, referenceOffset, referenceFormat);
             }
 
             public void Write(Byte[] fileData, Int32 offset)
             {
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 0, 3, true, (UInt32)this.DataOffset);
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 3, 1, true, (Byte)this.DataFormat);
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 4, 3, true, (UInt32)ReferenceOffset);
-                ArrayUtils.WriteIntToByteArray(fileData, offset + 7, 1, true, (Byte)this.ReferenceFormat);
+                ArrayUtils.WriteIntToByteArray(fileData, offset + 0, 3, true, (UInt32) this.DataOffset);
+                ArrayUtils.WriteIntToByteArray(fileData, offset + 3, 1, true, (Byte) this.DataFormat);
+                ArrayUtils.WriteIntToByteArray(fileData, offset + 4, 3, true, (UInt32) ReferenceOffset);
+                ArrayUtils.WriteIntToByteArray(fileData, offset + 7, 1, true, (Byte) this.ReferenceFormat);
             }
         }
 
         private enum CcShpFrameFormat
         {
             Empty = 0x00,
-            Lcw = 0x80,
-            XorChainRef = 0x48,
-            XorBase = 0x40,
             XorChain = 0x20,
+            XorBase = 0x40,
+            XorChainRef = 0x48,
+            Lcw = 0x80,
         }
 
     }

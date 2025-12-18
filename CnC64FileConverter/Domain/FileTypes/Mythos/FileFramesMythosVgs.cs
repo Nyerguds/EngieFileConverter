@@ -298,9 +298,11 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 compression = 0;
             Boolean hasXOpt = false;
             Boolean hasYOpt = false;
+            Boolean hasPal = false;
             FileFramesMythosVgs fileVgs = fileToSave as FileFramesMythosVgs;
             if (fileVgs != null)
             {
+                hasPal = fileVgs.m_PaletteSet;
                 compression = fileVgs.CompressionType;
                 foreach (SupportedFileType frame in fileVgs.Frames)
                 {
@@ -323,7 +325,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 compression = 0;
             return new SaveOption[]
             {
-                new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file as first frame", "0"),
+                new SaveOption("PAL", SaveOptionType.Boolean, "Save palette into file as first frame", hasPal ? "1" : "0"),
                 new SaveOption("CMP", SaveOptionType.ChoicesList, "Compression type:", String.Join(",", this.compressionTypes), compression.ToString()),
                 new SaveOption("OPX", SaveOptionType.Boolean, "Optimize empty horizontal space to X-offsets", hasXOpt ? "1" : "0"),
                 new SaveOption("OPY", SaveOptionType.Boolean, "Optimize empty vertical space to Y-offsets", hasYOpt ? "1" : "0"),

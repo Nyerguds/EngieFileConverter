@@ -225,7 +225,7 @@ namespace Nyerguds.GameData.Mythos
         /// <param name="buffer">Input buffer.</param>
         /// <param name="transparentIndex">Transparency value to collapse.</param>
         /// <param name="lineWidth">Line width.</param>
-        /// <param name="headerSize">Header size, to correctly put the full block length at the start.</param>
+        /// <param name="headerSize">Header size, to correctly put the full block length at the start. Should normally be '8'.</param>
         /// <returns>The encoded data.</returns>
         public Byte[] CollapsedTransparencyEncode(Byte[] buffer, Byte transparentIndex, Int32 lineWidth, Int32 headerSize)
         {

@@ -22,10 +22,10 @@ namespace CnC64FileConverter.UI.SaveOptions
 
         public override void UpdateInfo(SaveOption info)
         {
-            this.m_Info = info;
-            this.lblName.Text = GeneralUtils.DoubleFirstAmpersand(this.m_Info.UiString);
-            this.txtValue.Text = this.m_Info.SaveData;
-            String init = this.m_Info.InitValue;
+            this.Info = info;
+            this.lblName.Text = GeneralUtils.DoubleFirstAmpersand(this.Info.UiString);
+            this.txtValue.Text = this.Info.SaveData;
+            String init = this.Info.InitValue;
             this.m_minimum = null;
             this.m_maximum = null;
             if (String.IsNullOrEmpty(init))
@@ -75,11 +75,11 @@ namespace CnC64FileConverter.UI.SaveOptions
                     this.txtValue.SelectionStart = Math.Min(selStart, this.txtValue.Text.Length);
                 }
                 // Update controller
-                if (this.m_Info == null)
+                if (this.Info == null)
                     return;
-                this.m_Info.SaveData = (output.Length == 0 || "-".Equals(output)) ? "0" : this.txtValue.Text;
+                this.Info.SaveData = (output.Length == 0 || "-".Equals(output)) ? "0" : this.txtValue.Text;
                 if (this.m_Controller != null)
-                    this.m_Controller.UpdateControlInfo(this.m_Info);
+                    this.m_Controller.UpdateControlInfo(this.Info);
             }
             finally
             {

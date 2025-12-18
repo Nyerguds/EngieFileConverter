@@ -21,7 +21,6 @@ namespace CnC64FileConverter.Domain.FileTypes
         public override Int32 Height { get { return this.m_Height; } }
         protected Int32 m_Width;
         protected Int32 m_Height;
-        //protected String[] formats = new String[] { "Dune II", "Legend of Kyrandia", "C&C1/RA1", "Tiberian Sun" };
         /// <summary>Very short code name for this type.</summary>
         public override String ShortTypeName { get { return "Westwood TS Shape"; } }
         public override String[] FileExtensions { get { return new String[] { "shp" }; } }
@@ -51,31 +50,22 @@ namespace CnC64FileConverter.Domain.FileTypes
 
         protected void LoadFromFileData(Byte[] fileData, String sourcePath)
         {
-            // Throw a HeaderParseException from the moment it's detected as a specific type that's not the requested one.
             // OffsetInfo / ShapeFileHeader
             const Int32 hdrSize = 0x08;
             if (fileData.Length < hdrSize)
                 throw new FileTypeLoadException("Not long enough for header.");
             if (fileData[0] != 0 || fileData[1] != 0)
                 throw new FileTypeLoadException("Not a TS SHP file!");
-            UInt16 hdrWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
-            UInt16 hdrHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
-            UInt16 hdrFrames = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
-            if (hdrFrames == 0) // Can be TS SHP; it identifies with an empty first byte IIRC.
-                throw new FileTypeLoadException("Not a C&C1/RA1 SHP! file");
+            UInt16 hdrWidth = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 2, 2, true);
+            UInt16 hdrHeight = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 4, 2, true);
+            UInt16 hdrFrames = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, 6, 2, true);
+            if (hdrFrames == 0)
+                throw new FileTypeLoadException("Not a TS SHP file");
             if (hdrWidth == 0 || hdrHeight == 0)
                 throw new FileTypeLoadException("Illegal values in header!");
             const Int32 frameHdrSize = 0x18;
             if (fileData.Length < hdrSize + frameHdrSize * hdrFrames)
                 throw new FileTypeLoadException("File data is not long enough for frame headers!");
-
-            //Int32 fileSize = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, hdrSize + FrameHdrSize * hdrFrames, 3, true)
-            //if (fileData.Length != fileSize)
-            //    throw new FileTypeLoadException("File size does not match size value in header!");
-            //if (fileData.Length < hdrSize + palSize + FrameHdrSize * (hdrFrames + 2))
-            //    throw new FileTypeLoadException("Header is too small to contain the frames index!");
-            // Read palette if flag enabled?
-
             this.m_FramesList = new SupportedFileType[hdrFrames];
             this.m_Width = hdrWidth;
             this.m_Height = hdrHeight;
@@ -83,24 +73,24 @@ namespace CnC64FileConverter.Domain.FileTypes
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, transMask, false);
             // Frames
             Int32 curOffs = hdrSize;
-            Int32 fullFrameSize = hdrWidth * hdrHeight;            
+            Int32 fullFrameSize = hdrWidth * hdrHeight;
             for (Int32 i = 0; i < hdrFrames; i++)
             {
-                UInt16 frmX = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x00, 2, true);
-                UInt16 frmY = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x02, 2, true);
-                UInt16 frmWidth = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x04, 2, true);
-                UInt16 frmHeight = (UInt16)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x06, 2, true);
-                UInt32 frmFlags = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x08, 4, true);
-                Color frmColor = Color.FromArgb((Int32)(ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x0C, 3, false) | 0xFF000000));
-                UInt32 frmReserved = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x10, 4, true);
-                UInt32 frmDataOffset = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x14, 4, true);
+                UInt16 frmX = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x00, 2, true);
+                UInt16 frmY = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x02, 2, true);
+                UInt16 frmWidth = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x04, 2, true);
+                UInt16 frmHeight = (UInt16) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x06, 2, true);
+                UInt32 frmFlags = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x08, 4, true);
+                Color frmColor = Color.FromArgb((Int32) (ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x0C, 3, false) | 0xFF000000));
+                UInt32 frmReserved = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x10, 4, true);
+                UInt32 frmDataOffset = (UInt32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs + 0x14, 4, true);
                 curOffs += frameHdrSize;
                 Boolean usesRle = (frmFlags & 2) != 0;
                 Boolean hasTrans = (frmFlags & 1) != 0;
                 if (frmDataOffset != 0 && (frmX + frmWidth > hdrWidth || frmY + frmHeight > hdrHeight || frmReserved != 0
-                    || (usesRle && frmDataOffset + frmHeight * 2 > fileData.Length) || (!usesRle && frmDataOffset + frmWidth * frmHeight > fileData.Length)))
+                                           || (usesRle && frmDataOffset + frmHeight * 2 > fileData.Length) || (!usesRle && frmDataOffset + frmWidth * frmHeight > fileData.Length)))
                     throw new FileTypeLoadException("Illegal values in frame header!");
-                
+
                 Byte[] fullFrame = new Byte[fullFrameSize];
                 Int32 frameBytes;
                 if (frmDataOffset == 0)
@@ -111,7 +101,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     if (usesRle)
                     {
                         Int32 frameStart = (Int32) frmDataOffset;
-                        frame = WestwoodRleZero.DecompressRleZero(fileData, ref frameStart, frmWidth, frmHeight);
+                        frame = WestwoodRleZero.DecompressRleZeroTs(fileData, ref frameStart, frmWidth, frmHeight);
                         frameBytes = frameStart - (Int32) frmDataOffset;
                     }
                     else
@@ -122,8 +112,8 @@ namespace CnC64FileConverter.Domain.FileTypes
                         frameBytes = frameDataSize;
                     }
                     ImageUtils.PasteOn8bpp(fullFrame, hdrWidth, hdrHeight, hdrWidth,
-                                        frame, frmWidth, frmHeight, frmWidth,
-                                        new Rectangle(frmX, frmY, frmWidth, frmHeight), transMask, true);
+                        frame, frmWidth, frmHeight, frmWidth,
+                        new Rectangle(frmX, frmY, frmWidth, frmHeight), transMask, true);
                 }
                 // Convert frame data to image and frame object
                 Bitmap curFrImg = ImageUtils.BuildImage(fullFrame, this.m_Width, this.m_Height, this.m_Width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
@@ -137,7 +127,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 if (hasTrans)
                 {
                     extraInfo.Append("Transparency");
-                    if(usesRle)
+                    if (usesRle)
                         extraInfo.Append(", ");
                 }
                 if (usesRle)
@@ -162,12 +152,15 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color[] palette;
             PerformPreliminarychecks(ref fileToSave, out width, out height, out palette);
             Boolean adjust = palette != null && palette.Length > 0;
-            foreach (Color c in palette)
+            if (adjust)
             {
-                if (c.R % 4 == 0 && c.G % 4 == 0 && c.B % 4 == 0)
-                    continue;
-                adjust = false;
-                break;
+                foreach (Color c in palette)
+                {
+                    if (c.R % 4 == 0 && c.G % 4 == 0 && c.B % 4 == 0)
+                        continue;
+                    adjust = false;
+                    break;
+                }
             }
             SaveOption[] opts = new SaveOption[adjust ? 3 : 2];
             opts[0] = new SaveOption("TDL", SaveOptionType.Boolean, "Trim duplicate frames", "1");
@@ -196,9 +189,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 for (Int32 i = 0; i < palette.Length; i++)
                 {
                     Color col = palette[i];
-                    colArr[0] = (Byte)(col.R / 4);
-                    colArr[1] = (Byte)(col.G / 4);
-                    colArr[2] = (Byte)(col.B / 4);
+                    colArr[0] = (Byte) (col.R / 4);
+                    colArr[1] = (Byte) (col.G / 4);
+                    colArr[2] = (Byte) (col.B / 4);
                     newpal[i] = sixBittoEight.GetColor(colArr, 0);
                 }
                 palette = newpal;
@@ -206,9 +199,9 @@ namespace CnC64FileConverter.Domain.FileTypes
             Int32 frames = fileToSave.Frames.Length;
             const Int32 hdrSize = 0x08;
             Byte[] header = new Byte[hdrSize];
-            ArrayUtils.WriteIntToByteArray(header, 2, 2, true, (UInt16)width);
-            ArrayUtils.WriteIntToByteArray(header, 4, 2, true, (UInt16)height);
-            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16)frames);
+            ArrayUtils.WriteIntToByteArray(header, 2, 2, true, (UInt16) width);
+            ArrayUtils.WriteIntToByteArray(header, 4, 2, true, (UInt16) height);
+            ArrayUtils.WriteIntToByteArray(header, 6, 2, true, (UInt16) frames);
             const Int32 frameHdrSize = 0x18;
             Byte[] frameHeaders = new Byte[frames * frameHdrSize];
 
@@ -219,7 +212,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             Color[] framesDataColors = trimDuplicates ? new Color[frames] : null;
 
             Int32 frameHeaderOffset = 0;
-            UInt32 frameDataOffset = (UInt32)(hdrSize + frameHdrSize * frames);
+            UInt32 frameDataOffset = (UInt32) (hdrSize + frameHdrSize * frames);
             if (align && frameDataOffset % 8 > 0)
                 frameDataOffset += 8 - (frameDataOffset % 8);
             Byte[] dummy = trimDuplicates ? new Byte[0] : null;
@@ -277,7 +270,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     {
                         flags = 0x01;
                         // Collapse whitespace, check if smaller or not.
-                        imageDataToStore = WestwoodRleZero.CompressRleZero(imageData, newWidth, newHeight);
+                        imageDataToStore = WestwoodRleZero.CompressRleZeroTs(imageData, newWidth, newHeight);
                         if (imageDataToStore.Length > imageData.Length)
                             imageDataToStore = imageData;
                         else flags |= 2;
@@ -291,17 +284,17 @@ namespace CnC64FileConverter.Domain.FileTypes
                     }
                     dataOffset = frameDataOffset;
                 }
-                frameDataOffset += (UInt32)imageDataToStore.Length;
+                frameDataOffset += (UInt32) imageDataToStore.Length;
                 if (align && frameDataOffset % 8 > 0)
                     frameDataOffset += 8 - (frameDataOffset % 8);
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x00, 2, true, (UInt16)xOffset);  //frmX
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x02, 2, true, (UInt16)yOffset);  //frmY
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x04, 2, true, (UInt16)newWidth);  //frmWidth
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x06, 2, true, (UInt16)newHeight);  //frmHeight
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x08, 4, true, flags);  //frmFlags     
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x0C, 3, false, (UInt32)col.ToArgb()); //frmColor
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x00, 2, true, (UInt16) xOffset); //frmX
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x02, 2, true, (UInt16) yOffset); //frmY
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x04, 2, true, (UInt16) newWidth); //frmWidth
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x06, 2, true, (UInt16) newHeight); //frmHeight
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x08, 4, true, flags); //frmFlags     
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x0C, 3, false, (UInt32) col.ToArgb()); //frmColor
                 //ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x10, 4, true, 00);  //frmReserved
-                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x14, 4, true, dataOffset);  //frmDataOffset
+                ArrayUtils.WriteIntToByteArray(frameHeaders, frameHeaderOffset + 0x14, 4, true, dataOffset); //frmDataOffset
                 frameHeaderOffset += frameHdrSize;
             }
             Byte[] finalData = new Byte[frameDataOffset];
@@ -367,7 +360,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 allG += c.G * amount;
                 allB += c.B * amount;
             }
-            return Color.FromArgb((Byte)(allR / pixCount), (Byte)(allG / pixCount), (Byte)(allB / pixCount));
+            return Color.FromArgb((Byte) (allR / pixCount), (Byte) (allG / pixCount), (Byte) (allB / pixCount));
         }
 
         public static void PreCheckSplitShadows(SupportedFileType file, Byte sourceShadowIndex, Byte destShadowIndex, Boolean forCombine)
@@ -450,7 +443,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                     imageDataShadow = new Byte[imageData.Length];
                     for (Int32 y = 0; y < height; y++)
                     {
-                        Int32 offs = y*stride;
+                        Int32 offs = y * stride;
                         for (Int32 x = 0; x < width; x++)
                         {
                             if (imageData[offs] == sourceShadowIndex)
@@ -472,7 +465,7 @@ namespace CnC64FileConverter.Domain.FileTypes
                 frameNoShadows.SetColorsInPalette(frame.ColorsInPalette);
                 frameNoShadows.SetTransparencyMask(transMask);
                 newfile.AddFrame(frameNoShadows);
-                
+
                 Bitmap imageOnlyShadows = ImageUtils.BuildImage(imageDataShadow, width, height, stride, bm.PixelFormat, palette, null);
                 String nameOnlyShadows = name + "_s" + ext;
                 if (folder != null)
@@ -525,9 +518,9 @@ namespace CnC64FileConverter.Domain.FileTypes
                 Int32 shStride;
                 Byte[] shadowData = ImageUtils.GetImageData(shBm, out shStride);
                 // Convert to shadow-only image
-                shadowData = shadowData.Select(b => (Byte)(b != sourceShadowIndex ? 0 : destShadowIndex)).ToArray();
+                shadowData = shadowData.Select(b => (Byte) (b != sourceShadowIndex ? 0 : destShadowIndex)).ToArray();
                 ImageUtils.PasteOn8bpp(imageData, width, height, stride, shadowData, shWidth, shHeight, shStride, new Rectangle(0, 0, shWidth, shHeight), transMask, true);
-             
+
                 Bitmap imageCombined = ImageUtils.BuildImage(imageData, width, height, stride, bm.PixelFormat, palette, null);
                 FileImageFrame frameCombined = new FileImageFrame();
                 frameCombined.LoadFileFrame(newfile, file, imageCombined, name, i);

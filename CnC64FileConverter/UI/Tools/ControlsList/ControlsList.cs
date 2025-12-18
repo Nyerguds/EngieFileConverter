@@ -13,6 +13,7 @@ namespace Nyerguds.Util.Ui
     public abstract partial class ControlsList<T,U> : UserControl where T : Control
     {
         protected List<T> m_Contents = new List<T>();
+        protected CustomControlInfo<T, U> m_CustomControlInfo;
 
         protected ControlsList()
         {
@@ -29,6 +30,7 @@ namespace Nyerguds.Util.Ui
             this.Reset();
             if (cci == null)
                 return;
+            this.m_CustomControlInfo = cci;
             this.SuspendLayout();
             this.lblTypeName.Text = cci.Name;
             foreach (U vsi in cci.Properties)
@@ -41,6 +43,13 @@ namespace Nyerguds.Util.Ui
                 catch (NotImplementedException) { /* ignore */ }
             }
             this.PerformLayout();
+        }
+
+        public virtual T GetListedControlByInfoObject(U infoObject)
+        {
+            if (this.m_CustomControlInfo == null)
+                return null;
+            return this.m_CustomControlInfo.GetControlByProperty(infoObject, m_Contents);
         }
 
         /// <summary>

@@ -35,7 +35,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             // Default to true if the type has a specific forced transparent index; this kind of transparency is usually best removed for editing.
             return new SaveOption[]
             {
-                new SaveOption("NPT", SaveOptionType.Boolean, "Save indexed graphics without transparency (advised for editing)", mainTypeHasMask || parTypeHasMask ? "1" : "0")
+                new SaveOption("NTP", SaveOptionType.Boolean, "Save indexed graphics without transparency (advised for editing)", mainTypeHasMask || parTypeHasMask ? "1" : "0")
             };
         }
 
@@ -44,7 +44,7 @@ namespace CnC64FileConverter.Domain.FileTypes
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new NotSupportedException("File to save is empty!");
             Color[] pal = fileToSave.GetColors();
-            Boolean noPalTransparency = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NPT"));
+            Boolean noPalTransparency = GeneralUtils.IsTrueValue(SaveOption.GetSaveOptionValue(saveOptions, "NTP"));
             return BitmapHandler.GetPngImageData(fileToSave.GetBitmap(), pal == null ? 0 : pal.Length, noPalTransparency);
         }
     }
