@@ -368,7 +368,9 @@
     <Compile Include="UI\FrmFileConverter.Designer.cs">
       <DependentUpon>FrmFileConverter.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\FrmFileConverterTests.cs" />
+    <Compile Include="UI\FrmFileConverterTests.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FileConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UI\Util\PixelZoomPanel.cs">
@@ -449,8 +451,6 @@
     <Content Include="EngieFileConverter.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="cnc64logo.ico" />
-    <Content Include="cnc64logo.png" />
     <Content Include="engie.png" />
     <None Include="engie.ico" />
     <Content Include="Resources\clipboard-image.png" />
@@ -463,7 +463,6 @@
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>copy /y "$(ProjectDir)..\Nyerguds.Ini\$(OutDir)IniHandler.dll" "$(ProjectDir)Resources"</PreBuildEvent>
