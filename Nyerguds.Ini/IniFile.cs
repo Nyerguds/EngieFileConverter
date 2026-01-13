@@ -221,17 +221,10 @@ namespace Nyerguds.Ini
             this.m_IniSections = null;
             if (File.Exists(this.m_FilePath))
             {
-                StreamReader stream = null;
-                try { stream = new StreamReader(this.m_FilePath, this.m_Encoding, false); }
-                catch { /* ignore */ }
-                if (stream != null)
+                using (StreamReader stream = new StreamReader(this.m_FilePath, this.m_Encoding, false))
                 {
-                    try
-                    {
-                        ReadOnlyCollection<String> initext = this.ReadLinesFromTextStream(stream, charEncoding).AsReadOnly();
-                        this.m_IniSections = this.ReadIniContents(initext);
-                    }
-                    catch { /* ignore */ }
+                    ReadOnlyCollection<String> initext = this.ReadLinesFromTextStream(stream, charEncoding).AsReadOnly();
+                    this.m_IniSections = this.ReadIniContents(initext);
                 }
             }
             if (this.m_IniSections == null)
@@ -325,22 +318,16 @@ namespace Nyerguds.Ini
             {
                 initext = new List<String>(this.m_FileContents.Split('\n'));
             }
-            else
+            else if (File.Exists(iniFilePath))
             {
-                try
+                using (StreamReader stream = new StreamReader(iniFilePath, charEncoding, false))
                 {
-                    StreamReader stream = null;
-                    try
-                    {
-                        stream = new StreamReader(iniFilePath, charEncoding, false);
-                    }
-                    catch { /* ignore */ }
                     initext = this.ReadLinesFromTextStream(stream, charEncoding);
                 }
-                catch (Exception)
-                {
-                    initext = new List<String>();
-                }
+            }
+            else
+            {
+                initext = new List<String>();
             }
             Int32 nrOfSections = this.m_IniSections.Count;
             for (Int32 i = 0; i < nrOfSections; ++i)
@@ -434,29 +421,18 @@ namespace Nyerguds.Ini
             }
             else
             {
-                StreamWriter sw = null;
                 try
                 {
-                    sw = new StreamWriter(iniFilePath, false, charEncoding);
-                    Int32 nrOfLines = initext.Count;
-                    for (Int32 i = 0; i < nrOfLines; ++i)
-                        sw.WriteLine(initext[i]);
+                    using (StreamWriter sw = new StreamWriter(iniFilePath, false, charEncoding))
+                    {
+                        Int32 nrOfLines = initext.Count;
+                        for (Int32 i = 0; i < nrOfLines; ++i)
+                            sw.WriteLine(initext[i]);
+                    }
                 }
                 catch (IOException)
                 {
                     returnvalue = false;
-                }
-                finally
-                {
-                    try
-                    {
-                        if (sw != null)
-                        {
-                            sw.Close();
-                            sw.Dispose();
-                        }
-                    }
-                    catch { /* ignore */ }
                 }
                 if (returnvalue)
                     this.ReadIniFile(iniFilePath, charEncoding);
@@ -1034,25 +1010,18 @@ namespace Nyerguds.Ini
         protected List<String> ReadLinesFromTextStream(StreamReader stream, Encoding charEncoding)
         {
             List<String> text = new List<String>();
-            try
+            String input;
+            while ((input = stream.ReadLine()) != null)
             {
-                String input;
-                while ((input = stream.ReadLine()) != null)
+                // fix for UTF8 with BOM read on UTF8 without BOM.
+                if (text.Count == 0
+                    && charEncoding.CodePage == 65001
+                    && charEncoding.GetPreamble().Length == 0
+                    && input.Length > 0 && input[0] == 0xFEFF)
                 {
-                    // fix for UTF8 with BOM read on UTF8 without BOM.
-                    if (text.Count == 0
-                        && charEncoding.CodePage == 65001
-                        && charEncoding.GetPreamble().Length == 0
-                        && input.Length > 0 && input[0] == 0xFEFF)
-                    {
-                        input = input.Substring(1);
-                    }
-                    text.Add(input);
+                    input = input.Substring(1);
                 }
-            }
-            finally
-            {
-                stream.Close();
+                text.Add(input);
             }
             return text;
         }
