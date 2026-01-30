@@ -35,7 +35,7 @@ namespace EngieFileConverter.UI
             //this.ViewInt33MouseCursors();
             //this.MatrixImage();
             //this.LoadByteArrayImage();
-            this.CombineHue();
+            //this.CombineHue();
             //this.CreateSierpinskiImage();
             //this.ColorPsx();
             //this.ExpandRAMap();
@@ -82,6 +82,7 @@ namespace EngieFileConverter.UI
             //this.ExecuteThreaded(() => this.CorrectAlpha(this.m_LoadedFile), false, false, false, "Applying alpha...");
             //this.ExecuteThreaded(() => this.ConvertDiff(this.m_LoadedFile), false, false, false, "Removing differences...");
             //this.ExecuteThreaded(() => this.Fix6BitPalette(this.m_LoadedFile), false, false, false, "Fixing palette...");
+            this.SwapPaletteColors();
         }
 
         private void LoadTestFile(SupportedFileType loadImage)
@@ -2050,6 +2051,20 @@ namespace EngieFileConverter.UI
             FilePalette6Bit palsix = new FilePalette6Bit();
             palsix.LoadFile(pal, Path.ChangeExtension(fileToProcess.LoadedFile, ".pal"));
             return palsix;
+        }
+
+        private void SwapPaletteColors()
+        {
+            Bitmap loadedBm;
+            if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel > 8)
+                return;
+            Color[] pal = this.m_LoadedFile.GetColors();
+            for (Int32 c = 0; c < pal.Length; ++c)
+            {
+                Color col = pal[c];
+                pal[c] = Color.FromArgb(col.B, col.R, col.G);
+            }
+            this.ExecuteThreaded(() => this.SetToPalette(m_LoadedFile, pal), true, false, false, "Setting different palette");
         }
     }
 }

@@ -440,27 +440,27 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // Preliminary checks
             if (fileToSave == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
+                throw new FileTypeSaveException(ERR_EMPTY_FILE);
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             Int32 nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
-                throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
+                throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
             width = -1;
             height = -1;
             for (Int32 i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
-                    throw new ArgumentException(ERR_FRAMES_EMPTY, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_EMPTY);
                 if (frame.BitsPerPixel != 8)
-                    throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
+                    throw new FileTypeSaveException(String.Format(ERR_BPP_INPUT_EXACT, 8));
                 if (width == -1 && height == -1)
                 {
                     width = frame.Width;
                     height = frame.Height;
                 }
                 else if (width != frame.Width || height != frame.Height)
-                    throw new ArgumentException(ERR_FRAMES_SIZE_DIFF, "fileToSave");
+                    throw new FileTypeSaveException(ERR_FRAMES_SIZE_DIFF);
             }
             return frames;
         }

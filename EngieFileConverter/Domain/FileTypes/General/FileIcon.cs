@@ -205,7 +205,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Boolean addInc = Math.Max(w, h) < 256;
             List<Option> opts = new List<Option>();
             if (addSq)
-                opts.Add(new Option("SQR", OptionInputType.Boolean, "Pad image to square format", null, "1"));
+                opts.Add(new Option("SQR", OptionInputType.Boolean, "Pad image to square format", "1"));
             if (addInc)
             {
                 opts.Add(new Option("INC", OptionInputType.Boolean, "Include formats larger than source image", "1"));

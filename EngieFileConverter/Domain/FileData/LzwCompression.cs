@@ -39,7 +39,7 @@ namespace Nyerguds.FileData.Compression
     /// The code was adapted by Maarten Meuris aka Nyerguds:
     /// -Fixes the 7-bit filter caused by using an ASCII stream reader (an issue later fixed on the original repository)
     /// -Uses byte arrays as input and output.
-    /// -Added support for 12 and 13 bit, with an enum for the different supported bit lengths. different values for
+    /// -Added support for 12 and 13 bit, with an enum for the different supported bit lengths. Different values for
     ///  TABLE_SIZE taken from https://marknelson.us/assets/1989-10-01-lzw-data-compression/lzw_nelson.cpp
     /// </summary>
     public class LzwCompression

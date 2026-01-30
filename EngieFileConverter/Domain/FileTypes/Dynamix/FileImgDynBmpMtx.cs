@@ -118,6 +118,8 @@ namespace EngieFileConverter.Domain.FileTypes
             Byte[][] allFrames = new Byte[nrOfFrames][];
             Int32[] frameMatrix = new Int32[nrOfFrames];
             UInt32[] frameHashes = new UInt32[nrOfFrames];
+            // The Dictionary is used for a preliminary sorting of chunks into those with the same hash.
+            // A secondary operation then checks which of these are actually equal.
             Dictionary<UInt32, List<Int32>> hashmap = new Dictionary<UInt32, List<Int32>>();
             for (Int32 y = 0; y < matrixHeight; ++y)
             {

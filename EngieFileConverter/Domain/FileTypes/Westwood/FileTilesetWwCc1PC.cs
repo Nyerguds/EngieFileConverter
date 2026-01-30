@@ -185,7 +185,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 x = 0; x < nrOfFramesX; ++x)
                     {
                         Int32 index = y * nrOfFramesX + x;
-                        framesData[index] = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
+                        byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
+                        framesData[index] = frameData.All(b => b == 0) ? null : frameData;
                     }
                 }
             }
@@ -203,33 +204,39 @@ namespace EngieFileConverter.Domain.FileTypes
                         continue;
                     if (bitmap.Width != 24 || bitmap.Height != 24)
                         throw new ArgumentException("All frames must be 24×24.", "fileToSave");
-                    framesData[i] = ImageUtils.GetImageData(bitmap, true);
+                    byte[] frameData = ImageUtils.GetImageData(bitmap, true);
+                    framesData[i] = frameData.All(b => b == 0) ? null : frameData;
                 }
             }
+
             Byte[][] tempFrames = new Byte[nrOfFrames][];
             Byte[] finalIndices = new Byte[nrOfFrames];
             Int32 actualFrames = 0;
             for (Int32 index = 0; index < nrOfFrames; ++index)
             {
                 Byte[] frameData = framesData[index];
-                if (frameData == null || frameData.All(b => b == 0))
+                if (frameData == null)
+                {
                     finalIndices[index] = 0xFF;
+                }
                 else
                 {
                     Int32 foundIndex = -1;
                     for (Int32 i = 0; i < actualFrames; ++i)
                     {
-                        if (tempFrames[i].SequenceEqual(frameData))
+                        if (ArrayUtils.ArraysAreEqual(tempFrames[i], frameData))
                         {
                             foundIndex = i;
                             break;
                         }
                     }
                     if (foundIndex != -1)
+                    {
                         finalIndices[index] = (Byte)foundIndex;
+                    }
                     else
                     {
-                        finalIndices[index] = (Byte) actualFrames;
+                        finalIndices[index] = (Byte)actualFrames;
                         tempFrames[actualFrames] = frameData;
                         actualFrames++;
                     }

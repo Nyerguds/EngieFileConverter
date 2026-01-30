@@ -1,4 +1,4 @@
-#define EditsResearchMode
+//#define EditsResearchMode
 
 using Nyerguds.Ini;
 using Nyerguds.Util;

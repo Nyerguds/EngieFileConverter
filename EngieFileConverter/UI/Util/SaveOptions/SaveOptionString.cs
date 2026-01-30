@@ -1,11 +1,8 @@
-﻿using System;
+﻿using Nyerguds.Util.Ui;
+using System;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using EngieFileConverter.Domain.FileTypes;
-using EngieFileConverter.UI;
-using Nyerguds.Util;
-using Nyerguds.Util.Ui;
 
 namespace Nyerguds.Util.UI.SaveOptions
 {
@@ -19,6 +16,7 @@ namespace Nyerguds.Util.UI.SaveOptions
         private Int32 m_PadRight;
         private Boolean m_Loading;
         private Char[] m_AllowedMask;
+        private bool m_AllowLineBreak;
 
         public SaveOptionString() : this(null, null) { }
 
@@ -31,49 +29,53 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         private void InitResize()
         {
-            Int32 initialPosTxt = this.txtValue.Location.X;
-            this.initialWidthLbl = this.lblDescription.Width;
-            this.initialWidthTxt = this.txtValue.Width;
-            Int32 initialWidthFrm = this.DisplayRectangle.Width;
-            this.m_PadLeft = this.lblDescription.Location.X;
-            this.m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthTxt;
-            this.m_PadMiddle = initialPosTxt - this.initialWidthLbl - this.m_PadLeft;
-            this.initialWidthToScale = initialWidthFrm - this.m_PadLeft - this.m_PadRight - this.m_PadMiddle;
+            Int32 initialPosTxt = txtValue.Location.X;
+            initialWidthLbl = lblDescription.Width;
+            initialWidthTxt = txtValue.Width;
+            Int32 initialWidthFrm = DisplayRectangle.Width;
+            m_PadLeft = lblDescription.Location.X;
+            m_PadRight = initialWidthFrm - initialPosTxt - initialWidthTxt;
+            m_PadMiddle = initialPosTxt - initialWidthLbl - m_PadLeft;
+            initialWidthToScale = initialWidthFrm - m_PadLeft - m_PadRight - m_PadMiddle;
         }
 
         public override void UpdateInfo(Option info)
         {
-            this.Info = info;
-            this.lblDescription.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
-            this.m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
-            this.txtValue.Text = this.Info.Data;
+            Info = info;
+            lblDescription.Text = GeneralUtils.DoubleAmpersands(Info.UiString);
+            m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
+            // Only allow if explicitly in the InitValue.
+            m_AllowLineBreak = info.InitValue != null && info.InitValue.Contains('\r') || info.InitValue.Contains('\n');
+            string strData = Info.Data ?? String.Empty;
+            strData = strData.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n").Trim('\r', '\n', '\t', ' ');
+            txtValue.Text = strData;
         }
 
         public override void FocusValue()
         {
-            this.txtValue.Select();
+            txtValue.Select();
         }
 
         public override void SetEnabled(Boolean enabled)
         {
             try
             {
-                this.m_Loading = true;
-                this.Enabled = enabled;
+                m_Loading = true;
+                Enabled = enabled;
                 if (enabled)
-                    this.txtValue.Text = this.Info.Data;
+                    txtValue.Text = Info.Data;
                 else
-                    this.txtValue.Text = String.Empty;
+                    txtValue.Text = String.Empty;
             }
             finally
             {
-                this.m_Loading = false;
+                m_Loading = false;
             }
         }
 
         private void TextBoxCheckLines(Object sender, EventArgs e)
         {
-            if (this.m_Loading)
+            if (m_Loading)
                 return;
             const String editing = "editing";
             TextBox textbox = sender as TextBox;
@@ -93,7 +95,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                     Int32 caretSubtract = 0;
                     for (Int32 i = 0; i < txtLen; ++i)
                     {
-                        if (!this.m_AllowedMask.Contains(text[i]))
+                        if (!m_AllowedMask.Contains(text[i]))
                         {
                             text[i] = '\0';
                             if (i < caret)
@@ -118,7 +120,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         private void TextBoxCheckKeyPress(Object sender, KeyPressEventArgs e)
         {
-            if (e.KeyChar == '\r' || e.KeyChar == '\n')
+            if (!m_AllowLineBreak && (e.KeyChar == '\r' || e.KeyChar == '\n'))
                 e.Handled = true;
         }
 

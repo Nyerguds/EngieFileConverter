@@ -498,7 +498,7 @@ namespace EngieFileConverter.UI
                 this.lblValFilename.Text = GeneralUtils.DoubleAmpersands(shownFile.LoadedFileName);
                 this.lblValType.Text = GeneralUtils.DoubleAmpersands(shownFile.LongTypeName);
                 this.toolTip1.SetToolTip(this.lblValType, this.lblValType.Text);
-                this.lblValSize.Text = shownFile.Width + "×" + shownFile.Height;
+                this.lblValSize.Text = String.Format("{0}×{1}", shownFile.Width, shownFile.Height);
                 this.lblValColorFormat.Text = shownBpp < 0 ? String.Empty : (shownBpp == 0 ? "N/A" : (shownBpp + " BPP" + (shownBpp < 8 ? " (paletted)" : String.Empty)));
                 Color[] palette = shownFile.GetColors();
                 Int32 actualColors = palette == null ? 0 : palette.Length;

@@ -180,8 +180,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else
             {
-                Int32 transIndex;
-                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TID"), out transIndex);
+                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TID"), out int transIndex);
                 Byte[] imageBytes = ImageUtils.GetImageData(image, true);
                 try
                 {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -28,8 +29,7 @@ namespace Nyerguds.Util
 
         public static Boolean ArraysAreEqual<T>(T[] arr1, T[] arr2) where T : IEquatable<T>
         {
-            // There's probably a Linq version of this though... Probably .All() or something.
-            // But this is with simple arrays.
+            // Faster version of Linq .SequenceEquals(...) specifically for arrays.
             if (arr1 == null && arr2 == null)
                 return true;
             if (arr1 == null || arr2 == null)
@@ -37,8 +37,10 @@ namespace Nyerguds.Util
             Int32 arr1len = arr1.Length;
             if (arr1len != arr2.Length)
                 return false;
+            // Explicitly using EqualityComparer avoids null issues.
+            EqualityComparer<T> eqc = EqualityComparer<T>.Default;
             for (Int32 i = 0; i < arr1len; ++i)
-                if (!arr1[i].Equals(arr2[i]))
+                if (!eqc.Equals(arr1[i], arr2[i]))
                     return false;
             return true;
         }

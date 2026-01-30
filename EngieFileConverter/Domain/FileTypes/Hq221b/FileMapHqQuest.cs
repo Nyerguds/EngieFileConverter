@@ -201,12 +201,20 @@ namespace EngieFileConverter.Domain.FileTypes
             //rooms = defaultRooms;
             Byte[] walls = new byte[mapSize];
             Array.Copy(fileData, wallsOffset, walls, 0, mapSize);
-            Dictionary<Point, char> heroes = new Dictionary<Point, char>() {
-                { new Point(fileData[heroesOffset + 0], fileData[heroesOffset + 1]), 'B' }, // Barbarian
-                { new Point(fileData[heroesOffset + 3], fileData[heroesOffset + 4]), 'D' }, // Dwarf
-                { new Point(fileData[heroesOffset + 6], fileData[heroesOffset + 7]), 'E' }, // Elf
-                { new Point(fileData[heroesOffset + 9], fileData[heroesOffset + 10]), 'W' } // Wizard
-            };
+            Dictionary<Point, char> heroes = null;
+            try
+            {
+                heroes = new Dictionary<Point, char>() {
+                    { new Point(fileData[heroesOffset + 0], fileData[heroesOffset + 1]), 'B' }, // Barbarian
+                    { new Point(fileData[heroesOffset + 3], fileData[heroesOffset + 4]), 'D' }, // Dwarf
+                    { new Point(fileData[heroesOffset + 6], fileData[heroesOffset + 7]), 'E' }, // Elf
+                    { new Point(fileData[heroesOffset + 9], fileData[heroesOffset + 10]), 'W' } // Wizard
+                };
+            }
+            catch (ArgumentException)
+            {
+                throw new FileTypeLoadException("Duplicate location for heroes on map.");
+            }
             byte[] eventsTreasure = new byte[roomIds];
             Array.Copy(fileData, eventTreasureOffset, eventsTreasure, 0, roomIds);
             int[] treasureRooms = Enumerable.Range(0, roomIds).Where(i => eventsTreasure[i] != 0).ToArray();

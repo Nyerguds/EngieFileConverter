@@ -41,19 +41,21 @@ namespace EngieFileConverter.Domain.FileTypes
         public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
         protected Boolean[] m_TileUseList;
         private byte[] m_typesInfo;
+        private int m_tilesWidth;
+        private bool m_is1x1Multiple;
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, String filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        private void LoadFromFileData(Byte[] fileData, String sourcePath)
+        private void LoadFromFileData(byte[] fileData, String sourcePath)
         {
             int[] widths;
             int[] heights;
@@ -61,9 +63,10 @@ namespace EngieFileConverter.Domain.FileTypes
             bool[] tileUseList;
             int tilesX;
             int tilesY;
-            Byte[][] raTmpData = GetRaTmpData(fileData, out widths, out heights, out landTypesInfo, out tileUseList, out tilesX, out tilesY);
+            byte[][] raTmpData = GetRaTmpData(fileData, out widths, out heights, out landTypesInfo, out tileUseList, out tilesX, out tilesY);
             string hdrSize = tilesX + "×" + tilesY;
             tilesX = Math.Max(1, tilesX);
+            m_tilesWidth = tilesX;
             tilesY = Math.Max(1, tilesY);
             int numIcons = raTmpData.Length;
             int tileX = widths[0];
@@ -74,21 +77,21 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_typesInfo = typesInfo;
             this.m_TileUseList = tileUseList;
             m_Palette = PaletteUtils.GenerateGrayPalette(8, TransparencyMask, false);
-            bool is1x1Multiple = tilesX * tilesY == 1 && numIcons > 1;
+            m_is1x1Multiple = tilesX * tilesY == 1 && numIcons > 1;
             int widthX = tilesX;
-            if (is1x1Multiple)
+            if (m_is1x1Multiple)
             {
                 Double sqrt = Math.Sqrt(numIcons);
                 widthX = (sqrt - Math.Floor(sqrt)) < 0.0001 ? (int)sqrt : (int)(sqrt + 1);
             }
             m_FramesList = new SupportedFileType[numIcons];
             String landTypes = LandTypesToString(typesInfo, 0);
-            for (Int32 i = 0; i < numIcons; ++i)
+            for (int i = 0; i < numIcons; ++i)
             {
                 Bitmap frameImg = ImageUtils.BuildImage(raTmpData[i], tileX, tileY, tileX, PixelFormat.Format8bppIndexed, this.m_Palette, null);
                 FileImageFrame frame = new FileImageFrame();
                 frame.LoadFileFrame(this, this, frameImg, sourcePath, i);
-                byte landType = is1x1Multiple ? typesInfo[0] : landTypes.Length <= i ? (byte)0 : typesInfo[i];
+                byte landType = m_is1x1Multiple ? typesInfo[0] : landTypes.Length <= i ? (byte)0 : typesInfo[i];
                 string landTypeDesc = LandTypeDescriptions.TryGetValue(landType, out landTypeDesc) ? landTypeDesc : LandTypeDescriptions[0];
                 frame.ExtraInfo = "Land type: " + landTypeDesc + "\nEmpty: " + (tileUseList[i] ? "no" : "yes");
                 m_FramesList[i] = frame;
@@ -101,9 +104,9 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = extraInfo.ToString();
         }
 
-        public static Byte[][] GetRaTmpData(Byte[] fileData, out int[] widths, out int[] heights, out byte[] landTypesInfo, out Boolean[] tileUseList, out int headerWidth, out int headerHeight)
+        public static byte[][] GetRaTmpData(byte[] fileData, out int[] widths, out int[] heights, out byte[] landTypesInfo, out Boolean[] tileUseList, out int headerWidth, out int headerHeight)
         {
-            Int32 fileLen = fileData.Length;
+            int fileLen = fileData.Length;
             if (fileLen < 0x28)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
             Int16 hdrWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x00);
@@ -115,20 +118,20 @@ namespace EngieFileConverter.Domain.FileTypes
             // New in RA
             headerWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x08);
             headerHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x0A);
-            Int32 hdrSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0C);
+            int hdrSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0C);
             // Offset of start of actual icon data. Generally always 0x20
-            Int32 hdrIconsPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x10);
+            int hdrIconsPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x10);
             // Offset of start of palette data. Probably always 0.
-            Int32 hdrPalettesPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x14);
+            int hdrPalettesPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x14);
             // Offset of remaps data. Dune II leftover of 4 bit to 8 bit translation tables.
             // Always seems to be 0x2C730FXX (with values differing for the lowest byte), which makes no sense as ptr.
-            Int32 hdrRemapsPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x18);
+            int hdrRemapsPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x18);
             // Offset of 'transparency flags'? Generally points to an empty array at the end of the file.
-            Int32 hdrTransFlagPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x1C);
+            int hdrTransFlagPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x1C);
             // Offset of 'color' map, indicating the terrain type for each type. This includes unused cells, which are usually indicated as 0.
-            Int32 hdrColorMapPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x20);
+            int hdrColorMapPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x20);
             // Offset of actual icon set definition, defining for each index which icon data to use. FF for none.
-            Int32 hdrMapPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x24);
+            int hdrMapPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x24);
             // File size check
             if (hdrSize != fileData.Length)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_SIZE);
@@ -143,35 +146,35 @@ namespace EngieFileConverter.Domain.FileTypes
             // Checking if data is all inside the file
             if (hdrIconsPtr >= fileLen || (hdrMapPtr + hdrCount) > fileLen)
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL);
-            Int32 tileSize = hdrWidth * hdrHeight;
+            int tileSize = hdrWidth * hdrHeight;
             // Maps the available images onto the full iconset definition
-            Byte[] map = new Byte[hdrCount];
+            byte[] map = new byte[hdrCount];
             Array.Copy(fileData, hdrMapPtr, map, 0, hdrCount);
-            landTypesInfo = new Byte[Math.Max(1, headerWidth) * Math.Max(1, headerHeight)];
+            landTypesInfo = new byte[Math.Max(1, headerWidth) * Math.Max(1, headerHeight)];
             if (hdrMapPtr + landTypesInfo.Length > fileLen)
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL);
             Array.Copy(fileData, hdrColorMapPtr, landTypesInfo, 0, landTypesInfo.Length);
             // Get max index plus one for real images count. Nothing in the file header actually specifies this directly.
-            Int32 actualImages = map.Max(x => x == 0xff ? -1 : x) + 1;
+            int actualImages = map.Max(x => x == 0xff ? -1 : x) + 1;
             if (hdrTransFlagPtr + actualImages > fileLen)
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL);
             if (hdrIconsPtr + actualImages * tileSize > fileLen)
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
-            Byte[] imagesIndex = new Byte[actualImages];
+            byte[] imagesIndex = new byte[actualImages];
             Array.Copy(fileData, hdrTransFlagPtr, imagesIndex, 0, actualImages);
-            Byte[][] tiles = new Byte[hdrCount][];
+            byte[][] tiles = new byte[hdrCount][];
             widths = new int[hdrCount];
             heights = new int[hdrCount];
-            tileUseList = new Boolean[map.Length];
-            for (Int32 i = 0; i < map.Length; ++i)
+            tileUseList = new bool[map.Length];
+            for (int i = 0; i < map.Length; ++i)
             {
-                Byte dataIndex = map[i];
-                Boolean used = dataIndex != 0xFF;
+                byte dataIndex = map[i];
+                bool used = dataIndex != 0xFF;
                 tileUseList[i] = used;
-                Byte[] tileData = new Byte[tileSize];
+                byte[] tileData = new byte[tileSize];
                 if (used)
                 {
-                    Int32 offset = hdrIconsPtr + dataIndex * tileSize;
+                    int offset = hdrIconsPtr + dataIndex * tileSize;
                     if ((offset + tileSize) > fileLen)
                         throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
                     Array.Copy(fileData, offset, tileData, 0, tileSize);
@@ -183,9 +186,287 @@ namespace EngieFileConverter.Domain.FileTypes
             return tiles;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            throw new NotImplementedException();
+            PerformPreliminaryChecks(fileToSave, out int tiles, out int tileWidth, out bool hasFixedWidth, out byte[] landTypesArr);
+            bool is1x1Multiple = tileWidth == -1;
+            tileWidth = Math.Max(1, tileWidth);
+            string landTypes = LandTypesToString(landTypesArr, tileWidth);
+            string landTypesCheck = LandTypesToString(landTypesArr, 0).TrimEnd('X');
+            // Only allow 1x1 if there are no empty tile gaps in the data.
+            bool allow1x1 = is1x1Multiple || (landTypesCheck.Length > 0 && !landTypesCheck.Contains('X'));
+
+            int nrOfOps = 2;
+            if (allow1x1) nrOfOps++;
+            Option[] opts = new Option[nrOfOps];
+            int optind = 0;
+            if (allow1x1)
+            {
+                opts[optind++] = new Option("1x1", OptionInputType.Boolean, "Save as 1x1 with multiple frames (only the first land type is used)", is1x1Multiple ? "1" : "0");
+            }
+            opts[optind++] = new Option("LND", OptionInputType.String, "Land types for all cells.\n" +
+                "X: Unused, C: Clear, B: Beach, I: Rock\nR: Road, W: Water, V: River, H: Rough", "XxCcBbIiRrWwVvHh\r\n", landTypes);
+            // Only asked if it's not a multi-tile image or a tileset file.
+            opts[optind++] = new Option("WDT", OptionInputType.Number, "Width in tiles", "1," + tiles, tileWidth.ToString(),
+                new EnableFilter("1x1", false, "1"),
+                new EnableFilter("LND", hasFixedWidth, "1"));
+            return opts;
+        }
+
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        {
+            byte[][] tilesData = PerformPreliminaryChecks(fileToSave, out int nrOfTiles, out int tilesWidth, out _, out _);
+            string wOption = Option.GetSaveOptionValue(saveOptions, "WDT");
+            if (wOption != null)
+            {
+                // If given, override.
+                Int32.TryParse(wOption, out tilesWidth);
+            }
+            string landTypes = Option.GetSaveOptionValue(saveOptions, "LND");
+            bool is1x1multiple = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "1x1"));
+            // DATA GATHERED. Build icons map, remove duplicates.
+            int saveNrOfTiles = nrOfTiles;
+            int tilesHeight = is1x1multiple ? 1 : nrOfTiles / tilesWidth;
+            if (!is1x1multiple)
+            {
+                if (nrOfTiles % tilesWidth != 0)
+                {
+                    tilesHeight = (nrOfTiles + tilesWidth - 1) / tilesWidth;
+                    saveNrOfTiles = tilesWidth * tilesHeight;
+                }
+            }
+            else
+            {
+                tilesWidth = 1;
+            }
+            byte[][] tempTiles = new byte[saveNrOfTiles][];
+            byte[] finalIndices = new byte[saveNrOfTiles];
+            int actualTiles = 0;
+            for (int index = 0; index < saveNrOfTiles; ++index)
+            {
+                if (index >= nrOfTiles)
+                {
+                    finalIndices[index] = 0xFF;
+                    continue;
+                }
+                byte[] tileData = tilesData[index];
+                if (tileData == null)
+                {
+                    finalIndices[index] = 0xFF;
+                    continue;
+                }
+                int foundIndex = -1;
+                for (int i = 0; i < actualTiles; ++i)
+                {
+                    if (ArrayUtils.ArraysAreEqual(tempTiles[i], tileData))
+                    {
+                        foundIndex = i;
+                        break;
+                    }
+                }
+                if (foundIndex != -1)
+                {
+                    finalIndices[index] = (byte)foundIndex;
+                }
+                else
+                {
+                    finalIndices[index] = (byte)actualTiles;
+                    tempTiles[actualTiles] = tileData;
+                    actualTiles++;
+                }
+            }
+            byte[] landsForIcons = LandTypesFromString(landTypes, tilesWidth * tilesHeight);
+            if (is1x1multiple)
+            {
+                if (landsForIcons[0] == 3) landsForIcons[0] = 0;
+            }
+            else
+            {
+                for (int i = 0; i < saveNrOfTiles; ++i)
+                {
+                    if (finalIndices[i] == 0xFF)
+                    {
+                        landsForIcons[i] = 0;
+                    }
+                    else if (landsForIcons[i] == 0)
+                    {
+                        landsForIcons[i] = 3;
+                    }
+                }
+            }
+            // Order: (Header) , (data) ,  (actual frames index), (all tiles index) , (hdrColorMapPtr)
+            int tileLength = 24 * 24;
+            int size = 0x28;
+            int hdrIconsPtr = size;
+            size += actualTiles * tileLength;
+            int hdrMapPtr = size;
+            size += saveNrOfTiles;
+
+            int hdrTransFlagPtr = size;
+            size += actualTiles;
+
+            int hdrColorMapPtr = size;
+            size += landsForIcons.Length;
+            byte[] finalData = new byte[size];
+
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x00, 24); // Width
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x02, 24); // Height
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x04, (ushort)saveNrOfTiles);
+            // ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x06, 0); // hdrCount
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x08, (ushort)tilesWidth);
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x0A, (ushort)tilesHeight);
+
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x0C, (ushort)size);
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x10, (ushort)hdrIconsPtr);
+            // ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x014, 0); // indexPalette
+            // Signature ;)
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x18, 0x49474E45);
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x1C, (ushort)hdrTransFlagPtr);
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x20, (ushort)hdrColorMapPtr);
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x24, (ushort)hdrMapPtr);
+
+            for (int i = 0; i < actualTiles; ++i)
+                Array.Copy(tempTiles[i], 0, finalData, hdrIconsPtr + tileLength * i, tileLength);
+            Array.Copy(finalIndices, 0, finalData, hdrMapPtr, finalIndices.Length);
+            // Not done: write data to offset indexImages. Because, no one really knows what it does.
+            Array.Copy(landsForIcons, 0, finalData, hdrColorMapPtr, landsForIcons.Length);
+            return finalData;
+        }
+
+        private byte[][] PerformPreliminaryChecks(SupportedFileType fileToSave, out int nrOfTiles, out int tileWidth, out bool hasWidth, out byte[] landTypesArr)
+        {
+            nrOfTiles = 0;
+            tileWidth = 0;
+            hasWidth = false;
+            landTypesArr = null;
+            FileTilesetWwRA1 tilesetRa = fileToSave as FileTilesetWwRA1;
+            if (tilesetRa != null)
+            {
+                nrOfTiles = tilesetRa.Frames.Length;
+                tileWidth = tilesetRa.m_tilesWidth;
+                if (tilesetRa.m_is1x1Multiple && tilesetRa.m_tilesWidth == 1)
+                {
+                    tileWidth = -1;
+                }
+                hasWidth = true;
+                landTypesArr = tilesetRa.m_typesInfo;
+            }
+            Byte[][] framesData;
+            if (!fileToSave.IsFramesContainer)
+            {
+                if (fileToSave.BitsPerPixel != 8)
+                    throw new ArgumentException("Can only save 8 BPP images as this type.", "fileToSave");
+                Bitmap bitmap = fileToSave.GetBitmap();
+                if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
+                    throw new ArgumentException("The file dimensions are not a multiple of 24×24.", "fileToSave");
+                Int32 nrOfFramesX = bitmap.Width / 24;
+                Int32 nrOfFramesY = bitmap.Height / 24;
+                if (tilesetRa == null)
+                {
+                    nrOfTiles = nrOfFramesX * nrOfFramesY;
+                    hasWidth = true;
+                    tileWidth = nrOfFramesX;
+                }
+                if (landTypesArr == null)
+                {
+                    landTypesArr = Enumerable.Repeat(03, nrOfTiles).Select(b => (byte)b).ToArray();
+                }
+                framesData = new Byte[nrOfTiles][];
+                if (nrOfTiles > 255)
+                    throw new ArgumentException("Too many tiles in file.", "fileToSave");
+                Int32 stride;
+                Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
+                for (Int32 y = 0; y < nrOfFramesY; ++y)
+                {
+                    for (Int32 x = 0; x < nrOfFramesX; ++x)
+                    {
+                        Int32 index = y * nrOfFramesX + x;
+                        byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
+                        if (frameData.All(b => b == 0))
+                        {
+                            landTypesArr[index] = 0;
+                            frameData = null;
+                        }
+                        framesData[index] = frameData;
+                    }
+                }
+            }
+            else
+            {
+                SupportedFileType[] frames = fileToSave.Frames;
+                nrOfTiles = frames.Length;
+                if (nrOfTiles > 255)
+                    throw new ArgumentException("Too many tiles in file.", "fileToSave");
+                framesData = new Byte[nrOfTiles][];
+                if (landTypesArr == null)
+                {
+                    landTypesArr = Enumerable.Repeat(03, nrOfTiles).Select(b => (byte)b).ToArray();
+                }
+                for (Int32 i = 0; i < nrOfTiles; ++i)
+                {
+                    Bitmap bitmap;
+                    SupportedFileType frame = frames[i];
+                    if (frame == null || (bitmap = frame.GetBitmap()) == null)
+                        continue;
+                    if (frame.BitsPerPixel != 8)
+                        throw new ArgumentException("Can only save 8 BPP images as this type.", "fileToSave");
+                    if (bitmap.Width != 24 || bitmap.Height != 24)
+                        throw new ArgumentException("All frames must be 24×24.", "fileToSave");
+                    byte[] frameData = ImageUtils.GetImageData(bitmap, true);
+                    if (frameData.All(b => b == 0))
+                    {
+                        landTypesArr[i] = 0;
+                        frameData = null;
+                    }
+                    framesData[i] = frameData;
+                }
+                if (tilesetRa == null)
+                {
+                    Bitmap cmp = fileToSave.GetBitmap();
+                    // Check if composite frame gives a full image with a viable width to use.
+                    if (fileToSave.HasCompositeFrame && cmp != null && cmp.Width % 24 == 0 && cmp.Height % 24 == 0 && cmp.Width / 24 * cmp.Height / 24 == nrOfTiles)
+                    {
+                        hasWidth = true;
+                        tileWidth = cmp.Width / 24;
+                    }
+                    else
+                    {
+                        double sqrt = Math.Sqrt(nrOfTiles);
+                        tileWidth = (sqrt - Math.Floor(sqrt)) < 0.0001 ? (int)sqrt : (int)(sqrt + 1);
+                        int attemptUp = tileWidth;
+                        int attemptDn = tileWidth;
+                        while (nrOfTiles % attemptUp != 0)
+                        {
+                            attemptUp++;
+                        }
+                        while (nrOfTiles % attemptDn != 0)
+                        {
+                            attemptDn--;
+                        }
+                        // Get closest value, preferring upwards.
+                        if (attemptDn != 1 && attemptUp != nrOfTiles)
+                        {
+                            if (tileWidth - attemptDn < attemptUp - tileWidth)
+                            {
+                                tileWidth = attemptDn;
+                            }
+                            else
+                            {
+                                tileWidth = attemptUp;
+                            }
+                        }
+                        else if (attemptUp != nrOfTiles)
+                        {
+                            tileWidth = attemptUp;
+                        }
+                        else if (attemptDn != 1)
+                        {
+                            tileWidth = attemptDn;
+                        }
+                    }
+                }
+            }
+            return framesData;
         }
 
         private static readonly Dictionary<byte, char> LandTypeChars = new Dictionary<byte, char>
@@ -213,47 +494,48 @@ namespace EngieFileConverter.Domain.FileTypes
         };
         private static readonly Dictionary<char, byte> LandTypesValues = LandTypeChars.ToDictionary(x => x.Value, x => x.Key);
 
-        private static Byte[] LandTypesFromString(string types, int arrLen)
+        private static byte[] LandTypesFromString(string types, int arrLen)
         {
             types = types.Replace("\r", String.Empty).Replace("\n", String.Empty).Replace(" ", String.Empty).Replace("\t", String.Empty);
-            arrLen = Math.Min(arrLen, types.Length);
-            Byte[] arr = new Byte[arrLen];
-            Char[] input = types.ToUpperInvariant().ToCharArray();
+            byte[] arr = new byte[arrLen];
+            char[] input = types.ToUpperInvariant().ToCharArray();
             int inputLen = input.Length;
-            for (Int32 i = 0; i < input.Length; ++i)
+            for (int i = 0; i < arrLen; ++i)
             {
                 arr[i] = (byte)(i >= inputLen ? 0 : LandTypesValues.TryGetValue(input[i], out byte t) ? t : 0);
             }
             return arr;
         }
 
-        private static string LandTypesToString(Byte[] types, int width)
+        private static string LandTypesToString(byte[] types, int width)
         {
             bool hasWidth = width > 0;
-            int len = types.Length;
-            if (hasWidth)
-            {
-                len += len / width;
-                if (len % width == 0)
-                    len--;
-            }
-            Char[] output = new Char[len];
+            int reallen = types.Length;
+            int len = reallen;
+            char[] output;
             if (!hasWidth)
             {
-                for (Int32 i = 0; i < len; ++i)
+                output = new Char[len];
+                for (int i = 0; i < len; ++i)
                 {
                     output[i] = LandTypeChars.TryGetValue(types[i], out char t) ? t : 'X';
                 }
             }
             else
             {
+                int height = (len + width - 1) / width;
+                // Add a spot for the line break
                 int actualWidth = width + 1;
+                // Full length minus the final line break
+                len = actualWidth * height - 1;
+                output = new Char[len];
                 int index = 0;
-                for (Int32 i = 0; i < len; ++i)
+                for (int i = 0; i < len; ++i)
                 {
                     if ((i + 1) % actualWidth != 0)
                     {
-                        output[i] = LandTypeChars.TryGetValue(types[index], out char t) ? t : 'X';
+                        byte val = index >= reallen ? (byte)0 : types[index];
+                        output[i] = LandTypeChars.TryGetValue(val, out char t) ? t : 'X';
                         index++;
                     }
                     else
