@@ -1,1 +1,7 @@
+/EngieFileConverter/.vs/*
+/EngieFileConverter/bin/*
+/EngieFileConverter/obj/*
 /EngieFileConverter/Resources/*.dll
+/Nyerguds.Ini/.vs/*
+/Nyerguds.Ini/bin/*
+/Nyerguds.Ini/obj/*

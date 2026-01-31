@@ -76,7 +76,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (nrOfImages == 0)
                     throw new HeaderParseException("No images in given icon.");
                 Int32 offset = hdrSize;
-                this.m_FramesList = new SupportedFileType[nrOfImages];
+                List<SupportedFileType> frames = new List<SupportedFileType>();
                 for (Int32 i = 0; i < nrOfImages; ++i)
                 {
                     // 0 image width (is 0 for "256")
@@ -121,7 +121,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (bmp == null)
                         throw new HeaderParseException("Can't detect internal type.");
                     //throw new HeaderParseException("Unsupported image type " + ("dat".Equals(type) ? String.Empty : "\"" + type + "\" ") + "in frame " + i + ".");
-                    if (bmp.Width != frWidth || bmp.Height != frHeight)
+                    if ((bmp.Width != 256 && bmp.Width != frWidth) || (bmp.Height != 256 && bmp.Height != frHeight))
                         throw new HeaderParseException("Image " + i + " in icon does not match header information.");
                     this.m_MaxHeight = Math.Max(this.m_MaxHeight, frHeight);
                     this.m_MaxWidth = Math.Max(this.m_MaxWidth, frWidth);
@@ -140,9 +140,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (originalPixelFormat != PixelFormat.Undefined)
                         extraInfo += "\nOriginal pixel format: " + Image.GetPixelFormatSize(originalPixelFormat) + " bpp";
                     framePic.SetExtraInfo(extraInfo);
-                    this.m_FramesList[i] = framePic;
+                    frames.Add(framePic);
                     offset += indexItemSize;
                 }
+                this.m_FramesList = frames.ToArray();
                 return;
             }
             catch (HeaderParseException ex)

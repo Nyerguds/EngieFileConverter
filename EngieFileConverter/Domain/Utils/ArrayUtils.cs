@@ -8,6 +8,26 @@ namespace Nyerguds.Util
 {
     public static class ArrayUtils
     {
+        public static bool IsEmpty<T>(T[] array) where T : IEquatable<T>
+        {
+            return IsCleared(array, default(T));
+        }
+
+        public static bool IsCleared<T>(T[] array, T clearValue) where T : IEquatable<T>
+        {
+            bool isEmpty = true;
+            int arrLen = array.Length;
+            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
+            for (int bti = 0; bti < arrLen; ++bti)
+            {
+                if (!comparer.Equals(array[bti], clearValue))
+                {
+                    isEmpty = false;
+                    break;
+                }
+            }
+            return isEmpty;
+        }
 
         public static T[][] SwapDimensions<T>(T[][] original)
         {
@@ -38,9 +58,9 @@ namespace Nyerguds.Util
             if (arr1len != arr2.Length)
                 return false;
             // Explicitly using EqualityComparer avoids null issues.
-            EqualityComparer<T> eqc = EqualityComparer<T>.Default;
+            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
             for (Int32 i = 0; i < arr1len; ++i)
-                if (!eqc.Equals(arr1[i], arr2[i]))
+                if (!comparer.Equals(arr1[i], arr2[i]))
                     return false;
             return true;
         }
@@ -168,7 +188,7 @@ namespace Nyerguds.Util
             {
                 Int32 offs = startIndex + (littleEndian ? index : lastByte - index);
                 // "index << 3" is "index * 8"
-                data[offs] = (Byte) (value >> (index << 3) & 0xFF);
+                data[offs] = (Byte)(value >> (index << 3) & 0xFF);
             }
         }
 
@@ -267,7 +287,7 @@ namespace Nyerguds.Util
             {
                 Int32 codeToWrite = (data & ((1 << bitsToWriteAtIndex) - 1)) << usedBitsAtIndex;
                 data = data >> bitsToWriteAtIndex;
-                dataArr[byteIndex] |= (Byte) codeToWrite;
+                dataArr[byteIndex] |= (Byte)codeToWrite;
                 bitsToWrite -= bitsToWriteAtIndex;
                 bitsToWriteAtIndex = Math.Min(bitsToWrite, 8);
                 usedBitsAtIndex = 0;
@@ -295,7 +315,7 @@ namespace Nyerguds.Util
                 if (field.IsStatic)
                     // don't process static fields
                     continue;
-                if (fieldType == typeof (String))
+                if (fieldType == typeof(String))
                     // don't swap bytes for strings
                     continue;
                 Int32 offset = Marshal.OffsetOf(type, field.Name).ToInt32();
@@ -319,7 +339,7 @@ namespace Nyerguds.Util
 
         public static T ReadStructFromByteArray<T>(Byte[] rawData, Int32 offset, Endianness endianness) where T : struct
         {
-            Type tType = typeof (T);
+            Type tType = typeof(T);
             Int32 size = Marshal.SizeOf(tType);
             if (size + offset > rawData.Length)
                 throw new IndexOutOfRangeException("Array is too small to get the requested struct.");
@@ -333,7 +353,7 @@ namespace Nyerguds.Util
                 // Revert array to original data order
                 AdjustEndianness(tType, rawData, endianness, offset);
                 Object obj = Marshal.PtrToStructure(ptr, tType);
-                return (T) obj;
+                return (T)obj;
             }
             finally
             {
@@ -344,7 +364,7 @@ namespace Nyerguds.Util
 
         public static Byte[] StructToByteArray<T>(T obj, Endianness endianness) where T : struct
         {
-            Int32 size = Marshal.SizeOf(typeof (T));
+            Int32 size = Marshal.SizeOf(typeof(T));
             Byte[] target = new Byte[size];
             WriteStructToByteArray(obj, target, 0, endianness);
             return target;
@@ -352,7 +372,7 @@ namespace Nyerguds.Util
 
         public static void WriteStructToByteArray<T>(T obj, Byte[] target, Int32 index, Endianness endianness) where T : struct
         {
-            Type tType = typeof (T);
+            Type tType = typeof(T);
             Int32 size = Marshal.SizeOf(tType);
             IntPtr ptr = IntPtr.Zero;
             try
@@ -360,7 +380,7 @@ namespace Nyerguds.Util
                 ptr = Marshal.AllocHGlobal(size);
                 Marshal.StructureToPtr(obj, ptr, true);
                 Marshal.Copy(ptr, target, index, size);
-                AdjustEndianness(typeof (T), target, endianness, 0);
+                AdjustEndianness(typeof(T), target, endianness, 0);
             }
             finally
             {

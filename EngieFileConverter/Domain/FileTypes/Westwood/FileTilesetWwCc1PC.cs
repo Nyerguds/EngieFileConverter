@@ -186,7 +186,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         Int32 index = y * nrOfFramesX + x;
                         byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
-                        framesData[index] = frameData.All(b => b == 0) ? null : frameData;
+                        framesData[index] = ArrayUtils.IsEmpty(frameData) ? null : frameData;
                     }
                 }
             }
@@ -205,7 +205,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (bitmap.Width != 24 || bitmap.Height != 24)
                         throw new ArgumentException("All frames must be 24×24.", "fileToSave");
                     byte[] frameData = ImageUtils.GetImageData(bitmap, true);
-                    framesData[i] = frameData.All(b => b == 0) ? null : frameData;
+                    framesData[i] = ArrayUtils.IsEmpty(frameData) ? null : frameData;
                 }
             }
 

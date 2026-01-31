@@ -88,11 +88,23 @@ namespace Nyerguds.ImageManipulation
             return ((bitsLength * width) + 7) / 8;
         }
 
+        /// <summary>
+        /// Gets the classic stride rounded to 4 bytes for an image with the given width and bits per pixel.
+        /// </summary>
+        /// <param name="width">Image width.</param>
+        /// <param name="bitsLength">bits length of each pixel.</param>
+        /// <returns>The classic stride rounded to 4 bytes for an image with the given width and bits per pixel.</returns
         public static Int32 GetClassicStride(Int32 width, Int32 bitsLength)
         {
             return (((((bitsLength * width) + 7) / 8) + 3) / 4) * 4;
         }
 
+        /// <summary>
+        /// Converts bit per pixel for indexed formats (1, 4 or 8) to a PixelFormat enum.
+        /// </summary>
+        /// <param name="bpp">bits length of each pixel.</param>
+        /// <returns>The PixelFormat enum for this bpp value.</returns>
+        /// <exception cref="ArgumentException">Unsupported indexed pixel format.</exception>
         public static PixelFormat GetIndexedPixelFormat(Int32 bpp)
         {
             switch (bpp)

@@ -186,7 +186,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 errToN64;
             Byte[] mapDataToN64 = this.IdentifyTheaterAndConvert(fileData, ref theater, false, null, out errToN64);
             Int32 errToPc;
-            Byte[] mapDataToPC = this.IdentifyTheaterAndConvert(fileData, ref theater, false, null, out errToPc);
+            Byte[] mapDataToPC = this.IdentifyTheaterAndConvert(fileData, ref theater, true, null, out errToPc);
             if ((isPc && errToN64 > errToPc) || (!isPc && errToPc > errToN64))
                 throw new FileTypeLoadException("Not a " + (isPc ? "PC" : "N64") + " C&C Map file.");
             this.PCMapData = isPc ? fileData : mapDataToPC;

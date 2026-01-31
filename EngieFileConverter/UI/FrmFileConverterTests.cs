@@ -326,16 +326,73 @@ namespace EngieFileConverter.UI
             Byte[] colorData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
             if (imageData.Length != colorData.Length || iStride != cStride)
                 return;
+            bool isGray = true;
+            for (Int32 i = 0; i < imageData.Length; i += 4)
+            {
+                byte first = imageData[i];
+                if (first != imageData[i + 1] || first != imageData[i + 2])
+                {
+                    isGray = false;
+                    break;
+                }
+            }
+            if (!isGray)
+            {
+                byte[] tmp = imageData;
+                int tmpStride = iStride;
+                imageData = colorData;
+                iStride = cStride;
+                colorData = tmp;
+                cStride = tmpStride;
+            }
             for (Int32 i = 0; i < imageData.Length; i += 4)
             {
                 Color curPix = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(imageData, i));
                 Color curCol = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(colorData, i));
-                Color newCol = new ColorHSL(curCol.GetHue(), curCol.GetSaturation(), curPix.GetBrightness(), curPix.A);
+                ColorToHSV(curPix, out _, out _, out double value);
+                ColorToHSV(curCol, out double hue, out double sat, out double _);
+                // Color newCol = new ColorHSL(curCol.GetHue(), curCol.GetSaturation(), curPix.GetBrightness(), curPix.A);
+                Color newCol = ColorFromHSV(hue, sat, value);
                 UInt32 val = (UInt32)newCol.ToArgb();
                 ArrayUtils.WriteUInt32ToByteArrayLe(imageData, i, val);
             }
             using (Bitmap img = ImageUtils.BuildImage(imageData, im.Width, im.Height, iStride, PixelFormat.Format32bppArgb, null, null))
                 this.LoadTestFile(img);
+        }
+
+        public static void ColorToHSV(Color color, out double hue, out double saturation, out double value)
+        {
+            int max = Math.Max(color.R, Math.Max(color.G, color.B));
+            int min = Math.Min(color.R, Math.Min(color.G, color.B));
+
+            hue = color.GetHue();
+            saturation = (max == 0) ? 0 : 1d - (1d * min / max);
+            value = max / 255d;
+        }
+
+        public static Color ColorFromHSV(double hue, double saturation, double value)
+        {
+            int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+            double f = hue / 60 - Math.Floor(hue / 60);
+
+            value = value * 255;
+            int v = Convert.ToInt32(value);
+            int p = Convert.ToInt32(value * (1 - saturation));
+            int q = Convert.ToInt32(value * (1 - f * saturation));
+            int t = Convert.ToInt32(value * (1 - (1 - f) * saturation));
+
+            if (hi == 0)
+                return Color.FromArgb(255, v, t, p);
+            else if (hi == 1)
+                return Color.FromArgb(255, q, v, p);
+            else if (hi == 2)
+                return Color.FromArgb(255, p, v, t);
+            else if (hi == 3)
+                return Color.FromArgb(255, p, q, v);
+            else if (hi == 4)
+                return Color.FromArgb(255, t, p, v);
+            else
+                return Color.FromArgb(255, v, p, q);
         }
 
         private void ColorPsx()
@@ -1374,6 +1431,54 @@ namespace EngieFileConverter.UI
                 newbm.Save(filename, ImageFormat.Bmp);
             }
             //*/
+            Bitmap newbm = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, newPalette, Color.Black);
+            this.LoadTestFile(newbm);
+        }
+
+        private void ReversePalette()
+        {
+            if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || this.m_LoadedFile is FileFrames || this.m_LoadedFile.BitsPerPixel != 8)
+                return;
+            Color[] newPalette = new Color[0x100];
+            byte[] remap = new byte[0x100];
+            Color[] oldPalette = m_LoadedFile.GetColors();
+
+            for (int i = 0; i < 0x100; ++i)
+            {
+                byte inverse = (byte)(0xFF - i);
+                newPalette[i] = oldPalette[inverse];
+                remap[i] = inverse;
+            }
+            Int32 stride;
+            Int32 width;
+            Int32 height;
+            Color[] curPalette;
+            Byte[] imageData;
+            // This 'using' block is kept small; extract the data and then dispose everything.
+            using (Bitmap image = ImageUtils.CloneImage(this.m_LoadedFile.GetBitmap()))
+            {
+                if (image.PixelFormat != PixelFormat.Format8bppIndexed)
+                    return;
+                width = image.Width;
+                height = image.Height;
+                curPalette = image.Palette.Entries;
+                imageData = ImageUtils.GetImageData(image, out stride);
+            }
+            // Go over the actual pixels in the image data and replace the colors.
+            Int32 currentLineOffset = 0;
+            for (Int32 y = 0; y < height; ++y)
+            {
+                Int32 offset = currentLineOffset;
+                for (Int32 x = 0; x < width; ++x)
+                {
+                    // Replace index with index of the closest match found before for that color.
+                    imageData[offset] = remap[imageData[offset]];
+                    // Increase offset on this line
+                    offset++;
+                }
+                // Increase to start of next line
+                currentLineOffset += stride;
+            }
             Bitmap newbm = ImageUtils.BuildImage(imageData, width, height, stride, PixelFormat.Format8bppIndexed, newPalette, Color.Black);
             this.LoadTestFile(newbm);
         }

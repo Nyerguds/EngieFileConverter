@@ -109,7 +109,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source, and can normally also be saved from a single-image source.
         /// This setting should be ignored for types that are not set to IsFramesContainer.
         /// </summary>
-        public virtual Boolean HasCompositeFrame { get { return false; } }
+        public virtual Boolean HasCompositeFrame { get { return this.IsFramesContainer && m_LoadedImage != null; } }
         /// <summary>Extra info to be shown on the UI, like detected internal compression type in a loaded file.</summary>
         public virtual String ExtraInfo { get; set; }
         /// <summary>
@@ -371,23 +371,22 @@ namespace EngieFileConverter.Domain.FileTypes
             String outputPath = Path.GetDirectoryName(inputPath);
             String palName = Path.GetFileNameWithoutExtension(inputPath) + ".pal";
             String[] files = Directory.GetFiles(outputPath, palName);
-            if (files.Length == 0)
+            if (files.Length > 0)
             {
-                return null;
-            }            
-            try
-            {
-                String palFile = files[0];
-                palette = new T();
-                Byte[] palData = File.ReadAllBytes(palFile);
-                palette.LoadFile(palData, palFile);
-                this.m_Palette = palette.GetColors();
-                this.LoadedFileName += "/" + (Path.GetExtension(palFile) ?? String.Empty).TrimStart('.');
-                return palette;
-            }
-            catch
-            {
-                palette = null;
+                try
+                {
+                    String palFile = files[0];
+                    palette = new T();
+                    Byte[] palData = File.ReadAllBytes(palFile);
+                    palette.LoadFile(palData, palFile);
+                    this.m_Palette = palette.GetColors();
+                    this.LoadedFileName += "/" + (Path.GetExtension(palFile) ?? String.Empty).TrimStart('.');
+                    return palette;
+                }
+                catch
+                {
+                    palette = null;
+                }
             }            
             return palette;
         }

@@ -444,11 +444,14 @@ namespace Nyerguds.ImageManipulation
                 Int32 maskSize = 0;
                 if (height % 2 == 0 && detectIconFormat)
                 {
+                    int actualReadSize = (int)readEnd - readIndex;
                     Int32 halfHeight = height / 2;
                     // I think mask is always just single-bit OR.
                     Int32 maskStride = ImageUtils.GetClassicStride(width, 1);
                     Int32 maskSizeCheck = maskStride * halfHeight;
-                    if (imageSize - stride * halfHeight == maskSizeCheck)
+                    int imgSizeDiff = (int)imageSize - stride * halfHeight;
+                    int sizeWithMask = (int)imageSize + maskSizeCheck;
+                    if (imgSizeDiff == maskSizeCheck || (imgSizeDiff == 0 && actualReadSize == sizeWithMask))
                     {
                         height = halfHeight;
                         maskSize = maskSizeCheck;
@@ -458,7 +461,7 @@ namespace Nyerguds.ImageManipulation
                         // 8-bit 'mask' on 24bpp just containing alpha? Unsure if this exists.
                         maskStride = ImageUtils.GetClassicStride(width, 8);
                         maskSizeCheck = maskStride * halfHeight;
-                        if (imageSize - stride * halfHeight == maskSizeCheck)
+                        if (imgSizeDiff == maskSizeCheck || (imgSizeDiff == 0 && actualReadSize == sizeWithMask))
                         {
                             height = halfHeight;
                             maskSize = maskSizeCheck;
@@ -468,7 +471,8 @@ namespace Nyerguds.ImageManipulation
                 if (dataOffsetOverride != 0)
                     readIndex = dataOffsetOverride;
                 Int32 dataLen = stride * height;
-                if (dibBytes.Length - readIndex < dataLen + maskSize || readEnd - readIndex < dataLen + maskSize)
+                int fullLen = dataLen + maskSize;
+                if (dibBytes.Length - readIndex < fullLen || readEnd - readIndex < fullLen)
                     return false;
                 imageData = new Byte[dataLen];
                 Array.Copy(dibBytes, readIndex, imageData, 0, dataLen);

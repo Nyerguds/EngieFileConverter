@@ -115,7 +115,7 @@ namespace Nyerguds.ImageManipulation
         public static implicit operator ColorHSL(Color color)
         {
             ColorHSL hslColor = new ColorHSL();
-            hslColor.hue = color.GetHue() / 360.0; // we store hue as 0-1 as opposed to 0-360
+            hslColor.hue = color.GetHue() / SCALE; // we store hue as 0-1 as opposed to 0-360
             hslColor.luminosity = color.GetBrightness();
             hslColor.saturation = color.GetSaturation();
             hslColor.Alpha = color.A;

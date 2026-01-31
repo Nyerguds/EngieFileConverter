@@ -27,10 +27,6 @@ namespace EngieFileConverter.Domain.FileTypes
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
-        /// <summary>
-        /// See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false will not get an index -1 in the frames list.
-        /// C&amp;C tileset files are bit of an edge case, though, since they contains no overall dimensions. Files with known tile names as filename get their X and Y from the tile info.
-        /// </summary>
         public override Boolean IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
         public override Boolean HasCompositeFrame { get { return true; } }
@@ -382,7 +378,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         Int32 index = y * nrOfFramesX + x;
                         byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
-                        if (frameData.All(b => b == 0))
+                        if (ArrayUtils.IsEmpty(frameData))
                         {
                             landTypesArr[index] = 0;
                             frameData = null;
@@ -413,7 +409,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (bitmap.Width != 24 || bitmap.Height != 24)
                         throw new ArgumentException("All frames must be 24×24.", "fileToSave");
                     byte[] frameData = ImageUtils.GetImageData(bitmap, true);
-                    if (frameData.All(b => b == 0))
+                    if (ArrayUtils.IsEmpty(frameData))
                     {
                         landTypesArr[i] = 0;
                         frameData = null;
@@ -473,12 +469,12 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             { 00, 'X' }, // Filler tile, or [Clear] terrain on 1x1 sets with multiple tiles.
             { 03, 'C' }, // [Clear] Normal clear terrain.
-            { 06, 'B' }, // [Beach] Sandy beach. Can''t be built on.
+            { 06, 'B' }, // [Beach] Sandy beach. Can't be built on.
             { 08, 'I' }, // [Rock]  Impassable terrain.
             { 09, 'R' }, // [Road]  Units move faster on this terrain.
             { 10, 'W' }, // [Water] Ships can travel over this.
-            { 11, 'V' }, // [River] Ships normally can''t travel over this.
-            { 14, 'H' }, // [Rough] Rough terrain. Can''t be built on
+            { 11, 'V' }, // [River] Ships normally can't travel over this.
+            { 14, 'H' }, // [Rough] Rough terrain. Can't be built on
         };
 
         private static readonly Dictionary<byte, string> LandTypeDescriptions = new Dictionary<byte, string>

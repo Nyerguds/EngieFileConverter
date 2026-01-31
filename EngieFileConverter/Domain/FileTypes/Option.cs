@@ -108,7 +108,7 @@ namespace Nyerguds.Util
     {
         /// <summary>Simple numeric input. InitValue can be left empty, or give a comma-separated minimum and/or maximum in the format "min,max".</summary>
         Number,
-        /// <summary>Checkbox. Data value should always be either "0" and "1".</summary>
+        /// <summary>Checkbox. InitValue is ignored. Data value should always be either "0" and "1".</summary>
         Boolean,
         /// <summary>Free text field. If InitValue is specified, it limits the possible input characters to the characters inside the given string.</summary>
         String,
