@@ -127,10 +127,11 @@ Engie File Converter.
 
 Engie File Converter versions:
 
-v1.5.17 (Unreleased)
+v1.5.17 (05/02/2026 21:00 CET)
 -Fixed bug in autodetect that could crash on the HeroQuest map type.
--Added saving support for Red Alert Tileset format.
+-Added saving support for the Command & Conquer: Red Alert Tileset format.
 -Added support for the .cel full-map images used by Sega Saturn Command & Conquer.
+-Added support for the .lut chrono vortex effect tables used in Command & Conquer: Red Alert.
 
 v1.5.16 (11/12/2025 13:00 CET)
 -Added support for visualising HeroQuest (1991) quests.

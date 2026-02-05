@@ -283,7 +283,7 @@ namespace EngieFileConverter.Domain.FileTypes
             framesContainer.EmbeddedType = type;
             Color[] pal = currentType.GetColors();
             // 'common palette' logic is started by setting it to True when there is a palette.
-            Boolean commonPalette = pal != null && !currentType.NeedsPalette;
+            Boolean commonPalette = pal != null && pal.Length > 0 && !currentType.NeedsPalette;
             FileClass frameTypes = FileClass.None;
             Boolean nullPalette = currentType.NeedsPalette || pal == null;
             for (Int32 i = 0; i < nrOfFrames; ++i)

@@ -112,15 +112,15 @@ namespace EngieFileConverter.Domain.FileTypes
             // Always 0
             Int16 hdrAllocated = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x06);
             // New in RA
-            headerWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x08);
-            headerHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x0A);
+            headerWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x08); // hdrMapWidth
+            headerHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x0A); // hdrMapHeight
             int hdrSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0C);
-            // Offset of start of actual icon data. Generally always 0x20
+            // Offset of start of actual icon data. Generally always 0x28
             int hdrIconsPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x10);
             // Offset of start of palette data. Probably always 0.
             int hdrPalettesPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x14);
             // Offset of remaps data. Dune II leftover of 4 bit to 8 bit translation tables.
-            // Always seems to be 0x2C730FXX (with values differing for the lowest byte), which makes no sense as ptr.
+            // Always seems to be 0x2C730FFF (with values differing for the lowest byte), which makes no sense as ptr.
             int hdrRemapsPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x18);
             // Offset of 'transparency flags'? Generally points to an empty array at the end of the file.
             int hdrTransFlagPtr = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x1C);
@@ -200,55 +200,71 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 opts[optind++] = new Option("1x1", OptionInputType.Boolean, "Save as 1x1 with multiple frames (only the first land type is used)", is1x1Multiple ? "1" : "0");
             }
-            opts[optind++] = new Option("LND", OptionInputType.String, "Land types for all cells.\n" +
-                "X: Unused, C: Clear, B: Beach, I: Rock\nR: Road, W: Water, V: River, H: Rough", "XxCcBbIiRrWwVvHh\r\n", landTypes);
+            List<string> landTypesList = new List<string>();
+            List<char> allowedChars = new List<char>();
+            foreach (byte key in LandTypeChars.Keys.OrderBy(b => b))
+            {
+                char ch = LandTypeChars[key];
+                allowedChars.Add(Char.ToUpper(ch));
+                allowedChars.Add(Char.ToLower(ch));
+                landTypesList.Add(String.Format("{0}:\u00A0{1}", LandTypeChars[key], LandTypeDescriptions[key]));
+            }
+            allowedChars.Add('\r');
+            allowedChars.Add('\n');
+
+            string landtypes = String.Join(", ", landTypesList.ToArray());
+            opts[optind++] = new Option("LND", OptionInputType.String,
+                "Land types for all cells. Line breaks are cosmetic.\n" + landtypes,
+                new string(allowedChars.ToArray()), landTypes);
             // Only asked if it's not a multi-tile image or a tileset file.
             opts[optind++] = new Option("WDT", OptionInputType.Number, "Width in tiles", "1," + tiles, tileWidth.ToString(),
                 new EnableFilter("1x1", false, "1"),
-                new EnableFilter("LND", hasFixedWidth, "1"));
+                new EnableFilter("LND", hasFixedWidth, "!")); // '!' is not an allowed character for "LND"; this will always either enable or disable the option.
             return opts;
         }
 
         public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            byte[][] tilesData = PerformPreliminaryChecks(fileToSave, out int nrOfTiles, out int tilesWidth, out _, out _);
+            byte[][] tilesData = PerformPreliminaryChecks(fileToSave, out int nrOfTiles, out int hdrMapWidth, out _, out _);
             string wOption = Option.GetSaveOptionValue(saveOptions, "WDT");
             if (wOption != null)
             {
                 // If given, override.
-                Int32.TryParse(wOption, out tilesWidth);
+                Int32.TryParse(wOption, out hdrMapWidth);
             }
             string landTypes = Option.GetSaveOptionValue(saveOptions, "LND");
             bool is1x1multiple = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "1x1"));
             // DATA GATHERED. Build icons map, remove duplicates.
-            int saveNrOfTiles = nrOfTiles;
-            int tilesHeight = is1x1multiple ? 1 : nrOfTiles / tilesWidth;
+            int hdrCount = nrOfTiles;
+            int hdrMapHeight;
             if (!is1x1multiple)
             {
-                if (nrOfTiles % tilesWidth != 0)
+                hdrMapHeight = nrOfTiles / hdrMapWidth;
+                if (nrOfTiles % hdrMapWidth != 0)
                 {
-                    tilesHeight = (nrOfTiles + tilesWidth - 1) / tilesWidth;
-                    saveNrOfTiles = tilesWidth * tilesHeight;
+                    hdrMapHeight = (nrOfTiles + hdrMapWidth - 1) / hdrMapWidth;
+                    hdrCount = hdrMapWidth * hdrMapHeight;
                 }
             }
             else
             {
-                tilesWidth = 1;
+                hdrMapWidth = 1;
+                hdrMapHeight = 1;
             }
-            byte[][] tempTiles = new byte[saveNrOfTiles][];
-            byte[] finalIndices = new byte[saveNrOfTiles];
+            byte[][] tempTiles = new byte[hdrCount][];
+            byte[] finalMapping = new byte[hdrCount];
             int actualTiles = 0;
-            for (int index = 0; index < saveNrOfTiles; ++index)
+            for (int index = 0; index < hdrCount; ++index)
             {
                 if (index >= nrOfTiles)
                 {
-                    finalIndices[index] = 0xFF;
+                    finalMapping[index] = 0xFF;
                     continue;
                 }
                 byte[] tileData = tilesData[index];
                 if (tileData == null)
                 {
-                    finalIndices[index] = 0xFF;
+                    finalMapping[index] = 0xFF;
                     continue;
                 }
                 int foundIndex = -1;
@@ -262,25 +278,25 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if (foundIndex != -1)
                 {
-                    finalIndices[index] = (byte)foundIndex;
+                    finalMapping[index] = (byte)foundIndex;
                 }
                 else
                 {
-                    finalIndices[index] = (byte)actualTiles;
+                    finalMapping[index] = (byte)actualTiles;
                     tempTiles[actualTiles] = tileData;
                     actualTiles++;
                 }
             }
-            byte[] landsForIcons = LandTypesFromString(landTypes, tilesWidth * tilesHeight);
+            byte[] landsForIcons = LandTypesFromString(landTypes, hdrMapWidth * hdrMapHeight);
             if (is1x1multiple)
             {
                 if (landsForIcons[0] == 3) landsForIcons[0] = 0;
             }
             else
             {
-                for (int i = 0; i < saveNrOfTiles; ++i)
+                for (int i = 0; i < hdrCount; ++i)
                 {
-                    if (finalIndices[i] == 0xFF)
+                    if (finalMapping[i] == 0xFF)
                     {
                         landsForIcons[i] = 0;
                     }
@@ -290,41 +306,43 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
             }
-            // Order: (Header) , (data) ,  (actual frames index), (all tiles index) , (hdrColorMapPtr)
+            // Order: (Header), (hdrIconsPtr),  (hdrMapPtr), (all tiles index) , (hdrColorMapPtr)
             int tileLength = 24 * 24;
-            int size = 0x28;
-            int hdrIconsPtr = size;
-            size += actualTiles * tileLength;
-            int hdrMapPtr = size;
-            size += saveNrOfTiles;
+            int hdrSize = 0x28;
+            // Actual image data of the icons.
+            int hdrIconsPtr = hdrSize;
+            hdrSize += actualTiles * tileLength;
+            // Mapping of each icon index to an actual image data index, in one byte per icon.
+            int hdrMapPtr = hdrSize;
+            hdrSize += hdrCount;
+            // one byte for each physical image data block containing transparency flags.
+            int hdrTransFlagPtr = hdrSize;
+            hdrSize += actualTiles;
+            // One byte entry for each icon giving the land type. If 1x1-multiple, this is only one byte long.
+            int hdrColorMapPtr = hdrSize;
+            hdrSize += landsForIcons.Length;
+            // Full size calculated.
+            byte[] finalData = new byte[hdrSize];
 
-            int hdrTransFlagPtr = size;
-            size += actualTiles;
-
-            int hdrColorMapPtr = size;
-            size += landsForIcons.Length;
-            byte[] finalData = new byte[size];
-
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x00, 24); // Width
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x02, 24); // Height
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x04, (ushort)saveNrOfTiles);
-            // ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x06, 0); // hdrCount
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x08, (ushort)tilesWidth);
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x0A, (ushort)tilesHeight);
-
-            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x0C, (ushort)size);
+            const int signature = 0x49474E45; // "ENGI". Original is typically 0x2C730FFF
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x00, 24); // hdrWidth
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x02, 24); // hdrHeight
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x04, (ushort)hdrCount);
+            //ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x06, 0); // hdrAllocated
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x08, (ushort)hdrMapWidth);
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x0A, (ushort)hdrMapHeight);
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x0C, (ushort)hdrSize);
             ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x10, (ushort)hdrIconsPtr);
-            // ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x014, 0); // indexPalette
-            // Signature ;)
-            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x18, 0x49474E45);
+            //ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x014, 0); // hdrPalettePtr
+            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x18, signature); // hdrRemapsPtr
             ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x1C, (ushort)hdrTransFlagPtr);
             ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x20, (ushort)hdrColorMapPtr);
             ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x24, (ushort)hdrMapPtr);
 
             for (int i = 0; i < actualTiles; ++i)
                 Array.Copy(tempTiles[i], 0, finalData, hdrIconsPtr + tileLength * i, tileLength);
-            Array.Copy(finalIndices, 0, finalData, hdrMapPtr, finalIndices.Length);
-            // Not done: write data to offset indexImages. Because, no one really knows what it does.
+            Array.Copy(finalMapping, 0, finalData, hdrMapPtr, finalMapping.Length);
+            // hdrTransFlagPtr is in between here, but nothing needs to be written to it.
             Array.Copy(landsForIcons, 0, finalData, hdrColorMapPtr, landsForIcons.Length);
             return finalData;
         }
@@ -488,6 +506,7 @@ namespace EngieFileConverter.Domain.FileTypes
             { 11, "River" },
             { 14, "Rough" },
         };
+
         private static readonly Dictionary<char, byte> LandTypesValues = LandTypeChars.ToDictionary(x => x.Value, x => x.Key);
 
         private static byte[] LandTypesFromString(string types, int arrLen)

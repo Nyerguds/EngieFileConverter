@@ -356,6 +356,18 @@ namespace Nyerguds.ImageManipulation
         }
 
         /// <summary>
+        /// Gets a set of color components from the data, based on an offset.
+        /// </summary>
+        /// <param name="data">Image data as byte array.</param>
+        /// <param name="offset">Offset to read in the data.</param>
+        /// <returns>The color at that position.</returns>
+        public Byte[] GetColorComponents(Byte[] data, Int32 offset)
+        {
+            UInt32 value = (UInt32)ReadIntFromByteArray(data, offset, this.bytesPerPixel, this.littleEndian);
+            return this.GetColorComponentsFromValue(value);
+        }
+
+        /// <summary>
         /// Gets a color pixel from the data, based on an offset.
         /// </summary>
         /// <param name="data">Image data as byte array.</param>
@@ -406,6 +418,18 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="data">Image data as byte array.</param>
         /// <param name="offset">Offset at which to write in the data.</param>
+        /// <param name="components">Array of the color values to set at that position, as [A, R, G, B].</param>
+        public void WriteColorComponents(Byte[] data, Int32 offset, byte[] components)
+        {
+            UInt32 value = this.GetValueFromColorComponents(components);
+            WriteIntToByteArray(data, offset, this.bytesPerPixel, this.littleEndian, value);
+        }
+
+        /// <summary>
+        /// Writes a color pixel in the data at the given offset.
+        /// </summary>
+        /// <param name="data">Image data as byte array.</param>
+        /// <param name="offset">Offset at which to write in the data.</param>
         /// <param name="color">The color to set at that position.</param>
         public void WriteColor(Byte[] data, Int32 offset, Color color)
         {
@@ -433,10 +457,21 @@ namespace Nyerguds.ImageManipulation
         /// <returns>The color.</returns>
         public Color GetColorFromValue(UInt32 readValue)
         {
+            Byte[] components = GetColorComponentsFromValue(readValue);
+            return Color.FromArgb(components[ColA], components[ColR], components[ColG], components[ColB]);
+        }
+
+        /// <summary>
+        /// Gets a color from a read UInt32 value.
+        /// </summary>
+        /// <param name="readValue">The read 4-byte value.</param>
+        /// <returns>The color.</returns>
+        public Byte[] GetColorComponentsFromValue(UInt32 readValue)
+        {
             Byte[] components = new Byte[4];
             for (Int32 i = 0; i < 4; ++i)
                 components[i] = (Byte)Math.Min(255, (Int32)Math.Round(this.GetChannelFromValue(readValue, i) * MultiplierFor8BitCol, MidpointRounding.AwayFromZero));
-            return Color.FromArgb(components[ColA], components[ColR], components[ColG], components[ColB]);
+            return components;
         }
 
         /// <summary>
@@ -456,19 +491,30 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Gets the bare integer value of a color.
         /// </summary>
-        /// <param name="color">The color to convert.</param>
+        /// <param name="components">Array of the color values to convert, as [A, R, G, B].</param>
         /// <returns>The integer value to write.</returns>
-        public UInt32 GetValueFromColor(Color color)
+        public UInt32 GetValueFromColorComponents(Byte[] components)
         {
-            Byte[] components = new Byte[] {color.A, color.R, color.G, color.B};
             UInt32 val = 0;
-            for (Int32 i = 0; i < 4; ++i)
+            int len = Math.Min(components.Length, 4);
+            for (Int32 i = 0; i < len; ++i)
             {
                 Double tempValD = components[i] / this.multipliers[i];
                 UInt32 tempVal = Math.Min(this.maxChan[i], (UInt32)Math.Round(tempValD, MidpointRounding.AwayFromZero));
                 val = AddValueWithMask(val, this.bitMasks[i], tempVal);
             }
             return val;
+        }
+
+        /// <summary>
+        /// Gets the bare integer value of a color.
+        /// </summary>
+        /// <param name="color">The color to convert.</param>
+        /// <returns>The integer value to write.</returns>
+        public UInt32 GetValueFromColor(Color color)
+        {
+            Byte[] components = new Byte[] {color.A, color.R, color.G, color.B};
+            return GetValueFromColorComponents(components);
         }
 
         /// <summary>

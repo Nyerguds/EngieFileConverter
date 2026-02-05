@@ -1,5 +1,4 @@
-﻿using Nyerguds.FileData.Dynamix;
-using Nyerguds.ImageManipulation;
+﻿using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,7 @@ using System.Drawing.Imaging;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
-    public class FileWwSatCel : SupportedFileType
+    public class FileImageWwCelSaturn : SupportedFileType
     {
 
         const int HEADERSIZE = 0x14;

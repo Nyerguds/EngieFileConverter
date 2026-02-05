@@ -166,7 +166,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave.BitsPerPixel != 8)
                 throw new ArgumentException("Can only save 8 BPP images as this type.", "fileToSave");
             Byte[][] framesData;
-            Int32 nrOfFrames;
+            Int32 hdrCount;
             if (!fileToSave.IsFramesContainer)
             {
                 Bitmap bitmap = fileToSave.GetBitmap();
@@ -174,9 +174,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new ArgumentException("The file dimensions are not a multiple of 24×24.", "fileToSave");
                 Int32 nrOfFramesX = bitmap.Width / 24;
                 Int32 nrOfFramesY = bitmap.Height / 24;
-                nrOfFrames = nrOfFramesX * nrOfFramesY;
-                framesData = new Byte[nrOfFrames][];
-                if (nrOfFrames > 255)
+                hdrCount = nrOfFramesX * nrOfFramesY;
+                framesData = new Byte[hdrCount][];
+                if (hdrCount > 255)
                     throw new ArgumentException("Too many tiles in file.", "fileToSave");
                 Int32 stride;
                 Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
@@ -193,11 +193,11 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 SupportedFileType[] frames = fileToSave.Frames;
-                nrOfFrames = frames.Length;
-                if (nrOfFrames > 255)
+                hdrCount = frames.Length;
+                if (hdrCount > 255)
                     throw new ArgumentException("Too many tiles in file.", "fileToSave");
-                framesData = new Byte[nrOfFrames][];
-                for (Int32 i = 0; i < nrOfFrames; ++i)
+                framesData = new Byte[hdrCount][];
+                for (Int32 i = 0; i < hdrCount; ++i)
                 {
                     Bitmap bitmap;
                     if (frames[i] == null || (bitmap = frames[i].GetBitmap()) == null)
@@ -209,10 +209,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
 
-            Byte[][] tempFrames = new Byte[nrOfFrames][];
-            Byte[] finalIndices = new Byte[nrOfFrames];
+            Byte[][] tempFrames = new Byte[hdrCount][];
+            Byte[] finalIndices = new Byte[hdrCount];
             Int32 actualFrames = 0;
-            for (Int32 index = 0; index < nrOfFrames; ++index)
+            for (Int32 index = 0; index < hdrCount; ++index)
             {
                 Byte[] frameData = framesData[index];
                 if (frameData == null)
@@ -242,33 +242,33 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
             }
-            // Order: (Header) , (data) , (all tiles index) , (actual frames index)
+            // Order: (Header), (IconsPtr), (MapPtr), (TransFlagPtr)
             Int32 tileLength = 24 * 24;
             Int32 size = 0x20;
-            Int32 indexImgStart = size;
+            Int32 hdrIconsPtr = size;
             size += actualFrames * tileLength;
-            Int32 indexTilesetImagesList = size;
-            size += nrOfFrames;
-            Int32 indexImages = size;
+            Int32 hdrMapPtr = size;
+            size += hdrCount;
+            Int32 hdrTransFlagPtr = size;
             size += actualFrames;
             Byte[] finalData = new Byte[size];
 
-            // Width
-            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x00, 24);
-            // Height
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x02, 24);
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x04, (UInt16)nrOfFrames);
-            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x08, (UInt16)size);
-            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x0C, (UInt16)indexImgStart);
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x14, 0xFFFF);
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x16, 0x0D1A);
-            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x18, (UInt16)indexImages);
-            ArrayUtils.WriteUInt32ToByteArrayLe(finalData, 0x1C, (UInt16)indexTilesetImagesList);
+            const int signature = 0x49474E45; // "ENGI". Original is typically 0x0D1AFFFF
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x00, 24); // hdrWidth
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x02, 24); // hdrHeight
+            ArrayUtils.WriteInt16ToByteArrayLe(finalData, 0x04, (Int16)hdrCount);
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x08, (Int16)size);
+            //ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0x06, 0); // hdrAllocated
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x0C, (Int16)hdrIconsPtr);
+            //ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x10, 0x00000000); // hdrPalettesPtr
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x14, signature); // hdrRemapsPtr
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x18, (Int16)hdrTransFlagPtr);
+            ArrayUtils.WriteInt32ToByteArrayLe(finalData, 0x1C, (Int16)hdrMapPtr);
 
             for (Int32 i = 0; i < actualFrames; ++i)
-                Array.Copy(tempFrames[i], 0, finalData, indexImgStart + tileLength * i, tileLength);
-            // Not done: write data to offset indexImages. Because, no one really knows what it does.
-            Array.Copy(finalIndices, 0, finalData, indexTilesetImagesList, finalIndices.Length);
+                Array.Copy(tempFrames[i], 0, finalData, hdrIconsPtr + tileLength * i, tileLength);
+            // hdrTransFlagPtr is in between here, but nothing needs to be written to it.
+            Array.Copy(finalIndices, 0, finalData, hdrMapPtr, finalIndices.Length);
             return finalData;
         }
     }

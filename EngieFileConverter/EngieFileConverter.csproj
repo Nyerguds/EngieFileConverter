@@ -117,9 +117,10 @@
     <Compile Include="Domain\FileTypes\TheLearningCompany\FileFramesTrMntPak.cs" />
     <Compile Include="Domain\FileTypes\TheLearningCompany\FileFramesTrMntPan.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwBitFntUni.cs" />
-    <Compile Include="Domain\FileTypes\Westwood\FileWwSatCel.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileImageWwCelSaturn.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpBr.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwCmp.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileImgWwLut.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTilesetWwRA1.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgJmx.cs" />

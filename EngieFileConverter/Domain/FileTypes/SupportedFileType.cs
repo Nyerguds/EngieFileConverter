@@ -20,6 +20,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_BAD_SIZE = "Incorrect file size.";
         protected const String ERR_BAD_HEADER_SIZE = "File size in header does not match.";
         protected const String ERR_BAD_HEADER_PAL_SIZE = "Invalid palette length in header.";
+        protected const String ERR_BAD_IMAGE_DATA = "Bad values in image data.";
         protected const String ERR_NO_IMAGE = "No image data found in file.";
         protected const String ERR_NO_FRAMES = "No frames found in file.";
         protected const String ERR_SIZE_TOO_SMALL = "File is too small.";
@@ -43,6 +44,7 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_DIMENSIONS_TOO_WIDE_DIM = ERR_DIMENSIONS_TOO_WIDE + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
         protected const String ERR_DIMENSIONS_TOO_HIGH_DIM = ERR_DIMENSIONS_TOO_HIGH + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
         protected const String ERR_DIMENSIONS_TOO_HIGH_SIZE = ERR_DIMENSIONS_TOO_LARGE + ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE;
+        protected const String ERR_ONLY_FRAMES = "This format has no single main image to use.";
         protected const String ERR_FRAMES_NEEDED = "This format needs at least one frame.";
         protected const String ERR_FRAMES_OVERFLOW = "This format can't handle more than {0} frames.";
         protected const String ERR_FRAMES_EMPTY = "This format can't handle empty frames.";
