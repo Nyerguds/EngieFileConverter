@@ -127,6 +127,15 @@ Engie File Converter.
 
 Engie File Converter versions:
 
+v1.5.18 (06/06/2026 19:00 CET)
+-Upgraded the project to .Net v4.8.1.
+-Fixed bug in the save options system that could make it crash on save options showing a text field.
+-Transparent area on images saved as chrono vortex effect tables now gets saved as default
+ unmodified pixels. This makes it easy to create a default empty state image by saving a
+ transparent 64x64 image to chrono vortex table, then opening that, and saving it as png.
+-Fixed endianness mess on formats using Westwood RLE compression
+-Added 8-bit formats from DragonStrike to the Westwood CMP format.
+
 v1.5.17 (05/02/2026 21:00 CET)
 -Fixed bug in autodetect that could crash on the HeroQuest map type.
 -Added saving support for the Command & Conquer: Red Alert Tileset format.

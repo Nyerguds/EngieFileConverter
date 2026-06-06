@@ -42,8 +42,16 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null)
                 return null;
-            Boolean hasFrames = this.m_LoadedFile.Frames != null && this.m_LoadedFile.Frames.Length > 0;
-            return hasFrames && this.numFrame.Value != -1 ? (this.m_LoadedFile.Frames.Length > this.numFrame.Value ? this.m_LoadedFile.Frames[(Int32) this.numFrame.Value] : null) : this.m_LoadedFile;
+            int shownFrame = GetShownFrame();
+            return shownFrame == -1 ? this.m_LoadedFile : this.m_LoadedFile.Frames[shownFrame];
+        }
+
+        private int GetShownFrame()
+        {
+            int num = (int)this.numFrame.Value;
+            if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || num < 0 || num >= this.m_LoadedFile.Frames.Length)
+                return -1;
+            return num;
         }
 
         public FrmFileConverter()
@@ -1745,8 +1753,10 @@ namespace EngieFileConverter.UI
                 Point pastePoint;
                 Int32[] frameRange;
                 Boolean keepIndices;
+                int shownFrame = GetShownFrame();
                 // Pastebox deliberately does not dispose its Image, so it can be passed on to the function.
-                using (FrmPasteOnFrames pasteBox = new FrmPasteOnFrames(nrOfFrames, maxWidth, maxHeight, Math.Abs(this.m_LoadedFile.BitsPerPixel), this.m_LastOpenedFolder))
+                using (FrmPasteOnFrames pasteBox = new FrmPasteOnFrames(
+                    nrOfFrames, maxWidth, maxHeight, Math.Abs(this.m_LoadedFile.BitsPerPixel), this.m_LastOpenedFolder, shownFrame))
                 {
                     DialogResult dr = pasteBox.ShowDialog(this);
                     this.m_LastOpenedFolder = pasteBox.LastSelectedFolder;

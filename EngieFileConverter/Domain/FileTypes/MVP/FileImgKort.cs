@@ -99,7 +99,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);
             if (image.Width != 320 || image.Height != 240 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new FileTypeSaveException(ErrFixedBppAndSize);
+                throw new FileTypeSaveException(ErrFixedBppsAndSize(320, 240, ShortTypeName, 8));
             return image;
         }
 

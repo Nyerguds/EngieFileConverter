@@ -16,30 +16,30 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override Int32 Width { get { return this.m_Width; } }
-        public override Int32 Height { get { return this.m_Height; } }
-        protected Int32 m_Width;
-        protected Int32 m_Height;
-        public override String IdCode { get { return "WwSatCel"; } }
+        public override int Width { get { return this.m_Width; } }
+        public override int Height { get { return this.m_Height; } }
+        protected int m_Width;
+        protected int m_Height;
+        public override string IdCode { get { return "WwSatCel"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood C&C Saturn Cel"; } }
-        public override String[] FileExtensions { get { return new String[] { "cel" }; } }
-        public override String LongTypeName { get { return "Westwood C&C Sega Saturn Map Image data"; } }
-        public override Boolean NeedsPalette => false;
-        public override Int32 BitsPerPixel => 8;
+        public override string ShortTypeName { get { return "Westwood C&C Saturn Cel"; } }
+        public override string[] FileExtensions { get { return new string[] { "cel" }; } }
+        public override string LongTypeName { get { return "Westwood C&C Sega Saturn Map Image data"; } }
+        public override bool NeedsPalette => false;
+        public override int BitsPerPixel => 8;
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
         
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < HEADERSIZE + PALSIZE)
                 throw new FileTypeLoadException(ERR_NO_HEADER);
@@ -54,23 +54,23 @@ namespace EngieFileConverter.Domain.FileTypes
             switch (tiletype)
             {
                 case 0:
-                    // Size = 32. Not sure if these values are correct.
+                    // tileSize = 32. Not sure if these values are correct.
                     tileWidth = 8;
                     tileHeight = 4;
                     break;
                 case 1:
-                    //tileSize = 64.
+                    // tileSize = 64.
                     tileWidth = 8;
                     tileHeight = 8;
                     break;
                 case 2:
                 case 3:
-                    //tileSize = 128. Not sure if these values are correct.
+                    // tileSize = 128. Not sure if these values are correct.
                     tileWidth = 8;
                     tileHeight = 16;
                     break;
                 case 4:
-                    //tileSize = 256. Not sure if these values are correct.
+                    // tileSize = 256. Not sure if these values are correct.
                     tileWidth = 16;
                     tileHeight = 16;
                     break;
@@ -98,8 +98,10 @@ namespace EngieFileConverter.Domain.FileTypes
             int fullWidth = matrixWidth * tileWidth;
             int fullHeight = matrixHeight * tileHeight;
             byte[] imageData = new byte[fullWidth * fullHeight];
+            int tileY = 0;
             for (int y = 0; y < matrixHeight; ++y)
             {
+                int tileX = 0;
                 for (int x = 0; x < matrixWidth; ++x)
                 {
                     int tileId = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, index);
@@ -113,84 +115,90 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     ImageUtils.PasteOn8bpp(
                         imageData, fullWidth, fullHeight, fullWidth, tiles[tileId], tileWidth, tileHeight, tileWidth,
-                        new Rectangle(x * tileWidth, y * tileHeight, tileWidth, tileHeight), null, true);
+                        new Rectangle(tileX, tileY, tileWidth, tileHeight), null, true);
+                    tileX += tileWidth;
                 }
+                tileY += tileHeight;
             }
             m_Width = fullWidth;
             m_Height = fullHeight;
             m_LoadedImage = ImageUtils.BuildImage(imageData, fullWidth, fullHeight, fullWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
-            ExtraInfo = String.Format("Image built up from {0} {1}×{2} chunks.", nrOfTiles, tileWidth, tileHeight);
+            ExtraInfo = string.Format("Image built up from {0} {1}×{2} chunks.", nrOfTiles, tileWidth, tileHeight);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new FileTypeSaveException(String.Format(ERR_BPP_INPUT_EXACT, 8));
+                throw new FileTypeSaveException(string.Format(ERR_BPP_INPUT_EXACT, 8));
             Color[] palette = fileToSave.GetColors();
-            Int32 width = image.Width;
-            Int32 height = image.Height;
-            const Int32 tileWidth = 8;
-            const Int32 tileHeight = 8;
+            int width = image.Width;
+            int height = image.Height;
+            const int tileWidth = 8;
+            const int tileHeight = 8;
             if (width % tileWidth != 0 || height % tileHeight != 0)
                 throw new FileTypeSaveException("Cannot save images that are not an exact multiple of 8 pixels.");
             // Cut into tiles. This method is pretty much just the one from the Dynamix BMP matrix image, but without swapping rows and columns.
-            Int32 matrixWidth = width / tileWidth;
-            Int32 matrixHeight = height / tileHeight;
-            Int32 nrOfTiles = matrixWidth * matrixHeight;
-            Int32 stride;
-            Byte[] fullImageData = ImageUtils.GetImageData(image, out stride);
-            Byte[][] allTiles = new Byte[nrOfTiles][];
-            Int32[] tileMatrix = new Int32[nrOfTiles];
-            UInt32[] tileHashes = new UInt32[nrOfTiles];
+            int matrixWidth = width / tileWidth;
+            int matrixHeight = height / tileHeight;
+            int nrOfTiles = matrixWidth * matrixHeight;
+            int stride;
+            byte[] fullImageData = ImageUtils.GetImageData(image, out stride);
+            byte[][] allTiles = new byte[nrOfTiles][];
+            int[] tileMatrix = new int[nrOfTiles];
+            uint[] tileHashes = new uint[nrOfTiles];
             // The Dictionary is used for a preliminary sorting of chunks into those with the same hash.
             // A secondary operation then checks which of these are actually equal.
-            Dictionary<UInt32, List<Int32>> hashmap = new Dictionary<UInt32, List<Int32>>();
+            Dictionary<uint, List<int>> hashmap = new Dictionary<uint, List<int>>();
             int matrixIndex = 0;
-            for (Int32 y = 0; y < matrixHeight; ++y)
+            int tileY = 0;
+            for (int y = 0; y < matrixHeight; ++y)
             {
-                for (Int32 x = 0; x < matrixWidth; ++x)
+                int tileX = 0;
+                for (int x = 0; x < matrixWidth; ++x)
                 {
-                    Byte[] tileData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, new Rectangle(x * tileWidth, y * tileHeight, tileWidth, tileHeight));
+                    byte[] tileData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, new Rectangle(tileX, tileY, tileWidth, tileHeight));
                     allTiles[matrixIndex] = tileData;
                     tileMatrix[matrixIndex] = matrixIndex;
-                    UInt32 hash = Crc32.ComputeChecksum(tileData);
+                    uint hash = Crc32.ComputeChecksum(tileData);
                     tileHashes[matrixIndex] = hash;
                     if (!hashmap.ContainsKey(hash))
                     {
-                        hashmap.Add(hash, new List<Int32>(new Int32[] { matrixIndex }));
+                        hashmap.Add(hash, new List<int>(new int[] { matrixIndex }));
                     }
                     else
                     {
                         hashmap[hash].Add(matrixIndex);
                     }
                     matrixIndex++;
+                    tileX += tileWidth;
                 }
+                tileY += tileHeight;
             }
             // Detect and replace duplicates.
-            Int32 currentActual = 0;
-            Byte[][] allTilesActual = new Byte[nrOfTiles][];
-            Int32[] translationTable = new Int32[nrOfTiles];
-            for (Int32 i = 0; i < nrOfTiles; ++i)
+            int currentActual = 0;
+            byte[][] allTilesActual = new byte[nrOfTiles][];
+            int[] translationTable = new int[nrOfTiles];
+            for (int i = 0; i < nrOfTiles; ++i)
             {
-                Byte[] curData = allTiles[i];
+                byte[] curData = allTiles[i];
                 if (curData == null)
                     continue;
                 allTilesActual[currentActual] = curData;
                 translationTable[i] = currentActual;
                 currentActual++;
-                List<Int32> duplicates = hashmap[tileHashes[i]];
+                List<int> duplicates = hashmap[tileHashes[i]];
                 if (duplicates.Count < 2)
                     continue;
-                Int32 dupCount = duplicates.Count;
-                for (Int32 j = 0; j < dupCount; ++j)
+                int dupCount = duplicates.Count;
+                for (int j = 0; j < dupCount; ++j)
                 {
-                    Int32 dupIndex = duplicates[j];
+                    int dupIndex = duplicates[j];
                     if (dupIndex == i)
                         continue;
-                    Byte[] dupData = allTiles[dupIndex];
+                    byte[] dupData = allTiles[dupIndex];
                     // double-check if crc-equal data is actually equal.
                     if (!ArrayUtils.ArraysAreEqual(curData, dupData))
                         continue;
@@ -198,12 +206,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     tileMatrix[dupIndex] = i;
                 }
             }
-            const int max = Int16.MaxValue / 2;
+            const int max = ushort.MaxValue / 2;
             if (currentActual > max)
                 throw new FileTypeSaveException("Too many unique 8x8 chunks in image; cannot address more than {0} tiles.", max);
 
             // Fix tile references to collapsed indices.
-            for (Int32 i = 0; i < nrOfTiles; ++i)
+            for (int i = 0; i < nrOfTiles; ++i)
                 tileMatrix[i] = translationTable[tileMatrix[i]];
 
             int tileSize = tileWidth * tileHeight;
@@ -219,13 +227,13 @@ namespace EngieFileConverter.Domain.FileTypes
             byte[] palData = ColorUtils.GetEightBitPaletteData(palette, true);
             Array.Copy(palData, 0, fullFile, HEADERSIZE, palData.Length);
             int index = HEADERSIZE + PALSIZE;
-            for (Int32 i = 0; i < currentActual; ++i)
+            for (int i = 0; i < currentActual; ++i)
             {
                 Array.Copy(allTilesActual[i], 0, fullFile, index, tileSize);
                 index += tileSize;
             }
             index = HEADERSIZE + PALSIZE + tilesSize;
-            for (Int32 i = 0; i < nrOfTiles; ++i)
+            for (int i = 0; i < nrOfTiles; ++i)
             {
                 ArrayUtils.WriteUInt16ToByteArrayBe(fullFile, index, (ushort)(tileMatrix[i] * 2));
                 index += 2;

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
 
@@ -58,8 +59,25 @@ namespace EngieFileConverter.Domain.FileTypes
         protected const String ERR_UNKN_COMPR = "Unknown compression type.";
         protected const String ERR_UNKN_COMPR_X = "Unknown compression type \"{0}\".";
         protected const String ERR_BPP_DIMENSIONS = "Only {0}-bit {1}×{2} images can be saved as {3}.";
+        protected const String ERR_BPP = "{0}-bit";
+        protected const String ERR_MUL_BPP_DIMENSIONS = "Only {0} {1}×{2} images can be saved as {3}.";
         protected const String ERR_COMPR_TOO_LARGE = "The content after compression exceeds {0} bytes; it is too large to be saved in this type.";
         protected String ErrFixedBppAndSize { get { return String.Format(ERR_BPP_DIMENSIONS, this.BitsPerPixel, this.Width, this.Height, ShortTypeName); } }
+        
+        protected String ErrFixedBppsAndSize(int width, int height, string type, params int[] bpp) 
+        {
+            StringBuilder sb = new StringBuilder();
+            int len = bpp.Length;
+            int last = len - 1;
+            if (len > 0)
+                sb.Append(bpp[0]);
+            for (int i = 1; i > bpp.Length; ++i)
+            {
+                sb.Append(i == last ? " and " : ", ");
+                sb.Append(bpp[i]);
+            }
+            return String.Format(ERR_MUL_BPP_DIMENSIONS, sb.ToString(), width, height, type);
+        }
 
         #endregion
         /// <summary>Main image in this loaded file. Can be left as null for an empty frame or the main entry of a frames container.</summary>

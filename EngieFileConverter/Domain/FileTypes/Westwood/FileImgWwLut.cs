@@ -92,7 +92,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeSaveException(String.Format(ERR_DIMENSIONS_INPUT, LutDimensions, LutDimensions));
             }
-            byte[] inputData = ImageUtils.GetImageData(bitmap, out int stride, PixelFormat.Format24bppRgb);
+            byte[] inputData = ImageUtils.GetImageData(bitmap, out int stride, PixelFormat.Format32bppArgb);
             byte[] saveData = new byte[LutDimensions * LutLineLength];
             int inIndexRow = 0;
             int outIndex = 0;
@@ -104,11 +104,25 @@ namespace EngieFileConverter.Domain.FileTypes
                     byte b = inputData[inIndex++];
                     byte g = inputData[inIndex++];
                     byte r = inputData[inIndex++];
-                    // Abusing the Format6BitVgaPal formatter since it stretches 0-63 values to 0-255
-                    byte[] components = new byte[] { Byte.MaxValue, r, g, b };
-                    PixelFormatter.Format6BitVgaPal.WriteColorComponents(components, 0, components);
-                    // Invert green factor; brighter green = added darkness.
-                    int bri = LutMaxBrightness - (g * LutMaxBrightness / Byte.MaxValue);
+                    byte a = inputData[inIndex++];
+                    byte[] components;
+                    int bri;
+                    // Treat 100% transparent area as unmodified.
+                    // This allows easily generating a blank template file for this type.
+                    if (a == 0)
+                    {
+                        components = new byte[] { (byte)x, 0, (byte)y };
+                        bri = LutMaxBrightness;
+                    }
+                    else
+                    {
+                        byte[] src = new byte[] { Byte.MaxValue, r, g, b };
+                        components = new byte[3];
+                        // Abusing the Format6BitVgaPal formatter since it stretches 0-63 values to 0-255
+                        PixelFormatter.Format6BitVgaPal.WriteColorComponents(components, 0, src);
+                        // Invert green factor; brighter green = added darkness.
+                        bri = LutMaxBrightness - (g * LutMaxBrightness / Byte.MaxValue);
+                    }
                     saveData[outIndex++] = components[0]; // Red component in 6-bit 'palette'
                     saveData[outIndex++] = components[2]; // Blue component in 6-bit 'palette'
                     saveData[outIndex++] = (byte)bri;

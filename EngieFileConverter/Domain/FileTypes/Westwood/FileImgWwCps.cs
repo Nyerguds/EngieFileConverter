@@ -199,7 +199,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 cpsVersion = CpsVersion.AmigaEob1;
             else
                 cpsVersion = CpsVersion.AmigaEob2;
-            Byte[] imageData;
+            Byte[] imageData = null;
             Int32 dataOffset = start + 10 + paletteLength;
             if (compression == 0 && dataLen < dataOffset + bufferSize)
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
@@ -220,7 +220,9 @@ namespace EngieFileConverter.Domain.FileTypes
                         imageData = lzw14.Decompress(fileData, dataOffset, bufferSize);
                         break;
                     case 3:
-                        imageData = WestwoodRle.RleDecode(fileData, (UInt32) dataOffset, null, bufferSize, !isAmiga, true);
+                        int len = WestwoodRle.RleDecode(fileData, (UInt32) dataOffset, null, ref imageData, isAmiga, true);
+                        if (len != bufferSize)
+                            throw new FileTypeLoadException(ERR_DECOMPR_LEN);
                         break;
                     case 4:
                         imageData = new Byte[bufferSize];
@@ -293,13 +295,21 @@ namespace EngieFileConverter.Domain.FileTypes
                                 ("\nIncludes palette: " + (!this.NeedsPalette ? "Yes" + (amigaV1 ? " (EOB 1)" : (amigaV2 ? " (EOB 2)" : String.Empty)) : "No")));
         }
 
+        private string CheckFileToSave(SupportedFileType fileToSave, out Bitmap image)
+        {
+            image = null;
+            if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
+                return ERR_EMPTY_FILE;
+            if (image == null || image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
+                return ErrFixedBppsAndSize(320, 200, ShortTypeName, 8);
+            return null;
+        }
+
         public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
-            Bitmap image = fileToSave.GetBitmap();
-            if (image == null || image.Width != 320 || image.Height != 200 || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException(ErrFixedBppAndSize, "fileToSave");
+            string fileErr = CheckFileToSave(fileToSave, out Bitmap image);
+            if (fileErr != null)
+                throw new FileTypeSaveException(fileErr);
 
             FileImgWwCps cps = fileToSave as FileImgWwCps;
             Int32 compression = cps != null ? cps.CompressionType : 4;
@@ -314,11 +324,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            if (fileToSave == null || fileToSave.GetBitmap() == null)
-                throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
-            Bitmap image = fileToSave.GetBitmap();
-            if (image.Width != this.m_Width || image.Height != this.m_Height || image.PixelFormat != PixelFormat.Format8bppIndexed)
-                throw new ArgumentException(ErrFixedBppAndSize, "fileToSave");
+            string fileErr = CheckFileToSave(fileToSave, out Bitmap image);
+            if (fileErr != null)
+                throw new FileTypeSaveException(fileErr);
 
             Boolean asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
             Int32 version;
@@ -327,8 +335,6 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 compressionType;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compressionType);
             Byte[] imageData = ImageUtils.GetImageData(image, true);
-            if (imageData.Length != this.m_Width * this.m_Height)
-                throw new ArgumentException(ErrFixedBppAndSize, "fileToSave");
             return SaveCps(imageData, fileToSave.GetColors(), asPaletted ? 1 : 0, compressionType, (CpsVersion) version);
         }
 
@@ -339,7 +345,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (isAmiga)
             {
                 if (imageData.Any(p => p >= 32))
-                    throw new ArgumentException("Input for amiga images cannot use palette indices higher than 32.", "imageData");
+                    throw new FileTypeSaveException("Input for amiga images cannot use palette indices higher than 32.");
                 // bitplane this stuff!
                 Int32 bufSize = 40000;
                 if (amigaPal)
@@ -394,7 +400,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         compressedData = lzw14.Compress(imageData);
                         break;
                     case 3:
-                        compressedData = WestwoodRle.RleEncode(imageData, !isAmiga);
+                        compressedData = WestwoodRle.RleEncode(imageData, isAmiga);
                         break;
                     case 4:
                         compressedData = WWCompression.LcwCompress(imageData);

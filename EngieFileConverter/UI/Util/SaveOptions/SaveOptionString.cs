@@ -45,7 +45,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             lblDescription.Text = GeneralUtils.DoubleAmpersands(Info.UiString);
             m_AllowedMask = String.IsNullOrEmpty(info.InitValue) ? null : info.InitValue.ToCharArray();
             // Only allow if explicitly in the InitValue.
-            m_AllowLineBreak = info.InitValue != null && info.InitValue.Contains('\r') || info.InitValue.Contains('\n');
+            m_AllowLineBreak = info.InitValue != null && (info.InitValue.Contains('\r') || info.InitValue.Contains('\n'));
             string strData = Info.Data ?? String.Empty;
             strData = strData.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n").Trim('\r', '\n', '\t', ' ');
             txtValue.Text = strData;

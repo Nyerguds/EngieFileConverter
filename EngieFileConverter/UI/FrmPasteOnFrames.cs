@@ -28,7 +28,7 @@ namespace EngieFileConverter.UI
         private Int32 m_PasteAreaWidth;
         private Int32 m_PasteAreaHeight;
 
-        public FrmPasteOnFrames(Int32 frames, Int32 width, Int32 height, Int32 framesBpp, String lastOpenedFolder)
+        public FrmPasteOnFrames(Int32 frames, Int32 width, Int32 height, Int32 framesBpp, String lastOpenedFolder, int curFrame)
         {
             this.m_Frames = frames;
             this.m_PasteAreaWidth = width;
@@ -39,6 +39,10 @@ namespace EngieFileConverter.UI
             this.m_FramesBpp = framesBpp;
             this.numCoordsX.Maximum = width - 1;
             this.numCoordsY.Maximum = height- 1;
+            if (curFrame != -1)
+            {
+                txtFrames.Text = curFrame.ToString();
+            }
             if (m_FramesBpp > 0 && m_FramesBpp <= 8)
             {
                 this.rbtMatchPalette.Enabled = true;

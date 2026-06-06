@@ -346,30 +346,29 @@ namespace Nyerguds.ImageManipulation
         /// <summary>
         /// Palette compare. Replacement for SequenceEquals, since it's bloody slow, and with added support to ignore alpha.
         /// </summary>
-        /// <param name="palette1"></param>
-        /// <param name="palette2"></param>
-        /// <param name="ignoreAlpha"></param>
+        /// <param name="palette1">Colour palette.</param>
+        /// <param name="palette2">Colour palette to compare with.</param>
+        /// <param name="ignoreAlpha">True to ignore the alpha components of the colours.</param>
         /// <returns></returns>
         internal static Boolean PalettesAreEqual(Color[] palette1, Color[] palette2, Boolean ignoreAlpha)
         {
             // Replacement for SequenceEquals, since it's bloody slow.
-            Int32 pal1Length = palette1.Length;
+            int pal1Length = palette1.Length;
             if (pal1Length != palette2.Length)
                 return false;
             if (ignoreAlpha)
             {
-                for (Int32 i = 0; i < pal1Length; ++i)
+                for (int i = 0; i < pal1Length; ++i)
                 {
-                    if ((((UInt32)palette1[i].ToArgb()) & 0x00FFFFFF) == (((UInt32)palette2[i].ToArgb()) & 0x00FFFFFF))
-                        continue;
-                    return false;
+                    if ((((uint)palette1[i].ToArgb()) & 0x00FFFFFF) != (((uint)palette2[i].ToArgb()) & 0x00FFFFFF))
+                        return false;
                 }
+                return true;
             }
-            for (Int32 i = 0; i < pal1Length; ++i)
+            for (int i = 0; i < pal1Length; ++i)
             {
-                if (palette1[i].ToArgb() == palette2[i].ToArgb())
-                    continue;
-                return false;
+                if (palette1[i].ToArgb() != palette2[i].ToArgb())
+                    return false;
             }
             return true;
         }

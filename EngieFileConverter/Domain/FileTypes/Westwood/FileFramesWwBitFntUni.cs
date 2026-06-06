@@ -362,13 +362,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         // Seems x.SequenceEquals(y) is about 4x as slow as a simple 'for' loop here, so I stopped using it.
                         // Since they're stride-adjusted, the arrays are all of equal length at this point anyway.
-                        for (Int32 b = 0; b < blockLength; ++b)
-                        {
-                            if (curWritesymbol[b] == curChecksymbol[b])
-                                continue;
-                            isEqual = false;
-                            break;
-                        }
+                        isEqual = ArrayUtils.ArraysAreEqual(curWritesymbol, curChecksymbol);
                         if (!isEqual)
                             continue;
                     }

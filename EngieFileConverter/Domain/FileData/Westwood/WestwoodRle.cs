@@ -14,23 +14,24 @@ namespace Nyerguds.FileData.Westwood
         protected override UInt32 MaxRepeatValue { get { return UInt16.MaxValue; } }
         protected override UInt32 MaxCopyValue { get { return 0x7F; } }
 
-        protected Boolean m_SwapWords;
+        protected Boolean m_SwapWordsLE;
 
         /// <summary>
-        /// Initialises a new WestwoodRLE compression object, with the "swap words" option defaulting to true (PC format).
+        /// Initialises a new WestwoodRLE compression object, with the "swap words" option defaulting to false (PC format).
         /// </summary>
         public WestwoodRle()
         {
-            this.m_SwapWords = true;
+            this.m_SwapWordsLE = false;
         }
 
         /// <summary>
         /// Initialises a new WestwoodRLE compression object.
         /// </summary>
-        /// <param name="swapWords">True to use little-endian (PC format) for 16-bit values.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding
+        /// and decoding them as little-endian. Note that on PC, these are normally handled as big-endian.</param>
         public WestwoodRle(Boolean swapWords)
         {
-            this.m_SwapWords = swapWords;
+            this.m_SwapWordsLE = swapWords;
         }
 
         /// <summary>
@@ -40,7 +41,8 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="startOffset">Start offset in buffer.</param>
         /// <param name="endOffset">End offset in buffer.</param>
         /// <param name="decompressedSize">The expected size of the decompressed data.</param>
-        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, decoding them as little-endian.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding
+        /// and decoding them as little-endian. Note that on PC, these are normally handled as big-endian.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return null.</param>
         /// <returns>A byte array of the given output size, filled with the decompressed data.</returns>
         public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean swapWords, Boolean abortOnError)
@@ -56,10 +58,11 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="startOffset">Start offset in buffer.</param>
         /// <param name="endOffset">End offset in buffer.</param>
         /// <param name="bufferOut">Output array. Determines the maximum that can be decoded.</param>
-        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, decoding them as little-endian.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding
+        /// and decoding them as little-endian. Note that on PC, these are normally handled as big-endian.</param>
         /// <param name="abortOnError">If true, any found command with amount "0" in it will cause the process to abort and return -1.</param>
         /// <returns>The amount of written bytes in bufferOut.</returns>
-        public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Byte[] bufferOut, Boolean swapWords, Boolean abortOnError)
+        public static Int32 RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, ref Byte[] bufferOut, Boolean swapWords, Boolean abortOnError)
         {
             WestwoodRle rle = new WestwoodRle(swapWords);
             return rle.RleDecodeData(buffer, startOffset, endOffset, ref bufferOut, abortOnError);
@@ -69,7 +72,8 @@ namespace Nyerguds.FileData.Westwood
         /// Applies Run-Length Encoding (RLE) to the given data.
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
-        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding them as little-endian.</param>
+        /// <param name="swapWords">Swaps the bytes of the long-repetition Int16 values, encoding
+        /// and decoding them as little-endian. Note that on PC, these are normally handled as big-endian.</param>
         /// <returns>The run-length encoded data.</returns>
         public static Byte[] RleEncode(Byte[] buffer, Boolean swapWords)
         {
@@ -109,7 +113,7 @@ namespace Nyerguds.FileData.Westwood
                     amount = 0;
                     return false;
                 }
-                amount = (UInt32)(this.m_SwapWords ? buffer[inPtr++] + (buffer[inPtr++] << 8) : (buffer[inPtr++] << 8) + buffer[inPtr++]);
+                amount = (UInt32)(this.m_SwapWordsLE ? buffer[inPtr++] + (buffer[inPtr++] << 8) : (buffer[inPtr++] << 8) + buffer[inPtr++]);
             }
             return true;
         }
@@ -141,8 +145,8 @@ namespace Nyerguds.FileData.Westwood
                     Byte lenHi = (Byte)((amount >> 8) & 0xFF);
                     Byte lenLo = (Byte)(amount & 0xFF);
                     bufferOut[outPtr++] = 0;
-                    bufferOut[outPtr++] = this.m_SwapWords ? lenLo : lenHi;
-                    bufferOut[outPtr++] = this.m_SwapWords ? lenHi : lenLo;
+                    bufferOut[outPtr++] = this.m_SwapWordsLE ? lenLo : lenHi;
+                    bufferOut[outPtr++] = this.m_SwapWordsLE ? lenHi : lenLo;
                 }
             }
             else

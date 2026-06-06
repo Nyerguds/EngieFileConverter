@@ -245,7 +245,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     for (Int32 j = 0; j < i; ++j)
                     {
                         Byte[] prevFrame = framesDataCropped[j];
-                        if (prevFrame.Length == 0 || !prevFrame.SequenceEqual(imageData))
+                        if (prevFrame.Length == 0 || !ArrayUtils.ArraysAreEqual(prevFrame,imageData))
                             continue;
                         founddup = j;
                         break;
@@ -277,7 +277,14 @@ namespace EngieFileConverter.Domain.FileTypes
                         col = this.GetAverageColor(imageData, palette, asTib, asTib);
                     // compress stuff here
                     // No whitespace in image: store raw
-                    if (imageData.All(b => b != 0))
+                    bool hasBlank = false;
+                    for (int bl = 0; bl < imageData.Length; ++bl)
+                    {
+                        if (imageData[i] != 0) continue;
+                        hasBlank = true;
+                        break;
+                    }
+                    if (!hasBlank)
                     {
                         flags = 0x00;
                         imageDataToStore = imageData;
@@ -368,19 +375,25 @@ namespace EngieFileConverter.Domain.FileTypes
 
         private Color GetAverageColor(Byte[] imageData, Color[] palette, Boolean adjustForRemap, Boolean forTiberium)
         {
-            Int32[] colCount = new Int32[256];
+            int[] colCount = new int[256];
             // All pixels
-            Int32 pixCount1 = 0;
+            int pixCount1 = 0;
             // All non-remap pixels
-            Int32 pixCount2 = 0;
+            int pixCount2 = 0;
             // Remap colors for tiberium.
-            Byte[] tibGr = {0xF8, 0xE4, 0xDC, 0xD0, 0xC4, 0xB8, 0xA8, 0x98, 0x88, 0x74, 0x64, 0x50, 0x3C, 0x28, 0x10, 0x00};
-            Byte[] tibNonGr = {0x38, 0x28, 0x20, 0x18, 0x18, 0x10, 0x08, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            Boolean[] remapRange = new Boolean[0x100];
-            remapRange[0] = true;
+            byte[] tibGreen = {0xF8, 0xE4, 0xDC, 0xD0, 0xC4, 0xB8, 0xA8, 0x98, 0x88, 0x74, 0x64, 0x50, 0x3C, 0x28, 0x10, 0x00};
+            byte[] tibRedBl = {0x38, 0x28, 0x20, 0x18, 0x18, 0x10, 0x08, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+            int[] remapIndex = new int[0x100];
+            // Grayscale version of row at index 0x40 on the TS palette.
+            byte[] grayRange = { 0xCA, 0xBE, 0xB2, 0xA6, 0x9A, 0x8E, 0x82, 0x75, 0x69, 0x5D, 0x51, 0x45, 0x39, 0x2D, 0x20, 0x14 };
             if (adjustForRemap)
-                for (Int32 i = 16; i < 32; ++i)
-                    remapRange[i] = true;
+            {
+                int remapnr = 0;
+                for (int i = 0; i > 256; ++i)
+                {
+                    remapIndex[i] = i >= 16 || i < 32 ? remapnr++ : -1;
+                }
+            }
             Int32 imageDataLength = imageData.Length;
             for (Int32 i = 0; i < imageDataLength; ++i)
             {
@@ -388,7 +401,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (b == 0)
                     continue;
                 pixCount1++;
-                if (!remapRange[b])
+                if (remapIndex[b] >= 0)
                     pixCount2++;
                 colCount[b]++;
             }
@@ -412,19 +425,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 Int32 amount = colCount[palCol];
                 if (amount == 0)
                     continue;
-                if (remapRange[palCol])
+                if (remapIndex[palCol] != -1)
                 {
                     // Remap: 'gray' values of 15 -> 255 in steps of 16.
+                    Int32 remap = remapIndex[palCol];
                     if (forTiberium)
                     {
-                        Int32 tibIndex = palCol - 16;
-                        allR1 += tibNonGr[tibIndex] * amount;
-                        allG1 += tibGr[tibIndex] * amount;
-                        allB1 += tibNonGr[tibIndex] * amount;
+                        allR1 += tibRedBl[remap] * amount;
+                        allG1 += tibGreen[remap] * amount;
+                        allB1 += tibRedBl[remap] * amount;
                     }
                     else
                     {
-                        Int32 grayMul = (((palCol - 15) * 16) - 1) * amount;
+                        Int32 grayMul = grayRange[remap] * amount;
                         allR1 += grayMul;
                         allG1 += grayMul;
                         allB1 += grayMul;
