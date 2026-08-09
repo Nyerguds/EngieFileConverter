@@ -652,8 +652,20 @@ namespace EngieFileConverter.Domain.FileTypes
             // To ensure the file size is correct
             if (continues && framesData.Length > 0)
                 framesData[0] = new Byte[0];
-            // I dunno lol just following specs.
-            deltaBufferSize = Math.Max(0, deltaBufferSize - 37);
+            // deltaBufferSize is already the true largest pre-LCW delta-frame size computed
+            // above. The moddingwiki WSA format page documents that real Westwood-built
+            // files always store a value 37 bytes *smaller* than the actual required
+            // buffer size ("through some development quirk"), i.e. writers must still
+            // provide *more* than the raw computed size, not less. The previous code
+            // subtracted 37 here instead, apparently by treating this as the inverse of
+            // the "+= 37" read-side safety pad in LoadFromFileData -- it isn't, and doing
+            // so under-declares the buffer real decoders (DOSBox, the original DUNE2.EXE,
+            // OpenDUNE) allocate to decode the frame, causing crashes/corruption in-game
+            // even though the saved file loads back into Engie fine. Empirically, matching
+            // the safety margin real Westwood files carry (verified by round-tripping
+            // Dune II's WESTWOOD.WSA and INTRO1.WSA and confirming clean playback in real
+            // DOSBox-X) requires *adding* margin, not subtracting it.
+            deltaBufferSize += 35;
             Int32 headerSize = 14;
             if (saveType == WsaVersion.Dune2)
                 headerSize -= 4;
