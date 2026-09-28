@@ -9,7 +9,7 @@ namespace EngieFileConverter
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
-        public static Int32 Run(String[] args)
+        public static int Run(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

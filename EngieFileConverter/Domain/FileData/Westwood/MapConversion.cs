@@ -11,19 +11,19 @@ namespace Nyerguds.FileData.Westwood
 {
     public static class MapConversion
     {
-        public static readonly Dictionary<Int32, TileInfo> TILEINFO_TD = ReadTileInfoTd();
-        public static readonly Dictionary<Int32, TileInfo> TILEINFO_RA = ReadTileInfoRa();
-        public static readonly Dictionary<String, StructInfo> STRUCTUREINFO = ReadStructInfo(EngieFileConverter.Properties.Resources.structs, "structs.ini", "Structures");
-        public static readonly Dictionary<String, StructInfo> TERRAININFO = ReadStructInfo(EngieFileConverter.Properties.Resources.terrain, "terrain.ini", "Terrain");
-        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", EngieFileConverter.Properties.Resources.th_desert);
-        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", EngieFileConverter.Properties.Resources.th_temperate);
-        public static readonly Dictionary<Int32, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
-        public static readonly Dictionary<Int32, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
+        public static readonly Dictionary<int, TileInfo> TILEINFO_TD = ReadTileInfoTd();
+        public static readonly Dictionary<int, TileInfo> TILEINFO_RA = ReadTileInfoRa();
+        public static readonly Dictionary<string, StructInfo> STRUCTUREINFO = ReadStructInfo(EngieFileConverter.Properties.Resources.structs, "structs.ini", "Structures");
+        public static readonly Dictionary<string, StructInfo> TERRAININFO = ReadStructInfo(EngieFileConverter.Properties.Resources.terrain, "terrain.ini", "Terrain");
+        public static readonly Dictionary<int, CnCMapCell> DESERT_MAPPING = LoadMapping("th_desert.nms", EngieFileConverter.Properties.Resources.th_desert);
+        public static readonly Dictionary<int, CnCMapCell> TEMPERATE_MAPPING = LoadMapping("th_temperate.nms", EngieFileConverter.Properties.Resources.th_temperate);
+        public static readonly Dictionary<int, CnCMapCell> DESERT_MAPPING_REVERSED = LoadReverseMapping(DESERT_MAPPING);
+        public static readonly Dictionary<int, CnCMapCell> TEMPERATE_MAPPING_REVERSED = LoadReverseMapping(TEMPERATE_MAPPING);
 
-        private static Dictionary<Int32, TileInfo> ReadTileInfoTd()
+        private static Dictionary<int, TileInfo> ReadTileInfoTd()
         {
-            String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
-            String tilesetsData2;
+            string file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2.ini");
+            string tilesetsData2;
             if (File.Exists(file))
                 tilesetsData2 = File.ReadAllText(file);
             else
@@ -31,10 +31,10 @@ namespace Nyerguds.FileData.Westwood
             return ReadTileInfo(tilesetsData2, 0xFF);
         }
 
-        private static Dictionary<Int32, TileInfo> ReadTileInfoRa()
+        private static Dictionary<int, TileInfo> ReadTileInfoRa()
         {
-            String file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2ra.ini");
-            String tilesetsData2;
+            string file = Path.Combine(GeneralUtils.GetApplicationPath(), "tilesets2ra.ini");
+            string tilesetsData2;
             if (File.Exists(file))
                 tilesetsData2 = File.ReadAllText(file);
             else
@@ -42,14 +42,14 @@ namespace Nyerguds.FileData.Westwood
             return ReadTileInfo(tilesetsData2, 0xFFFF);
         }
 
-        private static Dictionary<Int32, TileInfo> ReadTileInfo(string tilesFile, int maxId)
+        private static Dictionary<int, TileInfo> ReadTileInfo(string tilesFile, int maxId)
         {
             IniFile tilesetsFile2 = new IniFile(null, tilesFile, true, IniFile.ENCODING_DOS_US, true);
-            Dictionary<Int32, TileInfo> tileInfo2 = new Dictionary<Int32, TileInfo>();
+            Dictionary<int, TileInfo> tileInfo2 = new Dictionary<int, TileInfo>();
             //tilesets2.ini - new loading code
-            for (Int32 currentId = 0; currentId < maxId; ++currentId)
+            for (int currentId = 0; currentId < maxId; ++currentId)
             {
-                String sectionName = tilesetsFile2.GetStringValue("TileSets", currentId.ToString(), null);
+                string sectionName = tilesetsFile2.GetStringValue("TileSets", currentId.ToString(), null);
                 if (sectionName == null)
                     continue;
                 if (sectionName.StartsWith("WC"))
@@ -58,22 +58,22 @@ namespace Nyerguds.FileData.Westwood
                 }
                 TileInfo info = new TileInfo();
                 info.TileName = sectionName;
-                Int32 width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
-                Int32 height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
+                int width = tilesetsFile2.GetIntValue(sectionName, "X", 1);
+                int height = tilesetsFile2.GetIntValue(sectionName, "Y", 1);
                 info.Width = width;
                 info.Height = height;
                 info.PrimaryHeightType = GeneralUtils.TryParseEnum(tilesetsFile2.GetStringValue(sectionName, "PrimaryType", null), TerrainTypeEnh.Clear, true);
-                Int32 cells = width * height;
-                Char[] types = new Char[cells];
-                for (Int32 y = 0; y < height; ++y)
+                int cells = width * height;
+                char[] types = new char[cells];
+                for (int y = 0; y < height; ++y)
                 {
-                    String typechars = tilesetsFile2.GetStringValue(sectionName, "Terrain" + y, String.Empty);
-                    Int32 len = typechars.Length;
-                    for (Int32 x = 0; x < width; ++x)
+                    string typechars = tilesetsFile2.GetStringValue(sectionName, "Terrain" + y, String.Empty);
+                    int len = typechars.Length;
+                    for (int x = 0; x < width; ++x)
                         types[y * width + x] = x >= len ? '?' : typechars[x];
                 }
                 TerrainTypeEnh[] typedCells = new TerrainTypeEnh[cells];
-                for (Int32 i = 0; i < cells; ++i)
+                for (int i = 0; i < cells; ++i)
                 {
                     switch (types[i])
                     {
@@ -130,47 +130,50 @@ namespace Nyerguds.FileData.Westwood
             return tileInfo2;
         }
 
-        private static Dictionary<String, StructInfo> ReadStructInfo(String structsResource, String structsFilename, String listSection)
+        private static Dictionary<string, StructInfo> ReadStructInfo(string structsResource, string structsFilename, string listSection)
         {
-            String file = Path.Combine(GeneralUtils.GetApplicationPath(), structsFilename);
-            String fileGrids = Path.Combine(GeneralUtils.GetApplicationPath(), "grids.ini");
-            String structData;
+            string file = Path.Combine(GeneralUtils.GetApplicationPath(), structsFilename);
+            string fileGrids = Path.Combine(GeneralUtils.GetApplicationPath(), "grids.ini");
+            string structData;
             if (File.Exists(file))
                 structData = File.ReadAllText(file);
             else
                 structData = structsResource;
             IniFile structsFile = new IniFile(null, structData, true, IniFile.ENCODING_DOS_US, true);
 
-            String gridsData = null;
+            string gridsData = null;
             if (File.Exists(fileGrids))
                 gridsData = File.ReadAllText(fileGrids);
             else
                 gridsData = EngieFileConverter.Properties.Resources.grids;
             IniFile gridsFile = gridsData == null ? null : new IniFile(null, gridsData, true, IniFile.ENCODING_DOS_US, true);
 
-            Dictionary<String, StructInfo> structs = new Dictionary<String, StructInfo>(StringComparer.InvariantCultureIgnoreCase);
-            Dictionary<String, String> structsList = structsFile.GetSectionContent(listSection);
+            Dictionary<string, StructInfo> structs = new Dictionary<string, StructInfo>(StringComparer.InvariantCultureIgnoreCase);
+            Dictionary<string, string> structsList = structsFile.GetSectionContent(listSection);
             Regex dimRegex = new Regex("^\\s*(\\d+)\\s*x\\s*(\\d+)\\s*$", RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            Int32 curId = 0;
-            String curIdStr = curId.ToString();
+            int curId = 0;
+            string curIdStr = curId.ToString();
             while (structsList.ContainsKey(curIdStr))
             {
-                String structName = structsList[curIdStr];
-                Dictionary<String, String> structInfo = structsFile.GetSectionContent(structName);
-                String occupy;
-                Int32 width = 1;
+                string structName = structsList[curIdStr];
+                Dictionary<string, string> structInfo = structsFile.GetSectionContent(structName);
+                string occupy;
+                int width = 1;
                 if (gridsFile != null && structInfo.ContainsKey("OccupyList"))
-                    occupy = GetOccupyList(gridsFile, structInfo["OccupyList"], out width);
-                else
-                    occupy = String.Empty;
-                
-                Boolean[] occupyList = new Boolean[occupy.Length];
-                for (Int32 i = 0; i < occupy.Length; ++i)
                 {
-                    Char cell = occupy[i];
+                    occupy = GetOccupyList(gridsFile, structInfo["OccupyList"], out width);
+                }
+                else
+                {
+                    occupy = String.Empty;
+                }
+                bool[] occupyList = new bool[occupy.Length];
+                for (int i = 0; i < occupy.Length; ++i)
+                {
+                    char cell = occupy[i];
                     occupyList[i] = isAlphabetChar(cell);
                 }
-                String dimensions;
+                string dimensions;
                 if (!structInfo.TryGetValue("Dimensions", out dimensions))
                     dimensions = "1x1";
                 Match dimMatch = dimRegex.Match(dimensions);
@@ -190,12 +193,12 @@ namespace Nyerguds.FileData.Westwood
             return structs;
         }
 
-        private static String GetOccupyList(IniFile gridsFile, String gridName, out Int32 width)
+        private static string GetOccupyList(IniFile gridsFile, string gridName, out int width)
         {
-            Dictionary<String, String> grid = gridsFile.GetSectionContent(gridName);
-            Int32 curId = 0;
-            String curIdStr = curId.ToString();
-            List<String> lines = new List<String>();
+            Dictionary<string, string> grid = gridsFile.GetSectionContent(gridName);
+            int curId = 0;
+            string curIdStr = curId.ToString();
+            List<string> lines = new List<string>();
             while (grid.ContainsKey(curIdStr))
             {
                 lines.Add(grid[curIdStr]);
@@ -204,56 +207,51 @@ namespace Nyerguds.FileData.Westwood
             }
             StringBuilder fullGrid = new StringBuilder();
             width = lines.Max(ln => ln.Length);
-            foreach (String line in lines)
+            foreach (string line in lines)
             {
-                Int32 add = width - line.Length;
+                int add = width - line.Length;
                 fullGrid.Append(line);
                 if (add > 0)
-                    fullGrid.Append(new String('-', add));
+                    fullGrid.Append(new string('-', add));
             }
             return fullGrid.ToString();
         }
 
-        private static Boolean isAlphabetChar(Char ch)
+        private static bool isAlphabetChar(char ch)
         {
             return ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'));
         }
 
-        private static Dictionary<Int32, CnCMapCell> LoadMapping(String filename, Byte[] internalFallback)
+        private static Dictionary<int, CnCMapCell> LoadMapping(string filename, byte[] internalFallback)
         {
-            String[] errors;
-            String file = Path.Combine(GeneralUtils.GetApplicationPath(), filename);
-            Byte[] mappingBytes;
-            if (File.Exists(file))
-                mappingBytes = File.ReadAllBytes(file);
-            else
-                mappingBytes = internalFallback;
-            return LoadMapping(mappingBytes, out errors);
+            string file = Path.Combine(GeneralUtils.GetApplicationPath(), filename);
+            byte[] mappingBytes = File.Exists(file) ? File.ReadAllBytes(file) : internalFallback;
+            return LoadMapping(mappingBytes, out _);
         }
 
-        private static Dictionary<Int32, CnCMapCell> LoadReverseMapping(Dictionary<Int32, CnCMapCell> mapping)
+        private static Dictionary<int, CnCMapCell> LoadReverseMapping(Dictionary<int, CnCMapCell> mapping)
         {
-            Dictionary<Int32, CnCMapCell> newmapping = new Dictionary<Int32, CnCMapCell>();
+            Dictionary<int, CnCMapCell> newmapping = new Dictionary<int, CnCMapCell>();
             List<CnCMapCell> errorcells;
-            Dictionary<Int32, CnCMapCell[]> mapping2 = GetReverseMapping(mapping, out errorcells);
-            foreach (Int32 val in mapping2.Keys)
+            Dictionary<int, CnCMapCell[]> mapping2 = GetReverseMapping(mapping, out errorcells);
+            foreach (int val in mapping2.Keys)
                 newmapping.Add(val, mapping2[val][0]);
             return newmapping;
         }
 
 
-        private static Dictionary<Int32, CnCMapCell> LoadMapping(Byte[] fileData, out String[] errors)
+        private static Dictionary<int, CnCMapCell> LoadMapping(byte[] fileData, out string[] errors)
         {
-            List<String> errorMessages = new List<String>();
-            Dictionary<Int32, CnCMapCell> n64MapValues = new Dictionary<Int32, CnCMapCell>();
-            Dictionary<Int32, CnCMapCell> reverseValues = new Dictionary<Int32, CnCMapCell>();
+            List<string> errorMessages = new List<string>();
+            Dictionary<int, CnCMapCell> n64MapValues = new Dictionary<int, CnCMapCell>();
+            Dictionary<int, CnCMapCell> reverseValues = new Dictionary<int, CnCMapCell>();
             using (MemoryStream ms = new MemoryStream(fileData))
             {
-                Int32 amount = (Int32)ms.Length / 4;
+                int amount = (int)ms.Length / 4;
                 if (ms.Length != amount * 4)
                     throw new ArgumentException("file size must be divisible by 4.", "fileData");
-                Byte[] buffer = new Byte[4];
-                for (Int32 i = 0; i < amount; ++i)
+                byte[] buffer = new byte[4];
+                for (int i = 0; i < amount; ++i)
                 {
                     if (ms.Read(buffer, 0, 4) == 4)
                     {
@@ -276,16 +274,16 @@ namespace Nyerguds.FileData.Westwood
             return n64MapValues;
         }
 
-        public static Byte[] SaveMapping(Dictionary<Int32, CnCMapCell> mapping)
+        public static byte[] SaveMapping(Dictionary<int, CnCMapCell> mapping)
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                List<Int32> keys = new List<Int32>(mapping.Keys);
+                List<int> keys = new List<int>(mapping.Keys);
                 keys.Sort();
-                Int32 keyCount = keys.Count;
-                for (Int32 i = 0; i < keyCount; ++i)
+                int keyCount = keys.Count;
+                for (int i = 0; i < keyCount; ++i)
                 {
-                    Int32 key = keys[i];
+                    int key = keys[i];
                     CnCMapCell n64Cell = new CnCMapCell(key);
                     CnCMapCell pcCell = mapping[key];
                     ms.WriteByte((byte)n64Cell.TemplateType);
@@ -298,10 +296,10 @@ namespace Nyerguds.FileData.Westwood
             }
         }
 
-        public static CnCMap ConvertMap(CnCMap map, Dictionary<Int32, CnCMapCell> mapping, Byte? defaultHigh, Byte? defaultLow, Boolean toN64, out List<CnCMapCell> errorcells)
+        public static CnCMap ConvertMap(CnCMap map, Dictionary<int, CnCMapCell> mapping, byte? defaultHigh, byte? defaultLow, bool toN64, out List<CnCMapCell> errorcells)
         {
-            Byte highByte = defaultHigh.GetValueOrDefault(0xFF);
-            Byte lowByte = defaultLow.GetValueOrDefault((Byte)(toN64 ? 0xFF : 0x00));
+            byte highByte = defaultHigh.GetValueOrDefault(0xFF);
+            byte lowByte = defaultLow.GetValueOrDefault((byte)(toN64 ? 0xFF : 0x00));
             CnCMap newmap = new CnCMap(map.GetAsBytes(), false);
             if (toN64)
             {
@@ -310,9 +308,9 @@ namespace Nyerguds.FileData.Westwood
                 RemoveSnow(newmap);
             }
             errorcells = new List<CnCMapCell>();
-            for (Int32 i = 0; i < CnCMap.LENGTH_TD; ++i)
+            for (int i = 0; i < CnCMap.LENGTH_TD; ++i)
             {
-                Int32 cellvalue = newmap[i].ValueTD;
+                int cellvalue = newmap[i].ValueTD;
                 if ((!toN64 && cellvalue == 0xFFFF) || (toN64 && cellvalue == 0xFF00))
                 {
                     newmap[i] = new CnCMapCell(toN64 ? 0xFFFF : 0xFF00);
@@ -330,11 +328,11 @@ namespace Nyerguds.FileData.Westwood
             return newmap;
         }
 
-        private static Dictionary<Int32, CnCMapCell[]> GetReverseMapping(Dictionary<Int32, CnCMapCell> mapping, out List<CnCMapCell> errorcells)
+        private static Dictionary<int, CnCMapCell[]> GetReverseMapping(Dictionary<int, CnCMapCell> mapping, out List<CnCMapCell> errorcells)
         {
-            Dictionary<Int32, CnCMapCell[]> newmapping = new Dictionary<Int32, CnCMapCell[]>();
+            Dictionary<int, CnCMapCell[]> newmapping = new Dictionary<int, CnCMapCell[]>();
             errorcells = new List<CnCMapCell>();
-            foreach (Int32 mapval in mapping.Keys)
+            foreach (int mapval in mapping.Keys)
             {
                 CnCMapCell cell = mapping[mapval];
                 if (!newmapping.ContainsKey(cell.ValueTD))
@@ -358,11 +356,11 @@ namespace Nyerguds.FileData.Westwood
         /// </summary>
         /// <param name="mapData">Map data.</param>
         /// <returns>The map data simplified to terrain types.</returns>
-        public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData, Dictionary<Int32, TileInfo> tileInfo)
+        public static TerrainTypeEnh[] SimplifyMap(CnCMap mapData, Dictionary<int, TileInfo> tileInfo)
         {
             int emptyType = mapData.IsRaType ? 0xFFFF : 0xFF;
             TerrainTypeEnh[] simplifiedMap = new TerrainTypeEnh[mapData.Cells.Length];
-            for (Int32 i = 0; i < mapData.Cells.Length; ++i)
+            for (int i = 0; i < mapData.Cells.Length; ++i)
             {
                 CnCMapCell cell = mapData.Cells[i];
                 TerrainTypeEnh terrain = TerrainTypeEnh.Clear;
@@ -390,7 +388,7 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="map">The map to fix.</param>
         public static void CleanUpMapClearTerrain(CnCMap map)
         {
-            for (Int32 i = 0; i < CnCMap.LENGTH_TD; ++i)
+            for (int i = 0; i < CnCMap.LENGTH_TD; ++i)
             {
                 CnCMapCell cell = map.Cells[i];
                 if (cell.TemplateType == 0 // XCC
@@ -408,7 +406,7 @@ namespace Nyerguds.FileData.Westwood
         /// <param name="map">Removes snow from a map, since the N64 version can't handle it.</param>
         public static void RemoveSnow(CnCMap map)
         {
-            for (Int32 i = 0; i < CnCMap.LENGTH_TD; ++i)
+            for (int i = 0; i < CnCMap.LENGTH_TD; ++i)
             {
                 CnCMapCell cell = map.Cells[i];
                 TileInfo tileInfo;

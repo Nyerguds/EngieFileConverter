@@ -9,7 +9,7 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileTblWwPal : SupportedFileType
     {
-        public override String IdCode { get { return "WwTbl"; } }
+        public override string IdCode { get { return "WwTbl"; } }
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
@@ -18,14 +18,14 @@ namespace EngieFileConverter.Domain.FileTypes
         //protected Int32 m_Width = 0x101;
         //protected Int32 m_Height = 0x101;
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood PAL Table"; } }
-        public override String[] FileExtensions { get { return new String[] {"pal"}; } }
-        public override String LongTypeName  { get { return "Westwood Palette Stretch Table"; } }
-        public override Boolean NeedsPalette  { get { return true; } }
-        public override Int32 BitsPerPixel  { get { return 8; } }
-        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
+        public override string ShortTypeName { get { return "Westwood PAL Table"; } }
+        public override string[] FileExtensions { get { return new string[] {"pal"}; } }
+        public override string LongTypeName  { get { return "Westwood Palette Stretch Table"; } }
+        public override bool NeedsPalette  { get { return true; } }
+        public override int BitsPerPixel  { get { return 8; } }
+        public override bool[] TransparencyMask { get { return new bool[0]; } }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             return new Option[]
             {
@@ -35,23 +35,23 @@ namespace EngieFileConverter.Domain.FileTypes
             };
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, true);
-            List<Int32> ignorelistInput = this.GetIndices(Option.GetSaveOptionValue(saveOptions, "IGI"));
-            List<Int32> ignorelistMatch = this.GetIndices(Option.GetSaveOptionValue(saveOptions, "IGM"));
-            Boolean dupOnExcluded = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "DUP"));
+            List<int> ignorelistInput = this.GetIndices(Option.GetSaveOptionValue(saveOptions, "IGI"));
+            List<int> ignorelistMatch = this.GetIndices(Option.GetSaveOptionValue(saveOptions, "IGM"));
+            bool dupOnExcluded = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "DUP"));
             return GenerateInterlaceTable(cols, ignorelistInput, dupOnExcluded, ignorelistMatch);
         }
 
@@ -63,35 +63,35 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="dupOnExcluded"></param>
         /// <param name="exclIndTrg"></param>
         /// <returns></returns>
-        public static Byte[] GenerateInterlaceTable(Color[] colorPalette, List<Int32> exclIndSrc, Boolean dupOnExcluded, List<Int32> exclIndTrg)
+        public static byte[] GenerateInterlaceTable(Color[] colorPalette, List<int> exclIndSrc, bool dupOnExcluded, List<int> exclIndTrg)
         {
             if (colorPalette.Length > 0x100)
                 return null;
             Color[] palette = new Color[0x100];
             colorPalette.CopyTo(palette, 0);
 
-            Boolean[] excludedFrom = new Boolean[0x100];
-            for (Int32 i = 0; i < 0x100; ++i)
+            bool[] excludedFrom = new bool[0x100];
+            for (int i = 0; i < 0x100; ++i)
             {
-                Int32 index = exclIndSrc[i];
+                int index = exclIndSrc[i];
                 if (index >= 0 && index < 0x100)
                     excludedFrom[index] = true;
             }
-            Byte[] interlaceTable = new Byte[0x10000];
-            for (Int32 y = 0; y < 0x100; ++y)
+            byte[] interlaceTable = new byte[0x10000];
+            for (int y = 0; y < 0x100; ++y)
             {
-                for (Int32 x = y; x < 0x100; ++x)
+                for (int x = y; x < 0x100; ++x)
                 {
-                    Byte value;
-                    Boolean equal = y == x;
-                    Boolean exclX = excludedFrom[x];
-                    Boolean exclY = excludedFrom[y];
+                    byte value;
+                    bool equal = y == x;
+                    bool exclX = excludedFrom[x];
+                    bool exclY = excludedFrom[y];
                     if (equal)
-                        value = (Byte)y;
+                        value = (byte)y;
                     else if (exclX || exclY)
-                        value = dupOnExcluded ? (exclX ? (Byte)x : (Byte)y) : (Byte)0;
+                        value = dupOnExcluded ? (exclX ? (byte)x : (byte)y) : (byte)0;
                     else
-                        value = (Byte)ColorUtils.GetClosestPaletteIndexMatch(ColorUtils.GetAverageColor(colorPalette[x], colorPalette[y]), palette, exclIndTrg);
+                        value = (byte)ColorUtils.GetClosestPaletteIndexMatch(ColorUtils.GetAverageColor(colorPalette[x], colorPalette[y]), palette, exclIndTrg);
                     interlaceTable[y * 0x100 + x] = value;
                     if (!equal)
                         interlaceTable[x * 0x100 + y] = value;
@@ -100,28 +100,28 @@ namespace EngieFileConverter.Domain.FileTypes
             return interlaceTable;
         }
 
-        protected List<Int32> GetIndices(String excl)
+        protected List<int> GetIndices(string excl)
         {
-            String[] indices = excl.Split(new Char[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries);
-            List<Int32> indicesInt = new List<Int32>();
-            Int32 indicesLength = indices.Length;
-            for (Int32 i = 0; i < indicesLength; ++i)
+            string[] indices = excl.Split(new char[] { ',', ' ', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            List<int> indicesInt = new List<int>();
+            int indicesLength = indices.Length;
+            for (int i = 0; i < indicesLength; ++i)
             {
-                String index = indices[i];
-                try { indicesInt.Add(Byte.Parse(index)); }
+                string index = indices[i];
+                try { indicesInt.Add(byte.Parse(index)); }
                 catch (Exception e) { throw new NotSupportedException("Given indices contain illegal values.", e); }
             }
             return indicesInt;
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
-            const Int32 reqSize = 0x10000;
+            const int reqSize = 0x10000;
             if (fileData.Length != reqSize)
                 throw new FileTypeLoadException("File is not " + reqSize + " bytes long.");
-            for (Int32 y = 0; y < 256; ++y)
+            for (int y = 0; y < 256; ++y)
             {
-                for (Int32 x = y; x < 256; ++x)
+                for (int x = y; x < 256; ++x)
                 {
                     if (fileData[x*256 + y] != fileData[y*256 + x])
                         throw new FileTypeLoadException("File format redundancy check failed.");

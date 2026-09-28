@@ -20,29 +20,29 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "CgspNova"; } }
+        public override string IdCode { get { return "CgspNova"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Nova image"; } }
-        public override String[] FileExtensions { get { return new String[] { "ppp" }; } }
-        public override String LongTypeName { get { return "Nova image file"; } }
-        public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "Nova image"; } }
+        public override string[] FileExtensions { get { return new string[] { "ppp" }; } }
+        public override string LongTypeName { get { return "Nova image file"; } }
+        public override bool NeedsPalette { get { return !this.m_PaletteLoaded; } }
+        public override int BitsPerPixel { get { return 8; } }
         public override SupportedFileType[] Frames { get { return this.m_Frames; } }
 
-        protected Boolean m_PaletteLoaded;
+        protected bool m_PaletteLoaded;
         protected SupportedFileType[] m_Frames;
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < 5)
                 throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (ArrayUtils.ReadIntFromByteArray(fileData, 0, 3, true) != 0x564F4E)
                 throw new FileTypeLoadException("Not a " + this.ShortTypeName + ".");
             // Decompress flag-based RLE.
-            Byte[] fileDataUnc;
+            byte[] fileDataUnc;
             try
             {
                 fileDataUnc = PppCompression.DecompressPppRle(fileData);
@@ -60,60 +60,60 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException(ERR_DECOMPR_ERR, GeneralUtils.RecoverArgExceptionMessage(ex, true));
             }
-            Int32 len = fileDataUnc.Length;
+            int len = fileDataUnc.Length;
             if (len < 8)
                 throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
             // The final check on the "NOVA" string at the start.
             if (ArrayUtils.ReadUInt32FromByteArrayLe(fileDataUnc, 0) != 0x41564F4E)
                 throw new FileTypeLoadException("Not a " + this.ShortTypeName + ".");
-            Int32 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileDataUnc, 4);
-            Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileDataUnc, 6);
-            String paletteFilename = Path.GetFileNameWithoutExtension(sourcePath) + ".pal";
-            String palettePath = sourcePath == null ? null : Path.Combine(Path.GetDirectoryName(sourcePath), paletteFilename);
-            List<String> extraInfo = new List<String>();
+            int width = ArrayUtils.ReadUInt16FromByteArrayLe(fileDataUnc, 4);
+            int height = ArrayUtils.ReadUInt16FromByteArrayLe(fileDataUnc, 6);
+            string paletteFilename = Path.GetFileNameWithoutExtension(sourcePath) + ".pal";
+            string palettePath = sourcePath == null ? null : Path.Combine(Path.GetDirectoryName(sourcePath), paletteFilename);
+            List<string> extraInfo = new List<string>();
             if (palettePath != null && File.Exists(palettePath) && new FileInfo(palettePath).Length == 0x300)
             {
                 this.m_Palette = ColorUtils.ReadSixBitPaletteFile(palettePath, true);
                 this.m_PaletteLoaded = true;
                 extraInfo.Add("Palette loaded from " + paletteFilename);
             }
-            Int32 imageSize = width * height;
+            int imageSize = width * height;
             if (imageSize + 8 != len)
                 throw new FileTypeLoadException("File size does not match.");
-            Byte[] imageData = new Byte[imageSize];
+            byte[] imageData = new byte[imageSize];
             Array.Copy(fileDataUnc, 8, imageData, 0, imageSize);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
-            Int32 cinemaFrames =  this.CheckForCinemaFrames(sourcePath);
+            int cinemaFrames =  this.CheckForCinemaFrames(sourcePath);
             if (cinemaFrames > 0)
                 extraInfo.Add(cinemaFrames + " cinema frames found.");
             this.ExtraInfo = String.Join("\n", extraInfo.ToArray());
             this.SetFileNames(sourcePath);
         }
 
-        private Int32 CheckForCinemaFrames(String sourcePath)
+        private int CheckForCinemaFrames(string sourcePath)
         {
             if (sourcePath == null)
                 return 0;
-            String path = Path.GetDirectoryName(sourcePath);
-            String filename = Path.GetFileName(sourcePath);
-            String filenameBase = Path.GetFileNameWithoutExtension(sourcePath);
+            string path = Path.GetDirectoryName(sourcePath);
+            string filename = Path.GetFileName(sourcePath);
+            string filenameBase = Path.GetFileNameWithoutExtension(sourcePath);
             Regex nameRegex = new Regex("^([a-z]+)(\\d)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
             Match m = nameRegex.Match(filenameBase);
             if (!m.Success)
                 return 0;
-            String baseName = m.Groups[1].Value;
-            String baseNum = m.Groups[2].Value;
+            string baseName = m.Groups[1].Value;
+            string baseNum = m.Groups[2].Value;
 
             List<SupportedFileType> frames = new List<SupportedFileType>();
             Color[] greyPal = PaletteUtils.GenerateGrayPalette(4, null, false);
-            for (Int32 i = 1; i <= 9; ++i)
+            for (int i = 1; i <= 9; ++i)
             {
-                String cinemaFilename = baseName + "." + baseNum + "_" + i;
-                String cinemaFullName = Path.Combine(path, cinemaFilename);
+                string cinemaFilename = baseName + "." + baseNum + "_" + i;
+                string cinemaFullName = Path.Combine(path, cinemaFilename);
                 FileInfo cinemaFrame = new FileInfo(cinemaFullName);
                 if (!cinemaFrame.Exists || cinemaFrame.Length != 10240)
                     continue;
-                Byte[] imageBytes = File.ReadAllBytes(cinemaFullName);
+                byte[] imageBytes = File.ReadAllBytes(cinemaFullName);
                 Bitmap frameImg = ImageUtils.BuildImage(imageBytes, 160, 128, 80, PixelFormat.Format4bppIndexed, greyPal, null);
                 //Headerless grayscale 160x128 4-bit images which show the striptease scenes.
                 FileImageFrame framePic = new FileImageFrame();
@@ -128,25 +128,25 @@ namespace EngieFileConverter.Domain.FileTypes
             return frames.Count;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
                 throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
-            Int32 width = fileToSave.Width;
-            Int32 height = fileToSave.Height;
+            int width = fileToSave.Width;
+            int height = fileToSave.Height;
             if (width > 0xFFFF || height > 0xFFFF)
                 throw new ArgumentException(ERR_DIMENSIONS_TOO_LARGE, "fileToSave");
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
-            Byte[] novaData = new Byte[8 + imageData.Length];
+            int stride;
+            byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
+            byte[] novaData = new byte[8 + imageData.Length];
             ArrayUtils.WriteInt32ToByteArrayLe(novaData, 0, 0x41564F4E);
-            ArrayUtils.WriteUInt16ToByteArrayLe(novaData, 4, (UInt16)width);
-            ArrayUtils.WriteUInt16ToByteArrayLe(novaData, 6, (UInt16)height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(novaData, 4, (ushort)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(novaData, 6, (ushort)height);
             Array.Copy(imageData, 0, novaData, 8, imageData.Length);
-            Byte[] compressBuffer = PppCompression.CompressPppRle(novaData);
+            byte[] compressBuffer = PppCompression.CompressPppRle(novaData);
             return compressBuffer;
         }
     }

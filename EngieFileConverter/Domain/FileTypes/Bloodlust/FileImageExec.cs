@@ -9,9 +9,9 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageExecM : FileImageExec
     {
-        public override String IdCode { get { return "ExImgM"; } }
-        public override String LongTypeName { get { return "Executioner Image (Masked)"; } }
-        public override Boolean DecodeMask { get { return true; } }
+        public override string IdCode { get { return "ExImgM"; } }
+        public override string LongTypeName { get { return "Executioner Image (Masked)"; } }
+        public override bool DecodeMask { get { return true; } }
 
         // TODO change input to also accept masks
     }
@@ -22,57 +22,57 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "ExImg"; } }
+        public override string IdCode { get { return "ExImg"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Executioner Image"; } }
-        public override String[] FileExtensions { get { return new String[] { "vol" }; } }
-        public override String LongTypeName { get { return "Executioner Image"; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "Executioner Image"; } }
+        public override string[] FileExtensions { get { return new string[] { "vol" }; } }
+        public override string LongTypeName { get { return "Executioner Image"; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 8; } }
         protected SupportedFileType[] m_FramesList;
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
 
-        public virtual Boolean DecodeMask { get { return false; } }
+        public virtual bool DecodeMask { get { return false; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask
+        public override bool[] TransparencyMask
         {
             get
             {
-                Boolean[] transMask = new Boolean[0x100];
+                bool[] transMask = new bool[0x100];
                 transMask[0xFF] = true;
                 return transMask;
             }
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < 4)
                 throw new FileTypeLoadException(ERR_NO_HEADER);
             if (fileData[0] != 0x10 || fileData[3] != 0xFF)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
-            Int32 width = fileData[1];
-            Int32 height = fileData[2];
+            int width = fileData[1];
+            int height = fileData[2];
             if (width == 0 || height == 0)
                 throw new FileTypeLoadException(ERR_DIM_ZERO);
-            Int32 ptr = 0;
+            int ptr = 0;
 
-            Byte[] mask = this.DecodeMask ? new Byte[width * height] : null;
-            Byte fillValue = (Byte) (this.DecodeMask ? 0x00 : 0xFF);
-            Boolean success;
-            Byte[] imageData = ExecutionersCompression.DecodeChunk(fileData, ref ptr, fillValue, ref mask, 0x01, out success);
+            byte[] mask = this.DecodeMask ? new byte[width * height] : null;
+            byte fillValue = (byte) (this.DecodeMask ? 0x00 : 0xFF);
+            bool success;
+            byte[] imageData = ExecutionersCompression.DecodeChunk(fileData, ref ptr, fillValue, ref mask, 0x01, out success);
             //Byte[] imageData = Decode(fileData, 4, width, height);
             //System.IO.File.WriteAllBytes(sourcePath + ".dec", imageData);
             if (imageData == null)
@@ -109,7 +109,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             this.PerformPreliminaryChecks(fileToSave);
             // No options if the file is not a frames container.
@@ -136,7 +136,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     throw new FileTypeSaveException("Image dimensions cannot exceed 255.");
                 return new Bitmap[] {image};
             }
-            const String framesErr = "The only frame input accepted by this type is a single frame plus its mask.";
+            const string framesErr = "The only frame input accepted by this type is a single frame plus its mask.";
             if (fileToSave.Frames.Length != 2)
                 throw new FileTypeSaveException(framesErr);
             SupportedFileType frame0 = fileToSave.Frames[0];
@@ -152,23 +152,23 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeSaveException("Image dimensions cannot exceed 255.");
             if (image.Width != mask.Width || image.Height != mask.Height)
                 throw new FileTypeSaveException("The dimensions of the mask image and the frame must be identical.");
-            Byte[] maskBytes = ImageUtils.GetImageData(mask, true);
-            Int32 len = maskBytes.Length;
-            for (Int32 i = 0; i < len; ++i)
+            byte[] maskBytes = ImageUtils.GetImageData(mask, true);
+            int len = maskBytes.Length;
+            for (int i = 0; i < len; ++i)
                 if (maskBytes[i] > 1)
                     throw new FileTypeSaveException("Mask image should only contain 0 and 1 values, with 1 indicating masked pixels.");
             return new Bitmap[] {image, mask};
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap[] bms = this.PerformPreliminaryChecks(fileToSave);
             Bitmap image = bms[0];
             if (fileToSave.IsFramesContainer)
             {
                 Bitmap mask = bms[1];
-                Byte[] maskBytes = ImageUtils.GetImageData(mask, true);
-                Byte[] imageBytes = ImageUtils.GetImageData(image, true);
+                byte[] maskBytes = ImageUtils.GetImageData(mask, true);
+                byte[] imageBytes = ImageUtils.GetImageData(image, true);
                 try
                 {
                     return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, maskBytes, 1);
@@ -181,10 +181,10 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TID"), out int transIndex);
-                Byte[] imageBytes = ImageUtils.GetImageData(image, true);
+                byte[] imageBytes = ImageUtils.GetImageData(image, true);
                 try
                 {
-                    return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, (Byte)transIndex);
+                    return ExecutionersCompression.EncodeToChunk(imageBytes, image.Width, image.Height, (byte)transIndex);
                 }
                 catch (ArgumentException ex)
                 {

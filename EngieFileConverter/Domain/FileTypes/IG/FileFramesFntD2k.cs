@@ -11,61 +11,61 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesFntD2k : SupportedFileType
     {
-        protected const String ERR_NOHEADER = "File data too short to contain header.";
-        protected const String ERR_SIZEHEADER = "File size value in header does not match file data length.";
-        protected const String ERR_BADHEADER = "Identifying bytes in header do not match.";
+        protected const string ERR_NOHEADER = "File data too short to contain header.";
+        protected const string ERR_SIZEHEADER = "File size value in header does not match file data length.";
+        protected const string ERR_BADHEADER = "Identifying bytes in header do not match.";
 
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override Int32 Width { get { return this.m_Width; } }
-        public override Int32 Height { get { return this.m_Height; } }
-        protected Int32 m_Width;
-        protected Int32 m_Height;
-        public override String IdCode { get { return "FntD2k"; } }
+        public override int Width { get { return this.m_Width; } }
+        public override int Height { get { return this.m_Height; } }
+        protected int m_Width;
+        protected int m_Height;
+        public override string IdCode { get { return "FntD2k"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "IG Font (Dune 2000)"; } }
-        public override String[] FileExtensions { get { return new String[] { "fnt" }; } }
-        public override String LongTypeName { get { return "IG Font (Dune 2000)"; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "IG Font (Dune 2000)"; } }
+        public override string[] FileExtensions { get { return new string[] { "fnt" }; } }
+        public override string LongTypeName { get { return "IG Font (Dune 2000)"; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
+        public override bool HasCompositeFrame { get { return false; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
+        public override bool[] TransparencyMask { get { return new bool[] { true }; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFile(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.FromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        public void FromFileData(Byte[] fileData, String sourcePath)
+        public void FromFileData(byte[] fileData, string sourcePath)
         {
             // Technically header + first symbol header, but whatev :p
             if (fileData.Length < 0x410)
                 throw new FileTypeLoadException(ERR_NOHEADER);
-            Byte index00 = fileData[00]; // "FontLoadedFlag" according to Siberian GRemlin. No idea why he called it that.
-            Byte spaceWidth = fileData[01];
-            Byte firstSymbol = fileData[02];
+            byte index00 = fileData[00]; // "FontLoadedFlag" according to Siberian GRemlin. No idea why he called it that.
+            byte spaceWidth = fileData[01];
+            byte firstSymbol = fileData[02];
             // 'Interval' is right-edge X optimization much like WW does Y optimization. Pad it onto the font. The Save will trim it off again.
-            Byte padding = fileData[03];
-            Byte maxHeight = fileData[04];
-            Byte empty05 = fileData[05];
-            Byte empty06 = fileData[06];
-            Byte empty07 = fileData[07];
+            byte padding = fileData[03];
+            byte maxHeight = fileData[04];
+            byte empty05 = fileData[05];
+            byte empty06 = fileData[06];
+            byte empty07 = fileData[07];
             //No clue if this is ok as test...
             if (index00 != 1 || empty05 != 0 || empty06 != 0 || empty07 != 0)
                 throw new FileTypeLoadException(ERR_BADHEADER);
@@ -73,31 +73,31 @@ namespace EngieFileConverter.Domain.FileTypes
             // Wlll be increased to the max found in the file.
             this.m_Width = spaceWidth;
             this.m_FramesList = new SupportedFileType[0x100];
-            Boolean[] transMask = this.TransparencyMask;
+            bool[] transMask = this.TransparencyMask;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(this.BitsPerPixel, transMask, false);
             // Prepare space
-            Int32 spacePos = firstSymbol - 1;
+            int spacePos = firstSymbol - 1;
             if (spacePos < 0)
                 spacePos += 0x100;
-            Int32 actualSpaceWidth = spaceWidth + padding;
-            Bitmap spaceImg = ImageUtils.BuildImage(new Byte[maxHeight * actualSpaceWidth], actualSpaceWidth, maxHeight, actualSpaceWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
+            int actualSpaceWidth = spaceWidth + padding;
+            Bitmap spaceImg = ImageUtils.BuildImage(new byte[maxHeight * actualSpaceWidth], actualSpaceWidth, maxHeight, actualSpaceWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
             FileImageFrame space = CreateFrame(spaceImg, sourcePath, spacePos, 1, 1, -1, -1, 0);
             space.SetExtraInfo(space.ExtraInfo + "\nSpace width in header: " + spaceWidth + "\nApplied padding: " + padding + " pixel" + (padding == 1 ? String.Empty : "s"));
             // Read the rest of the symbols.
-            Int32 readOffset = 0x408;
-            Int32 datalen = fileData.Length;
-            for (Int32 i = 0; i < 0x100; ++i)
+            int readOffset = 0x408;
+            int datalen = fileData.Length;
+            for (int i = 0; i < 0x100; ++i)
             {
-                Byte currentSymbol = (Byte)((firstSymbol + i) & 0xFF);
+                byte currentSymbol = (byte)((firstSymbol + i) & 0xFF);
                 if (readOffset + 8 > datalen)
                     throw new FileTypeLoadException("File data too short for symbol header of symbol #" + firstSymbol + ".");
-                Int32 origSymbolWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
-                Int32 symbolWidth = origSymbolWidth + padding;
+                int origSymbolWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
+                int symbolWidth = origSymbolWidth + padding;
                 this.m_Width = Math.Max(symbolWidth, this.m_Width);
                 readOffset += 4;
-                Int32 symbolHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
+                int symbolHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, readOffset);
                 readOffset += 4;
-                Int32 symbolReadSize = origSymbolWidth * symbolHeight;
+                int symbolReadSize = origSymbolWidth * symbolHeight;
                 Bitmap curFrImg = null;
                 if (symbolReadSize > 0)
                 {
@@ -106,7 +106,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     // Space symbol; break after all checks are done.
                     if (i == 0xFF)
                         break;
-                    Byte[] symbolData = new Byte[symbolReadSize];
+                    byte[] symbolData = new byte[symbolReadSize];
                     Array.Copy(fileData, readOffset, symbolData, 0, symbolData.Length);
                     if (padding > 0)
                         symbolData = ImageUtils.ChangeStride(symbolData, origSymbolWidth, symbolHeight, symbolWidth, false, 0);
@@ -135,7 +135,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="height">Height of the symbol.</param>
         /// <param name="padding">Added padding from the header.</param>
         /// <returns>The created frame.</returns>
-        private FileImageFrame CreateFrame(Bitmap curFrImg, String sourcePath, Int32 currentSymbol, Int32 dataOffset, Int32 dataLength, Int32 width, Int32 height, Int32 padding)
+        private FileImageFrame CreateFrame(Bitmap curFrImg, string sourcePath, int currentSymbol, int dataOffset, int dataLength, int width, int height, int padding)
         {
             FileImageFrame framePic = new FileImageFrame();
             framePic.LoadFileFrame(this, this, curFrImg, sourcePath, currentSymbol);
@@ -159,30 +159,30 @@ namespace EngieFileConverter.Domain.FileTypes
             return framePic;
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
-            Int32 maxUsedHeight;
+            int maxUsedHeight;
             this.PerformPreliminaryChecks(fileToSave, out maxUsedHeight);
             FileFramesWwFntV3 fontFile = fileToSave as FileFramesWwFntV3;
-            Int32 fontHeight = fontFile != null ? fontFile.Height : maxUsedHeight;
+            int fontHeight = fontFile != null ? fontFile.Height : maxUsedHeight;
             return new Option[]
             {
                 new Option("FHE", OptionInputType.Number, "Font height", fontHeight +",255", fontHeight.ToString())
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveFont(fileToSave, saveOptions);
         }
 
-        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out Int32 height)
+        private SupportedFileType[] PerformPreliminaryChecks(SupportedFileType fileToSave, out int height)
         {
             // Preliminary checks
             SupportedFileType[] frames = fileToSave.Frames;
             if (!fileToSave.IsFramesContainer || frames == null)
                 throw new FileTypeSaveException("No frames found in source data.");
-            Int32 frameLen = frames.Length;
+            int frameLen = frames.Length;
             if (frameLen == 0)
                 throw new FileTypeSaveException("No frames found in source data.");
             if (frameLen < 32)
@@ -190,7 +190,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (frameLen > 256)
                 throw new FileTypeSaveException("Dune 2000 font can only handle up to 256 frames.");
             height = -1;
-            for (Int32 i = 0; i < frameLen; ++i)
+            for (int i = 0; i < frameLen; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame.BitsPerPixel != this.BitsPerPixel)
@@ -204,18 +204,18 @@ namespace EngieFileConverter.Domain.FileTypes
             return frames;
         }
 
-        protected Byte[] SaveFont(SupportedFileType fileToSave, Option[] saveOptions)
+        protected byte[] SaveFont(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            Int32 fontHeight;
+            int fontHeight;
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave, out fontHeight);
             // Override the one from the preliminary check.
             fontHeight = Int32.Parse(Option.GetSaveOptionValue(saveOptions, "FHE"));
-            Int32 origFrameLen = frames.Length;
+            int origFrameLen = frames.Length;
             if (origFrameLen < 0x100)
             {
                 SupportedFileType[] newFrames = new SupportedFileType[0x100];
                 Array.Copy(frames, 0, newFrames, 0, origFrameLen);
-                for (Int32 i = origFrameLen; i < 0x100; ++i)
+                for (int i = origFrameLen; i < 0x100; ++i)
                 {
                     FileImageFrame framePic = new FileImageFrame();
                     framePic.LoadFileFrame(fileToSave, fileToSave, null, null, i);
@@ -228,12 +228,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 frames = newFrames;
             }
             SupportedFileType[] baseList = new SupportedFileType[0x100];
-            Byte[][] framesList = new Byte[0x100][];
-            Byte spaceWidth = (Byte)frames[0x20].Width;
+            byte[][] framesList = new byte[0x100][];
+            byte spaceWidth = (byte)frames[0x20].Width;
             // Final saved data does in fact contain a 0x0 dummy entry for the space character... further invalidating the whole optimisation effort.
-            Byte firstSymbol = 0x21;
+            byte firstSymbol = 0x21;
             // this is FF and not 100 because the space itself is omitted.
-            Int32 remainingSymbols = 0x100 - firstSymbol; // 222 ?
+            int remainingSymbols = 0x100 - firstSymbol; // 222 ?
 
             Array.Copy(frames, firstSymbol, baseList, 0, remainingSymbols);
             Array.Copy(frames, 0, baseList, remainingSymbols, firstSymbol);
@@ -243,22 +243,22 @@ namespace EngieFileConverter.Domain.FileTypes
             // Code to detect how much space at the right edge is added padding to create space between pixels.
             // This space is trimmed off and added in the header instead.
             // Start from max that can be trimmed off the space, since it's not in the list.
-            Int32 globalOpenSpace = spaceWidth;
-            for (Int32 i = 0; i < 0x100; ++i)
+            int globalOpenSpace = spaceWidth;
+            for (int i = 0; i < 0x100; ++i)
             {
                 SupportedFileType frame = baseList[i];
                 // ignore completely empty characters; they'd reduce it to 0 for no reason.
                 if (frame == null || frame.Width == 0 && frame.Height == 0 || frame.GetBitmap() == null)
                     continue;
-                Int32 stride;
-                Byte[] byteData = ImageUtils.GetImageData(frame.GetBitmap(), out stride, true);
+                int stride;
+                byte[] byteData = ImageUtils.GetImageData(frame.GetBitmap(), out stride, true);
                 framesList[i] = byteData;
-                Int32 width = frame.Width;
-                Int32 height = frame.Height;
-                Int32 minOpenSpace = width;
-                for (Int32 y = 0; y < height; ++y)
+                int width = frame.Width;
+                int height = frame.Height;
+                int minOpenSpace = width;
+                for (int y = 0; y < height; ++y)
                 {
-                    Byte[] line = new Byte[width];
+                    byte[] line = new byte[width];
                     Array.Copy(byteData, y * stride, line, 0, width);
                     minOpenSpace = Math.Min(minOpenSpace, line.Reverse().TakeWhile(x => x == 0).Count());
                 }
@@ -268,42 +268,42 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (globalOpenSpace > 0)
             {
-                spaceWidth -= (Byte)globalOpenSpace;
-                for (Int32 i = 0; i < 0x100; ++i)
+                spaceWidth -= (byte)globalOpenSpace;
+                for (int i = 0; i < 0x100; ++i)
                 {
                     SupportedFileType frame = baseList[i];
                     if (frame == null || frame.Width == 0 && frame.Height == 0 || frame.GetBitmap() == null)
                         continue;
-                    Int32 width = frame.Width;
-                    Int32 height = frame.Height;
-                    Byte[] byteData = framesList[i];
+                    int width = frame.Width;
+                    int height = frame.Height;
+                    byte[] byteData = framesList[i];
                     byteData = ImageUtils.ChangeStride(byteData, width, height, width - globalOpenSpace, false, 0);
                     framesList[i] = byteData;
                 }
                 // The global font width is not actually saved, so there's no use in adjusting it too.
             }
-            Int32 fileLen = 0x408 + framesList.Select(x => (x == null ? 0 : x.Length) + 8).Sum();
-            Byte[] fileData = new Byte[fileLen];
+            int fileLen = 0x408 + framesList.Select(x => (x == null ? 0 : x.Length) + 8).Sum();
+            byte[] fileData = new byte[fileLen];
             fileData[0] = 0x01;
             fileData[1] = spaceWidth; // space width
             fileData[2] = firstSymbol;
-            fileData[3] = (Byte)globalOpenSpace; // space between characters
-            fileData[4] = (Byte)fontHeight;
+            fileData[3] = (byte)globalOpenSpace; // space between characters
+            fileData[4] = (byte)fontHeight;
             //fileData[5] = 0x00;
             //fileData[6] = 0x00;
             //fileData[7] = 0x00;
             //0x08 => 0x408: giant load of crap. Leave empty, I guess?
-            Int32 writeOffset = 0x408;
-            for (Int32 i = 0; i < 0x100; ++i)
+            int writeOffset = 0x408;
+            for (int i = 0; i < 0x100; ++i)
             {
                 SupportedFileType frame = baseList[i];
-                Int32 width = frame == null || frame.Width == 0 ? 0 : (frame.Width - globalOpenSpace);
-                Int32 height = frame == null ? 0 : frame.Height;
+                int width = frame == null || frame.Width == 0 ? 0 : (frame.Width - globalOpenSpace);
+                int height = frame == null ? 0 : frame.Height;
                 ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset, width);
                 writeOffset += 4;
                 ArrayUtils.WriteInt32ToByteArrayLe(fileData, writeOffset, height);
                 writeOffset += 4;
-                Byte[] bdata = framesList[i];
+                byte[] bdata = framesList[i];
                 if (bdata != null)
                 {
                     Array.Copy(bdata, 0, fileData, writeOffset, bdata.Length);

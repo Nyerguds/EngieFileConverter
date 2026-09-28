@@ -8,41 +8,41 @@ namespace Nyerguds.FileData.Dynamix
     public class DynamixLzwEncoder
     {
 
-        private Byte[] _codeCur = new Byte[256];
-        private Int32 _codeSize;
-        private Int32 _codeLen;
+        private byte[] _codeCur = new byte[256];
+        private int _codeSize;
+        private int _codeLen;
 
         private struct DictTableEntry
         {
-            public Byte[] Str; // Byte[256];
-            public Byte Len;
+            public byte[] Str; // Byte[256];
+            public byte Len;
         }
 
         private DictTableEntry[] dict_table = new DictTableEntry[0x4000];
 
-        private UInt32 _dictSize;
-        private UInt32 _dictMax;
-        private Boolean _dictFull;
+        private uint _dictSize;
+        private uint _dictMax;
+        private bool _dictFull;
 
-        private UInt32 FindLzwCode(Byte[] data_in, Int32 start, Int32 dataEnd)
+        private uint FindLzwCode(byte[] data_in, int start, int dataEnd)
         {
             // 1-byte code
-            UInt32 findLast = data_in[start];
-            UInt32 findLen = 2;
+            uint findLast = data_in[start];
+            uint findLen = 2;
             while (start + (findLen - 1) < dataEnd)
             {
-                UInt32 lcv;
+                uint lcv;
                 // AGI LZW uses SS:SP stack - limit code size
                 if (findLen >= 16) break;
-                Boolean hit = false;
-                for (lcv = 0x102; lcv < this._dictSize; lcv++)
+                bool hit = false;
+                for (lcv = 0x102; lcv < this._dictSize; ++lcv)
                 {
                     // check lengths
                     if (dict_table[lcv].Len != findLen)
                         continue;
                     // compare strings
                     int lcv2;
-                    for (lcv2 = 0; lcv2 < dict_table[lcv].Len; lcv2++)
+                    for (lcv2 = 0; lcv2 < dict_table[lcv].Len; ++lcv2)
                         if (dict_table[lcv].Str[lcv2] != data_in[start + lcv2])
                             break;
                     // match! no extra entry needed
@@ -67,12 +67,12 @@ namespace Nyerguds.FileData.Dynamix
         private void LzwReset()
         {
             this.dict_table = new DictTableEntry[0x4000];
-            for (int lcv = 0; lcv < 256; lcv++)
+            for (int lcv = 0; lcv < 256; ++lcv)
             {
                 DictTableEntry dte = new DictTableEntry();
                 dte.Len = 1;
-                dte.Str = new Byte[256];
-                dte.Str[0] = (Byte) lcv;
+                dte.Str = new byte[256];
+                dte.Str[0] = (byte) lcv;
                 dict_table[lcv] = dte;
             }
             // 00-FF = ASCII
@@ -86,7 +86,7 @@ namespace Nyerguds.FileData.Dynamix
             this._codeLen = 0;
         }
 
-        public Byte[] LzwEncode(Byte[] data, Int32 dataStart, Int32 dataEnd, Boolean prefixSize)
+        public byte[] LzwEncode(byte[] data, int dataStart, int dataEnd, bool prefixSize)
         {
             LzwBuffer outBuffer = new LzwBuffer();
             if (dataStart < 0)
@@ -95,7 +95,7 @@ namespace Nyerguds.FileData.Dynamix
                 dataEnd = data.Length;
             // ------------------------------------------
             // ------------------------------------------
-            Int32 lcv = dataStart;
+            int lcv = dataStart;
             while (lcv < dataEnd)
             {
                 // send reset
@@ -110,7 +110,7 @@ namespace Nyerguds.FileData.Dynamix
                     this.LzwReset();
                     outBuffer.PackBitsRight(this._codeSize, 0x100);
                 }
-                UInt32 new_code = this.FindLzwCode(data, lcv, dataEnd);
+                uint new_code = this.FindLzwCode(data, lcv, dataEnd);
                 outBuffer.PackBitsRight(this._codeSize, new_code);
                 // expand string
                 this._codeCur[this._codeLen++] = dict_table[new_code].Str[0];
@@ -120,7 +120,7 @@ namespace Nyerguds.FileData.Dynamix
                 // add to dictionary: 2+ bytes only
                 if (this._codeLen >= 2)
                 {
-                    UInt32 lcv1;
+                    uint lcv1;
                     if (this._dictFull == false)
                     {
                         // check full condition
@@ -138,7 +138,7 @@ namespace Nyerguds.FileData.Dynamix
                             this._codeSize++;
                         }
                         // add new entry
-                        for (UInt32 lcv2 = 0; lcv2 < this._codeLen; lcv2++)
+                        for (uint lcv2 = 0; lcv2 < this._codeLen; lcv2++)
                         {
                             dict_table[lcv1].Str[lcv2] = this._codeCur[lcv2];
                             dict_table[lcv1].Len++;
@@ -165,10 +165,10 @@ namespace Nyerguds.FileData.Dynamix
 
         private class LzwBuffer
         {
-            private Byte[] buffer;
-            private UInt32 curVal;
-            private Int32 curBits;
-            private UInt32 curSize;
+            private byte[] buffer;
+            private uint curVal;
+            private int curBits;
+            private uint curSize;
 
             public LzwBuffer()
             {
@@ -177,34 +177,34 @@ namespace Nyerguds.FileData.Dynamix
 
             private void ResetFileBits()
             {
-                this.buffer = new Byte[16 * 0x100000];
+                this.buffer = new byte[16 * 0x100000];
                 this.curVal = 0;
                 this.curBits = 0;
                 this.curSize = 0;
             }
 
-            public Byte[] GetBuffer(Boolean addSize, Int32 origSize)
+            public byte[] GetBuffer(bool addSize, int origSize)
             {
-                Byte[] outBuf = new Byte[addSize ? this.curSize + 4 : this.curSize];
+                byte[] outBuf = new byte[addSize ? this.curSize + 4 : this.curSize];
                 if (addSize)
                 {
-                    outBuf[0] = (Byte) ((origSize >> 00) & 0xFF);
-                    outBuf[1] = (Byte) ((origSize >> 08) & 0xFF);
-                    outBuf[2] = (Byte) ((origSize >> 16) & 0xFF);
-                    outBuf[3] = (Byte) ((origSize >> 24) & 0xFF);
+                    outBuf[0] = (byte) ((origSize >> 00) & 0xFF);
+                    outBuf[1] = (byte) ((origSize >> 08) & 0xFF);
+                    outBuf[2] = (byte) ((origSize >> 16) & 0xFF);
+                    outBuf[3] = (byte) ((origSize >> 24) & 0xFF);
                 }
                 Array.Copy(this.buffer, 0, outBuf, addSize ? 4 : 0, this.curSize);
                 return outBuf;
             }
 
-            public void PackBitsLeft(Int32 bits, UInt32 val)
+            public void PackBitsLeft(int bits, uint val)
             {
                 while (bits-- != 0)
                 {
                     if (curBits == 8)
                     {
                         curBits = 0;
-                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                        this.buffer[this.curSize++] = (byte) (curVal & 0xff);
                     }
                     curVal <<= 1;
                     curVal |= ((val >> bits) & 1);
@@ -212,14 +212,14 @@ namespace Nyerguds.FileData.Dynamix
                 }
             }
 
-            public void PackBitsRight(Int32 bits, UInt32 val)
+            public void PackBitsRight(int bits, uint val)
             {
                 while (bits-- != 0)
                 {
                     if (curBits == 8)
                     {
                         curBits = 0;
-                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                        this.buffer[this.curSize++] = (byte) (curVal & 0xff);
                     }
                     curVal >>= 1;
                     curVal |= ((val & 1) << 7);
@@ -235,7 +235,7 @@ namespace Nyerguds.FileData.Dynamix
                     if (curBits == 8)
                     {
                         curBits = 0;
-                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                        this.buffer[this.curSize++] = (byte) (curVal & 0xff);
                         break;
                     }
                     curVal <<= 1;
@@ -251,7 +251,7 @@ namespace Nyerguds.FileData.Dynamix
                     if (curBits == 8)
                     {
                         curBits = 0;
-                        this.buffer[this.curSize++] = (Byte) (curVal & 0xff);
+                        this.buffer[this.curSize++] = (byte) (curVal & 0xff);
                         break;
                     }
                     curVal >>= 1;

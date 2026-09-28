@@ -14,48 +14,48 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image4Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image4Bit; } }
 
-        public override String IdCode { get { return "KotbPak"; } }
+        public override string IdCode { get { return "KotbPak"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "KotB PAK"; } }
-        public override String[] FileExtensions { get { return new String[] { "pak" }; } }
-        public override String LongTypeName { get { return "Kings of the Beach PAK file"; } }
+        public override string ShortTypeName { get { return "KotB PAK"; } }
+        public override string[] FileExtensions { get { return new string[] { "pak" }; } }
+        public override string LongTypeName { get { return "Kings of the Beach PAK file"; } }
         //public override Boolean NeedsPalette { get { return false; } }
-        public override Int32 BitsPerPixel { get { return 4; } }
+        public override int BitsPerPixel { get { return 4; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < 4)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
             // First RLE byte value is 0. Not allowed.
             if ((fileData[0] & 0x7F) == 0)
                 throw new FileTypeLoadException(ERR_DECOMPR);
-            Int32 dataEnd = fileData.Length - 2;
-            UInt32 dataLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, dataEnd);
+            int dataEnd = fileData.Length - 2;
+            uint dataLen = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, dataEnd);
             if (dataLen < 2)
                 throw new FileTypeLoadException(ERR_DECOMPR_LEN);
-            Byte[] decompressed = null;
-            Int32 decompressedLength = RleCompressionHighBitCopy.RleDecode(fileData, 0, (UInt32)dataEnd, ref decompressed, true);
+            byte[] decompressed = null;
+            int decompressedLength = RleCompressionHighBitCopy.RleDecode(fileData, 0, (uint)dataEnd, ref decompressed, true);
             if (decompressedLength == -1)
                 throw new FileTypeLoadException("Decompression failed: illegal RLE value encountered.");
             if (decompressedLength != dataLen)
                 throw new FileTypeLoadException(ERR_DECOMPR_LEN);
-            Int32 byteWidth = decompressed[0];
-            Int32 imgHeight = decompressed[1];
+            int byteWidth = decompressed[0];
+            int imgHeight = decompressed[1];
             if (byteWidth == 0 || imgHeight == 0)
                 throw new FileTypeLoadException(ERR_DIM_ZERO);
-            Int32 expectedSize = byteWidth * 4 * imgHeight;
-            if (expectedSize > UInt16.MaxValue)
+            int expectedSize = byteWidth * 4 * imgHeight;
+            if (expectedSize > ushort.MaxValue)
                 throw new FileTypeLoadException("Image dimensions too large.");
 
             // OVERALL PRINCIPLE:
@@ -67,24 +67,24 @@ namespace EngieFileConverter.Domain.FileTypes
 
             // Single line length for horizontally-composed image is
             // four "bit frames" with a stride equal to the given byte width.
-            Int32 fourLinesStride = byteWidth * 4;
+            int fourLinesStride = byteWidth * 4;
             // Actual final image pixel width. One scanline is four 1-bpp lines of stride
             // interpreted as 4bpp image, so with 2 pixels per byte.
-            Int32 imgWidth = fourLinesStride * 2;
+            int imgWidth = fourLinesStride * 2;
             // Some files seem cut off, but the data length at the end of the file accurately indicates this.
             // The play court images do this: their cut-off height is always set at 85 lines.
             // They use the Rio one (which is complete) for the court image itself.
             if ((decompressedLength - 2) % fourLinesStride != 0)
                 throw new FileTypeLoadException("Data cutoff is not exactly on one line.");
-            Int32 endHeight = (decompressedLength - 2) / fourLinesStride;
+            int endHeight = (decompressedLength - 2) / fourLinesStride;
             if (endHeight < imgHeight)
                 this.ExtraInfo = "Data cut off at " + endHeight + " lines";
 
-            Int32 stride;
-            Byte[] imageData = ImageUtils.PlanarLinesToLinear(decompressed, 2, imgWidth, endHeight, 4, byteWidth, 1, 4, out stride);
+            int stride;
+            byte[] imageData = ImageUtils.PlanarLinesToLinear(decompressed, 2, imgWidth, endHeight, 4, byteWidth, 1, 4, out stride);
             if (endHeight < imgHeight)
             {
-                Byte[] imageDataExpanded = new Byte[stride * imgHeight];
+                byte[] imageDataExpanded = new byte[stride * imgHeight];
                 Array.Copy(imageData, 0, imageDataExpanded, 0, imageData.Length);
                 imageData = imageDataExpanded;
             }
@@ -93,47 +93,47 @@ namespace EngieFileConverter.Domain.FileTypes
 
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
-            Int32 imgWidth;
-            Int32 imgHeight;
+            int imgWidth;
+            int imgHeight;
             Bitmap image = this.PerformPreliminaryChecks(fileToSave, out imgWidth, out imgHeight);
-            Int32 stride;
-            Byte[] imageBytes = ImageUtils.GetImageData(image, out stride);
-            Int32 lastLineOffs = stride * (imgHeight - 1);
-            Byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, imgWidth, 1, lastLineOffs, 4, true, ref stride);
-            for (Int32 x = 0; x < imgWidth; ++x)
+            int stride;
+            byte[] imageBytes = ImageUtils.GetImageData(image, out stride);
+            int lastLineOffs = stride * (imgHeight - 1);
+            byte[] lastLine = ImageUtils.ConvertTo8Bit(imageBytes, imgWidth, 1, lastLineOffs, 4, true, ref stride);
+            for (int x = 0; x < imgWidth; ++x)
                 if (lastLine[x] != 0)
                     return new Option[0];
             return new Option[] { new Option("CUT", OptionInputType.Boolean, "Trim 0-value lines off the end.", "1") };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            Int32 imgWidth;
-            Int32 imgHeight;
+            int imgWidth;
+            int imgHeight;
             Bitmap image = this.PerformPreliminaryChecks(fileToSave, out imgWidth, out imgHeight);
-            Boolean trimEnd = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CUT"));
-            Int32 saveHeight = imgHeight;
+            bool trimEnd = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CUT"));
+            int saveHeight = imgHeight;
             // Width has to be a multiple of 8.
-            Int32 byteWidth = (image.Width + 7) / 8;
-            Int32 alignedWidth = byteWidth * 8;
+            int byteWidth = (image.Width + 7) / 8;
+            int alignedWidth = byteWidth * 8;
             // Width is multiplied by 4. This forms quadruple-width rows to be filled with the bits from one row.
-            Int32 eightBitWidth = alignedWidth * 4;
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(image, out stride);
-            Byte[] eightbitImage = ImageUtils.ConvertTo8Bit(imageData, imgWidth, imgHeight, 0, 4, true, ref stride);
+            int eightBitWidth = alignedWidth * 4;
+            int stride;
+            byte[] imageData = ImageUtils.GetImageData(image, out stride);
+            byte[] eightbitImage = ImageUtils.ConvertTo8Bit(imageData, imgWidth, imgHeight, 0, 4, true, ref stride);
             if (alignedWidth > imgWidth)
                 eightbitImage = ImageUtils.ChangeStride(eightbitImage, stride, imgHeight, alignedWidth, false, 0);
             // Trim end, creating cut-off images like the original court ones. The original height is saved,
             // and the decompressed data value at the end will be used to calculate the true height.
             if (trimEnd)
             {
-                for (Int32 y = saveHeight-1; y > 0; y--)
+                for (int y = saveHeight-1; y > 0; y--)
                 {
-                    Int32 offset = stride * y;
-                    Boolean isEmpty = true;
-                    for (Int32 x = 0; x < stride; ++x)
+                    int offset = stride * y;
+                    bool isEmpty = true;
+                    for (int x = 0; x < stride; ++x)
                     {
                         if (eightbitImage[offset + x] == 0)
                             continue;
@@ -146,34 +146,34 @@ namespace EngieFileConverter.Domain.FileTypes
                         break;
                 }
             }
-            Byte[] oneBitQuadImage = new Byte[eightBitWidth * imgHeight];
-            for (Int32 y = 0; y < imgHeight; ++y)
+            byte[] oneBitQuadImage = new byte[eightBitWidth * imgHeight];
+            for (int y = 0; y < imgHeight; ++y)
             {
-                Int32 offset = alignedWidth * y;
-                Int32 finalOffset = eightBitWidth * y;
-                for (Int32 x = 0; x < alignedWidth; ++x)
+                int offset = alignedWidth * y;
+                int finalOffset = eightBitWidth * y;
+                for (int x = 0; x < alignedWidth; ++x)
                 {
                     // Split up and write the 4 bits.
-                    for (Int32 i = 0; i < 4; ++i)
-                        oneBitQuadImage[finalOffset + imgWidth * i + x] = (Byte)((eightbitImage[offset + x] >> i) & 1);
+                    for (int i = 0; i < 4; ++i)
+                        oneBitQuadImage[finalOffset + imgWidth * i + x] = (byte)((eightbitImage[offset + x] >> i) & 1);
                 }
             }
             // Compact to 1bpp image
-            Byte[] finalImageData = ImageUtils.ConvertFrom8Bit(oneBitQuadImage, eightBitWidth, imgHeight, 1, true, ref eightBitWidth);
-            Byte[] finalData = new Byte[finalImageData.Length + 2];
-            finalData[0] = (Byte)byteWidth;
-            finalData[1] = (Byte)saveHeight;
+            byte[] finalImageData = ImageUtils.ConvertFrom8Bit(oneBitQuadImage, eightBitWidth, imgHeight, 1, true, ref eightBitWidth);
+            byte[] finalData = new byte[finalImageData.Length + 2];
+            finalData[0] = (byte)byteWidth;
+            finalData[1] = (byte)saveHeight;
             Array.Copy(finalImageData, 0, finalData, 2, finalImageData.Length);
             //return finalData;
-            Byte[] compressedData = RleCompressionHighBitCopy.RleEncode(finalData);
-            Int32 dataEnd = compressedData.Length;
-            Byte[] finalCompressedData = new Byte[dataEnd + 2];
+            byte[] compressedData = RleCompressionHighBitCopy.RleEncode(finalData);
+            int dataEnd = compressedData.Length;
+            byte[] finalCompressedData = new byte[dataEnd + 2];
             Array.Copy(compressedData, finalCompressedData, dataEnd);
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalCompressedData, dataEnd, (UInt16)finalData.Length);
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalCompressedData, dataEnd, (ushort)finalData.Length);
             return finalCompressedData;
         }
 
-        private Bitmap PerformPreliminaryChecks(SupportedFileType fileToSave, out Int32 width, out Int32 height)
+        private Bitmap PerformPreliminaryChecks(SupportedFileType fileToSave, out int width, out int height)
         {
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
@@ -182,7 +182,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeSaveException(ERR_BPP_INPUT_EXACT, 4);
             width = image.Width;
             height = image.Height;
-            if (width * height / 2 > UInt16.MaxValue)
+            if (width * height / 2 > ushort.MaxValue)
                 throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_LARGE);
             if (width > 320 || height > 200)
                 throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_LARGE);

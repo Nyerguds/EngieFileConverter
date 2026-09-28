@@ -10,15 +10,15 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmSetAlpha : Form
     {
-        private Boolean _changing;
+        private bool _changing;
 
-        public Int32 Alpha { get; set; }
+        public int Alpha { get; set; }
 
         public FrmSetAlpha() : this(0)
         {
         }
 
-        public FrmSetAlpha(Int32 alpha)
+        public FrmSetAlpha(int alpha)
         {
             this.InitializeComponent();
             this.Alpha = alpha;
@@ -34,14 +34,14 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void NumAlpha_ValueChanged(Object sender, EventArgs e)
+        private void NumAlpha_ValueChanged(object sender, EventArgs e)
         {
             if (this._changing)
                 return;
             try
             {
                 this._changing = true;
-                this.trbAlpha.Value = (Int32) this.numAlpha.Value;
+                this.trbAlpha.Value = (int) this.numAlpha.Value;
             }
             finally
             {
@@ -49,14 +49,14 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void NumAlpha_ValueEntered(Object sender, Nyerguds.Util.UI.ValueEnteredEventArgs e)
+        private void NumAlpha_ValueEntered(object sender, Nyerguds.Util.UI.ValueEnteredEventArgs e)
         {
             if (this._changing)
                 return;
             try
             {
                 this._changing = true;
-                this.trbAlpha.Value = (Int32) this.numAlpha.Value;
+                this.trbAlpha.Value = (int) this.numAlpha.Value;
             }
             finally
             {
@@ -64,7 +64,7 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void TrbAlpha_ValueChanged(Object sender, EventArgs e)
+        private void TrbAlpha_ValueChanged(object sender, EventArgs e)
         {
             if (this._changing)
                 return;
@@ -79,9 +79,9 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void btnOk_Click(Object sender, EventArgs e)
+        private void btnOk_Click(object sender, EventArgs e)
         {
-            this.Alpha = (Int32)numAlpha.Value;
+            this.Alpha = (int)numAlpha.Value;
         }
     }
 }

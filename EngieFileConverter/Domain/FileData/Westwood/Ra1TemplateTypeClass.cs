@@ -1234,20 +1234,20 @@ namespace Nyerguds.FileData.Westwood
         protected static List<Ra1TemplateTypeClass> orderedTemplates = new List<Ra1TemplateTypeClass>(templates).OrderBy(x => x.TemplateId).ToList();
         public static List<Ra1TemplateTypeClass> Templates { get { return orderedTemplates.ToList(); } }
 
-        public Int32 TemplateId;
+        public int TemplateId;
         public Ra1Theater Theaters;
         public string FileName;
-        public Int32 NameId;
+        public int NameId;
 
-        public Ra1TemplateTypeClass(TemplateType templateType, Ra1Theater theaters, String fileName, Int32 nameId)
+        public Ra1TemplateTypeClass(TemplateType templateType, Ra1Theater theaters, string fileName, int nameId)
         {
-            this.TemplateId = (Int32)templateType;
+            this.TemplateId = (int)templateType;
             this.Theaters = theaters;
             this.FileName = fileName;
             this.NameId = nameId;
         }
 
-        public override String ToString()
+        public override string ToString()
         {
             return this.TemplateId + "=" + this.FileName;
         }

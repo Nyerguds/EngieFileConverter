@@ -18,7 +18,7 @@ namespace Nyerguds.Util.UI
         [DefaultValue(1)]
         [Category("Data")]
         [Description("Indicates the amount to increment or decrement on mouse wheel scroll.")]
-        public Int32 MouseWheelIncrement { get; set; }
+        public int MouseWheelIncrement { get; set; }
         [Category("Action")]
         [Description("Occurs when the value is changed a single tick through either the up-down arrow keys, the up-down buttons or the scrollwheel.")]
         public event EventHandler<UpDownEventArgs> ValueUpDown;
@@ -28,11 +28,11 @@ namespace Nyerguds.Util.UI
         [Category("Data")]
         [Description("True to make the scrollwheel action cause validation on EnteredValue.")]
         [DefaultValue(true)]
-        public Boolean ScrollValidatesEnter { get { return this._ScrollValidatesEnter; } set { this._ScrollValidatesEnter = value; } }
+        public bool ScrollValidatesEnter { get { return this._ScrollValidatesEnter; } set { this._ScrollValidatesEnter = value; } }
         [Category("Data")]
         [DefaultValue(true)]
         [Description("True to make the up-down arrow keys or controls cause validation on EnteredValue.")]
-        public Boolean UpDownValidatesEnter { get { return this._UpDownValidatesEnter; } set { this._UpDownValidatesEnter = value; } }
+        public bool UpDownValidatesEnter { get { return this._UpDownValidatesEnter; } set { this._UpDownValidatesEnter = value; } }
 
         /// <summary>
         /// Last validated entered value.
@@ -40,7 +40,7 @@ namespace Nyerguds.Util.UI
         [Category("Data")]
         [DefaultValue(0)]
         [Description("The last validated value of the EnhNumericUpDownControl.")]
-        public Decimal EnteredValue
+        public decimal EnteredValue
         {
             get { return this.Constrain(this._EnteredValue);  }
             set
@@ -50,9 +50,9 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        private Decimal _EnteredValue;
-        private Boolean _ScrollValidatesEnter = true;
-        private Boolean _UpDownValidatesEnter = true;
+        private decimal _EnteredValue;
+        private bool _ScrollValidatesEnter = true;
+        private bool _UpDownValidatesEnter = true;
         private TextBox _TextBox;
 
         public EnhNumericUpDown()
@@ -73,23 +73,23 @@ namespace Nyerguds.Util.UI
 
         protected override void OnTextChanged(EventArgs e)
         {
-            Boolean allowminus = this.Minimum < 0;
-            Boolean allowHex = this.Hexadecimal;
-            String pattern = allowHex ? "(\\d|[A-F])*" : (allowminus ? "-?\\d*" : "\\d*");
+            bool allowminus = this.Minimum < 0;
+            bool allowHex = this.Hexadecimal;
+            string pattern = allowHex ? "(\\d|[A-F])*" : (allowminus ? "-?\\d*" : "\\d*");
             if (Regex.IsMatch(this.Text, "^" + pattern + "$", RegexOptions.IgnoreCase))
                 return;
             // something snuck in, probably with ctrl+v. Remove it.
             System.Media.SystemSounds.Beep.Play();
             StringBuilder text = new StringBuilder();
-            String txt = this.Text.ToUpperInvariant();
-            Int32 txtLen = txt.Length;
-            Int32 firstIllegalChar = -1;
-            for (Int32 i = 0; i < txtLen; ++i)
+            string txt = this.Text.ToUpperInvariant();
+            int txtLen = txt.Length;
+            int firstIllegalChar = -1;
+            for (int i = 0; i < txtLen; ++i)
             {
-                Char c = txt[i];
-                Boolean isNumRange = (c >= '0' && c <= '9');
-                Boolean isAllowedHexRange = allowHex && (c >= 'A' && c <= 'F');
-                Boolean isAllowedMinus = (i == 0 && c == '-' && !allowHex);
+                char c = txt[i];
+                bool isNumRange = (c >= '0' && c <= '9');
+                bool isAllowedHexRange = allowHex && (c >= 'A' && c <= 'F');
+                bool isAllowedMinus = (i == 0 && c == '-' && !allowHex);
                 if (!isNumRange && !isAllowedHexRange && !isAllowedMinus)
                 {
                     if (firstIllegalChar == -1)
@@ -98,12 +98,12 @@ namespace Nyerguds.Util.UI
                 }
                 text.Append(c);
             }
-            String filteredText = text.ToString();
-            Decimal value;
+            string filteredText = text.ToString();
+            decimal value;
             NumberStyles ns = allowHex ? NumberStyles.HexNumber : NumberStyles.Number;
-            if (Decimal.TryParse(filteredText, ns, NumberFormatInfo.CurrentInfo, out value))
+            if (decimal.TryParse(filteredText, ns, NumberFormatInfo.CurrentInfo, out value))
             {
-                value = Math.Max((Int32)this.Minimum, Math.Min(this.Maximum, value));
+                value = Math.Max((int)this.Minimum, Math.Min(this.Maximum, value));
                 // will trigger this function again, but that's okay, it'll immediately fail the regex and abort.
                 this.Text = value.ToString(CultureInfo.InvariantCulture);
             }
@@ -115,21 +115,21 @@ namespace Nyerguds.Util.UI
         }
 
         /// <summary>Gets or sets the starting point of text selected in the text box.</summary>
-        public Int32 SelectionStart
+        public int SelectionStart
         {
             get { return this._TextBox.SelectionStart; }
             set { this._TextBox.SelectionStart = value; }
         }
 
         /// <summary>Gets or sets the number of characters selected in the text box.</summary>
-        public Int32 SelectionLength
+        public int SelectionLength
         {
             get { return this._TextBox.SelectionLength; }
             set { this._TextBox.SelectionLength = value; }
         }
 
         /// <summary>Gets or sets a value indicating the currently selected text in the control.</summary>
-        public String SelectedText
+        public string SelectedText
         {
             get { return this._TextBox.SelectedText; }
             set { this._TextBox.SelectedText = value; }
@@ -146,8 +146,8 @@ namespace Nyerguds.Util.UI
             HandledMouseEventArgs hme = e as HandledMouseEventArgs;
             if (hme != null)
                 hme.Handled = true;
-            Int32 delta = e.Delta;
-            Int32 scroll = this.MouseWheelIncrement;
+            int delta = e.Delta;
+            int scroll = this.MouseWheelIncrement;
             // Negative increment is perfectly allowed, but will simply be handled as opposite direction scrolling.
             if (scroll < 0)
             {
@@ -157,13 +157,13 @@ namespace Nyerguds.Util.UI
             UpDownAction action;
             if (delta > 0)
             {
-                Decimal value = this.Value + scroll;
+                decimal value = this.Value + scroll;
                 this.Value = Math.Min(this.Maximum, value);
                 action = UpDownAction.Up;
             }
             else if (delta < 0)
             {
-                Decimal value = this.Value - scroll;
+                decimal value = this.Value - scroll;
                 this.Value = Math.Max(this.Minimum, value);
                 action = UpDownAction.Down;
             }
@@ -175,7 +175,7 @@ namespace Nyerguds.Util.UI
                 this.ValueUpDown(this, new UpDownEventArgs(action, scroll, true));
         }
 
-        private void CheckKeyPress(Object sender, KeyEventArgs e)
+        private void CheckKeyPress(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -183,16 +183,16 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        private Boolean ValidateValue()
+        private bool ValidateValue()
         {
-            Decimal oldval = this._EnteredValue;
+            decimal oldval = this._EnteredValue;
             this._EnteredValue = this.Value;
             if (this.ValueEntered != null)
                 this.ValueEntered(this, new ValueEnteredEventArgs(oldval));
             return true;
         }
 
-        public Decimal Constrain(Decimal value)
+        public decimal Constrain(decimal value)
         {
             if (value < this.Minimum)
                 value = this.Minimum;
@@ -230,11 +230,11 @@ namespace Nyerguds.Util.UI
         }
 
         // Sets the value without triggering the "OnValueChanged" event.
-        protected void SetInternalValue(Int32 value)
+        protected void SetInternalValue(int value)
         {
             Type numUpDownType = this.GetType();
             FieldInfo init = numUpDownType.GetField("initializing");
-            Boolean initializing = (Boolean)init.GetValue(this);
+            bool initializing = (bool)init.GetValue(this);
 
             if (!initializing && ((value < Minimum) || (value > Maximum)))
             {
@@ -254,9 +254,9 @@ namespace Nyerguds.Util.UI
 
     public class ValueEnteredEventArgs : EventArgs
     {
-        public Decimal Oldvalue;
+        public decimal Oldvalue;
 
-        public ValueEnteredEventArgs(Decimal oldvalue)
+        public ValueEnteredEventArgs(decimal oldvalue)
         {
             this.Oldvalue = oldvalue;
         }
@@ -265,14 +265,14 @@ namespace Nyerguds.Util.UI
     public class UpDownEventArgs : EventArgs
     {
         public UpDownAction Direction;
-        public Int32 Increment;
-        public Boolean FromMouseWheel;
+        public int Increment;
+        public bool FromMouseWheel;
 
         public UpDownEventArgs(UpDownAction direction)
             : this(direction, 1, false)
         { }
 
-        public UpDownEventArgs(UpDownAction direction, Int32 increment, Boolean fromMouseWheel)
+        public UpDownEventArgs(UpDownAction direction, int increment, bool fromMouseWheel)
         {
             this.Direction = direction;
             this.Increment = increment;

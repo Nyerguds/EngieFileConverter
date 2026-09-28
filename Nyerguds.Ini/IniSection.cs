@@ -24,23 +24,23 @@ namespace Nyerguds.Ini
     public class IniSection
     {
         /// <summary>The keys read from the ini file</summary>
-        private List<String> m_iniKeys;
+        private List<string> m_iniKeys;
         /// <summary>Upper case versions of the keys read from the ini file, for quick case-insensitive comparison</summary>
-        private List<String> m_iniKeysUpper;
+        private List<string> m_iniKeysUpper;
         /// <summary>The values associated to the keys</summary>
-        private List<String> m_iniValues;
+        private List<string> m_iniValues;
         /// <summary>A status of which keys' values are read or changed by the program</summary>
-        private List<Boolean> m_iniKeysAccessed;
+        private List<bool> m_iniKeysAccessed;
         /// <summary>A status of which keys' values are changed by the program</summary>
-        private List<Boolean> m_iniKeysChanged;
+        private List<bool> m_iniKeysChanged;
         ///<summary>The keys removed from the ini file by the program</summary>
-        private List<String> m_iniKeysRemoved;
+        private List<string> m_iniKeysRemoved;
         /// <summary>The name of the ini section</summary>
-        private String m_name;
+        private string m_name;
         /// <summary>True to trim all values before retrieving them</summary>
-        private Boolean m_trimValues;
+        private bool m_trimValues;
 
-        public Boolean TrimValues
+        public bool TrimValues
         {
             get { return m_trimValues; }
             set { m_trimValues = value; }
@@ -48,23 +48,23 @@ namespace Nyerguds.Ini
 
         /// <summary>Returns the name of this ini section</summary>
         /// <returns>The name of this ini section.</returns>
-        public String GetName()
+        public string GetName()
         {
             return m_name;
         }
 
         /// <summary>Creates a new Ini section object with the specified name</summary>
         /// <param name="name">The name for this ini section.</param>
-        public IniSection(String name)
+        public IniSection(string name)
         {
             this.m_name = name;
             this.m_trimValues = false;
-            this.m_iniKeys = new List<String>();
-            this.m_iniKeysUpper = new List<String>();
-            this.m_iniValues = new List<String>();
-            this.m_iniKeysChanged = new List<Boolean>();
-            this.m_iniKeysAccessed = new List<Boolean>();
-            this.m_iniKeysRemoved = new List<String>();
+            this.m_iniKeys = new List<string>();
+            this.m_iniKeysUpper = new List<string>();
+            this.m_iniValues = new List<string>();
+            this.m_iniKeysChanged = new List<bool>();
+            this.m_iniKeysAccessed = new List<bool>();
+            this.m_iniKeysRemoved = new List<string>();
         }
 
         /// <summary>
@@ -72,8 +72,8 @@ namespace Nyerguds.Ini
         /// </summary>
         internal void ResetStatuses()
         {
-            Int32 iniKeyCount = this.m_iniKeys.Count;
-            for (Int32 i = 0; i < iniKeyCount; ++i)
+            int iniKeyCount = this.m_iniKeys.Count;
+            for (int i = 0; i < iniKeyCount; ++i)
             {
                 m_iniKeysChanged[i] = false;
                 m_iniKeysAccessed[i] = false;
@@ -85,7 +85,7 @@ namespace Nyerguds.Ini
         /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned, and to 'true' if the value was successfully fetched.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
-        public String GetStringValue(String key, String defaultValue, out Boolean success)
+        public string GetStringValue(string key, string defaultValue, out bool success)
         {
             return GetStringValue(key, defaultValue, m_trimValues, out success);
         }
@@ -96,13 +96,13 @@ namespace Nyerguds.Ini
         /// <param name="trimValue">True to trim the retrieved value.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned, and to 'true' if the value was successfully fetched.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
-        public String GetStringValue(String key, String defaultValue, Boolean trimValue, out Boolean success)
+        public string GetStringValue(string key, string defaultValue, bool trimValue, out bool success)
         {
             if (String.IsNullOrEmpty(key))
                 throw new ArgumentException("Key can not be empty");
-            Int32 index = m_iniKeysUpper.IndexOf(key.ToUpperInvariant());
+            int index = m_iniKeysUpper.IndexOf(key.ToUpperInvariant());
             success = index > -1;
-            String returnValue;
+            string returnValue;
             if (success)
             {
                 m_iniKeysAccessed[index] = true;
@@ -118,12 +118,12 @@ namespace Nyerguds.Ini
         /// <summary>Sets a String value in the ini section.</summary>
         /// <param name="key">The name of the key.</param>
         /// <param name="value">Value to write.</param>
-        public void SetStringValue(String key, String value)
+        public void SetStringValue(string key, string value)
         {
             if (String.IsNullOrEmpty(key))
                 throw new ArgumentException("Key can not be empty");
-            String keyUpper = key.ToUpperInvariant();
-            Int32 index = m_iniKeysUpper.IndexOf(keyUpper);
+            string keyUpper = key.ToUpperInvariant();
+            int index = m_iniKeysUpper.IndexOf(keyUpper);
             if (index > -1)
             {
                 m_iniValues[index] = value;
@@ -143,10 +143,10 @@ namespace Nyerguds.Ini
 
         /// <summary>Removes a key from the ini section.</summary>
         /// <param name="key">The key to remove.</param>
-        public void RemoveKey(String key)
+        public void RemoveKey(string key)
         {
             key = key.ToUpperInvariant();
-            Int32 index = m_iniKeysUpper.IndexOf(key);
+            int index = m_iniKeysUpper.IndexOf(key);
             if (index > -1)
             {
                 m_iniKeys.RemoveAt(index);
@@ -165,15 +165,15 @@ namespace Nyerguds.Ini
         /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
-        public Int32 GetIntValue(String key, Int32 defaultValue, out Boolean success)
+        public int GetIntValue(string key, int defaultValue, out bool success)
         {
-            String value = GetStringValue(key, defaultValue.ToString(), out success);
+            string value = GetStringValue(key, defaultValue.ToString(), out success);
             if (success)
             {
                 try
                 {
                     value = SplitOffComment(value)[0];
-                    Int32 intvalue = Int32.Parse(value);
+                    int intvalue = Int32.Parse(value);
                     return intvalue;
                 }
                 catch (Exception)
@@ -188,11 +188,11 @@ namespace Nyerguds.Ini
         /// <param name="key">The name of the key.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
-        public void SetIntValue(String key, Int32 value, Boolean removeComments)
+        public void SetIntValue(string key, int value, bool removeComments)
         {
-            Boolean exists;
-            String strValue = GetStringValue(key, null, out exists);
-            String comment = String.Empty;
+            bool exists;
+            string strValue = GetStringValue(key, null, out exists);
+            string comment = String.Empty;
             if (exists && !removeComments)
                 comment = SplitOffComment(strValue)[1];
             strValue = value.ToString() + comment;
@@ -204,9 +204,9 @@ namespace Nyerguds.Ini
         /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
-        public Char GetCharValue(String key, Char defaultValue, out Boolean success)
+        public char GetCharValue(string key, char defaultValue, out bool success)
         {
-            String value = GetStringValue(key, null, out success);
+            string value = GetStringValue(key, null, out success);
             if (success && value.Length > 0)
                 return value[0];
             else
@@ -218,11 +218,11 @@ namespace Nyerguds.Ini
         /// <param name="key">The name of the key.</param>
         /// <param name="value">Value to write.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
-        public void SetCharValue(String key, Char value, Boolean removeComments)
+        public void SetCharValue(string key, char value, bool removeComments)
         {
-            Boolean exists;
-            String strValue = GetStringValue(key, null, false, out exists);
-            String comment = String.Empty;
+            bool exists;
+            string strValue = GetStringValue(key, null, false, out exists);
+            string comment = String.Empty;
             if (exists && !removeComments)
             {
                 if (strValue.Length > 0)
@@ -237,10 +237,10 @@ namespace Nyerguds.Ini
         /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
-        public Boolean GetBoolValue(String key, Boolean defaultValue, out Boolean success)
+        public bool GetBoolValue(string key, bool defaultValue, out bool success)
         {
-            String value = GetStringValue(key, defaultValue.ToString(), out success);
-            Boolean returnvalue = defaultValue;
+            string value = GetStringValue(key, defaultValue.ToString(), out success);
+            bool returnvalue = defaultValue;
             if (success && value.Length > 0)
             {
                 value = SplitOffComment(value)[0];
@@ -250,7 +250,7 @@ namespace Nyerguds.Ini
                     success = false;
                     return defaultValue;
                 }
-                switch (Char.ToUpper(value[0]))
+                switch (char.ToUpper(value[0]))
                 {
                     case 'Y': // yes
                     case 'T': // true
@@ -267,7 +267,7 @@ namespace Nyerguds.Ini
                     default:
                         try
                         {
-                            Int32 intvalue;
+                            int intvalue;
                             if (!Int32.TryParse(value, out intvalue))
                             {
                                 success = false;
@@ -298,13 +298,13 @@ namespace Nyerguds.Ini
         /// <summary>Sets a Boolean value in the ini section, in the chosen boolean save mode.</summary>
         /// <param name="key">The name of the key.</param>
         /// <param name="value">Value to write.</param>
-        /// <param name="booleanmode">The BooleanMode (True/False, Yes/No, 1/0, etc) to use for saving Booleans as String.</param>
+        /// <param name="booleanmode">The BooleanMode (True/False, Yes/No, 1/0, etc) to use for saving booleans as string.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
-        public void SetBoolValue(String key, Boolean value, BooleanMode booleanmode, Boolean removeComments)
+        public void SetBoolValue(string key, bool value, BooleanMode booleanmode, bool removeComments)
         {
-            Boolean exists;
-            String strValue = GetStringValue(key, String.Empty, out exists);
-            String comment;
+            bool exists;
+            string strValue = GetStringValue(key, String.Empty, out exists);
+            string comment;
             if (exists && !removeComments)
                 comment = SplitOffComment(strValue)[1];
             else
@@ -334,15 +334,15 @@ namespace Nyerguds.Ini
         /// <param name="defaultValue">The default value to return in case the key was not found.</param>
         /// <param name="success">An output parameter containing a boolean which is set to 'false' if the fetch failed and the default value was returned.</param>
         /// <returns>The found value, or the given default value if the fetch failed.</returns>
-        public Double GetFloatValue(String key, Double defaultValue, out Boolean success)
+        public double GetFloatValue(string key, double defaultValue, out bool success)
         {
-            String value = GetStringValue(key, defaultValue.ToString(CultureInfo.InvariantCulture), out success);
+            string value = GetStringValue(key, defaultValue.ToString(CultureInfo.InvariantCulture), out success);
             if (!success)
                 return defaultValue;
             try
             {
                 value = SplitOffComment(value)[0];
-                Double floatvalue = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                double floatvalue = Convert.ToDouble(value, CultureInfo.InvariantCulture);
                 return floatvalue;
             }
             catch
@@ -357,15 +357,15 @@ namespace Nyerguds.Ini
         /// <param name="value">Value to write.</param>
         /// <param name="precision">Precision for float.</param>
         /// <param name="removeComments">True to remove any comments put behind the value. The default behaviour is to filter out the comment and paste it behind the new value.</param>
-        public void SetFloatValue(String key, Double value, Int32 precision, Boolean removeComments)
+        public void SetFloatValue(string key, double value, int precision, bool removeComments)
         {
-            Boolean exists;
-            String strValue = GetStringValue(key, String.Empty, out exists);
+            bool exists;
+            string strValue = GetStringValue(key, String.Empty, out exists);
             precision = Math.Max(0, precision);
             // Don't allow ridiculously long precision
             precision = Math.Min(50, precision);
-            String comment = String.Empty;
-            Double precisionfactor = Math.Pow(10, precision);
+            string comment = String.Empty;
+            double precisionfactor = Math.Pow(10, precision);
             value = Math.Truncate(value * precisionfactor) / precisionfactor;
             if (exists && !removeComments)
                 comment = SplitOffComment(strValue)[1];
@@ -377,13 +377,13 @@ namespace Nyerguds.Ini
         /// <summary>Splits the comment off the given string value, and returns the two parts in a String array.</summary>
         /// <param name="value">The string to split.</param>
         /// <returns>A 2-element string array with the value as first element and the split off comment as second value.</returns>
-        private String[] SplitOffComment(String value)
+        private string[] SplitOffComment(string value)
         {
-            Int32 semicolonOffset = value.IndexOf(";", StringComparison.Ordinal);
-            String[] returnval = new String[2];
+            int semicolonOffset = value.IndexOf(";", StringComparison.Ordinal);
+            string[] returnval = new string[2];
             if (semicolonOffset >= 0)
             {
-                Int32 commentOffset = semicolonOffset;
+                int commentOffset = semicolonOffset;
                 // add all whitespace to the comment part.
                 while (commentOffset > 0 && ((value[commentOffset - 1] == ' ') || (value[commentOffset - 1] == '\t')))
                     commentOffset--;
@@ -402,10 +402,10 @@ namespace Nyerguds.Ini
         /// <summary>Removes all keys in the ini section.</summary>
         public void Clear()
         {
-            Int32 nrOfKeys = this.m_iniKeysUpper.Count;
-            for (Int32 i = 0; i < nrOfKeys; ++i)
+            int nrOfKeys = this.m_iniKeysUpper.Count;
+            for (int i = 0; i < nrOfKeys; ++i)
             {
-                String key = this.m_iniKeysUpper[i];
+                string key = this.m_iniKeysUpper[i];
                 if (!this.m_iniKeysRemoved.Contains(key))
                     this.m_iniKeysRemoved.Add(key);
             }
@@ -418,21 +418,21 @@ namespace Nyerguds.Ini
 
         /// <summary>Gets all keys from the ini section.</summary>
         /// <returns>A copy of the list of all key names in the ini section.</returns>
-        public List<String> GetKeys()
+        public List<string> GetKeys()
         {
-            return new List<String>(m_iniKeys);
+            return new List<string>(m_iniKeys);
         }
 
         /// <summary>Gets all upper case keys from the ini section.</summary>
         /// <returns>A copy of the list of all upper case key names in the ini section.</returns>
-        public List<String> GetUpperCaseKeys()
+        public List<string> GetUpperCaseKeys()
         {
-            return new List<String>(m_iniKeysUpper);
+            return new List<string>(m_iniKeysUpper);
         }
 
         /// <summary>Returns a copy of the ini section's key-value pairs map.</summary>
         /// <returns>A Dictionary with the key-value pairs.</returns>
-        public Dictionary<String, String> GetKeyValuePairs()
+        public Dictionary<string, string> GetKeyValuePairs()
         {
             return GetKeyValuePairs(false);
         }
@@ -440,14 +440,14 @@ namespace Nyerguds.Ini
         /// <summary>Returns a copy of the ini section's key-value pairs map.</summary>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
         /// <returns>A Dictionary with the key-value pairs.</returns>
-        public Dictionary<String, String> GetKeyValuePairs(Boolean upperCaseKeys)
+        public Dictionary<string, string> GetKeyValuePairs(bool upperCaseKeys)
         {
-            Dictionary<String, String> dictionary = new Dictionary<String, String>();
-            Int32 iniKeyCount = this.m_iniKeys.Count;
-            for (Int32 i = 0; i < iniKeyCount; ++i)
+            Dictionary<string, string> dictionary = new Dictionary<string, string>();
+            int iniKeyCount = this.m_iniKeys.Count;
+            for (int i = 0; i < iniKeyCount; ++i)
             {
-                String key = upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i];
-                String value = m_iniValues[i];
+                string key = upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i];
+                string value = m_iniValues[i];
                 if (value != null && m_trimValues)
                     value = m_iniValues[i].Trim(' ', '\t');
                 dictionary.Add(key, value);
@@ -458,11 +458,11 @@ namespace Nyerguds.Ini
         /// <summary>Returns a copy of the ini section's Accessed statuses for all keys.</summary>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
         /// <returns>A Dictionary with the key-value pairs.</returns>
-        public Dictionary<String, Boolean> GetKeyValuePairsAccessed(Boolean upperCaseKeys)
+        public Dictionary<string, bool> GetKeyValuePairsAccessed(bool upperCaseKeys)
         {
-            Dictionary<String, Boolean> dictionary = new Dictionary<String, Boolean>();
-            Int32 iniKeyCount = this.m_iniKeys.Count;
-            for (Int32 i = 0; i < iniKeyCount; ++i)
+            Dictionary<string, bool> dictionary = new Dictionary<string, bool>();
+            int iniKeyCount = this.m_iniKeys.Count;
+            for (int i = 0; i < iniKeyCount; ++i)
                 dictionary.Add((upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i]), m_iniKeysAccessed[i]);
             return dictionary;
         }
@@ -470,25 +470,25 @@ namespace Nyerguds.Ini
         /// <summary>Returns a copy of the ini section's Changed statuses for all keys.</summary>
         /// <param name="upperCaseKeys">True to return the keys as upper case strings, for easier case-insensitive search.</param>
         /// <returns>A Dictionary with the key-value pairs.</returns>
-        public Dictionary<String, Boolean> GetKeyValuePairsChanged(Boolean upperCaseKeys)
+        public Dictionary<string, bool> GetKeyValuePairsChanged(bool upperCaseKeys)
         {
-            Dictionary<String, Boolean> dictionary = new Dictionary<String, Boolean>();
-            Int32 iniKeyCount = this.m_iniKeys.Count;
-            for (Int32 i = 0; i < iniKeyCount; ++i)
+            Dictionary<string, bool> dictionary = new Dictionary<string, bool>();
+            int iniKeyCount = this.m_iniKeys.Count;
+            for (int i = 0; i < iniKeyCount; ++i)
                 dictionary.Add((upperCaseKeys ? m_iniKeysUpper[i] : m_iniKeys[i]), m_iniKeysChanged[i]);
             return dictionary;
         }
 
         /// <summary>Returns a list of upper case versions of the removed keys.</summary>
         /// <returns>A List of Strings.</returns>
-        public List<String> GetRemovedKeys()
+        public List<string> GetRemovedKeys()
         {
             return m_iniKeysRemoved;
         }
 
         /// <summary>Returns the name of the section</summary>
         /// <returns>the name of the section.</returns>
-        public override String ToString()
+        public override string ToString()
         {
             return this.m_name;
         }

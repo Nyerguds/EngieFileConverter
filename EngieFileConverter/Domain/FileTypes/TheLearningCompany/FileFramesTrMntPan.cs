@@ -158,8 +158,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     string[] values = hiddenData.Select(val => val.ToString()).ToArray();
                     string[] chars = hiddenData.Where(val => fileData[val] > 0x1F && fileData[val] < 0x80).Select(val => ((char)fileData[val]).ToString()).ToArray();
                     sb.Append("\nHidden data @ ");
-                    sb.Append(string.Join(", ", values));
-                    sb.Append("\n = \"").Append(string.Join(string.Empty, chars)).Append("\"");
+                    sb.Append(String.Join(", ", values));
+                    sb.Append("\n = \"").Append(String.Join(String.Empty, chars)).Append("\"");
                 }
             }
             //*/
@@ -176,7 +176,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 while (writeOffs < frameTilesLen)
                 {
                     if (readOffs + 2 > imgDataPos)
-                        throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "could not fill full frame with available data."));
+                        throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "could not fill full frame with available data."));
                     int info = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
                     readOffs += 2;
                     if (info != 0x0FFF)
@@ -187,7 +187,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         int pointer = (info & 0x0FFF) << 4;
                         int end = writeOffs + added + 1;
                         if (end > frameTilesLen)
-                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "repeated amount of tiles exceeds current tile map size."));
+                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "repeated amount of tiles exceeds current tile map size."));
                         end = Math.Min(end, frameTilesLen);
                         for (; writeOffs < end; ++writeOffs)
                         {
@@ -198,16 +198,16 @@ namespace EngieFileConverter.Domain.FileTypes
                     {
                         // copy entire row from previous decompression.
                         if (writeOffs % tilesX != 0)
-                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "tile map line copy commands are only supported at the start of a line."));
+                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "tile map line copy commands are only supported at the start of a line."));
                         if (readOffs + 2 > imgDataPos)
-                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "could read entire tile map line copy command."));
+                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "could read entire tile map line copy command."));
                         int linecopy = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, readOffs);
                         readOffs += 2;
                         int rowStart = (linecopy & 0xFF) * tilesX;
                         int map = (linecopy & 0xFF00) >> 8;
                         int end = Math.Min(writeOffs + tilesX, frameTilesLen);
                         if (frames.Count <= map)
-                            throw new FileTypeLoadException(string.Format(ERR_DECOMPR_ERR, "tile map line copy command references unbuilt tile map."));
+                            throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR, "tile map line copy command references unbuilt tile map."));
                         int[] copyPointers = frames[map];
                         for (; writeOffs < end; ++writeOffs)
                         {
@@ -312,8 +312,8 @@ namespace EngieFileConverter.Domain.FileTypes
             if (nrOfFrames == 1 && !fileToSave.IsFramesContainer)
             {
                 // one frame: chop into sub-frames
-                int.TryParse(Option.GetSaveOptionValue(saveOptions, "WDT"), out frameWidth);
-                int.TryParse(Option.GetSaveOptionValue(saveOptions, "HGT"), out frameHeight);
+                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "WDT"), out frameWidth);
+                Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "HGT"), out frameHeight);
                 if (frameWidth % 8 != 0 || frameHeight % 8 != 0)
                     throw new FileTypeSaveException(ERR_FRAMES_MUL8);
                 if (width % frameWidth != 0 || height % frameHeight != 0)
@@ -494,7 +494,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 else
                 {
                     // Repeats of 2 or 3: just repeat the value.
-                    for (int i = 1; i < repeat; i++)
+                    for (int i = 1; i < repeat; ++i)
                         comprImgData[comprImgOffset++] = curVal;
                 }
                 // For repeats of 2 and 3, just write one and repeat the whole loop.
@@ -518,7 +518,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     Array.Copy(comprImgData, newArr, comprImgData.Length);
                     comprImgData = newArr;
                 }
-                for (int i = 0; i < sigLen; i++)
+                for (int i = 0; i < sigLen; ++i)
                 {
                     comprImgData[comprImgOffset++] = FLAG_VALUE;
                     comprImgData[comprImgOffset++] = 0;
@@ -537,21 +537,29 @@ namespace EngieFileConverter.Domain.FileTypes
         }
 
         /// <summary>
-        /// Find tile in list of unique tiles, and add this new tile to the list if it was not found.
+        /// Find tile in list of unique tiles, and return its index. If this new tile was not found, add it to the list and return its index.
         /// </summary>
-        /// <param name="uniqueTiles">List of unique 8*8 byte tiles.</param>
+        /// <param name="uniqueTiles">List of unique tiles.</param>
         /// <param name="curTile">Current tile to find.</param>
         /// <returns>The index at which the tile was found or added.</returns>
         private int FindUniqueTile(List<byte[]> uniqueTiles, byte[] curTile)
         {
             int length = uniqueTiles.Count;
-            for (int i = 0; i < length; i++)
+            int curlen = curTile.Length;
+            for (int listIndex = 0; listIndex < length; ++listIndex)
             {
-                byte[] tile = uniqueTiles[i];
-                bool match = true;
-                for (int j = 0; j < 64; ++j)
+                byte[] tile = uniqueTiles[listIndex];
+                int tlen = tile.Length;
+                // Should never happen in this context; tiles are always 8x8.
+                if (tlen != curlen)
                 {
-                    if (curTile[j] != tile[j])
+                    continue;
+                }
+                bool match = true;
+                // There are linq operations for this, but for-loops are insanely much faster.
+                for (int pixIndex = 0; pixIndex < tlen; ++pixIndex)
+                {
+                    if (curTile[pixIndex] != tile[pixIndex])
                     {
                         match = false;
                         break;
@@ -559,7 +567,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if (match)
                 {
-                    return i;
+                    return listIndex;
                 }
             }
             uniqueTiles.Add(curTile);

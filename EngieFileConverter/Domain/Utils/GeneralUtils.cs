@@ -13,12 +13,12 @@ namespace Nyerguds.Util
 {
     public static class GeneralUtils
     {
-        public static Boolean IsNumeric(String str)
+        public static bool IsNumeric(string str)
         {
-            Int32 strLEn = str.Length;
-            for (Int32 i = 0; i < strLEn; ++i)
+            int strLEn = str.Length;
+            for (int i = 0; i < strLEn; ++i)
             {
-                Char c = str[i];
+                char c = str[i];
                 if (c < '0' || c > '9')
                     return false;
             }
@@ -31,7 +31,7 @@ namespace Nyerguds.Util
         /// </summary>
         /// <param name="value">String to parse.</param>
         /// <returns>True if the string's first letter matches J, Y, O, 1 or T.</returns>
-        public static Boolean IsTrueValue(String value)
+        public static bool IsTrueValue(string value)
         {
             return IsTrueValue(value, false);
         }
@@ -42,7 +42,7 @@ namespace Nyerguds.Util
         /// <param name="value">String to parse</param>
         /// <param name="defaultVal">Default value to return in case parse fails</param>
         /// <returns>True if the string's first letter matches J, Y, O, 1 or T</returns>
-        public static Boolean IsTrueValue(String value, Boolean defaultVal)
+        public static bool IsTrueValue(string value, bool defaultVal)
         {
             if (String.IsNullOrEmpty(value))
                 return defaultVal;
@@ -51,33 +51,33 @@ namespace Nyerguds.Util
             return Regex.IsMatch(value, "^\\s*(([TJYO].*)|(0*[1-9]\\d*))\\s*$", RegexOptions.IgnoreCase);
         }
 
-        public static Boolean IsHexadecimal(String str)
+        public static bool IsHexadecimal(string str)
         {
             return Regex.IsMatch(str, "^[0-9A-F]*$", RegexOptions.IgnoreCase);
         }
 
-        public static Int32 HighestCommonDenominator(Int32 a, Int32 b)
+        public static int HighestCommonDenominator(int a, int b)
         {
-            const String err = "Argument cannot be 0";
+            const string err = "Argument cannot be 0";
             if (a == 0)
                 throw new ArgumentException(err, "a");
             if (b == 0)
                 throw new ArgumentException(err, "b");
-            Int32 min = Math.Min(a, b);
+            int min = Math.Min(a, b);
             if (Math.Max(a, b) % min == 0)
                 return min;
-            for (Int32 i = min; i > 0; --i)
+            for (int i = min; i > 0; --i)
                 if (a % i == 0 && b % i == 0)
                     return i;
             return 1;
         }
 
-        public static String GetApplicationPath()
+        public static string GetApplicationPath()
         {
             return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         }
 
-        public static TEnum TryParseEnum<TEnum>(String value, TEnum defaultValue, Boolean ignoreCase) where TEnum : struct
+        public static TEnum TryParseEnum<TEnum>(string value, TEnum defaultValue, bool ignoreCase) where TEnum : struct
         {
             if (String.IsNullOrEmpty(value))
                 return defaultValue;
@@ -91,12 +91,12 @@ namespace Nyerguds.Util
             }
         }
 
-        public static String GetAbsolutePath(String relativePath)
+        public static string GetAbsolutePath(string relativePath)
         {
             return GetAbsolutePath(null, relativePath);
         }
 
-        public static String GetAbsolutePath(String basePath, String relativePath)
+        public static string GetAbsolutePath(string basePath, string relativePath)
         {
             if (relativePath == null)
                 return null;
@@ -104,7 +104,7 @@ namespace Nyerguds.Util
                 basePath = Path.GetFullPath("."); // quick way of getting current working directory
             else
                 basePath = GetAbsolutePath(null, basePath); // to be REALLY sure ;)
-            String path;
+            string path;
             // specific for windows paths starting on \ - they need the drive added to them.
             // I constructed this piece like this for possible Mono support.
             if (!Path.IsPathRooted(relativePath) || "\\".Equals(Path.GetPathRoot(relativePath)))
@@ -118,9 +118,9 @@ namespace Nyerguds.Util
                 path = relativePath;
             // resolves any internal "..\" to get the true full path.
 
-            Int32 filenameStart = path.LastIndexOf(Path.DirectorySeparatorChar);
-            String dirPart = path.Substring(0, filenameStart + 1);
-            String filePart = path.Substring(filenameStart + 1);
+            int filenameStart = path.LastIndexOf(Path.DirectorySeparatorChar);
+            string dirPart = path.Substring(0, filenameStart + 1);
+            string filePart = path.Substring(filenameStart + 1);
             if (filePart.Contains("*") || filePart.Contains("?"))
             {
                 dirPart = Path.GetFullPath(dirPart);
@@ -129,11 +129,11 @@ namespace Nyerguds.Util
             return Path.GetFullPath(path);
         }
 
-        public static String ProgramVersion()
+        public static string ProgramVersion()
         {
             FileVersionInfo ver = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
             //Version v = AssemblyName.GetAssemblyName(Assembly.GetExecutingAssembly().Location).Version;
-            String version = String.Format("v{0}.{1}", ver.FileMajorPart, ver.FileMinorPart);
+            string version = String.Format("v{0}.{1}", ver.FileMajorPart, ver.FileMinorPart);
             if (ver.FileBuildPart > 0)
                 version += "." + ver.FileBuildPart;
             if (ver.FilePrivatePart > 0)
@@ -148,7 +148,7 @@ namespace Nyerguds.Util
         /// <param name="numbers">The array of numbers.</param>
         /// <returns>The resulting String.</returns>
         /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
-        public static String GroupNumbers<T>(IEnumerable<T> numbers) where T : IComparable, IConvertible
+        public static string GroupNumbers<T>(IEnumerable<T> numbers) where T : IComparable, IConvertible
         {
             return GroupNumbers(numbers, false);
     }
@@ -160,7 +160,7 @@ namespace Nyerguds.Util
         /// <param name="numbers">The array of numbers.</param>
         /// <returns>The resulting String.</returns>
         /// <remarks>Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
-        public static String GroupNumbers<T>(IEnumerable<T> numbers, Boolean asHex) where T : IComparable, IConvertible
+        public static string GroupNumbers<T>(IEnumerable<T> numbers, bool asHex) where T : IComparable, IConvertible
         {
             return new StringBuilder().AppendNumbersGrouped(numbers, asHex).ToString();
         }
@@ -188,7 +188,7 @@ namespace Nyerguds.Util
         /// <returns>The given string builder arg, for convenience for further appending.</returns>
         /// <remarks>
         /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
-        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, Boolean asHex) where T : IComparable, IConvertible
+        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, bool asHex) where T : IComparable, IConvertible
         {
             return AppendNumbersGrouped(sb, numbers, "-", ", ", asHex);
         }
@@ -204,17 +204,17 @@ namespace Nyerguds.Util
         /// <returns>The given string builder arg, for convenience for further appending.</returns>
         /// <remarks>
         /// Designed to work for all integer types, though it will overflow on UInt64 values larger than Int64.MaxValue.</remarks>
-        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, String rangeSeparator, String groupsSeparator, Boolean asHex) where T : IComparable, IConvertible
+        public static StringBuilder AppendNumbersGrouped<T>(this StringBuilder sb, IEnumerable<T> numbers, string rangeSeparator, string groupsSeparator, bool asHex) where T : IComparable, IConvertible
         {
             T[] numbersArr = numbers.Distinct().OrderBy(x => x).ToArray();
-            Int64 len = numbersArr.LongLength;
-            Int64 index = 0;
+            long len = numbersArr.LongLength;
+            long index = 0;
             while (index < len)
             {
                 if (index > 0)
                     sb.Append(groupsSeparator);
                 T cur = numbersArr[index];
-                Int64 startIndex = index;
+                long startIndex = index;
                 sb.Append(String.Format(asHex ? "{0:X}" : "{0}", cur));
                 while (index + 1 < len && numbersArr[index].ToInt64(CultureInfo.InvariantCulture) + 1 == numbersArr[index + 1].ToInt64(CultureInfo.InvariantCulture))
                     index++;
@@ -231,7 +231,7 @@ namespace Nyerguds.Util
         /// </summary>
         /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
         /// <returns>An array of distinct integers.</returns>
-        public static Int32[] GetRangedNumbers(String input)
+        public static int[] GetRangedNumbers(string input)
         {
             return GetRangedNumbers(input, "-", ",");
         }
@@ -242,7 +242,7 @@ namespace Nyerguds.Util
         /// </summary>
         /// <param name="input">A comma-separated list of positive numbers and number ranges.</param>
         /// <returns>An array of distinct integers.</returns>
-        public static Int32[] GetRangedNumbers(String input, bool asHex)
+        public static int[] GetRangedNumbers(string input, bool asHex)
         {
             return GetRangedNumbers(input, "-", ",", asHex);
         }
@@ -255,7 +255,7 @@ namespace Nyerguds.Util
         /// <param name="rangeSeparator">String put between two numbers in a range, like the '-' in "1-3".</param>
         /// <param name="groupsSeparator">String put between two groups, like the ',' in "1-5, 9-10". Spaces are trimmed off both this string and the split results.</param>
         /// <returns>An array of integers.</returns>
-        public static Int32[] GetRangedNumbers(String input, String rangeSeparator, String groupsSeparator)
+        public static int[] GetRangedNumbers(string input, string rangeSeparator, string groupsSeparator)
         {
             return GetRangedNumbers(input, rangeSeparator, groupsSeparator, false);
         }
@@ -268,28 +268,28 @@ namespace Nyerguds.Util
         /// <param name="rangeSeparator">String put between two numbers in a range, like the '-' in "1-3".</param>
         /// <param name="groupsSeparator">String put between two groups, like the ',' in "1-5, 9-10". Spaces are trimmed off both this string and the split results.</param>
         /// <returns>An array of integers.</returns>
-        public static Int32[] GetRangedNumbers(String input, String rangeSeparator, String groupsSeparator, bool asHex)
+        public static int[] GetRangedNumbers(string input, string rangeSeparator, string groupsSeparator, bool asHex)
         {
             if (String.IsNullOrEmpty(input))
-                return new Int32[0];
+                return new int[0];
             input = Regex.Replace(input, "\\s", String.Empty);
             if (input.Length == 0)
-                return new Int32[0];
+                return new int[0];
             groupsSeparator = groupsSeparator.Trim();
-            String[] parts = input.Split(new String[] { groupsSeparator }, StringSplitOptions.RemoveEmptyEntries);
-            List<Int32> numbers = new List<Int32>();
-            Int32 nrOfParts = parts.Length;
+            string[] parts = input.Split(new string[] { groupsSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            List<int> numbers = new List<int>();
+            int nrOfParts = parts.Length;
             // Unlike a simple Split, the use of regex allows the use of negative values if the range splitter is "-".
-            String nrGroup = asHex ? "(-?)((?:0x)?[0-9A-Za-z]+)" : "(-?)(\\d+)";
+            string nrGroup = asHex ? "(-?)((?:0x)?[0-9A-Za-z]+)" : "(-?)(\\d+)";
             Regex split = new Regex("^" + nrGroup + "\\s*(?:" + Regex.Escape(rangeSeparator) + "\\s*" + nrGroup + ")?$");
             int numBase = asHex ? 16 : 10;
-            for (Int32 i = 0; i < nrOfParts; ++i)
+            for (int i = 0; i < nrOfParts; ++i)
             {
-                String part = parts[i];
+                string part = parts[i];
                 Match m = split.Match(part);
                 if (m.Success)
                 {
-                    Int32 val1 = Convert.ToInt32(m.Groups[2].Value, numBase);
+                    int val1 = Convert.ToInt32(m.Groups[2].Value, numBase);
                     if (m.Groups[1].Value == "-")
                         val1 *= -1;
                     if (m.Groups[4].Value.Length == 0)
@@ -298,11 +298,11 @@ namespace Nyerguds.Util
                     }
                     else
                     {
-                        Int32 val2 = Convert.ToInt32(m.Groups[4].Value, numBase);
+                        int val2 = Convert.ToInt32(m.Groups[4].Value, numBase);
                         if (m.Groups[3].Value == "-")
                             val2 *= -1;
-                        Int32 lowest = Math.Min(val1, val2);
-                        Int32 highest = Math.Max(val1, val2);
+                        int lowest = Math.Min(val1, val2);
+                        int highest = Math.Max(val1, val2);
                         numbers.AddRange(Enumerable.Range(lowest, highest - lowest + 1));
                     }
                 }
@@ -310,7 +310,7 @@ namespace Nyerguds.Util
             return numbers.Distinct().ToArray();
         }
 
-        public static String DoubleAmpersands(String input)
+        public static string DoubleAmpersands(string input)
         {
             return input == null ? null : input.Replace("&", "&&");
         }
@@ -331,13 +331,13 @@ namespace Nyerguds.Util
         /// <param name="argex">The ArgumentException to retrieve the message from</param>
         /// <param name="fallback">True to construct a fallback message if the error message is empty.</param>
         /// <returns>The actual message given when the ArgumentException was created.</returns>
-        public static String RecoverArgExceptionMessage(ArgumentException argex, Boolean fallback)
+        public static string RecoverArgExceptionMessage(ArgumentException argex, bool fallback)
         {
             if (argex == null)
                 return null;
             SerializationInfo info = new SerializationInfo(typeof(ArgumentException), new FormatterConverter());
             argex.GetObjectData(info, new StreamingContext(StreamingContextStates.Clone));
-            String message = info.GetString("Message");
+            string message = info.GetString("Message");
             if (!String.IsNullOrEmpty(message))
                 return message;
             if (!fallback)

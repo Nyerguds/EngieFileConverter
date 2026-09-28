@@ -12,21 +12,21 @@ namespace Nyerguds.Util.UI
 {
     public partial class FrmManagePalettes : Form
     {
-        private const String CREATENEW = "Create new...";
+        private const string CREATENEW = "Create new...";
 
-        private Int32 bpp;
-        private Int32 nrOfColorsPerPal;
-        private Int32 nrOfSubPalettes;
+        private int bpp;
+        private int nrOfColorsPerPal;
+        private int nrOfSubPalettes;
         private PaletteDropDownInfo paletteToSave;
-        private String paletteSavePath;
-        private Boolean immediateSave = false;
-        private Dictionary<String, List<PaletteDropDownInfo>> subPalettes;
-        private List<String> removedPalettes;
-        private Int32 addedIndex = 0;
+        private string paletteSavePath;
+        private bool immediateSave = false;
+        private Dictionary<string, List<PaletteDropDownInfo>> subPalettes;
+        private List<string> removedPalettes;
+        private int addedIndex = 0;
 
-        public String Title { get; set; }
+        public string Title { get; set; }
 
-        public String SuggestedSaveName { get; set; }
+        public string SuggestedSaveName { get; set; }
 
         public PaletteDropDownInfo PaletteToSave
         {
@@ -38,7 +38,7 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        public FrmManagePalettes(Int32 bpp, String paletteSavePath)
+        public FrmManagePalettes(int bpp, string paletteSavePath)
         {
             this.InitializeComponent();
             this.paletteSavePath = paletteSavePath;
@@ -46,26 +46,26 @@ namespace Nyerguds.Util.UI
             this.nrOfColorsPerPal = 1 << bpp;
             this.nrOfSubPalettes = 256 / this.nrOfColorsPerPal;
             this.lbSubPalettes.Items.Clear();
-            this.removedPalettes = new List<String>();
+            this.removedPalettes = new List<string>();
             this.Opacity = 0;
         }
 
         private void Init()
         {
             this.cmbPalettes.Items.Clear();
-            this.subPalettes = new Dictionary<String, List<PaletteDropDownInfo>>();
+            this.subPalettes = new Dictionary<string, List<PaletteDropDownInfo>>();
             FileInfo[] files = new DirectoryInfo(this.paletteSavePath).GetFiles("*.pal").OrderBy(x => x.Name).ToArray();
-            Int32 filesLength = files.Length;
-            for (Int32 i = 0; i < filesLength; ++i)
+            int filesLength = files.Length;
+            for (int i = 0; i < filesLength; ++i)
             {
                 FileInfo file = files[i];
                 if (file.Length != 0x300)
                     continue;
-                String name = file.Name;
+                string name = file.Name;
                 List<PaletteDropDownInfo> currentSubPals = PaletteDropDownInfo.LoadSubPalettesInfoFromPalette(new FileInfo(file.FullName), true, true, false);
                 if (currentSubPals.Count == 0)
                     continue;
-                Int32 curBpp = currentSubPals[0].BitsPerPixel;
+                int curBpp = currentSubPals[0].BitsPerPixel;
                 if (this.bpp == curBpp)
                 {
                     this.subPalettes.Add(name, currentSubPals);
@@ -73,7 +73,7 @@ namespace Nyerguds.Util.UI
                         this.TrimSubPalettes(currentSubPals);
                 }
             }
-            foreach (String key in this.subPalettes.Keys)
+            foreach (string key in this.subPalettes.Keys)
                 this.cmbPalettes.Items.Add(key);
             if (this.paletteToSave != null)
             {
@@ -84,7 +84,7 @@ namespace Nyerguds.Util.UI
 
         private void TrimSubPalettes(List<PaletteDropDownInfo> subPalettes)
         {
-            for (Int32 i = subPalettes.Count - 1; i >= 0; i--)
+            for (int i = subPalettes.Count - 1; i >= 0; i--)
             {
                 PaletteDropDownInfo curr = subPalettes[i];
                 if (!String.IsNullOrEmpty(curr.Name))
@@ -93,12 +93,12 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        private void CmbPalettes_SelectedIndexChanged(Object sender, EventArgs e)
+        private void CmbPalettes_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (this.cmbPalettes.SelectedIndex < this.subPalettes.Count)
             {
                 this.lbSubPalettes.SelectedItem = null;
-                Int32 items = this.ListSubPalettes((this.cmbPalettes.SelectedItem ?? String.Empty).ToString());
+                int items = this.ListSubPalettes((this.cmbPalettes.SelectedItem ?? String.Empty).ToString());
                 //this.lbSubPalettes.Focus();
                 this.lbSubPalettes.SelectedIndex = items > 0 ? 0 : -1;
                 return;
@@ -106,17 +106,17 @@ namespace Nyerguds.Util.UI
             // "Create new" item was selected.
             // Give "save as" dialog? Maybe not, it only works from the program's folder. Just name + existence check, then?
             this.lbSubPalettes.Items.Clear();
-            String saveName = "newpal.pal";
+            string saveName = "newpal.pal";
             if (this.SuggestedSaveName != null)
                 saveName = Path.GetFileNameWithoutExtension(this.SuggestedSaveName) + ".pal";
-            String newPaletteName = this.GetTextInput("Palette name:", this.Title, saveName, FormStartPosition.CenterParent);
-            Char[] invalid = Path.GetInvalidFileNameChars();
-            Boolean isNull = newPaletteName == null;
-            Boolean isEmpty = !isNull && newPaletteName.Length == 0;
-            Boolean illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
+            string newPaletteName = this.GetTextInput("Palette name:", this.Title, saveName, FormStartPosition.CenterParent);
+            char[] invalid = Path.GetInvalidFileNameChars();
+            bool isNull = newPaletteName == null;
+            bool isEmpty = !isNull && newPaletteName.Length == 0;
+            bool illegalChars = !isNull && newPaletteName.Any(c => invalid.Contains(c));
             while (isEmpty || illegalChars)
             {
-                String message;
+                string message;
                 if (isEmpty)
                     message = "Palette needs a name.";
                 else
@@ -136,18 +136,18 @@ namespace Nyerguds.Util.UI
             }
             if (!newPaletteName.EndsWith(".pal"))
                 newPaletteName += ".pal";
-            String newPath = Path.Combine(this.paletteSavePath, newPaletteName);
+            string newPath = Path.Combine(this.paletteSavePath, newPaletteName);
             List<PaletteDropDownInfo> newPalInfo;
-            Int32 existingpos = this.subPalettes.Keys.ToList().IndexOf(newPaletteName);
+            int existingpos = this.subPalettes.Keys.ToList().IndexOf(newPaletteName);
             if (existingpos != -1)
             {
                 MessageBox.Show(this, "Palette already exists.", this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 this.cmbPalettes.SelectedIndex = existingpos;
                 return;
             }
-            String barePalName = newPaletteName.Substring(0, newPaletteName.Length - 4);
-            String iniPath = Path.Combine(this.paletteSavePath, barePalName + ".ini");
-            Boolean iniExists = File.Exists(iniPath);
+            string barePalName = newPaletteName.Substring(0, newPaletteName.Length - 4);
+            string iniPath = Path.Combine(this.paletteSavePath, barePalName + ".ini");
+            bool iniExists = File.Exists(iniPath);
             if (File.Exists(newPath))
             {
                 if (this.bpp == 4)
@@ -169,7 +169,7 @@ namespace Nyerguds.Util.UI
                         }
                         this.subPalettes.Add(newPaletteName, newPalInfo);
                         this.removedPalettes.Remove(newPaletteName);
-                        Int32 newIndex = this.subPalettes.Count - 1;
+                        int newIndex = this.subPalettes.Count - 1;
                         this.cmbPalettes.Items[this.subPalettes.Count - 1] = newPaletteName;
                         this.cmbPalettes.Items.Add(CREATENEW);
                         this.cmbPalettes.SelectedIndex = newIndex;
@@ -190,7 +190,7 @@ namespace Nyerguds.Util.UI
                         newPalInfo.Add(new PaletteDropDownInfo(newPaletteName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), newPaletteName, 0, true, false));
                         this.subPalettes.Add(newPaletteName, newPalInfo);
                         this.removedPalettes.Remove(newPaletteName);
-                        Int32 newIndex = this.subPalettes.Count - 1;
+                        int newIndex = this.subPalettes.Count - 1;
                         this.cmbPalettes.Items[newIndex] = newPaletteName;
                         this.cmbPalettes.Items.Add(CREATENEW);
                         this.cmbPalettes.SelectedIndex = newIndex;
@@ -220,34 +220,34 @@ namespace Nyerguds.Util.UI
             }
         }
 
-        private Int32 ListSubPalettes(String filename)
+        private int ListSubPalettes(string filename)
         {
             this.lbSubPalettes.Items.Clear();
             List<PaletteDropDownInfo> subPals;
             if (!this.subPalettes.TryGetValue(filename, out subPals))
                 return 0;
             // Trim all unused entries off the end
-            for (Int32 i = subPals.Count - 1; i >= 0; i--)
+            for (int i = subPals.Count - 1; i >= 0; i--)
             {
                 PaletteDropDownInfo curr = subPals[i];
                 if (!String.IsNullOrEmpty(curr.Name))
                     break;
                 subPals.RemoveAt(i);
             }
-            this.lbSubPalettes.Items.AddRange(subPals.Select(x => (Object)x).ToArray());
+            this.lbSubPalettes.Items.AddRange(subPals.Select(x => (object)x).ToArray());
             return subPals.Count;
         }
 
-        private void BtnRename_Click(Object sender, EventArgs e)
+        private void BtnRename_Click(object sender, EventArgs e)
         {
-            String selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
+            string selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
             if (!this.subPalettes.ContainsKey(selectedPal))
                 return;
             PaletteDropDownInfo currentPal = this.lbSubPalettes.SelectedItem as PaletteDropDownInfo;
             if (currentPal == null || !currentPal.SourceFile.Equals(selectedPal))
                 return;
             DialogResult dr = DialogResult.No;
-            String newPaletteName;
+            string newPaletteName;
             do
             {
                 newPaletteName = this.GetTextInput("Sub-palette name:", this.Title, currentPal.Name, FormStartPosition.CenterParent);
@@ -263,17 +263,17 @@ namespace Nyerguds.Util.UI
             this.lbSubPalettes.Items[this.lbSubPalettes.SelectedIndex] = currentPal;
         }
 
-        private void BtnAdd_Click(Object sender, EventArgs e)
+        private void BtnAdd_Click(object sender, EventArgs e)
         {
             if (this.lbSubPalettes.Items.Count >= this.nrOfSubPalettes)
             {
-                String message = "Can't add more than " + this.nrOfSubPalettes + " sub-palette" + (this.nrOfSubPalettes == 1 ? String.Empty : "s")
+                string message = "Can't add more than " + this.nrOfSubPalettes + " sub-palette" + (this.nrOfSubPalettes == 1 ? String.Empty : "s")
                                  + " in a" + (this.bpp == 8 ? "n" : String.Empty) + " " + this.bpp + " BPP palette.\n\nTo create a new palette file, select \""
                                  + CREATENEW + "\" from the end of the palettes dropdown list.";
                 MessageBox.Show(this, message, this.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            String selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
+            string selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
             if (!this.subPalettes.ContainsKey(selectedPal))
                 return;
             List<PaletteDropDownInfo> subList;
@@ -281,7 +281,7 @@ namespace Nyerguds.Util.UI
                 return;
 
             DialogResult dr = DialogResult.No;
-            String newPaletteName;
+            string newPaletteName;
             do
             {
                 newPaletteName = this.GetTextInput("New sub-palette name:", this.Title, String.Empty, FormStartPosition.CenterParent);
@@ -294,10 +294,10 @@ namespace Nyerguds.Util.UI
             if (newPaletteName == null)
                 return;
 
-            Int32 pos = this.lbSubPalettes.SelectedIndex + 1;
+            int pos = this.lbSubPalettes.SelectedIndex + 1;
             subList.Insert(pos, new PaletteDropDownInfo(newPaletteName, this.bpp, Enumerable.Repeat(Color.Empty, this.nrOfColorsPerPal).ToArray(), selectedPal, pos, true, false));
-            Int32 subListCount = subList.Count;
-            for (Int32 i = 0; i < subListCount; ++i)
+            int subListCount = subList.Count;
+            for (int i = 0; i < subListCount; ++i)
             {
                 PaletteDropDownInfo info = subList[i];
                 info.Entry = i;
@@ -309,9 +309,9 @@ namespace Nyerguds.Util.UI
             this.lbSubPalettes.SelectedIndex = pos;
         }
 
-        private void BtnRemove_Click(Object sender, EventArgs e)
+        private void BtnRemove_Click(object sender, EventArgs e)
         {
-            String selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
+            string selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
             if (!this.subPalettes.ContainsKey(selectedPal))
                 return;
             List<PaletteDropDownInfo> subList;
@@ -323,7 +323,7 @@ namespace Nyerguds.Util.UI
 
             if (this.lbSubPalettes.Items.Count == 1)
             {
-                String message;
+                string message;
                 if (this.nrOfSubPalettes == 1)
                     message = "This will remove this palette.";
                 else
@@ -333,7 +333,7 @@ namespace Nyerguds.Util.UI
                     return;
                 this.subPalettes.Remove(selectedPal);
                 this.removedPalettes.Add(selectedPal);
-                Int32 index = this.cmbPalettes.SelectedIndex;
+                int index = this.cmbPalettes.SelectedIndex;
                 this.cmbPalettes.SelectedIndex = -1;
                 this.cmbPalettes.Items.RemoveAt(index);
                 this.cmbPalettes.SelectedIndex = this.cmbPalettes.Items.Count - this.addedIndex > 0 ? 0 : -1;
@@ -342,23 +342,23 @@ namespace Nyerguds.Util.UI
             DialogResult dr2 = MessageBox.Show(this, "Are you sure you want to remove this entry?", this.Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (dr2 == DialogResult.No)
                 return;
-            Int32 entry = currentPal.Entry;
+            int entry = currentPal.Entry;
             subList.RemoveAt(this.lbSubPalettes.SelectedIndex);
             this.lbSubPalettes.Items.RemoveAt(this.lbSubPalettes.SelectedIndex);
-            Int32 subListCount = subList.Count;
-            for (Int32 i = 0; i < subListCount; ++i)
+            int subListCount = subList.Count;
+            for (int i = 0; i < subListCount; ++i)
             {
                 PaletteDropDownInfo info = subList[i];
                 info.Entry = i;
                 this.lbSubPalettes.Items[i] = info;
             }
-            Int32 indexToSelect = entry;
+            int indexToSelect = entry;
             if (this.lbSubPalettes.Items.Count <= indexToSelect)
                 indexToSelect--;
             this.lbSubPalettes.SelectedIndex = indexToSelect;
         }
 
-        private void LbSubPalettes_SelectedIndexChanged(Object sender, EventArgs e)
+        private void LbSubPalettes_SelectedIndexChanged(object sender, EventArgs e)
         {
             PaletteDropDownInfo selectedSubPal = this.lbSubPalettes.SelectedItem as PaletteDropDownInfo;
             Color[] colors;
@@ -369,18 +369,18 @@ namespace Nyerguds.Util.UI
             this.palSelectedSubPal.Palette = colors;
         }
 
-        private void BtnCancel_Click(Object sender, EventArgs e)
+        private void BtnCancel_Click(object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void BtnOk_Click(Object sender, EventArgs e)
+        private void BtnOk_Click(object sender, EventArgs e)
         {
             if (this.paletteToSave != null)
             {
-                String selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
+                string selectedPal = (this.cmbPalettes.SelectedItem ?? String.Empty).ToString();
                 PaletteDropDownInfo currentPal = this.lbSubPalettes.SelectedItem as PaletteDropDownInfo;
-                Boolean hasValidSelection = this.cmbPalettes.SelectedIndex > -1 && currentPal != null && selectedPal.Length > 0;
+                bool hasValidSelection = this.cmbPalettes.SelectedIndex > -1 && currentPal != null && selectedPal.Length > 0;
                 if (!hasValidSelection || !currentPal.SourceFile.Equals(selectedPal))
                 {
                     if (this.immediateSave)
@@ -392,8 +392,8 @@ namespace Nyerguds.Util.UI
                     this.DialogResult = DialogResult.None;
                     return;
                 }
-                String palette = currentPal.SourceFile;
-                Int32 entry = currentPal.Entry;
+                string palette = currentPal.SourceFile;
+                int entry = currentPal.Entry;
                 if (palette == null || entry < 0 || entry >= this.nrOfSubPalettes)
                 {
                     this.DialogResult = DialogResult.None;
@@ -403,7 +403,7 @@ namespace Nyerguds.Util.UI
                 if (palfile.Exists && palfile.Length == 0x300 && !currentPal.Colors.All(c => c.IsEmpty))
                 {
                     MessageBoxButtons mbb = this.immediateSave ? MessageBoxButtons.YesNoCancel : MessageBoxButtons.YesNo;
-                    String message = "Overwrite this palette entry?";
+                    string message = "Overwrite this palette entry?";
                     if (this.immediateSave)
                         message += "\n\nPress \"No\" to pick another entry to save to.";
 
@@ -434,21 +434,21 @@ namespace Nyerguds.Util.UI
                     this.paletteToSave = currentPal;
             }
             // save all changes
-            foreach (String palName in this.subPalettes.Keys)
+            foreach (string palName in this.subPalettes.Keys)
             {
                 Color[] thisFullPal;
                 FileInfo pfile = new FileInfo(Path.Combine(this.paletteSavePath, palName));
-                Boolean is8bpp = this.bpp == 8;
+                bool is8bpp = this.bpp == 8;
 
-                String bareName = pfile.Name;
-                String inipath = Path.Combine(pfile.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
-                Boolean iniExists = File.Exists(inipath);
+                string bareName = pfile.Name;
+                string inipath = Path.Combine(pfile.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
+                bool iniExists = File.Exists(inipath);
                 IniFile paletteConfig = new IniFile(inipath);
                 if (pfile.Exists && pfile.Length == 0x300)
                 {
                     // Eight bit: if ini exists, and data is specifically identified as 8-bit
-                    Boolean origIsEightBit = iniExists && paletteConfig.GetBoolValue(PaletteDropDownInfo.PALINISECTION, PaletteDropDownInfo.PALINIKEY8BIT, false);
-                    Byte[] palBytes = File.ReadAllBytes(pfile.FullName);
+                    bool origIsEightBit = iniExists && paletteConfig.GetBoolValue(PaletteDropDownInfo.PALINISECTION, PaletteDropDownInfo.PALINIKEY8BIT, false);
+                    byte[] palBytes = File.ReadAllBytes(pfile.FullName);
                     // ...or if no ini exists but the data contains values higher than 6-bit allows.
                     if (!iniExists && palBytes.Any(b => b > 0x3F))
                         origIsEightBit = true;
@@ -458,9 +458,9 @@ namespace Nyerguds.Util.UI
                 else
                     thisFullPal = Enumerable.Repeat(Color.Black, 256).ToArray();
                 List<PaletteDropDownInfo> subPals = this.subPalettes[palName];
-                Int32 subPalsCount = subPals.Count;
-                Boolean skip = false;
-                for (Int32 i = 0; i < subPalsCount; ++i)
+                int subPalsCount = subPals.Count;
+                bool skip = false;
+                for (int i = 0; i < subPalsCount; ++i)
                 {
                     PaletteDropDownInfo subpal = subPals[i];
                     if (subpal.BitsPerPixel != this.bpp)
@@ -479,7 +479,7 @@ namespace Nyerguds.Util.UI
                 paletteConfig.SetBoolValue(PaletteDropDownInfo.PALINISECTION, PaletteDropDownInfo.PALINIKEY8BIT, true);
                 if (!is8bpp)
                 {
-                    for (Int32 i = 0; i < this.nrOfSubPalettes; ++i)
+                    for (int i = 0; i < this.nrOfSubPalettes; ++i)
                     {
                         PaletteDropDownInfo subPal = subPals.Find(x => x.Entry == i);
                         if (subPal != null)
@@ -488,10 +488,10 @@ namespace Nyerguds.Util.UI
                 }
                 paletteConfig.WriteIni();
             }
-            foreach (String pal in this.removedPalettes)
+            foreach (string pal in this.removedPalettes)
             {
-                String palFile = Path.Combine(this.paletteSavePath, pal);
-                String iniFile = Path.Combine(this.paletteSavePath, pal.Substring(0, pal.Length - 4)) + ".ini";
+                string palFile = Path.Combine(this.paletteSavePath, pal);
+                string iniFile = Path.Combine(this.paletteSavePath, pal.Substring(0, pal.Length - 4)) + ".ini";
                 File.Delete(palFile);
                 File.Delete(iniFile);
             }
@@ -499,7 +499,7 @@ namespace Nyerguds.Util.UI
             this.Close();
         }
 
-        private String GetTextInput(String prompt, String title, String defaultText, FormStartPosition startPosition)
+        private string GetTextInput(string prompt, string title, string defaultText, FormStartPosition startPosition)
         {
             SaveOptionInfo soi = new SaveOptionInfo();
             soi.Name = null;
@@ -517,18 +517,18 @@ namespace Nyerguds.Util.UI
 
         }
 
-        private void FrmManagePalettes_Load(Object sender, EventArgs e)
+        private void FrmManagePalettes_Load(object sender, EventArgs e)
         {
             this.Init();
             if (this.paletteToSave != null)
             {
                 this.palReplaceBy.Palette = this.paletteToSave.Colors;
-                String source = this.paletteToSave.SourceFile;
-                Int32 entry = this.paletteToSave.Entry;
+                string source = this.paletteToSave.SourceFile;
+                int entry = this.paletteToSave.Entry;
                 if (!String.IsNullOrEmpty(source) && entry != -1 && this.cmbPalettes.Items.Contains(source))
                 {
                     // Save an existing palette
-                    Int32 index = this.cmbPalettes.Items.IndexOf(source);
+                    int index = this.cmbPalettes.Items.IndexOf(source);
                     if (index != -1)
                     {
                         this.cmbPalettes.SelectedIndex = index;
@@ -569,7 +569,7 @@ namespace Nyerguds.Util.UI
             PalettePanel.InitPaletteControl(this.bpp, this.palSelectedSubPal, this.palSelectedSubPal.Palette, 74);
         }
 
-        private void FrmManagePalettes_Shown(Object sender, EventArgs e)
+        private void FrmManagePalettes_Shown(object sender, EventArgs e)
         {
             if (this.cmbPalettes.SelectedIndex != -1)
                 this.lbSubPalettes.Focus();

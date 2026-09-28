@@ -19,64 +19,64 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "IgDmp"; } }
+        public override string IdCode { get { return "IgDmp"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Interactive Girls DMP file"; } }
-        public override String[] FileExtensions { get { return new String[] { "dmp" }; } }
-        public override String LongTypeName { get { return "Interactive Girls DMP image file"; } }
-        public override Boolean NeedsPalette { get { return !this.m_PaletteLoaded; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
-        protected Boolean m_PaletteLoaded;
-        public Boolean Combined { get; private set; }
+        public override string ShortTypeName { get { return "Interactive Girls DMP file"; } }
+        public override string[] FileExtensions { get { return new string[] { "dmp" }; } }
+        public override string LongTypeName { get { return "Interactive Girls DMP image file"; } }
+        public override bool NeedsPalette { get { return !this.m_PaletteLoaded; } }
+        public override int BitsPerPixel { get { return 8; } }
+        protected bool m_PaletteLoaded;
+        public bool Combined { get; private set; }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
-            String filename = sourcePath;
-            String basePath = Path.GetDirectoryName(sourcePath);
-            String baseName = Path.GetFileNameWithoutExtension(sourcePath);
-            String baseExt = Path.GetExtension(sourcePath);
-            String curFile = Path.Combine(basePath, Path.GetFileName(filename));
-            Byte[] palette = null;
-            Int32 width = -1;
-            Int32 height = -1;
-            Byte[] imageData = null;
+            string filename = sourcePath;
+            string basePath = Path.GetDirectoryName(sourcePath);
+            string baseName = Path.GetFileNameWithoutExtension(sourcePath);
+            string baseExt = Path.GetExtension(sourcePath);
+            string curFile = Path.Combine(basePath, Path.GetFileName(filename));
+            byte[] palette = null;
+            int width = -1;
+            int height = -1;
+            byte[] imageData = null;
             Regex nameEnd = new Regex("^(.*?)-[tb][lr]$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
             Match m;
-            Boolean combined = false;
+            bool combined = false;
             if (baseName != null && baseExt != null && (m = nameEnd.Match(baseName)).Success)
             {
                 combined = true;
-                String baseFileName = m.Groups[1].Value;
-                String baseFilePath = Path.Combine(basePath, m.Groups[1].Value);
-                String[] frameSuffixes = new String[] {"-tl", "-tr", "-bl", "-br"};
-                Byte[][] frames = new Byte[4][];
-                Int32[] widths = new Int32[4];
-                Int32[] heights = new Int32[4];
+                string baseFileName = m.Groups[1].Value;
+                string baseFilePath = Path.Combine(basePath, m.Groups[1].Value);
+                string[] frameSuffixes = new string[] {"-tl", "-tr", "-bl", "-br"};
+                byte[][] frames = new byte[4][];
+                int[] widths = new int[4];
+                int[] heights = new int[4];
                 StringBuilder extraInfo = new StringBuilder();
-                for (Int32 i = 0; i < 4; ++i)
+                for (int i = 0; i < 4; ++i)
                 {
-                    String testPath = baseFilePath + frameSuffixes[i] + baseExt;
+                    string testPath = baseFilePath + frameSuffixes[i] + baseExt;
                     if (!File.Exists(testPath))
                     {
                         combined = false;
                         break;
                     }
-                    Byte[] pal2 = null;
+                    byte[] pal2 = null;
                     try
                     {
-                        Int32 frHeight;
-                        Int32 frWidth;
-                        Byte[] frameData = testPath == curFile ? fileData : File.ReadAllBytes(testPath);
+                        int frHeight;
+                        int frWidth;
+                        byte[] frameData = testPath == curFile ? fileData : File.ReadAllBytes(testPath);
                         frames[i] = this.ReadSingleFrame(frameData, testPath, out frWidth, out frHeight, ref pal2);
                         if (palette == null && pal2 != null)
                         {
@@ -98,7 +98,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         combined = false;
                         break;
                     }
-                    for (Int32 c = 0; c < 0x300; ++c)
+                    for (int c = 0; c < 0x300; ++c)
                     {
                         if (palette[i] == pal2[i])
                             continue;
@@ -109,13 +109,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (combined)
                 {
                     this.Combined = true;
-                    Int32 halfWidth1 = Math.Max(widths[0], widths[2]);
-                    Int32 halfWidth2 = Math.Max(widths[1], widths[3]);
-                    Int32 halfHeight1 = Math.Max(heights[0], heights[1]);
-                    Int32 halfHeight2 = Math.Max(heights[2], heights[3]);
+                    int halfWidth1 = Math.Max(widths[0], widths[2]);
+                    int halfWidth2 = Math.Max(widths[1], widths[3]);
+                    int halfHeight1 = Math.Max(heights[0], heights[1]);
+                    int halfHeight2 = Math.Max(heights[2], heights[3]);
                     width = halfWidth1 + halfWidth2;
                     height = halfHeight1 + halfHeight2;
-                    imageData = new Byte[width * height];
+                    imageData = new byte[width * height];
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[0], widths[0], heights[0], widths[0], new Rectangle(0, 0, widths[0], heights[0]), null, true);
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[1], widths[1], heights[1], widths[1], new Rectangle(halfWidth1, 0, widths[1], heights[1]), null, true);
                     ImageUtils.PasteOn8bpp(imageData, width, height, width, frames[2], widths[2], heights[2], widths[2], new Rectangle(0, halfHeight1, widths[2], heights[2]), null, true);
@@ -123,7 +123,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     filename = baseFilePath + baseExt;
                     extraInfo.AppendLine("Composed from four files: ");
                     extraInfo.Append("  ");
-                    for (Int32 i = 0; i < 4; ++i)
+                    for (int i = 0; i < 4; ++i)
                     {
                         extraInfo.Append(baseFileName).Append(frameSuffixes[i]).Append(baseExt);
                         if (i != 3)
@@ -142,7 +142,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.m_Palette = ColorUtils.ReadSixBitPalette(palette);
             else
             {
-                String palFile = Path.Combine(basePath, baseName + ".pal");
+                string palFile = Path.Combine(basePath, baseName + ".pal");
                 FileInfo palInfo;
                 if (baseName != null && (palInfo = new FileInfo(palFile)).Exists && palInfo.Length == 0x300)
                 {
@@ -167,7 +167,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        protected Byte[] ReadSingleFrame(Byte[] fileData, String sourcePath, out Int32 width, out Int32 height, ref Byte[] palette)
+        protected byte[] ReadSingleFrame(byte[] fileData, string sourcePath, out int width, out int height, ref byte[] palette)
         {
             // Specs:
             // 00 - Byte   - Magic marker '01'
@@ -177,36 +177,36 @@ namespace EngieFileConverter.Domain.FileTypes
             // 06 - UInt32 - Padding (empty)
             // 0A - Byte[0x300] - Palette (if palette indicator is 1)
             // 30A - Byte[Width*Height] - Data
-            Int32 fileDataLength = fileData.Length;
+            int fileDataLength = fileData.Length;
             if (fileDataLength < 6)
                 throw new FileTypeLoadException("Not an ICG DMP file.");
-            Int32 magic = fileData[0];
+            int magic = fileData[0];
             if (magic != 1)
                 throw new FileTypeLoadException("Not an ICG DMP file.");
-            Int32 hasPalette = fileData[1];
+            int hasPalette = fileData[1];
             if (hasPalette > 1)
                 throw new FileTypeLoadException("Not an ICG DMP file.");
-            Boolean paletteLoaded = hasPalette == 1;
+            bool paletteLoaded = hasPalette == 1;
             width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
             height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
-            UInt32 padding = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 6);
+            uint padding = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 6);
             if (padding != 0)
                 throw new FileTypeLoadException("Not an ICG DMP file.");
-            Int32 dataStart = 0x0A + hasPalette * 0x300;
-            Int32 dataSize = width * height;
+            int dataStart = 0x0A + hasPalette * 0x300;
+            int dataSize = width * height;
             if (paletteLoaded)
             {
-                palette = new Byte[0x300];
+                palette = new byte[0x300];
                 Array.Copy(fileData, 0x0A, palette, 0, 0x300);
             }
             if (fileDataLength != dataSize + dataStart)
                 throw new FileTypeLoadException("Not an ICG DMP file.");
-            Byte[] imgBytes = new Byte[dataSize];
+            byte[] imgBytes = new byte[dataSize];
             Array.Copy(fileData, dataStart, imgBytes, 0, dataSize);
             return imgBytes;
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             PerformPreliminaryChecks(fileToSave);
             return new Option[]
@@ -215,7 +215,7 @@ namespace EngieFileConverter.Domain.FileTypes
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Specs:
             // 00 - Byte   - Magic marker '01'
@@ -227,20 +227,20 @@ namespace EngieFileConverter.Domain.FileTypes
             // 30A - Byte[Width*Height] - Data
 
             PerformPreliminaryChecks(fileToSave);
-            Boolean asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
-            Int32 stride;
-            Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
-            Int32 imageLength = imageBytes.Length;
-            Byte hasPalette = asPaletted ? (Byte)1 : (Byte)0;
-            Int32 dataStart = 0x0A + hasPalette * 0x300;
-            Byte[] dmpData = new Byte[dataStart + imageLength];
+            bool asPaletted = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PAL"));
+            int stride;
+            byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
+            int imageLength = imageBytes.Length;
+            byte hasPalette = asPaletted ? (byte)1 : (byte)0;
+            int dataStart = 0x0A + hasPalette * 0x300;
+            byte[] dmpData = new byte[dataStart + imageLength];
             dmpData[0] = 0x01;
             dmpData[1] = hasPalette;
-            ArrayUtils.WriteUInt16ToByteArrayLe(dmpData, 2, (UInt16)fileToSave.Width);
-            ArrayUtils.WriteUInt16ToByteArrayLe(dmpData, 4, (UInt16)fileToSave.Height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(dmpData, 2, (ushort)fileToSave.Width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(dmpData, 4, (ushort)fileToSave.Height);
             if (asPaletted)
             {
-                Byte[] palette = ColorUtils.GetSixBitPaletteData(fileToSave.GetColors());
+                byte[] palette = ColorUtils.GetSixBitPaletteData(fileToSave.GetColors());
                 Array.Copy(palette, 0, dmpData, 0xA, palette.Length);
             }
             Array.Copy(imageBytes, 0, dmpData, dataStart, imageLength);

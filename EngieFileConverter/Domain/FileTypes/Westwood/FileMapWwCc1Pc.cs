@@ -151,42 +151,42 @@ namespace EngieFileConverter.Domain.FileTypes
             Color.FromArgb(0x65, 0x65, 0x7D), // 29 = SCRATE
         };
 
-        public override String IdCode { get { return "WwCc1MapPC"; } }
+        public override string IdCode { get { return "WwCc1MapPC"; } }
         public override FileClass FileClass { get { return FileClass.CcMap | FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.CcMap; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C Map"; } }
+        public override string ShortTypeName { get { return "C&C Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return "C&C map file - PC"; } }
+        public override string LongTypeName { get { return "C&C map file - PC"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "bin" }; } }
-        public override Int32 Width { get { return 64; } }
-        public override Int32 Height { get { return 64; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string[] FileExtensions { get { return new string[] { "bin" }; } }
+        public override int Width { get { return 64; } }
+        public override int Height { get { return 64; } }
+        public override int BitsPerPixel { get { return 8; } }
 
-        public Byte[] PCMapData { get; protected set; }
-        public Byte[] N64MapData { get; protected set; }
+        public byte[] PCMapData { get; protected set; }
+        public byte[] N64MapData { get; protected set; }
 
         public CnCMap Map { get { return new CnCMap(this.PCMapData, false); } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFile(fileData, true);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFile(fileData, filename, null, null, true);
         }
 
-        public void LoadFile(Byte[] fileData, Boolean isPc)
+        public void LoadFile(byte[] fileData, bool isPc)
         {
             this.PCMapData = fileData;
             Theater theater = (Theater)0xFF;
-            Int32 errToN64;
-            Byte[] mapDataToN64 = this.IdentifyTheaterAndConvert(fileData, ref theater, false, null, out errToN64);
-            Int32 errToPc;
-            Byte[] mapDataToPC = this.IdentifyTheaterAndConvert(fileData, ref theater, true, null, out errToPc);
+            int errToN64;
+            byte[] mapDataToN64 = this.IdentifyTheaterAndConvert(fileData, ref theater, false, null, out errToN64);
+            int errToPc;
+            byte[] mapDataToPC = this.IdentifyTheaterAndConvert(fileData, ref theater, true, null, out errToPc);
             if ((isPc && errToN64 > errToPc) || (!isPc && errToPc > errToN64))
                 throw new FileTypeLoadException("Not a " + (isPc ? "PC" : "N64") + " C&C Map file.");
             this.PCMapData = isPc ? fileData : mapDataToPC;
@@ -194,7 +194,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = this.ReadMapAsImage(fileData, theater, Rectangle.Empty, null);
         }
 
-        public void LoadFile(Byte[] fileData, String filename, Byte[] iniContents, String iniFile, Boolean isPc)
+        public void LoadFile(byte[] fileData, string filename, byte[] iniContents, string iniFile, bool isPc)
         {
             IniInfo iniInfo = this.GetIniInfo(iniFile ?? filename, (Theater)0xFF, iniContents);
             Theater theater = iniInfo == null ? (Theater)0xFF : iniInfo.Theater;
@@ -216,7 +216,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(filename);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             FileMapWwCc1Pc cc1PcMap = fileToSave as FileMapWwCc1Pc;
             if (cc1PcMap == null)
@@ -224,15 +224,15 @@ namespace EngieFileConverter.Domain.FileTypes
             return ArrayUtils.CloneArray(cc1PcMap.PCMapData);
         }
 
-        protected void DetectDataTypeAndConvert(Byte[] fileData, Theater theater, String sourceFile, Rectangle usableArea, Boolean isPc)
+        protected void DetectDataTypeAndConvert(byte[] fileData, Theater theater, string sourceFile, Rectangle usableArea, bool isPc)
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
-            Int32 errCells;
-            Byte[] convertedData = this.IdentifyTheaterAndConvert(fileData, ref theater, !isPc, sourceFile, out errCells);
+            int errCells;
+            byte[] convertedData = this.IdentifyTheaterAndConvert(fileData, ref theater, !isPc, sourceFile, out errCells);
             if (errCells > 0)
             {
-                Int32 errCells2;
+                int errCells2;
                 this.IdentifyTheaterAndConvert(fileData, ref theater, isPc, sourceFile, out errCells2);
                 if (errCells > errCells2)
                     throw new FileTypeLoadException("Not a " + (isPc ? "PC" : "N64") + " C&C Map file.");
@@ -241,15 +241,15 @@ namespace EngieFileConverter.Domain.FileTypes
             this.N64MapData = isPc ? convertedData : fileData;
         }
 
-        protected IniInfo GetIniInfo(String filename, Theater defaultTheater, Byte[] iniData)
+        protected IniInfo GetIniInfo(string filename, Theater defaultTheater, byte[] iniData)
         {
             IniInfo info = new IniInfo();
             info.Theater = defaultTheater;
-            String inipath = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".ini";
+            string inipath = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".ini";
             IniFile inifile = null;
             if (iniData != null)
             {
-                String iniStr = IniFile.ENCODING_DOS_US.GetString(iniData);
+                string iniStr = IniFile.ENCODING_DOS_US.GetString(iniData);
                 inifile = new IniFile(inipath, iniStr, IniFile.ENCODING_DOS_US);
                 inipath = filename;
             }
@@ -259,7 +259,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (inifile == null || inifile.ContainsSection("MapPack") || (!inifile.ContainsSection("Basic") && !inifile.ContainsSection("Map")))
                 return null;
-            String th = inifile.GetStringValue("Map", "Theater", null);
+            string th = inifile.GetStringValue("Map", "Theater", null);
             info.Theater = GeneralUtils.TryParseEnum(th, defaultTheater, true);
             info.Name = inifile.GetStringValue("Basic", "Name", null);
             info.Width = inifile.GetIntValue("Map", "Width", 64);
@@ -272,20 +272,20 @@ namespace EngieFileConverter.Domain.FileTypes
             return info;
         }
 
-        private Dictionary<Int32, Int32> GetPopulation(IniFile inifile)
+        private Dictionary<int, int> GetPopulation(IniFile inifile)
         {
-            Dictionary<Int32, Int32> cells = new Dictionary<Int32, Int32>();
+            Dictionary<int, int> cells = new Dictionary<int, int>();
             // Fetch structures
-            Dictionary<String, String> str = inifile.GetSectionContent("Structures");
+            Dictionary<string, string> str = inifile.GetSectionContent("Structures");
             List<MapStructure> structures = new List<MapStructure>();
-            foreach (KeyValuePair<String, String> strPair in str)
+            foreach (KeyValuePair<string, string> strPair in str)
             {
                 Match strMatch = STRREGEX.Match(strPair.Value);
                 if (!strMatch.Success)
                     continue;
                 House strOwner = GeneralUtils.TryParseEnum(strMatch.Groups[1].Value, House.GoodGuy, true);
-                String strName = strMatch.Groups[2].Value;
-                Int32 strCell = Int32.Parse(strMatch.Groups[4].Value);
+                string strName = strMatch.Groups[2].Value;
+                int strCell = Int32.Parse(strMatch.Groups[4].Value);
                 StructInfo strInfo;
                 if (!MapConversion.STRUCTUREINFO.TryGetValue(strName, out strInfo))
                     continue;
@@ -297,10 +297,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 StructInfo strInfo = mapStruct.StructType;
                 if (!strInfo.HasBib || strInfo.Width < 2 || strInfo.Width > 4)
                     continue;
-                Int32 strCell = mapStruct.Cell + (strInfo.Height - 1) * 64;
-                Int32 bibsize = 2 * strInfo.Width;
-                Int32 strWidth = strInfo.Width;
-                for (Int32 i = 0; i < bibsize; ++i)
+                int strCell = mapStruct.Cell + (strInfo.Height - 1) * 64;
+                int bibsize = 2 * strInfo.Width;
+                int strWidth = strInfo.Width;
+                for (int i = 0; i < bibsize; ++i)
                 {
                     cells[strCell] = (int)TerrainTypeEnh.Bibs;
                     strCell++;
@@ -309,16 +309,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             // Paint terrain
-            Dictionary<String, String> ter = inifile.GetSectionContent("Terrain");
-            foreach (KeyValuePair<String, String> terPair in ter)
+            Dictionary<string, string> ter = inifile.GetSectionContent("Terrain");
+            foreach (KeyValuePair<string, string> terPair in ter)
             {
-                Int32 terCell;
+                int terCell;
                 if (!Int32.TryParse(terPair.Key, out terCell))
                     continue;
                 Match terMatch = TERREGEX.Match(terPair.Value);
                 if (!terMatch.Success)
                     continue;
-                String terType = terMatch.Groups[1].Value;
+                string terType = terMatch.Groups[1].Value;
 
                 StructInfo strInfo;
                 if (!MapConversion.TERRAININFO.TryGetValue(terType, out strInfo))
@@ -330,8 +330,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     terColor = TerrainTypeEnh.Rocks;
                 else
                     terColor = TerrainTypeEnh.Trees;
-                Int32 strWidth = strInfo.Width;
-                for (Int32 i = 0; i < strInfo.OccupyList.Length; ++i)
+                int strWidth = strInfo.Width;
+                for (int i = 0; i < strInfo.OccupyList.Length; ++i)
                 {
                     if (strInfo.OccupyList[i])
                         cells[terCell] = (int)terColor;
@@ -341,13 +341,13 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             // Paint overlay
-            Dictionary<String, String> ovl = inifile.GetSectionContent("Overlay");
-            foreach (KeyValuePair<String, String> ovlPair in ovl)
+            Dictionary<string, string> ovl = inifile.GetSectionContent("Overlay");
+            foreach (KeyValuePair<string, string> ovlPair in ovl)
             {
-                Int32 ovlCell;
+                int ovlCell;
                 if (!Int32.TryParse(ovlPair.Key, out ovlCell))
                     continue;
-                String ovlType = ovlPair.Value;
+                string ovlType = ovlPair.Value;
                 if (CIVREGEX.IsMatch(ovlType))
                     cells[ovlCell] = this.GetHouseColorIndex(House.Neutral, 1);
                 else
@@ -362,10 +362,10 @@ namespace EngieFileConverter.Domain.FileTypes
             foreach (MapStructure mapStruct in structures)
             {
                 StructInfo strInfo = mapStruct.StructType;
-                Int32 strColor = this.GetHouseColorIndex(mapStruct.Owner, 1);
-                Int32 strCell = mapStruct.Cell;
-                Int32 strWidth = strInfo.Width;
-                for (Int32 i = 0; i < strInfo.OccupyList.Length; ++i)
+                int strColor = this.GetHouseColorIndex(mapStruct.Owner, 1);
+                int strCell = mapStruct.Cell;
+                int strWidth = strInfo.Width;
+                for (int i = 0; i < strInfo.OccupyList.Length; ++i)
                 {
                     if (strInfo.OccupyList[i])
                         cells[strCell] = strColor;
@@ -375,28 +375,28 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             // Paint infantry
-            Dictionary<String, String> inf = inifile.GetSectionContent("Infantry");
-            foreach (KeyValuePair<String, String> infPair in inf)
+            Dictionary<string, string> inf = inifile.GetSectionContent("Infantry");
+            foreach (KeyValuePair<string, string> infPair in inf)
             {
                 Match infMatch = INFREGEX.Match(infPair.Value);
                 if (infMatch.Success)
                 {
                     House infOwner = GeneralUtils.TryParseEnum(infMatch.Groups[1].Value, House.GoodGuy, true);
-                    Int32 infColor = this.GetHouseColorIndex(infOwner, 0);
-                    Int32 infCell = Int32.Parse(infMatch.Groups[4].Value);
+                    int infColor = this.GetHouseColorIndex(infOwner, 0);
+                    int infCell = Int32.Parse(infMatch.Groups[4].Value);
                     cells[infCell] = infColor;
                 }
             }
             // Paint units
-            Dictionary<String, String> veh = inifile.GetSectionContent("Units");
-            foreach (KeyValuePair<String, String> vehPair in veh)
+            Dictionary<string, string> veh = inifile.GetSectionContent("Units");
+            foreach (KeyValuePair<string, string> vehPair in veh)
             {
                 Match vehMatch = VEHREGEX.Match(vehPair.Value);
                 if (vehMatch.Success)
                 {
                     House vehOwner = GeneralUtils.TryParseEnum(vehMatch.Groups[1].Value, House.GoodGuy, true);
-                    Int32 vehColor = this.GetHouseColorIndex(vehOwner, 0);
-                    Int32 vehCell = Int32.Parse(vehMatch.Groups[4].Value);
+                    int vehColor = this.GetHouseColorIndex(vehOwner, 0);
+                    int vehCell = Int32.Parse(vehMatch.Groups[4].Value);
                     cells[vehCell] = vehColor;
                 }
             }
@@ -431,20 +431,20 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        protected Color GetHouseColor(House owner, Int32 index)
+        protected Color GetHouseColor(House owner, int index)
         {
             return GetHousePalette(owner)[index];
         }
 
-        protected Int32 GetHouseColorIndex(House owner, Int32 index)
+        protected int GetHouseColorIndex(House owner, int index)
         {
-            return 0x40 + ((Int32)owner * 2) + index;
+            return 0x40 + ((int)owner * 2) + index;
         }
 
-        protected Int32 GetOverlayColorIndex(OverlayTd type)
+        protected int GetOverlayColorIndex(OverlayTd type)
         {
-            Int32 lastHouse = (Int32)Enum.GetValues(typeof(House)).Cast<House>().Max();
-            return 0x40 + (lastHouse + 1) * 2 + (Int32)type;
+            int lastHouse = (int)Enum.GetValues(typeof(House)).Cast<House>().Max();
+            return 0x40 + (lastHouse + 1) * 2 + (int)type;
         }
 
         /// <summary>
@@ -455,7 +455,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="usableArea">USable area of the map.</param>
         /// <param name="addedPixels">Added data to populate the map.</param>
         /// <returns></returns>
-        protected Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, Rectangle usableArea, Dictionary<Int32, Int32> addedPixels)
+        protected Bitmap ReadMapAsImage(byte[] fileData, Theater theater, Rectangle usableArea, Dictionary<int, int> addedPixels)
         {
             if (fileData.Length != 8192)
                 throw new FileTypeLoadException("Incorrect file size.");
@@ -469,41 +469,41 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException(GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
             Color[] palette = GetTheaterPaletteFull(theater);
-            Byte[] imageData = new Byte[CnCMap.LENGTH_TD];
+            byte[] imageData = new byte[CnCMap.LENGTH_TD];
             if (usableArea == Rectangle.Empty)
             {
-                for (Int32 i = 0; i < simplifiedMap.Length; ++i)
-                    imageData[i] = (Byte)simplifiedMap[i];
+                for (int i = 0; i < simplifiedMap.Length; ++i)
+                    imageData[i] = (byte)simplifiedMap[i];
             }
             else
             {
                 // paint blue-tinted outside border
                 if (usableArea != Rectangle.Empty)
                 {
-                    for (Int32 i = 0; i < simplifiedMap.Length; ++i)
-                        imageData[i] = (Byte)(simplifiedMap[i] + 0x20);
+                    for (int i = 0; i < simplifiedMap.Length; ++i)
+                        imageData[i] = (byte)(simplifiedMap[i] + 0x20);
                 }
                 // paint normal-colored area
-                Int32 minY = usableArea != Rectangle.Empty ? usableArea.Y : 0;
-                Int32 maxY = usableArea != Rectangle.Empty ? usableArea.Y + usableArea.Height : 64;
-                Int32 minX = usableArea != Rectangle.Empty ? usableArea.X : 0;
-                Int32 maxX = usableArea != Rectangle.Empty ? usableArea.X + usableArea.Width : 64;
-                for (Int32 y = minY; y < maxY; ++y)
+                int minY = usableArea != Rectangle.Empty ? usableArea.Y : 0;
+                int maxY = usableArea != Rectangle.Empty ? usableArea.Y + usableArea.Height : 64;
+                int minX = usableArea != Rectangle.Empty ? usableArea.X : 0;
+                int maxX = usableArea != Rectangle.Empty ? usableArea.X + usableArea.Width : 64;
+                for (int y = minY; y < maxY; ++y)
                 {
-                    for (Int32 x = minX; x < maxX; ++x)
+                    for (int x = minX; x < maxX; ++x)
                     {
-                        Int32 cell = (y << 6) | x;
-                        imageData[cell] = (Byte)simplifiedMap[cell];
+                        int cell = (y << 6) | x;
+                        imageData[cell] = (byte)simplifiedMap[cell];
                     }
                 }
             }
             if (addedPixels != null)
             {
-                Int32[] cells = addedPixels.Keys.ToArray();
-                for (Int32 i = 0; i < cells.Length; ++i)
+                int[] cells = addedPixels.Keys.ToArray();
+                for (int i = 0; i < cells.Length; ++i)
                 {
-                    Int32 cell = cells[i];
-                    imageData[cell] = (Byte)addedPixels[cell];
+                    int cell = cells[i];
+                    imageData[cell] = (byte)addedPixels[cell];
                 }
             }
             return ImageUtils.BuildImage(imageData, 64, 64, 64, PixelFormat.Format8bppIndexed, palette, Color.Black);
@@ -562,7 +562,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     g.FillRectangle(sb, fullRect);
                 }
-                for (int i = 0; i < 0x20; i++)
+                for (int i = 0; i < 0x20; ++i)
                 {
                     bm.SetPixel(i % 0x10, i / 0x10, colFull[i]);
                 }
@@ -582,7 +582,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     g.DrawImage(bm2, fullRect, 0, 0, 16, 16, GraphicsUnit.Pixel, imageAttributes);
                 }
                 int i0 = 0;
-                for (int i = 0x20; i < 0x40; i++)
+                for (int i = 0x20; i < 0x40; ++i)
                 {
                     colFull[i] = bm.GetPixel(i0 % 0x10, i0 / 0x10);
                     i0++;
@@ -596,7 +596,7 @@ namespace EngieFileConverter.Domain.FileTypes
             Color[] colFull = GetTheaterPalette(theater);
             House[] houses = Enum.GetValues(typeof (House)).Cast<House>().ToArray();
             Array.Sort(houses);
-            Int32 curIndex = 0x40;
+            int curIndex = 0x40;
             foreach (House house in houses)
             {
                 Color[] housePal = GetHousePalette(house);
@@ -608,14 +608,14 @@ namespace EngieFileConverter.Domain.FileTypes
             return colFull;
         }
 
-        protected Byte[] IdentifyTheaterAndConvert(Byte[] fileData, ref Theater theater, Boolean toPC, String sourceFile, out Int32 errorCells)
+        protected byte[] IdentifyTheaterAndConvert(byte[] fileData, ref Theater theater, bool toPC, string sourceFile, out int errorCells)
         {
-            Dictionary<Int32, CnCMapCell> mappingDes = toPC ? MapConversion.DESERT_MAPPING : MapConversion.DESERT_MAPPING_REVERSED;
-            Dictionary<Int32, CnCMapCell> mappingTem = toPC ? MapConversion.TEMPERATE_MAPPING : MapConversion.TEMPERATE_MAPPING_REVERSED;
+            Dictionary<int, CnCMapCell> mappingDes = toPC ? MapConversion.DESERT_MAPPING : MapConversion.DESERT_MAPPING_REVERSED;
+            Dictionary<int, CnCMapCell> mappingTem = toPC ? MapConversion.TEMPERATE_MAPPING : MapConversion.TEMPERATE_MAPPING_REVERSED;
             errorCells = 0;
             if (theater != (Theater)0xFF)
             {
-                Dictionary<Int32, CnCMapCell> mapping = null;
+                Dictionary<int, CnCMapCell> mapping = null;
                 switch (theater)
                 {
                     case Theater.Desert:
@@ -639,9 +639,9 @@ namespace EngieFileConverter.Domain.FileTypes
             if (theater == (Theater)0xFF)
             {
                 List<CnCMapCell> errorcellsTemperate;
-                Byte[] dataTemperate = this.ConvertMap(fileData, mappingTem, toPC, out errorcellsTemperate);
+                byte[] dataTemperate = this.ConvertMap(fileData, mappingTem, toPC, out errorcellsTemperate);
                 List<CnCMapCell> errorcellsDesert;
-                Byte[] dataDesert = this.ConvertMap(fileData, mappingDes, toPC, out errorcellsDesert);
+                byte[] dataDesert = this.ConvertMap(fileData, mappingDes, toPC, out errorcellsDesert);
                 // Technically maps have more chance of being desert when they're Nod maps, so if the number of errors
                 // is the same on each, and a filename is given, check the SC[G/B]##EA format of the filename.
                 if (errorcellsTemperate.Count > errorcellsDesert.Count
@@ -662,7 +662,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return fileData;
         }
 
-        protected Byte[] ConvertMap(Byte[] mapData, Dictionary<Int32, CnCMapCell> mapping, Boolean toPC, out List<CnCMapCell> errorcells)
+        protected byte[] ConvertMap(byte[] mapData, Dictionary<int, CnCMapCell> mapping, bool toPC, out List<CnCMapCell> errorcells)
         {
             CnCMap map = new CnCMap(mapData, false);
             map = MapConversion.ConvertMap(map, mapping, null, null, !toPC, out errorcells);
@@ -673,9 +673,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             public House Owner { get; set; }
             public StructInfo StructType { get; set; }
-            public Int32 Cell { get; set; }
+            public int Cell { get; set; }
 
-            public MapStructure(StructInfo structType, House owner, Int32 cell)
+            public MapStructure(StructInfo structType, House owner, int cell)
             {
                 this.StructType = structType;
                 this.Owner = owner;
@@ -687,11 +687,11 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileMapWwCc1PcFromIni : FileMapWwCc1Pc
     {
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "ini" }; } }
+        public override string[] FileExtensions { get { return new string[] { "ini" }; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C Map ini"; } }
+        public override string ShortTypeName { get { return "C&C Map ini"; } }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             IniInfo iniInfo;
             try
@@ -704,14 +704,14 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (iniInfo == null || !String.Equals(Path.GetFileName(iniInfo.File), Path.GetFileName(filename), StringComparison.InvariantCultureIgnoreCase))
                 throw new FileTypeLoadException("Could not load ini file.");
-            String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".bin";
+            string mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".bin";
             if (!File.Exists(mapFilename))
                 throw new FileTypeLoadException("No .bin file found for this ini file.");
             DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(filename));
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".bin");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            Byte[] mapFileData = File.ReadAllBytes(mapFilename);
+            byte[] mapFileData = File.ReadAllBytes(mapFilename);
             base.LoadFile(mapFileData, mapFilename, fileData, filename, true);
         }
 
@@ -720,14 +720,14 @@ namespace EngieFileConverter.Domain.FileTypes
     public class IniInfo
     {
         public Theater Theater { get; set; }
-        public String Name { get; set; }
-        public String File { get; set; }
-        public Int32 Width { get; set; }
-        public Int32 Height { get; set; }
-        public Int32 X { get; set; }
-        public Int32 Y { get; set; }
-        public String Player { get; set; }
-        public Dictionary<Int32, Int32> Population { get; set; }
+        public string Name { get; set; }
+        public string File { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public string Player { get; set; }
+        public Dictionary<int, int> Population { get; set; }
     }
 
 }

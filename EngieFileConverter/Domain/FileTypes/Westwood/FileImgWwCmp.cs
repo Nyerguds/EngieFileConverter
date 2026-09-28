@@ -17,7 +17,7 @@ namespace EngieFileConverter.Domain.FileTypes
         public override int Height { get { return m_Height; } }
         protected static int m_Width = 320;
         protected static int m_Height = 200;
-        public Int32 CompressionType { get; protected set; }
+        public int CompressionType { get; protected set; }
 
         public override string IdCode { get { return "WwCmp"; } }
         /// <summary>Very short code name for this type.</summary>
@@ -237,7 +237,7 @@ namespace EngieFileConverter.Domain.FileTypes
 
         public byte[] SaveToBytes8bpp(Bitmap image, Option[] saveOptions)
         {
-            int.TryParse(Option.GetSaveOptionValue(saveOptions, "VER"), out int compression);
+            Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "VER"), out int compression);
             byte[] imageData = ImageUtils.GetImageData(image, out int stride, true);
             byte[] compressedData;
             byte imageType;

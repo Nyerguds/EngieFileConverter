@@ -8,19 +8,19 @@ namespace Nyerguds.ImageManipulation
     public static class PngHandler
     {
         /// <summary>An array containing the identifying bytes required at the start of a PNG image file.</summary>
-        private static readonly Byte[] PNG_IDENTIFIER = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        private static readonly byte[] PNG_IDENTIFIER = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
         /// <summary>Returns an array containing the identifying bytes required at the start of a PNG image file.</summary>
         /// <returns>An array containing the identifying bytes required at the start of a PNG image file.</returns>
-        public static Byte[] GetPngIdentifier() { return ArrayUtils.CloneArray(PNG_IDENTIFIER); }
+        public static byte[] GetPngIdentifier() { return ArrayUtils.CloneArray(PNG_IDENTIFIER); }
 
         /// <summary>The contents of the IDAT chunk for a 1x1 8-bit indexed image with pixel value 0.</summary>
-        private static readonly Byte[] PNG_BLANK = { 0x08, 0xD7, 0x63, 0x60, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01 };
+        private static readonly byte[] PNG_BLANK = { 0x08, 0xD7, 0x63, 0x60, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01 };
         /// <summary>
         /// Returns the contents of the IDAT chunk for a 1x1 8-bit indexed image with pixel value 0.
         /// Used as dummy for generating custom-sized palettes.
         /// </summary>
         /// <returns>The contents of the IDAT chunk for a 1x1 8-bit indexed image with pixel value 0.</returns>
-        public static Byte[] GetBlankPngIdatContents() { return ArrayUtils.CloneArray(PNG_BLANK); }
+        public static byte[] GetBlankPngIdatContents() { return ArrayUtils.CloneArray(PNG_BLANK); }
 
         /// <summary>
         /// Checks the start of a byte array to see if it matches the identifying bytes required at the start of a PNG image file.
@@ -28,12 +28,12 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="data">The data to check.</param>
         /// <returns>True if the start of the data matches the PNG identifier.</returns>
-        public static Boolean IsPng(Byte[] data)
+        public static bool IsPng(byte[] data)
         {
-            Int32 idLen = PNG_IDENTIFIER.Length;
+            int idLen = PNG_IDENTIFIER.Length;
             if (data.Length < PNG_IDENTIFIER.Length)
                 return false;
-            for (Int32 i = 0; i < idLen; ++i)
+            for (int i = 0; i < idLen; ++i)
                 if (data[i] != PNG_IDENTIFIER[i])
                     return false;
             return true;
@@ -46,7 +46,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">The bytes of the png image.</param>
         /// <param name="chunkName">The name of the chunk to find.</param>
         /// <returns>The index of the start of the png chunk, or -1 if the chunk was not found.</returns>
-        public static Int32 FindPngChunk(Byte[] data, String chunkName)
+        public static int FindPngChunk(byte[] data, string chunkName)
         {
             if (data == null)
                 throw new ArgumentNullException("data", "No data given.");
@@ -55,17 +55,17 @@ namespace Nyerguds.ImageManipulation
             if (!IsPng(data))
                 throw new FormatException("Data does not contain a png header.");
             // Using UTF-8 as extra check to make sure the name does not contain > 127 values.
-            Byte[] chunkNamebytes = Encoding.UTF8.GetBytes(chunkName);
+            byte[] chunkNamebytes = Encoding.UTF8.GetBytes(chunkName);
             if (chunkName.Length != 4 || chunkNamebytes.Length != 4)
                 throw new ArgumentException("Chunk name must be 4 ASCII characters.", "chunkName");
-            Int32 offset = PNG_IDENTIFIER.Length;
-            Int32 end = data.Length;
+            int offset = PNG_IDENTIFIER.Length;
+            int end = data.Length;
             // continue until either the end is reached, or there is not enough space behind it for reading a new chunk
             while (offset + 12 <= end)
             {
-                Int32 nameStart = offset + 4;
-                Boolean isMatch = true;
-                for (Int32 i = 0; i < 4; ++i)
+                int nameStart = offset + 4;
+                bool isMatch = true;
+                for (int i = 0; i < 4; ++i)
                 {
                     if (chunkNamebytes[i] != data[nameStart + i])
                     {
@@ -73,7 +73,7 @@ namespace Nyerguds.ImageManipulation
                         break;
                     }
                 }
-                Int32 chunkLength = GetPngChunkDataLength(data, offset);
+                int chunkLength = GetPngChunkDataLength(data, offset);
                 if (isMatch)
                 {
                     // For efficiency, only check checksum on found chunk.
@@ -95,25 +95,25 @@ namespace Nyerguds.ImageManipulation
         /// <param name="chunkName">4-character chunk name.</param>
         /// <param name="chunkData">Data to write into the new chunk.</param>
         /// <returns>The new offset after writing the new chunk. Always equal to the offset plus the length of chunk data plus 12.</returns>
-        public static Int32 WritePngChunk(Byte[] target, Int32 offset, String chunkName, Byte[] chunkData)
+        public static int WritePngChunk(byte[] target, int offset, string chunkName, byte[] chunkData)
         {
             if (offset + chunkData.Length + 12 > target.Length)
                 throw new ArgumentException("Data does not fit in target array.", "chunkData");
             if (chunkName.Length != 4)
                 throw new ArgumentException("Chunk must be 4 characters.", "chunkName");
-            Byte[] chunkNamebytes = Encoding.ASCII.GetBytes(chunkName);
+            byte[] chunkNamebytes = Encoding.ASCII.GetBytes(chunkName);
             if (chunkNamebytes.Length != 4)
                 throw new ArgumentException("Chunk must be 4 bytes.", "chunkName");
             ArrayUtils.WriteInt32ToByteArrayBe(target, offset, chunkData.Length);
             offset += 4;
-            Int32 nameOffset = offset;
+            int nameOffset = offset;
             Array.Copy(chunkNamebytes, 0, target, offset, 4);
             offset += 4;
-            Int32 curLength = chunkData.Length;
+            int curLength = chunkData.Length;
             Array.Copy(chunkData, 0, target, offset, curLength);
             offset += curLength;
-            UInt32 crcval = Crc32.ComputeChecksum(target, nameOffset, chunkData.Length + 4);
-            ArrayUtils.WriteInt32ToByteArrayBe(target, offset, (Int32)crcval);
+            uint crcval = Crc32.ComputeChecksum(target, nameOffset, chunkData.Length + 4);
+            ArrayUtils.WriteInt32ToByteArrayBe(target, offset, (int)crcval);
             offset += 4;
             return offset;
         }
@@ -125,13 +125,13 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">The PNG file data</param>
         /// <param name="chunkOffset">Offset of the PNG chunk, as found by FindPngChunk.</param>
         /// <returns>The value read from the chunk's length block.</returns>
-        public static Int32 GetPngChunkDataLength(Byte[] data, Int32 chunkOffset)
+        public static int GetPngChunkDataLength(byte[] data, int chunkOffset)
         {
             if (chunkOffset + 12 > data.Length)
                 throw new IndexOutOfRangeException("Bad chunk size in png image.");
             // Don't want to use BitConverter; then you have to check platform endianness and all that mess.
             //Int32 length = data[offset + 3] + (data[offset + 2] << 8) + (data[offset + 1] << 16) + (data[offset] << 24);
-            Int32 length = ArrayUtils.ReadInt32FromByteArrayBe(data, chunkOffset);
+            int length = ArrayUtils.ReadInt32FromByteArrayBe(data, chunkOffset);
             if (length < 0 || chunkOffset + 12 + length > data.Length)
                 throw new IndexOutOfRangeException("Bad chunk size in png image.");
             return length;
@@ -143,7 +143,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">The PNG file data</param>
         /// <param name="chunkOffset">Offset of the chunk.</param>
         /// <returns>The contents inside the chunk, without the chunk header or CRC footer.</returns>
-        public static Byte[] GetPngChunkData(Byte[] data, Int32 chunkOffset)
+        public static byte[] GetPngChunkData(byte[] data, int chunkOffset)
         {
             return GetPngChunkData(data, chunkOffset, -1);
         }
@@ -155,13 +155,13 @@ namespace Nyerguds.ImageManipulation
         /// <param name="chunkOffset">Offset of the chunk.</param>
         /// <param name="chunkLength">Length of the chunk, of -1 to auto-fetch using GetPngChunkDataLength.</param>
         /// <returns>The contents inside the chunk, without the chunk header or CRC footer.</returns>
-        public static Byte[] GetPngChunkData(Byte[] data, Int32 chunkOffset, Int32 chunkLength)
+        public static byte[] GetPngChunkData(byte[] data, int chunkOffset, int chunkLength)
         {
             if (chunkLength < 0)
                 chunkLength = GetPngChunkDataLength(data, chunkOffset);
             if (chunkLength == -1)
                 return null;
-            Byte[] chunkData = new Byte[chunkLength];
+            byte[] chunkData = new byte[chunkLength];
             Array.Copy(data, chunkOffset + 8, chunkData, 0, chunkLength);
             return chunkData;
         }
@@ -172,7 +172,7 @@ namespace Nyerguds.ImageManipulation
         /// <param name="data">The PNG file data</param>
         /// <param name="chunkOffset">Offset of the chunk.</param>
         /// <returns>True if the 4-byte CRC checksum at the end of the chunk matches the contents.</returns>
-        public static Boolean PngChecksumMatches(Byte[] data, Int32 chunkOffset)
+        public static bool PngChecksumMatches(byte[] data, int chunkOffset)
         {
             return PngChecksumMatches(data, chunkOffset, -1);
         }
@@ -184,16 +184,16 @@ namespace Nyerguds.ImageManipulation
         /// <param name="chunkOffset">Offset of the chunk.</param>
         /// <param name="chunkLength">Length of the chunk, of -1 to auto-fetch using GetPngChunkDataLength.</param>
         /// <returns>True if the 4-byte CRC checksum at the end of the chunk matches the contents.</returns>
-        public static Boolean PngChecksumMatches(Byte[] data, Int32 chunkOffset, Int32 chunkLength)
+        public static bool PngChecksumMatches(byte[] data, int chunkOffset, int chunkLength)
         {
             if (chunkLength < 0)
                 chunkLength = GetPngChunkDataLength(data, chunkOffset);
             if (chunkLength == -1)
                 return false;
-            Byte[] checksum = new Byte[4];
+            byte[] checksum = new byte[4];
             Array.Copy(data, chunkOffset + 8 + chunkLength, checksum, 0, 4);
-            UInt32 readChecksum = ArrayUtils.ReadUInt32FromByteArrayBe(checksum, 0);
-            UInt32 calculatedChecksum = Crc32.ComputeChecksum(data, chunkOffset + 4, chunkLength + 4);
+            uint readChecksum = ArrayUtils.ReadUInt32FromByteArrayBe(checksum, 0);
+            uint calculatedChecksum = Crc32.ComputeChecksum(data, chunkOffset + 4, chunkLength + 4);
             return readChecksum == calculatedChecksum;
         }
 

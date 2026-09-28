@@ -24,29 +24,29 @@ namespace Nyerguds.FileData.NullSoft
     /// </summary>
     public static class PcxCompression
     {
-        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset)
+        public static byte[] RleDecode(byte[] buffer, uint? startOffset, uint? endOffset, int scanlineSize, int planes, int height, out uint offset)
         {
-            Boolean zeroRepeatsFound;
+            bool zeroRepeatsFound;
             return RleDecode(buffer, startOffset, endOffset, scanlineSize, planes, height, out offset, out zeroRepeatsFound);
         }
 
-        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset, out Boolean zeroRepeatsFound)
+        public static byte[] RleDecode(byte[] buffer, uint? startOffset, uint? endOffset, int scanlineSize, int planes, int height, out uint offset, out bool zeroRepeatsFound)
         {
             zeroRepeatsFound = false;
-            Int32 outputSize = planes * scanlineSize * height;
+            int outputSize = planes * scanlineSize * height;
             offset = startOffset ?? 0;
-            UInt32 end = (UInt32)buffer.LongLength;
+            uint end = (uint)buffer.LongLength;
             if (endOffset.HasValue)
                 end = Math.Min(endOffset.Value, end);
-            Byte[] output = new Byte[outputSize];
-            Int32 outputOffset = 0;
+            byte[] output = new byte[outputSize];
+            int outputOffset = 0;
             while (offset < end && outputOffset < outputSize)
             {
-                Byte val = buffer[offset++];
+                byte val = buffer[offset++];
                 if ((val & 0xC0) == 0xC0)
                 {
                     // Repeat
-                    UInt32 amount = (UInt32)(val & 0x3F);
+                    uint amount = (uint)(val & 0x3F);
                     if (offset >= end)
                         break;
                     if (amount == 0)
@@ -58,8 +58,8 @@ namespace Nyerguds.FileData.NullSoft
                     else
                         val = buffer[offset++];
                     if (outputOffset + amount > outputSize)
-                        amount = (UInt32)(outputSize - outputOffset);
-                    for (Int32 i = 0; i < amount; ++i)
+                        amount = (uint)(outputSize - outputOffset);
+                    for (int i = 0; i < amount; ++i)
                         output[outputOffset++] = val;
                 }
                 else
@@ -72,31 +72,31 @@ namespace Nyerguds.FileData.NullSoft
             return output;
         }
 
-        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 scanlineSize, Int32 planes, Int32 height, out UInt32 offset, out Byte[] hiddenMessage)
+        public static byte[] RleDecode(byte[] buffer, uint? startOffset, uint? endOffset, int scanlineSize, int planes, int height, out uint offset, out byte[] hiddenMessage)
         {
-            Int32 outputSize = planes * scanlineSize * height;
+            int outputSize = planes * scanlineSize * height;
             offset = startOffset ?? 0;
-            UInt32 end = (UInt32)buffer.LongLength;
+            uint end = (uint)buffer.LongLength;
             if (endOffset.HasValue)
                 end = Math.Min(endOffset.Value, end);
-            Byte[] output = new Byte[outputSize];
-            Int32 outputOffset = 0;
-            List<Byte> c0Bytes = new List<Byte>();
+            byte[] output = new byte[outputSize];
+            int outputOffset = 0;
+            List<byte> c0Bytes = new List<byte>();
             while (offset < end && outputOffset < outputSize)
             {
-                Byte val = buffer[offset++];
+                byte val = buffer[offset++];
                 if ((val & 0xC0) == 0xC0)
                 {
                     // Repeat
-                    UInt32 amount = (UInt32) (val & 0x3F);
+                    uint amount = (uint) (val & 0x3F);
                     if (offset >= end)
                         break;
                     val = buffer[offset++];
                     if (amount == 0)
                         c0Bytes.Add(val);
                     if (outputOffset + amount > outputSize)
-                        amount = (UInt32)(outputSize - outputOffset);
-                    for (Int32 i = 0; i < amount; ++i)
+                        amount = (uint)(outputSize - outputOffset);
+                    for (int i = 0; i < amount; ++i)
                         output[outputOffset++] = val;
                 }
                 else
@@ -117,30 +117,30 @@ namespace Nyerguds.FileData.NullSoft
         /// <param name="height">Height of the image.</param>
         /// <param name="stride">Stride of a full line in the image data. For planar data, this means one line of actual pixel data, of the combined planes.</param>
         /// <returns>The compressed data.</returns>
-        public static Byte[] RleEncode(Byte[] buffer, Int32 height, Int32 stride)
+        public static byte[] RleEncode(byte[] buffer, int height, int stride)
         {
-            UInt32 end = (UInt32)buffer.Length;
-            UInt32 linePtr = 0;
+            uint end = (uint)buffer.Length;
+            uint linePtr = 0;
             using (MemoryStream output = new MemoryStream())
             {
-                for (Int32 y = 0; y < height; ++y)
+                for (int y = 0; y < height; ++y)
                 {
-                    UInt32 inPtr = linePtr;
-                    linePtr += (UInt32)stride;
+                    uint inPtr = linePtr;
+                    linePtr += (uint)stride;
                     while (inPtr < linePtr && inPtr < end)
                     {
-                        Byte val = buffer[inPtr];
-                        UInt32 start = inPtr;
+                        byte val = buffer[inPtr];
+                        uint start = inPtr;
                         // Increase inptr to the last repeated.
                         for (; inPtr < end && buffer[inPtr] == val; ++inPtr) { }
-                        Int64 len = inPtr - start;
+                        long len = inPtr - start;
                         if (len == 1 && val < 0xC0)
                             output.WriteByte(val);
                         else
                         {
                             while (len > 0)
                             {
-                                output.WriteByte((Byte)(Math.Min(0x3F, len) | 0xC0));
+                                output.WriteByte((byte)(Math.Min(0x3F, len) | 0xC0));
                                 output.WriteByte(val);
                                 len -= 0x3F;
                             }

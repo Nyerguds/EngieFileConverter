@@ -30,27 +30,27 @@ namespace EngieFileConverter.Domain.FileTypes
         }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
 
-        public override String IdCode { get { return null; } }
-        public override String ShortTypeName { get { return "Image"; } }
-        public override String LongTypeName { get { return "Image file"; } }
-        public override String[] FileExtensions { get { return new String[] { "png", "bmp", "gif", "jpg", "jpeg" }; } }
+        public override string IdCode { get { return null; } }
+        public override string ShortTypeName { get { return "Image"; } }
+        public override string LongTypeName { get { return "Image file"; } }
+        public override string[] FileExtensions { get { return new string[] { "png", "bmp", "gif", "jpg", "jpeg" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions
+        public override string[] DescriptionsForExtensions
         {
-            get { return new String[] { "Portable Network Graphics", "Bitmap", "CompuServe GIF image", "JPEG", "JPEG" }; }
+            get { return new string[] { "Portable Network Graphics", "Bitmap", "CompuServe GIF image", "JPEG", "JPEG" }; }
         }
 
-        protected virtual String MimeType { get { return null; } }
+        protected virtual string MimeType { get { return null; } }
 
         public FileImage() { }
 
-        public void LoadFile(Bitmap image, String filename)
+        public void LoadFile(Bitmap image, string filename)
         {
             this.m_LoadedImage = image;
             this.SetFileNames(filename);
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             try
             {
@@ -78,22 +78,22 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        protected void CheckSpecificFileType(Byte[] fileData, String filename)
+        protected void CheckSpecificFileType(byte[] fileData, string filename)
         {
             if (this.MimeType == null)
                 return;
-            String[] mimeType = MimeTypeDetector.GetMimeTypeFromExtension(this.MimeType);
-            String[] dataMime = MimeTypeDetector.GetMimeType(fileData, 0);
+            string[] mimeType = MimeTypeDetector.GetMimeTypeFromExtension(this.MimeType);
+            string[] dataMime = MimeTypeDetector.GetMimeType(fileData, 0);
             if (mimeType == null || dataMime == null || !mimeType[1].Equals(dataMime[1], StringComparison.InvariantCultureIgnoreCase))
                 throw new FileTypeLoadException("This is not a " + this.ShortTypeName + " image.");
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // General override in case an Image sub-type has no implementation of this.
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);
-            String filename = "test." + this.FileExtensions[0];
+            string filename = "test." + this.FileExtensions[0];
             try
             {
                 return ImageUtils.GetSavedImageData(fileToSave.GetBitmap(), ref filename);

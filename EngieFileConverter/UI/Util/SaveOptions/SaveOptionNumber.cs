@@ -12,18 +12,18 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     public partial class SaveOptionNumber : SaveOptionControl
     {
-        private Int32 initialWidthLbl;
-        private Int32 initialWidthCmb;
-        private Int32 initialWidthToScale;
-        private Int32 m_PadLeft;
-        private Int32 m_PadMiddle;
-        private Int32 m_PadRight;
-        private Boolean m_Loading;
+        private int initialWidthLbl;
+        private int initialWidthCmb;
+        private int initialWidthToScale;
+        private int m_PadLeft;
+        private int m_PadMiddle;
+        private int m_PadRight;
+        private bool m_Loading;
 
 
-        private volatile Boolean m_editingText;
-        private Int32? m_minimum;
-        private Int32? m_maximum;
+        private volatile bool m_editingText;
+        private int? m_minimum;
+        private int? m_maximum;
 
         public SaveOptionNumber() : this(null, null) { }
 
@@ -36,10 +36,10 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         private void InitResize()
         {
-            Int32 initialPosTxt = this.numValue.Location.X;
+            int initialPosTxt = this.numValue.Location.X;
             this.initialWidthLbl = this.lblName.Width;
             this.initialWidthCmb = this.numValue.Width;
-            Int32 initialWidthFrm = this.DisplayRectangle.Width;
+            int initialWidthFrm = this.DisplayRectangle.Width;
             this.m_PadLeft = this.lblName.Location.X;
             this.m_PadRight = initialWidthFrm - initialPosTxt - this.initialWidthCmb;
             this.m_PadMiddle = initialPosTxt - this.initialWidthLbl - this.m_PadLeft;
@@ -51,22 +51,22 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.Info = info;
             this.lblName.Text = GeneralUtils.DoubleAmpersands(this.Info.UiString);
             this.numValue.Text = this.Info.Data;
-            String init = this.Info.InitValue;
+            string init = this.Info.InitValue;
             this.m_minimum = null;
             this.m_maximum = null;
             if (String.IsNullOrEmpty(init))
                 return;
-            Int32 cpos = init.IndexOf(",", StringComparison.Ordinal);
+            int cpos = init.IndexOf(",", StringComparison.Ordinal);
             if (cpos < 0)
                 return;
-            String min = init.Substring(0, cpos);
-            Decimal minVal;
-            if (String.IsNullOrEmpty(min) || !Decimal.TryParse(min, out minVal))
-                minVal = Decimal.MinValue;
-            String max = init.Substring(cpos + 1);
-            Decimal maxVal;
-            if (String.IsNullOrEmpty(max) || !Decimal.TryParse(max, out maxVal))
-                maxVal = Decimal.MaxValue;
+            string min = init.Substring(0, cpos);
+            decimal minVal;
+            if (String.IsNullOrEmpty(min) || !decimal.TryParse(min, out minVal))
+                minVal = decimal.MinValue;
+            string max = init.Substring(cpos + 1);
+            decimal maxVal;
+            if (String.IsNullOrEmpty(max) || !decimal.TryParse(max, out maxVal))
+                maxVal = decimal.MaxValue;
             if (minVal > maxVal)
                 throw new ArgumentException("Initialization error: Given maximum is smaller than given minimum.", "info");
             this.numValue.Minimum = minVal;
@@ -78,7 +78,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.numValue.Select();
         }
 
-        private void numValue_ValueChanged(Object sender, EventArgs e)
+        private void numValue_ValueChanged(object sender, EventArgs e)
         {
             // Update controller
             if (this.Info == null)
@@ -88,12 +88,12 @@ namespace Nyerguds.Util.UI.SaveOptions
                 this.m_Controller.UpdateControlInfo(this.Info);
         }
 
-        private void lblName_Resize(Object sender, EventArgs e)
+        private void lblName_Resize(object sender, EventArgs e)
         {
             // What a mess just to make the center size...
-            Double scaleFactor = (Double)this.DisplayRectangle.Width / (Double)this.initialWidthToScale;
-            Int32 newWidthLbl = (Int32)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
-            Int32 newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
+            double scaleFactor = (double)this.DisplayRectangle.Width / (double)this.initialWidthToScale;
+            int newWidthLbl = (int)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
+            int newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
             this.lblName.Width = newWidthLbl;
             this.numValue.Location = new Point(this.m_PadLeft + newWidthLbl + this.m_PadMiddle, this.numValue.Location.Y);
             this.numValue.Width = newWidthTxt;

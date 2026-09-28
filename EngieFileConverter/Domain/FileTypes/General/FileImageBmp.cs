@@ -11,40 +11,40 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageBmp : FileImage
     {
-        public override String ShortTypeName { get { return "Bitmap"; } }
+        public override string ShortTypeName { get { return "Bitmap"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return "Bitmap Image"; } }
+        public override string LongTypeName { get { return "Bitmap Image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
+        public override string[] FileExtensions { get { return new string[] { "bmp" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] { this.LongTypeName }; } }
-        protected override String MimeType { get { return "bmp"; } }
+        public override string[] DescriptionsForExtensions { get { return new string[] { this.LongTypeName }; } }
+        protected override string MimeType { get { return "bmp"; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData);
             this.SetFileNames(filename);
         }
 
-        public void LoadFromFileData(Byte[] fileData)
+        public void LoadFromFileData(byte[] fileData)
         {
             // Implemented manually because it's already in the clipboard code, and GDI+ returns 32bpp for 16bpp bitmaps.
             // General specs: http://www.dragonwins.com/domains/getteched/bmp/bmpfileformat.htm
-            Int32 dataLen = fileData.Length;
+            int dataLen = fileData.Length;
             if (dataLen < 18 || fileData[0] != 0x42 || fileData[1] != 0x4D)
                 throw new FileTypeLoadException(ERR_BAD_HEADER);
-            UInt32 size = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x02);
-            UInt32 reserved = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x06);
-            Int32 headerEnd = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0A);
+            uint size = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x02);
+            uint reserved = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x06);
+            int headerEnd = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0A);
             if (size != dataLen || reserved != 0 || dataLen < headerEnd)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
-            Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0E);
-            String compression = null;
+            int headerSize = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0x0E);
+            string compression = null;
             if (headerEnd < headerSize + 14)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
             try
@@ -94,7 +94,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Error loading bitmap.");
             }
             StringBuilder sbExtrainfo = new StringBuilder();
-            Int32 version = 0;
+            int version = 0;
             switch (headerSize)
             {
                 case 40:
@@ -138,7 +138,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = sbExtrainfo.ToString();
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);

@@ -11,32 +11,32 @@ namespace Nyerguds.FileData.Agos
     public class AgosCompression: RleImplementation<AgosCompression>
     {
 
-        public static Byte[] DecodeImage(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 height, Int32 stride)
+        public static byte[] DecodeImage(byte[] buffer, uint? startOffset, uint? endOffset, int height, int stride)
         {
             AgosCompression rle = new AgosCompression();
-            Int32 byteLength = stride * height;
-            Byte[] outBuffer = new Byte[byteLength];
+            int byteLength = stride * height;
+            byte[] outBuffer = new byte[byteLength];
             if (rle.RleDecodeData(buffer, startOffset, endOffset, ref outBuffer, true) == -1)
                 return null;
             // outBuffer is now the image, with its columns stored as rows.
-            Byte[] outBuffer2 = new Byte[byteLength];
+            byte[] outBuffer2 = new byte[byteLength];
             // Post-processing: Exchange rows and columns.
-            for (Int32 i = 0; i < byteLength; ++i)
+            for (int i = 0; i < byteLength; ++i)
                 outBuffer2[(i % height) * stride + (i / height)] = outBuffer[i];
             // outBuffer2 is now the correct image.
             return outBuffer2;
         }
 
-        public static Byte[] EncodeImage(Byte[] buffer, Int32 stride)
+        public static byte[] EncodeImage(byte[] buffer, int stride)
         {
-            Int32 byteLength = buffer.Length;
-            Int32 height = byteLength / stride;
+            int byteLength = buffer.Length;
+            int height = byteLength / stride;
             // Should not happen, but you never know...
             while (byteLength > height * stride)
                 height++;
-            Byte[] buffer2 = new Byte[byteLength];
+            byte[] buffer2 = new byte[byteLength];
             // Pre-processing: Exchange rows and columns.
-            for (Int32 i = 0; i < byteLength; ++i)
+            for (int i = 0; i < byteLength; ++i)
                 buffer2[i] = buffer[i % height * stride + i / height];
             // buffer2 is now the image, with its columns stored as rows.
             // Perform actual compression.
@@ -46,9 +46,9 @@ namespace Nyerguds.FileData.Agos
 
         #region tweaked overrides
         /// <summary>Maximum amount of repeating bytes that can be stored in one code.</summary>
-        protected override UInt32 MaxRepeatValue { get { return 0x80; } }
+        protected override uint MaxRepeatValue { get { return 0x80; } }
         /// <summary>Maximum amount of copied bytes that can be stored in one code.</summary>
-        protected override UInt32 MaxCopyValue { get { return 0x7F; } }
+        protected override uint MaxCopyValue { get { return 0x7F; } }
 
         /// <summary>
         /// Reads a code, determines the repeat / skip command and the amount of bytes to repeat/skip,
@@ -60,7 +60,7 @@ namespace Nyerguds.FileData.Agos
         /// <param name="isRepeat">Returns true for repeat code, false for copy code.</param>
         /// <param name="amount">Returns the amount to copy or repeat.</param>
         /// <returns>True if the read succeeded, false if it failed.</returns>
-        protected override Boolean GetCode(Byte[] buffer, ref UInt32 inPtr, ref UInt32 bufferEnd, out Boolean isRepeat, out UInt32 amount)
+        protected override bool GetCode(byte[] buffer, ref uint inPtr, ref uint bufferEnd, out bool isRepeat, out uint amount)
         {
             if (inPtr >= bufferEnd)
             {
@@ -68,9 +68,9 @@ namespace Nyerguds.FileData.Agos
                 amount = 0;
                 return false;
             }
-            Byte code = buffer[inPtr++];
+            byte code = buffer[inPtr++];
             isRepeat = (code & 0x80) == 0;
-            amount = (UInt32)(isRepeat ? code + 1 : 0x100 - code);
+            amount = (uint)(isRepeat ? code + 1 : 0x100 - code);
             return true;
         }
 
@@ -84,14 +84,14 @@ namespace Nyerguds.FileData.Agos
         /// <param name="forRepeat">True if this is a repeat code, false if this is a copy code.</param>
         /// <param name="amount">Amount to write into the repeat or copy code.</param>
         /// <returns>True if the write succeeded, false if it failed.</returns>
-        protected override Boolean WriteCode(Byte[] bufferOut, ref UInt32 outPtr, UInt32 bufferEnd, Boolean forRepeat, UInt32 amount)
+        protected override bool WriteCode(byte[] bufferOut, ref uint outPtr, uint bufferEnd, bool forRepeat, uint amount)
         {
             if (bufferOut.Length <= outPtr)
                 return false;
             if (forRepeat)
-                bufferOut[outPtr++] = (Byte)(amount - 1);
+                bufferOut[outPtr++] = (byte)(amount - 1);
             else
-                bufferOut[outPtr++] = (Byte)(0x100 - amount);
+                bufferOut[outPtr++] = (byte)(0x100 - amount);
             return true;
         }
         #endregion

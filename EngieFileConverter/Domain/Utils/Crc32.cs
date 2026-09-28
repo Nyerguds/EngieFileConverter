@@ -7,38 +7,38 @@ namespace Nyerguds.Util
     /// </summary>
     public class Crc32
     {
-        private static readonly UInt32[] Table = FillTable();
+        private static readonly uint[] Table = FillTable();
 
-        public static UInt32 ComputeChecksum(Byte[] bytes)
+        public static uint ComputeChecksum(byte[] bytes)
         {
             return ComputeChecksum(bytes, 0, bytes.Length);
         }
 
-        public static UInt32 ComputeChecksum(Byte[] bytes, Int32 start, Int32 length)
+        public static uint ComputeChecksum(byte[] bytes, int start, int length)
         {
-            UInt32 crc = 0xFFFFFFFF;
-            Int32 end = start + length;
-            for (Int32 i = start; i < end; ++i)
+            uint crc = 0xFFFFFFFF;
+            int end = start + length;
+            for (int i = start; i < end; ++i)
             {
-                Byte index = (Byte)((crc & 0xFF) ^ bytes[i]);
+                byte index = (byte)((crc & 0xFF) ^ bytes[i]);
                 crc = (crc >> 8) ^ Table[index];
             }
             return ~crc;
         }
 
-        public static Byte[] ComputeChecksumBytes(Byte[] bytes)
+        public static byte[] ComputeChecksumBytes(byte[] bytes)
         {
             return BitConverter.GetBytes(ComputeChecksum(bytes));
         }
 
-        private static UInt32[] FillTable()
+        private static uint[] FillTable()
         {
-            const UInt32 poly = 0xEDB88320;
-            UInt32[] fillTable = new UInt32[256];
-            for (UInt32 i = 0; i < fillTable.Length; ++i)
+            const uint poly = 0xEDB88320;
+            uint[] fillTable = new uint[256];
+            for (uint i = 0; i < fillTable.Length; ++i)
             {
-                UInt32 temp = i;
-                for (Int32 j = 8; j > 0; --j)
+                uint temp = i;
+                for (int j = 8; j > 0; --j)
                 {
                     if ((temp & 1) == 1)
                         temp = ((temp >> 1) ^ poly);

@@ -16,19 +16,19 @@ namespace EngieFileConverter.UI
 {
     public partial class FrmPasteOnFrames : Form
     {
-        public Int32[] FrameRange { get; private set; }
+        public int[] FrameRange { get; private set; }
         public Point Coords { get; private set; }
         public Bitmap Image { get; private set; }
-        public String LastSelectedFolder { get; private set; }
-        public Boolean KeepIndices { get; private set; }
+        public string LastSelectedFolder { get; private set; }
+        public bool KeepIndices { get; private set; }
 
-        private Int32 m_Frames;
-        private Int32 m_FramesBpp;
-        private String labelText;
-        private Int32 m_PasteAreaWidth;
-        private Int32 m_PasteAreaHeight;
+        private int m_Frames;
+        private int m_FramesBpp;
+        private string labelText;
+        private int m_PasteAreaWidth;
+        private int m_PasteAreaHeight;
 
-        public FrmPasteOnFrames(Int32 frames, Int32 width, Int32 height, Int32 framesBpp, String lastOpenedFolder, int curFrame)
+        public FrmPasteOnFrames(int frames, int width, int height, int framesBpp, string lastOpenedFolder, int curFrame)
         {
             this.m_Frames = frames;
             this.m_PasteAreaWidth = width;
@@ -57,20 +57,20 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void BtnSelectImageClick(Object sender, EventArgs e)
+        private void BtnSelectImageClick(object sender, EventArgs e)
         {
             Type[] openTypes = FileTypesFactory.SupportedOpenTypes;
             SupportedFileType[] sft = openTypes.Select(ft => new FileDialogItem<SupportedFileType>(ft).ItemObject).Where(ft => (ft.InputFileClass & FileClass.Image) != 0).ToArray();
             List<Type> filteredTypes = sft.Select(ft => ft.GetType()).ToList();
             SupportedFileType selectedType;
-            String filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), openTypes, this.LastSelectedFolder, "images", null, true, out selectedType);
+            string filename = FileDialogGenerator.ShowOpenFileFialog(this, "Select image", filteredTypes.ToArray(), openTypes, this.LastSelectedFolder, "images", null, true, out selectedType);
             if (filename == null)
                 return;
             this.LastSelectedFolder = Path.GetDirectoryName(filename);
-            Boolean loaded = false;
+            bool loaded = false;
             try
             {
-                Byte[] fileData = File.ReadAllBytes(filename);
+                byte[] fileData = File.ReadAllBytes(filename);
                 // "*.*" was selected.
                 if (selectedType == null)
                 {
@@ -78,7 +78,7 @@ namespace EngieFileConverter.UI
                     selectedType = FileTypesFactory.LoadFileAutodetect(fileData, filename, sft, true, out loadErrors);
                     if (selectedType == null)
                     {
-                        String errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
+                        string errors = String.Join("\n", loadErrors.Select(er => er.AttemptedLoadedType + ": " + er.Message).ToArray());
                         MessageBox.Show(this, "File type of " + filename + " could not be identified. Errors returned by all attempts:\n\n" + errors, FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
@@ -93,7 +93,7 @@ namespace EngieFileConverter.UI
                 this.btnOK.Enabled = true;
                 this.btnCenterX.Enabled = true;
                 this.btnCenterY.Enabled = true;
-                Int32 selectedBpp = selectedType.BitsPerPixel;
+                int selectedBpp = selectedType.BitsPerPixel;
                 this.rbtKeepIndices.Enabled = m_FramesBpp <= 8 && selectedBpp > 0 && selectedBpp <= 8 && selectedBpp <= m_FramesBpp;
                 if (!this.rbtKeepIndices.Enabled)
                 {
@@ -127,12 +127,12 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void btnClipboard_Click(Object sender, EventArgs e)
+        private void btnClipboard_Click(object sender, EventArgs e)
         {
             GetImageFromClipboard(false);
         }
 
-        private Boolean GetImageFromClipboard(Boolean failSilently)
+        private bool GetImageFromClipboard(bool failSilently)
         {
             DataObject retrievedData = (DataObject)Clipboard.GetDataObject();
             if (retrievedData == null)
@@ -159,7 +159,7 @@ namespace EngieFileConverter.UI
                     }
                 }
                 this.Image = clipImage.GetBitmap();
-                Int32 selectedBpp = clipImage.BitsPerPixel;
+                int selectedBpp = clipImage.BitsPerPixel;
                 this.txtImage.Text = "[From clipboard]";
                 this.lblImage.Text = this.labelText + " " + clipImage.Width + "×" + clipImage.Height + ", " + clipImage.BitsPerPixel + "bpp";
                 this.btnOK.Enabled = true;
@@ -194,7 +194,7 @@ namespace EngieFileConverter.UI
             return true;
         }
 
-        protected override Boolean ProcessCmdKey(ref Message msg, Keys keyData)
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (keyData == (Keys.Control | Keys.V) && GetImageFromClipboard(true))
                 return true;
@@ -215,7 +215,7 @@ namespace EngieFileConverter.UI
             numCoordsY.Value = Math.Min(Math.Max(0, (this.m_PasteAreaHeight - this.Image.Height) / 2), numCoordsY.Maximum);
         }
 
-        private void TextBoxShortcuts(Object sender, KeyEventArgs e)
+        private void TextBoxShortcuts(object sender, KeyEventArgs e)
         {
             // Split off to override menu shortcuts when this control is selected.
             TextBox textBox = sender as TextBox;
@@ -223,7 +223,7 @@ namespace EngieFileConverter.UI
                 return;
             if (e.Control)
             {
-                Boolean handled = true;
+                bool handled = true;
                 if (e.KeyCode == Keys.A)
                     textBox.SelectAll();
                 else if (e.KeyCode == Keys.Z)
@@ -250,21 +250,21 @@ namespace EngieFileConverter.UI
             }
         }
         
-        private void BtnOkClick(Object sender, EventArgs e)
+        private void BtnOkClick(object sender, EventArgs e)
         {
             if (txtFrames.Text.Trim(",- \r\n\t".ToCharArray()).Length == 0)
             {
                 MessageBox.Show(this, "No frame ranges specified.", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            Int32[] frameRange = GeneralUtils.GetRangedNumbers(txtFrames.Text).Where(i => i < m_Frames).ToArray();
+            int[] frameRange = GeneralUtils.GetRangedNumbers(txtFrames.Text).Where(i => i < m_Frames).ToArray();
             if (frameRange.Length == 0)
             {
                 MessageBox.Show(this, "No valid frame ranges found in given text.", FrmFileConverter.GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             this.FrameRange = frameRange;
-            this.Coords = new Point((Int32) this.numCoordsX.Value, (Int32) this.numCoordsY.Value);
+            this.Coords = new Point((int) this.numCoordsX.Value, (int) this.numCoordsY.Value);
             this.KeepIndices = this.rbtKeepIndices.Checked;
             this.DialogResult = DialogResult.OK;
             this.Close();

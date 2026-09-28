@@ -9,7 +9,7 @@ namespace Nyerguds.Util.UI.SaveOptions
     {
         private SaveOptionInfo m_soi;
 
-        public Int32 OptimalHeight { get; private set; }
+        public int OptimalHeight { get; private set; }
 
         public FrmOptions()
         {
@@ -17,7 +17,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.m_soi = new SaveOptionInfo();
         }
 
-        public FrmOptions(String title, SaveOptionInfo soi)
+        public FrmOptions(string title, SaveOptionInfo soi)
         {
             this.InitializeComponent();
             this.Text = title;
@@ -32,8 +32,8 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.m_soi = soi;
             this.lstOptions.Populate(this.m_soi, this);
             Option[] props = this.m_soi.Properties;
-            Int32 nrOfProps = props.Length;
-            for (Int32 i = 0; i < nrOfProps; ++i)
+            int nrOfProps = props.Length;
+            for (int i = 0; i < nrOfProps; ++i)
                 this.UpdateControlInfo(props[i]);
             this.OptimalHeight = this.Height - pnlOptions.Height + lstOptions.Height;
         }
@@ -47,9 +47,9 @@ namespace Nyerguds.Util.UI.SaveOptions
         {
             Option current = null;
             Option[] props = this.m_soi.Properties;
-            Int32 nrOfProps = props.Length;
-            String updCode = updateInfo.Code;
-            for (Int32 i = 0; i < nrOfProps; ++i)
+            int nrOfProps = props.Length;
+            string updCode = updateInfo.Code;
+            for (int i = 0; i < nrOfProps; ++i)
             {
                 Option prop = props[i];
                 if (String.Equals(prop.Code, updCode))
@@ -66,16 +66,16 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         public void UpdateControlChildren(Option dependingOn)
         {
-            String checkCode = dependingOn.Code;
+            string checkCode = dependingOn.Code;
             Option[] dependentControls = this.m_soi.Properties;
-            Int32 nrOfDependentControls = dependentControls.Length;
-            for (Int32 i = 0; i < nrOfDependentControls; ++i)
+            int nrOfDependentControls = dependentControls.Length;
+            for (int i = 0; i < nrOfDependentControls; ++i)
             {
                 Option dependentControl = dependentControls[i];
                 EnableFilter[] filters = dependentControl.Filters;
-                Int32 nrOfFilters = filters.Length;
-                Boolean hasFilter = false;
-                for (Int32 f = 0; f < nrOfFilters; ++f)
+                int nrOfFilters = filters.Length;
+                bool hasFilter = false;
+                for (int f = 0; f < nrOfFilters; ++f)
                 {
                     if (filters[f].CheckOption != checkCode)
                         continue;
@@ -87,29 +87,29 @@ namespace Nyerguds.Util.UI.SaveOptions
                 SaveOptionControl soc = this.lstOptions.GetListedControlByInfoObject(dependentControl);
                 if (soc == null)
                     continue;
-                Int32 matchAmount = 0;
-                Int32 neededAmount = nrOfFilters;
-                for (Int32 f = 0; f < nrOfFilters; ++f)
+                int matchAmount = 0;
+                int neededAmount = nrOfFilters;
+                for (int f = 0; f < nrOfFilters; ++f)
                 {
-                    Boolean controlFound;
+                    bool controlFound;
                     if (this.EvaluateFilter(filters[f], out controlFound))
                         matchAmount++;
                     if (!controlFound)
                         neededAmount--;
                 }
-                Boolean passed = dependentControl.FilterAnd ? matchAmount == neededAmount : matchAmount > 0;
+                bool passed = dependentControl.FilterAnd ? matchAmount == neededAmount : matchAmount > 0;
                 soc.SetEnabled(passed);
                 this.UpdateControlChildren(dependentControl);
             }
         }
 
-        private Boolean EvaluateFilter(EnableFilter filter, out Boolean controlFound)
+        private bool EvaluateFilter(EnableFilter filter, out bool controlFound)
         {
-            String checkCode = filter.CheckOption;
+            string checkCode = filter.CheckOption;
             Option[] saveOpts = this.m_soi.Properties;
-            Int32 nrOfOpts = saveOpts.Length;
+            int nrOfOpts = saveOpts.Length;
             controlFound = false;
-            for (Int32 i = 0; i < nrOfOpts; ++i)
+            for (int i = 0; i < nrOfOpts; ++i)
             {
                 Option opt = saveOpts[i];
                 if (opt.Code != checkCode)
@@ -119,13 +119,13 @@ namespace Nyerguds.Util.UI.SaveOptions
                 if (!checkSoc.Enabled)
                     return false;
                 controlFound = true;
-                Boolean curMatches = filter.CheckMatchValues.Contains(opt.Data);
+                bool curMatches = filter.CheckMatchValues.Contains(opt.Data);
                 return filter.WhenCheckMatches ? curMatches : !curMatches;
             }
             return false;
         }
 
-        private void FrmExtraOptions_Load(Object sender, EventArgs e)
+        private void FrmExtraOptions_Load(object sender, EventArgs e)
         {
             this.lstOptions.FocusFirst();
         }

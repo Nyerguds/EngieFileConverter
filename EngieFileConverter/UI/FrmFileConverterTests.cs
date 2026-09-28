@@ -20,7 +20,7 @@ using Nyerguds.FileData.EmotionalPictures;
 namespace EngieFileConverter.UI
 {
     /// <summary>
-    /// To anyone who sees this, hello, and welcome to Nyerguds's random experiments and test code! This code onbnly compiles in Debug mode,
+    /// To anyone who sees this, hello, and welcome to Nyerguds's random experiments and test code! This code only compiles in Debug mode,
     /// and is linked to the [Edit] -> [Test bed] menu item (tsmiTestBed) through the TsmiTestBedClick function. Typically, only one of the
     /// below functions is called. I keep them all here because they often contain interesting code, but I don't want to pollute the main
     /// source file of FrmFileConverter with them.
@@ -90,7 +90,7 @@ namespace EngieFileConverter.UI
             this.ReloadWithDispose(loadImage, true, true, true);
         }
 
-        private void LoadTestFile(Bitmap loadImage, String filename, String extraInfo)
+        private void LoadTestFile(Bitmap loadImage, string filename, string extraInfo)
         {
             if (!filename.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
                 filename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".png");
@@ -112,7 +112,7 @@ namespace EngieFileConverter.UI
             this.LoadTestFile(loadImage, ".\\image.png", null);
         }
 
-        private void LoadTestFile(Bitmap loadImage, String extraInfo)
+        private void LoadTestFile(Bitmap loadImage, string extraInfo)
         {
             this.LoadTestFile(loadImage, ".\\image.png", extraInfo);
         }
@@ -121,7 +121,7 @@ namespace EngieFileConverter.UI
         {
             //*/
             // Cursors data from the KORT.EXE of the King Arthur's K.O.R.T. game.
-            Byte[] int33MouseCursorKort = new Byte[]
+            byte[] int33MouseCursorKort = new byte[]
             {
                 0xFF, 0x1F, 0xFF, 0x0F, 0xFF, 0x07, 0xFF, 0x03, 0xFF, 0x01, 0xFF, 0x00, 0x7F, 0x00, 0x3F, 0x00,
                 0x1F, 0x00, 0x3F, 0x00, 0xFF, 0x01, 0xFF, 0x01, 0xFF, 0xE0, 0xFF, 0xF0, 0xFF, 0xF8, 0xFF, 0xF8,
@@ -163,7 +163,7 @@ namespace EngieFileConverter.UI
                 0xC0, 0x06, 0x80, 0x03, 0xF8, 0x3F, 0x80, 0x03, 0x80, 0x03, 0x80, 0x03, 0x80, 0x03, 0x00, 0x00,
             };
             /*/
-            Byte[] int33MouseCursor = int33MouseCursorKort;
+            byte[] int33MouseCursor = int33MouseCursorKort;
             /*/
             Byte[] int33MouseCursor = int33MouseCursorExhumed;
             //*/
@@ -173,50 +173,50 @@ namespace EngieFileConverter.UI
             palette[1] = Color.FromArgb(0, Color.Fuchsia);
             palette[2] = Color.White;
             palette[3] = Color.Red;
-            Int32 frames = int33MouseCursor.Length / 64;
-            Int32 fullWidth = frames * 16;
-            Int32 fullHeight = 16;
-            Int32 fullStride = frames * 16;
-            Byte[] fullImage = new Byte[fullHeight * fullStride];
+            int frames = int33MouseCursor.Length / 64;
+            int fullWidth = frames * 16;
+            int fullHeight = 16;
+            int fullStride = frames * 16;
+            byte[] fullImage = new byte[fullHeight * fullStride];
             FileFrames framesContainer = new FileFrames();
-            for (Int32 i = 0; i < frames; ++i)
+            for (int i = 0; i < frames; ++i)
             {
-                Int32 start = i * 64;
-                Int32 start2 = start + 32;
-                Byte[] curImage1 = new Byte[32];
-                for (Int32 j = 0; j < 32; j += 2)
+                int start = i * 64;
+                int start2 = start + 32;
+                byte[] curImage1 = new byte[32];
+                for (int j = 0; j < 32; j += 2)
                 {
                     curImage1[j] = int33MouseCursor[start + j + 1];
                     curImage1[j + 1] = int33MouseCursor[start + j];
                 }
-                Int32 stride1 = 2;
+                int stride1 = 2;
                 curImage1 = ImageUtils.ConvertTo8Bit(curImage1, 16, 16, 0, 1, true, ref stride1);
 
-                Byte[] curImage2 = new Byte[32];
-                for (Int32 j = 0; j < 32; j += 2)
+                byte[] curImage2 = new byte[32];
+                for (int j = 0; j < 32; j += 2)
                 {
                     curImage2[j] = int33MouseCursor[start2 + j + 1];
                     curImage2[j + 1] = int33MouseCursor[start2 + j];
                 }
-                Int32 stride2 = 2;
+                int stride2 = 2;
                 curImage2 = ImageUtils.ConvertTo8Bit(curImage2, 16, 16, 0, 1, true, ref stride2);
 
-                Byte[] imageFinal = new Byte[256];
-                Int32 strideFinal = 16;
-                for (Int32 j = 0; j < 256; ++j)
+                byte[] imageFinal = new byte[256];
+                int strideFinal = 16;
+                for (int j = 0; j < 256; ++j)
                 {
-                    imageFinal[j] = (Byte)((curImage2[j] << 1) | curImage1[j]);
+                    imageFinal[j] = (byte)((curImage2[j] << 1) | curImage1[j]);
                 }
                 StringBuilder sb = new StringBuilder();
                 using (MemoryStream ms = new MemoryStream(int33MouseCursor))
                 using (BinaryReader br = new BinaryReader(ms))
                 {
                     ms.Position = 64 * i;
-                    for (Int32 j = 0; j < 32; ++j)
+                    for (int j = 0; j < 32; ++j)
                     {
                         if (j == 16)
                             sb.Append('\n');
-                        UInt16 line = br.ReadUInt16();
+                        ushort line = br.ReadUInt16();
                         sb.AppendFormat(" {0:X04} ", line).Append(Convert.ToString(line, 2).PadLeft(16, '0').Replace("0", "_").Replace("1", "X")).Append("\n");
                     }
                 }
@@ -234,24 +234,24 @@ namespace EngieFileConverter.UI
                 framesContainer.AddFrame(frame);
                 frame.SetExtraInfo(sb.ToString().TrimEnd('\n'));
             }
-            Int32 factor = 4;
+            int factor = 4;
             Bitmap composite;
             if (factor != 1)
             {
-                Int32 fullWidthF = fullWidth * factor;
-                Int32 fullHeightF = fullHeight * factor;
-                Int32 fullStrideF = fullHeightF;
-                Byte[] fullImageF = new Byte[fullStrideF * fullHeightF];
-                Int32 readLine = 0;
-                Int32 writeLine = 0;
-                Int32 prevWriteLine = 0;
-                for (Int32 y = 1; y <= fullHeightF; ++y)
+                int fullWidthF = fullWidth * factor;
+                int fullHeightF = fullHeight * factor;
+                int fullStrideF = fullHeightF;
+                byte[] fullImageF = new byte[fullStrideF * fullHeightF];
+                int readLine = 0;
+                int writeLine = 0;
+                int prevWriteLine = 0;
+                for (int y = 1; y <= fullHeightF; ++y)
                 {
-                    Int32 curWriteLine = writeLine;
+                    int curWriteLine = writeLine;
                     if (y % factor == 0)
                     {
-                        Int32 curReadLine = readLine;
-                        for (Int32 x = 0; x < fullWidthF; ++x)
+                        int curReadLine = readLine;
+                        for (int x = 0; x < fullWidthF; ++x)
                             fullImageF[curWriteLine + x] = fullImage[curReadLine + x / 4];
                         readLine += fullStride;
                     }
@@ -286,7 +286,7 @@ namespace EngieFileConverter.UI
 
         private void LoadByteArrayImage()
         {
-            Byte[] imageBytes =
+            byte[] imageBytes =
             {
                 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
                 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80,
@@ -303,7 +303,7 @@ namespace EngieFileConverter.UI
                 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80, 0xC2, 0x80
             };
             Color[] palette = new Color[0x100];
-            for (Int32 i = 0; i < 0x100; ++i)
+            for (int i = 0; i < 0x100; ++i)
                 palette[i] = Color.FromArgb(i, i, i);
             using (Bitmap img = ImageUtils.BuildImage(imageBytes, 10, 20, 10, PixelFormat.Format8bppIndexed, palette, null))
                 this.LoadTestFile(img);
@@ -320,14 +320,14 @@ namespace EngieFileConverter.UI
             Bitmap col = this.m_LoadedFile.Frames[1].GetBitmap();
             if (im == null || col == null || im.Width != col.Width || im.Height != col.Height)
                 return;
-            Int32 iStride;
-            Byte[] imageData = ImageUtils.GetImageData(im, out iStride, PixelFormat.Format32bppArgb);
-            Int32 cStride;
-            Byte[] colorData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
+            int iStride;
+            byte[] imageData = ImageUtils.GetImageData(im, out iStride, PixelFormat.Format32bppArgb);
+            int cStride;
+            byte[] colorData = ImageUtils.GetImageData(col, out cStride, PixelFormat.Format32bppArgb);
             if (imageData.Length != colorData.Length || iStride != cStride)
                 return;
             bool isGray = true;
-            for (Int32 i = 0; i < imageData.Length; i += 4)
+            for (int i = 0; i < imageData.Length; i += 4)
             {
                 byte first = imageData[i];
                 if (first != imageData[i + 1] || first != imageData[i + 2])
@@ -345,7 +345,7 @@ namespace EngieFileConverter.UI
                 colorData = tmp;
                 cStride = tmpStride;
             }
-            for (Int32 i = 0; i < imageData.Length; i += 4)
+            for (int i = 0; i < imageData.Length; i += 4)
             {
                 Color curPix = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(imageData, i));
                 Color curCol = Color.FromArgb(ArrayUtils.ReadInt32FromByteArrayLe(colorData, i));
@@ -353,7 +353,7 @@ namespace EngieFileConverter.UI
                 ColorToHSV(curCol, out double hue, out double sat, out double _);
                 // Color newCol = new ColorHSL(curCol.GetHue(), curCol.GetSaturation(), curPix.GetBrightness(), curPix.A);
                 Color newCol = ColorFromHSV(hue, sat, value);
-                UInt32 val = (UInt32)newCol.ToArgb();
+                uint val = (uint)newCol.ToArgb();
                 ArrayUtils.WriteUInt32ToByteArrayLe(imageData, i, val);
             }
             using (Bitmap img = ImageUtils.BuildImage(imageData, im.Width, im.Height, iStride, PixelFormat.Format32bppArgb, null, null))
@@ -397,10 +397,10 @@ namespace EngieFileConverter.UI
 
         private void ColorPsx()
         {
-            String filenameImage = "SCA01EA_cutout.BIN";
+            string filenameImage = "SCA01EA_cutout.BIN";
             if (!File.Exists(filenameImage))
                 return;
-            Byte[] imageData = File.ReadAllBytes(filenameImage);
+            byte[] imageData = File.ReadAllBytes(filenameImage);
             Color[] palette = PaletteUtils.GenerateRainbowPalette(8, -1, null, true, 0, 240, true);
             using (Bitmap img = ImageUtils.BuildImage(imageData, 2048, 128, 2048, PixelFormat.Format8bppIndexed, palette, null))
                 this.LoadTestFile(img);
@@ -408,36 +408,36 @@ namespace EngieFileConverter.UI
 
         private void ExpandRAMap()
         {
-            String file = "SCG01EA";
-            String ext = ".INI";
+            string file = "SCG01EA";
+            string ext = ".INI";
 
-            String finalFile = file + ext;
+            string finalFile = file + ext;
             if (!File.Exists(finalFile))
                 return;
             IniFile ramap = new IniFile(finalFile);
-            Int32 lineNr = 1;
+            int lineNr = 1;
             //String packedSection = "MapPack";
-            String packedSection = "OverlayPack";
-            Dictionary<String, String> sectionValues = ramap.GetSectionContent(packedSection);
+            string packedSection = "OverlayPack";
+            Dictionary<string, string> sectionValues = ramap.GetSectionContent(packedSection);
             StringBuilder sb = new StringBuilder();
             while (sectionValues.ContainsKey(lineNr.ToString()))
             {
                 sb.Append(sectionValues[lineNr.ToString()]);
                 lineNr++;
             }
-            Byte[] compressedMap = Convert.FromBase64String(sb.ToString());
-            Int32 readPtr = 0;
-            Int32 writePtr = 0;
-            Byte[] mapFile = new Byte[128 * 128 * 3];
+            byte[] compressedMap = Convert.FromBase64String(sb.ToString());
+            int readPtr = 0;
+            int writePtr = 0;
+            byte[] mapFile = new byte[128 * 128 * 3];
 
             while (readPtr + 4 <= compressedMap.Length)
             {
-                UInt32 uLength = ArrayUtils.ReadUInt32FromByteArrayLe(compressedMap, readPtr);
-                Int32 length = (Int32)(uLength & 0xDFFFFFFF);
+                uint uLength = ArrayUtils.ReadUInt32FromByteArrayLe(compressedMap, readPtr);
+                int length = (int)(uLength & 0xDFFFFFFF);
                 readPtr += 4;
-                Byte[] dest = new Byte[8192];
-                Int32 readPtr2 = readPtr;
-                Int32 decompressed = Nyerguds.FileData.Westwood.WWCompression.LcwDecompress(compressedMap, ref readPtr2, dest, 0);
+                byte[] dest = new byte[8192];
+                int readPtr2 = readPtr;
+                int decompressed = Nyerguds.FileData.Westwood.WWCompression.LcwDecompress(compressedMap, ref readPtr2, dest, 0);
                 Array.Copy(dest, 0, mapFile, writePtr, decompressed);
                 readPtr += length;
                 writePtr += decompressed;
@@ -461,7 +461,7 @@ namespace EngieFileConverter.UI
 
         private void MatrixImage()
         {
-            Byte[] matrix =
+            byte[] matrix =
             {
                 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E,
                 0x10, 0x12, 0xFF, 0x16, 0x18, 0xFF, 0x1C, 0x1E,
@@ -481,18 +481,18 @@ namespace EngieFileConverter.UI
             Bitmap bm;
             if (this.m_LoadedFile == null || (bm = this.m_LoadedFile.GetBitmap()) == null || (bm.PixelFormat & PixelFormat.Indexed) == 0)
                 return;
-            Int32 x = 120;
-            Int32 y = 96;
-            Byte pixel = ImageUtilsSO.GetIndexedPixel(bm, x, y);
+            int x = 120;
+            int y = 96;
+            byte pixel = ImageUtilsSO.GetIndexedPixel(bm, x, y);
             MessageBox.Show(this, "The index of pixel [" + x + "," + y + "] is " + pixel + ".", GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
 
         private void ExtractInts()
         {
-            String s = "some text here = 5\nanother text line here = 4 with random garbage\n7\nfoo bar 9";
-            List<Int32> nums = UtilsSO.ExtractInts(s);
-            String ints = String.Join(", ", nums.Select(i => i.ToString()).ToArray());
+            string s = "some text here = 5\nanother text line here = 4 with random garbage\n7\nfoo bar 9";
+            List<int> nums = UtilsSO.ExtractInts(s);
+            string ints = String.Join(", ", nums.Select(i => i.ToString()).ToArray());
             MessageBox.Show(this, "The numbers are " + ints, GetTitle(), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -500,16 +500,16 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null)
                 return;
-            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String[] files = { "ENGLISH", "FRENCH", "GERMAN", "ITALIAN", "SCROLL" };
-            foreach (String filename in files)
+            string path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            string[] files = { "ENGLISH", "FRENCH", "GERMAN", "ITALIAN", "SCROLL" };
+            foreach (string filename in files)
             {
-                String fullPath = Path.Combine(path, filename + ".PPP");
+                string fullPath = Path.Combine(path, filename + ".PPP");
                 if (!File.Exists(fullPath))
                     continue;
-                Byte[] buff = File.ReadAllBytes(fullPath);
+                byte[] buff = File.ReadAllBytes(fullPath);
 
-                Byte[] buffDec;
+                byte[] buffDec;
                 try
                 {
                     buffDec = PppCompression.DecompressPppRle(buff);
@@ -518,29 +518,29 @@ namespace EngieFileConverter.UI
                 {
                     continue;
                 }
-                String uncPath = Path.Combine(path, filename + ".dat");
+                string uncPath = Path.Combine(path, filename + ".dat");
                 File.WriteAllBytes(uncPath, buffDec);
 
-                Int32 len = buffDec.Length;
-                Int32 ptr = 0;
-                List<String> stringsFile = new List<String>();
+                int len = buffDec.Length;
+                int ptr = 0;
+                List<string> stringsFile = new List<string>();
                 // DOS-865: Nordic
                 Encoding dosenc = Encoding.GetEncoding(865);
                 while (ptr < len)
                 {
-                    Int32 strLen = buffDec[ptr];
+                    int strLen = buffDec[ptr];
                     ptr++;
-                    Byte[] strBuffer = new Byte[strLen];
+                    byte[] strBuffer = new byte[strLen];
                     Array.Copy(buffDec, ptr, strBuffer, 0, Math.Min(strLen, len - ptr));
-                    for (Int32 c = 0; c < strLen; ++c)
-                        strBuffer[c] = (Byte)((strBuffer[c] << 1) | (strBuffer[c] >> 7));
-                    String curLine = dosenc.GetString(strBuffer);
+                    for (int c = 0; c < strLen; ++c)
+                        strBuffer[c] = (byte)((strBuffer[c] << 1) | (strBuffer[c] >> 7));
+                    string curLine = dosenc.GetString(strBuffer);
                     stringsFile.Add(curLine);
                     ptr += strLen;
                 }
-                String fullFile = String.Join(Environment.NewLine, stringsFile.ToArray());
+                string fullFile = String.Join(Environment.NewLine, stringsFile.ToArray());
 
-                String fullPath2 = Path.Combine(path, filename + ".txt");
+                string fullPath2 = Path.Combine(path, filename + ".txt");
                 File.WriteAllText(fullPath2, fullFile, new UTF8Encoding(true) /* dosenc*/);
             }
         }
@@ -549,17 +549,17 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || (this.m_LoadedFile.GetBitmap()) == null)
                 return;
-            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String name = Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile);
-            Byte[] imageData = ImageUtils.GetImageData(this.m_LoadedFile.GetBitmap(), PixelFormat.Format24bppRgb);
-            Int32 palLen = Math.Min(0x300, imageData.Length / 3 * 3);
-            for (Int32 i = 0; i < palLen; i += 3)
+            string path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            string name = Path.GetFileNameWithoutExtension(this.m_LoadedFile.LoadedFile);
+            byte[] imageData = ImageUtils.GetImageData(this.m_LoadedFile.GetBitmap(), PixelFormat.Format24bppRgb);
+            int palLen = Math.Min(0x300, imageData.Length / 3 * 3);
+            for (int i = 0; i < palLen; i += 3)
             {
-                Byte b = imageData[i];
+                byte b = imageData[i];
                 imageData[i] = imageData[i + 2];
                 imageData[i + 2] = b;
             }
-            Byte[] paletteData = new Byte[0x300];
+            byte[] paletteData = new byte[0x300];
             Array.Copy(imageData, paletteData, Math.Min(0x300, imageData.Length));
             FilePalette8Bit pal = new FilePalette8Bit();
             pal.LoadFile(paletteData, Path.Combine(path, name + ".pal"));
@@ -570,24 +570,24 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.LoadedFile == null)
                 return;
-            String folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String folder106c = Path.Combine(folder, "106c");
-            String folderOrig = Path.Combine(folder, "orig");
+            string folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            string folder106c = Path.Combine(folder, "106c");
+            string folderOrig = Path.Combine(folder, "orig");
             if (!Directory.Exists(folderOrig) || !Directory.Exists(folder106c))
                 return;
-            String[] allMaps = Directory.GetFiles(folderOrig, "*.bin");
-            Int32 nrOfMaps = allMaps.Length;
+            string[] allMaps = Directory.GetFiles(folderOrig, "*.bin");
+            int nrOfMaps = allMaps.Length;
             FileFrames frames = new FileFrames();
-            for (Int32 i = 0; i < nrOfMaps; ++i)
+            for (int i = 0; i < nrOfMaps; ++i)
             {
-                String fileOrig = allMaps[i];
-                String fileName = Path.GetFileName(fileOrig);
-                String file106c = Path.Combine(folder106c, fileName);
-                Boolean fileOrigExists = File.Exists(fileOrig);
-                Boolean file106cExists = File.Exists(file106c);
+                string fileOrig = allMaps[i];
+                string fileName = Path.GetFileName(fileOrig);
+                string file106c = Path.Combine(folder106c, fileName);
+                bool fileOrigExists = File.Exists(fileOrig);
+                bool file106cExists = File.Exists(file106c);
 
                 FileImageFrame framePic = new FileImageFrame();
-                String newPath = Path.Combine(folder, fileName);
+                string newPath = Path.Combine(folder, fileName);
                 if (!fileOrigExists || !file106cExists)
                 {
                     framePic.LoadFile(null, newPath);
@@ -595,12 +595,12 @@ namespace EngieFileConverter.UI
                     frames.AddFrame(framePic);
                     continue;
                 }
-                Byte[] mapDataOrig = File.ReadAllBytes(fileOrig);
-                Byte[] mapData106c = File.ReadAllBytes(file106c);
+                byte[] mapDataOrig = File.ReadAllBytes(fileOrig);
+                byte[] mapData106c = File.ReadAllBytes(file106c);
 
-                Byte[] imageData;
-                Int32 stride;
-                Byte colIndex;
+                byte[] imageData;
+                int stride;
+                byte colIndex;
                 Color[] colors;
                 using (FileMapWwCc1Pc mapOrig = new FileMapWwCc1Pc())
                 {
@@ -610,7 +610,7 @@ namespace EngieFileConverter.UI
                     Color[] cols = mappic.Palette.Entries;
                     if (cols.Length < 256)
                     {
-                        colIndex = (Byte)cols.Length;
+                        colIndex = (byte)cols.Length;
                         colors = new Color[colIndex + 1];
                         Array.Copy(cols, colors, colIndex);
                     }
@@ -621,11 +621,11 @@ namespace EngieFileConverter.UI
                     }
                 }
                 colors[colIndex] = Color.Red;
-                const Int32 mapSize = 64 * 64;
-                List<Int32> affectedCells = new List<Int32>();
-                for (Int32 c = 0; c < mapSize; ++c)
+                const int mapSize = 64 * 64;
+                List<int> affectedCells = new List<int>();
+                for (int c = 0; c < mapSize; ++c)
                 {
-                    Int32 mapOffs = c << 1;
+                    int mapOffs = c << 1;
                     if (mapDataOrig[mapOffs] == mapData106c[mapOffs] && mapDataOrig[mapOffs + 1] == mapData106c[mapOffs + 1])
                         continue;
                     imageData[c] = colIndex;
@@ -665,7 +665,7 @@ namespace EngieFileConverter.UI
             }
             if (images.Count == 0)
                 return;
-            Byte[] contents;
+            byte[] contents;
             // Set program icon to this, as quick test.
             this.Icon = ImageUtilsSO.ConvertImagesToIco(images.ToArray(), out contents);
             // Content of Images comes from loaded file, so don't dispose them. The LoadTestFile function will take care of that.
@@ -678,17 +678,17 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile))
                 return;
-            String folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String[] files = Directory.GetFiles(folder, "*.png");
-            foreach (String file in files)
+            string folder = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            string[] files = Directory.GetFiles(folder, "*.png");
+            foreach (string file in files)
                 this.FixPngAspectRatio(file);
         }
 
-        private void FixPngAspectRatio(String path)
+        private void FixPngAspectRatio(string path)
         {
-            const String physChunkId = "pHYs";
+            const string physChunkId = "pHYs";
             // Read bytes
-            Byte[] pngBytes;
+            byte[] pngBytes;
             try
             {
                 pngBytes = File.ReadAllBytes(path);
@@ -700,14 +700,14 @@ namespace EngieFileConverter.UI
             // Checks
             if (!PngHandler.IsPng(pngBytes))
                 return;
-            Int32 physLoc = PngHandler.FindPngChunk(pngBytes, physChunkId);
+            int physLoc = PngHandler.FindPngChunk(pngBytes, physChunkId);
             if (physLoc == -1)
                 return;
-            Byte[] pngChunk = PngHandler.GetPngChunkData(pngBytes, physLoc);
+            byte[] pngChunk = PngHandler.GetPngChunkData(pngBytes, physLoc);
             if (pngChunk.Length != 9)
                 return;
-            UInt32 dimX = ArrayUtils.ReadUInt32FromByteArrayBe(pngChunk, 0);
-            UInt32 dimY = ArrayUtils.ReadUInt32FromByteArrayBe(pngChunk, 4);
+            uint dimX = ArrayUtils.ReadUInt32FromByteArrayBe(pngChunk, 0);
+            uint dimY = ArrayUtils.ReadUInt32FromByteArrayBe(pngChunk, 4);
             if (dimX == dimY)
                 return;
 
@@ -717,11 +717,11 @@ namespace EngieFileConverter.UI
             PngHandler.WritePngChunk(pngBytes, physLoc, physChunkId, pngChunk);
 
             // Make backup
-            String folder = Path.GetDirectoryName(path);
-            String origFolder = Path.Combine(folder, "orig");
+            string folder = Path.GetDirectoryName(path);
+            string origFolder = Path.Combine(folder, "orig");
             if (!Directory.Exists(origFolder))
                 Directory.CreateDirectory(origFolder);
-            String backup = Path.Combine(origFolder, Path.GetFileName(path));
+            string backup = Path.Combine(origFolder, Path.GetFileName(path));
             File.Copy(path, backup);
 
             // Save changes
@@ -730,41 +730,41 @@ namespace EngieFileConverter.UI
 
         private void MakeBorderIcon()
         {
-            Int32 size = 34;
-            Int32 borderSize = 2;
+            int size = 34;
+            int borderSize = 2;
             PixelFormat pixelFormat = PixelFormat.Format1bppIndexed;
-            Int32 stride = size;
-            Byte[] pixels = new Byte[size * stride];
+            int stride = size;
+            byte[] pixels = new byte[size * stride];
 
             Color[] palette = new Color[] { Color.Pink, Color.Green };
 
-            Byte paintIndex = 1;
+            byte paintIndex = 1;
             borderSize = Math.Min(borderSize, size);
 
             // Horizontal: just fill the whole block.
 
             // Top line
-            Int32 end = stride * borderSize;
-            for (Int32 i = 0; i < end; ++i)
+            int end = stride * borderSize;
+            for (int i = 0; i < end; ++i)
                 pixels[i] = paintIndex;
 
             // Bottom line
             end = stride * size;
-            for (Int32 i = stride * (size - borderSize); i < end; ++i)
+            for (int i = stride * (size - borderSize); i < end; ++i)
                 pixels[i] = paintIndex;
 
             // Vertical: Both loops are inside the same y loop. It only goes over
             // the space between the already filled top and bottom parts.
-            Int32 lineStart = borderSize * stride;
-            Int32 yEnd = size - borderSize;
-            Int32 rightStart = size - borderSize;
-            for (Int32 y = borderSize; y < yEnd; ++y)
+            int lineStart = borderSize * stride;
+            int yEnd = size - borderSize;
+            int rightStart = size - borderSize;
+            for (int y = borderSize; y < yEnd; ++y)
             {
                 // left line
-                for (Int32 x = 0; x < borderSize; ++x)
+                for (int x = 0; x < borderSize; ++x)
                     pixels[lineStart + x] = paintIndex;
                 // right line
-                for (Int32 x = rightStart; x < size; ++x)
+                for (int x = rightStart; x < size; ++x)
                     pixels[lineStart + x] = paintIndex;
                 lineStart += stride;
             }
@@ -804,12 +804,12 @@ namespace EngieFileConverter.UI
             SupportedFileType shownFile = this.GetShownFile();
             if (shownFile == null || (bm = shownFile.GetBitmap()) == null || bm.PixelFormat != PixelFormat.Format8bppIndexed)
                 return;
-            Int32 stride;
-            Int32 width = bm.Width;
-            Int32 height = bm.Height;
-            Byte[] data = ImageUtils.GetImageData(bm, out stride);
+            int stride;
+            int width = bm.Width;
+            int height = bm.Height;
+            byte[] data = ImageUtils.GetImageData(bm, out stride);
             Color[] cols = bm.Palette.Entries;
-            Byte[] palette = ColorUtils.GetSixBitPaletteData(cols);
+            byte[] palette = ColorUtils.GetSixBitPaletteData(cols);
 
             // Used data:
             // Byte[] data = image data
@@ -818,25 +818,25 @@ namespace EngieFileConverter.UI
             // Int32 width = image width
             // Int32 height = image height
 
-            for (Int32 t = 0; t < 0x300; ++t)
-                palette[t] = (Byte)(palette[t] * 4);
-            Int32 lineOffset = 0;
-            Int32 lineOffsetQuad = 0;
-            Int32 strideQuad = width * 4;
-            Byte[] dataArgb = new Byte[strideQuad * height];
-            for (Int32 y = 0; y < height; ++y)
+            for (int t = 0; t < 0x300; ++t)
+                palette[t] = (byte)(palette[t] * 4);
+            int lineOffset = 0;
+            int lineOffsetQuad = 0;
+            int strideQuad = width * 4;
+            byte[] dataArgb = new byte[strideQuad * height];
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offset = lineOffset;
-                Int32 outOffset = lineOffsetQuad;
-                for (Int32 x = 0; x < width; ++x)
+                int offset = lineOffset;
+                int outOffset = lineOffsetQuad;
+                for (int x = 0; x < width; ++x)
                 {
                     // get color index, then get the correct location in the palette array
                     // by multiplying it by 3 (the length of one full color)
-                    Int32 colIndex = data[offset++] * 3;
+                    int colIndex = data[offset++] * 3;
                     dataArgb[outOffset++] = palette[colIndex + 2]; // Blue
                     dataArgb[outOffset++] = palette[colIndex + 1]; // Green
                     dataArgb[outOffset++] = palette[colIndex]; // Red
-                    dataArgb[outOffset++] = (colIndex == 0 ? (Byte)0 : (Byte)255); // Alpha: set to 0 for background black
+                    dataArgb[outOffset++] = (colIndex == 0 ? (byte)0 : (byte)255); // Alpha: set to 0 for background black
                 }
                 lineOffset += stride;
                 lineOffsetQuad += strideQuad;
@@ -849,15 +849,15 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || this.m_LoadedFile.LoadedFile == null)
                 return;
-            Int32 frameNr = this.m_LoadedFile.Frames.Length;
+            int frameNr = this.m_LoadedFile.Frames.Length;
             List<Image> images = new List<Image>();
-            for (Int32 i = 0; i < frameNr; ++i)
+            for (int i = 0; i < frameNr; ++i)
             {
                 Bitmap bm = this.m_LoadedFile.Frames[i].GetBitmap();
                 if (bm != null)
                     images.Add(bm);
             }
-            Byte[] fileBytes = FileIcon.ConvertImagesToIcoBytes(images.ToArray());
+            byte[] fileBytes = FileIcon.ConvertImagesToIcoBytes(images.ToArray());
             File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(this.m_LoadedFile.LoadedFile), "test.ico"), fileBytes);
         }
 
@@ -867,74 +867,74 @@ namespace EngieFileConverter.UI
             SupportedFileType shownFile = this.GetShownFile();
             if (shownFile == null || (bm = shownFile.GetBitmap()) == null)
                 return;
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format32bppArgb);
-            Int32 width = bm.Width;
-            Int32 height = bm.Height;
+            int stride;
+            byte[] imageData = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format32bppArgb);
+            int width = bm.Width;
+            int height = bm.Height;
 
             Color chroma = Color.Aquamarine;
-            Double chromaHue = chroma.GetHue();
-            Double hueThreshold = 50.0;
-            Double satThreshold = 0.2;
-            Double briThreshold = 0.2;
-            Int32 lineOffset = 0;
-            for (Int32 y = 0; y < height; ++y)
+            double chromaHue = chroma.GetHue();
+            double hueThreshold = 50.0;
+            double satThreshold = 0.2;
+            double briThreshold = 0.2;
+            int lineOffset = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offsetQuad = lineOffset - 4;
-                for (Int32 x = 0; x < width; ++x)
+                int offsetQuad = lineOffset - 4;
+                for (int x = 0; x < width; ++x)
                 {
                     offsetQuad += 4;
 
-                    Byte b = imageData[offsetQuad + 0];
-                    Byte g = imageData[offsetQuad + 1];
-                    Byte r = imageData[offsetQuad + 2];
-                    Byte a = imageData[offsetQuad + 3];
+                    byte b = imageData[offsetQuad + 0];
+                    byte g = imageData[offsetQuad + 1];
+                    byte r = imageData[offsetQuad + 2];
+                    byte a = imageData[offsetQuad + 3];
                     Color c = Color.FromArgb(a, r, g, b);
-                    Double cHue = c.GetHue();
-                    Double cSat = c.GetSaturation();
-                    Double cBri = c.GetBrightness();
-                    Double hueDiff = Math.Min(Math.Abs(chromaHue - cHue), 360 - Math.Abs(chromaHue - cHue));
+                    double cHue = c.GetHue();
+                    double cSat = c.GetSaturation();
+                    double cBri = c.GetBrightness();
+                    double hueDiff = Math.Min(Math.Abs(chromaHue - cHue), 360 - Math.Abs(chromaHue - cHue));
 
                     if (cSat < satThreshold || cBri < briThreshold || hueDiff > hueThreshold)
                         continue;
-                    Byte grayVal = (Byte)Math.Min((r * 0.3) + (g * 0.59) + (b * 0.11), 255);
+                    byte grayVal = (byte)Math.Min((r * 0.3) + (g * 0.59) + (b * 0.11), 255);
                     imageData[offsetQuad + 0] = grayVal;
                     imageData[offsetQuad + 1] = grayVal;
                     imageData[offsetQuad + 2] = grayVal;
-                    imageData[offsetQuad + 3] = (Byte)Math.Min(((180 - hueDiff) * 255 / 360), 255);
+                    imageData[offsetQuad + 3] = (byte)Math.Min(((180 - hueDiff) * 255 / 360), 255);
                 }
                 lineOffset += stride;
             }
             lineOffset = 0;
-            for (Int32 y = 0; y < height; ++y)
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offsetQuad = lineOffset - 4;
-                for (Int32 x = 0; x < width; ++x)
+                int offsetQuad = lineOffset - 4;
+                for (int x = 0; x < width; ++x)
                 {
                     offsetQuad += 4;
-                    Byte b = imageData[offsetQuad + 0];
-                    Byte g = imageData[offsetQuad + 1];
-                    Byte r = imageData[offsetQuad + 2];
+                    byte b = imageData[offsetQuad + 0];
+                    byte g = imageData[offsetQuad + 1];
+                    byte r = imageData[offsetQuad + 2];
                     Color c = Color.FromArgb(r, g, b);
-                    Double cHue = c.GetHue();
-                    Double cSat = c.GetSaturation();
-                    Double cBri = c.GetBrightness();
+                    double cHue = c.GetHue();
+                    double cSat = c.GetSaturation();
+                    double cBri = c.GetBrightness();
                     if (cHue < 60 || cHue > 130 || cSat < 0.15 || cBri <= 0.15)
                         continue;
                     //if (cHue >= 60 && cHue <= 130 && cSat >= 0.15 && cBri > 0.15)
-                    Int32 rb = r * b;
-                    Int32 gsq = g * g;
+                    int rb = r * b;
+                    int gsq = g * g;
                     if (rb != 0 && gsq / rb >= 1.5)
                     {
-                        imageData[offsetQuad + 0] = (Byte)Math.Max(r * 1.4, 255);
+                        imageData[offsetQuad + 0] = (byte)Math.Max(r * 1.4, 255);
                         imageData[offsetQuad + 1] = g;
-                        imageData[offsetQuad + 2] = (Byte)Math.Max(b * 1.4, 255);
+                        imageData[offsetQuad + 2] = (byte)Math.Max(b * 1.4, 255);
                     }
                     else
                     {
-                        imageData[offsetQuad + 0] = (Byte)Math.Max(r * 1.2, 255);
+                        imageData[offsetQuad + 0] = (byte)Math.Max(r * 1.2, 255);
                         imageData[offsetQuad + 1] = g;
-                        imageData[offsetQuad + 2] = (Byte)Math.Max(b * 1.2, 255);
+                        imageData[offsetQuad + 2] = (byte)Math.Max(b * 1.2, 255);
                     }
                 }
             }
@@ -954,8 +954,8 @@ namespace EngieFileConverter.UI
             imageAttr.SetColorKey(low_color, high_color);
 
             // Make the result image.
-            Int32 width = bm.Width;
-            Int32 height = bm.Height;
+            int width = bm.Width;
+            int height = bm.Height;
             Bitmap bmNew = new Bitmap(width, height);
 
             // Process the image.
@@ -979,15 +979,15 @@ namespace EngieFileConverter.UI
             if (shownFile == null || (image = shownFile.GetBitmap()) == null)
                 return;
 
-            Int32 width = image.Width;
-            Int32 height = image.Height;
+            int width = image.Width;
+            int height = image.Height;
             BitmapData sourceData = image.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            Int32 stride = sourceData.Stride;
-            Byte[] data = new Byte[stride * height];
+            int stride = sourceData.Stride;
+            byte[] data = new byte[stride * height];
             Marshal.Copy(sourceData.Scan0, data, 0, data.Length);
             image.UnlockBits(sourceData);
 
-            Int32 lastWhiteLine = ImageUtilsSO.GetLastClearLine(data, stride, width, height, Color.White);
+            int lastWhiteLine = ImageUtilsSO.GetLastClearLine(data, stride, width, height, Color.White);
             if (lastWhiteLine == height - 1)
                 MessageBox.Show(this, "Nothing touching the bottom edge.");
             else
@@ -1010,11 +1010,11 @@ namespace EngieFileConverter.UI
             SupportedFileType shownFile = this.GetShownFile();
             if (shownFile == null || (image = shownFile.GetBitmap()) == null)
                 return;
-            Int32 width = image.Width;
-            Int32 height = image.Height;
-            Byte[] imageData = ImageUtilsSO.GetChannelBytes(image, 0);
-            Int32 stride = width;
-            Byte[] bayerData = ImageUtilsSO.BayerToRgb2x2Orig(imageData, ref width, ref height, ref stride, true, false);
+            int width = image.Width;
+            int height = image.Height;
+            byte[] imageData = ImageUtilsSO.GetChannelBytes(image, 0);
+            int stride = width;
+            byte[] bayerData = ImageUtilsSO.BayerToRgb2x2Orig(imageData, ref width, ref height, ref stride, true, false);
             Bitmap bmNew;
             using (Bitmap bmBay = ImageUtils.BuildImage(bayerData, width, height, stride, PixelFormat.Format24bppRgb, null, null))
             {
@@ -1036,21 +1036,21 @@ namespace EngieFileConverter.UI
             SupportedFileType shownFile = this.GetShownFile();
             if (shownFile == null || (image = shownFile.GetBitmap()) == null || image.PixelFormat != PixelFormat.Format8bppIndexed || image.Width % 2 != 0)
                 return;
-            Int32 width = image.Width / 2;
-            Int32 height = image.Height;
-            Int32 stride;
-            Byte[] imgData1 = ImageUtils.GetImageData(image, out stride, true);
-            Byte[] imgData2 = new Byte[width * height];
-            Int32 readLineOffs = 0;
-            Int32 writeLineOffs = 0;
-            for (Int32 y = 0; y < height; ++y)
+            int width = image.Width / 2;
+            int height = image.Height;
+            int stride;
+            byte[] imgData1 = ImageUtils.GetImageData(image, out stride, true);
+            byte[] imgData2 = new byte[width * height];
+            int readLineOffs = 0;
+            int writeLineOffs = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 readOffs = readLineOffs;
-                Int32 readOffsEnd = readLineOffs + width * 2;
+                int readOffs = readLineOffs;
+                int readOffsEnd = readLineOffs + width * 2;
                 for (; readOffs < readOffsEnd; readOffs += 2)
                 {
-                    Int32 value = ((imgData1[readOffs + 1] << 8) + imgData1[readOffs]) >> 4;
-                    imgData2[writeLineOffs] = (Byte)value;
+                    int value = ((imgData1[readOffs + 1] << 8) + imgData1[readOffs]) >> 4;
+                    imgData2[writeLineOffs] = (byte)value;
                     writeLineOffs++;
                 }
                 readLineOffs += stride;
@@ -1063,17 +1063,17 @@ namespace EngieFileConverter.UI
         {
             Bitmap picFootshape;
             Bitmap materialImage;
-            Int32 width;
-            Int32 height;
+            int width;
+            int height;
             SupportedFileType current = this.m_LoadedFile;
             if (current == null || !current.IsFramesContainer || current.Frames.Length < 2
                 || current.Frames[0] == null || (picFootshape = current.Frames[0].GetBitmap()) == null
                 || current.Frames[1] == null || (materialImage = current.Frames[1].GetBitmap()) == null
                 || (width = picFootshape.Width) != materialImage.Width || (height = picFootshape.Height) != materialImage.Height)
                 return;
-            Int32 stride;
+            int stride;
             // extract bytes of shape & alpha image
-            Byte[] shapeImageBytes = ImageUtils.GetImageData(picFootshape, out stride, PixelFormat.Format32bppArgb);
+            byte[] shapeImageBytes = ImageUtils.GetImageData(picFootshape, out stride, PixelFormat.Format32bppArgb);
             // combine
             using (Bitmap blackImage = ImageUtilsSO.ExtractBlackImage(shapeImageBytes, width, height, stride))
             {
@@ -1091,13 +1091,13 @@ namespace EngieFileConverter.UI
             Bitmap image;
             if (shownFile == null || (image = shownFile.GetBitmap()) == null || image.PixelFormat != PixelFormat.Format32bppArgb)
                 return;
-            String testFilesPath = Path.GetFullPath(Path.Combine(GeneralUtils.GetApplicationPath(), "..\\..\\..\\..\\1_testdata"));
-            String patternsFolder = Path.Combine(testFilesPath, "feet_patterns");
+            string testFilesPath = Path.GetFullPath(Path.Combine(GeneralUtils.GetApplicationPath(), "..\\..\\..\\..\\1_testdata"));
+            string patternsFolder = Path.Combine(testFilesPath, "feet_patterns");
             //String materialsFolder = Path.Combine(testFilesPath, "feet_material");
             //foreach (String materialImagePath in Directory.GetFiles(materialsFolder))
             //    File.Delete(materialImagePath);
-            String finalFolder = Path.Combine(testFilesPath, "feet_final");
-            foreach (String finalFile in Directory.GetFiles(finalFolder))
+            string finalFolder = Path.Combine(testFilesPath, "feet_final");
+            foreach (string finalFile in Directory.GetFiles(finalFolder))
                 File.Delete(finalFile);
             //ImageUtilsSO.TilePatterns(patternsFolder, image.Width, image.Height, materialsFolder);
             ImageUtilsSO.BakeImages(shownFile.LoadedFile, patternsFolder, finalFolder);
@@ -1109,61 +1109,61 @@ namespace EngieFileConverter.UI
             Bitmap image;
             if (shownFile == null || (image = shownFile.GetBitmap()) == null)
                 return;
-            Int32 width = image.Width;
-            Int32 height = image.Height;
-            Int32 stride;
-            Byte[] shapeImageBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format32bppArgb);
+            int width = image.Width;
+            int height = image.Height;
+            int stride;
+            byte[] shapeImageBytes = ImageUtils.GetImageData(image, out stride, PixelFormat.Format32bppArgb);
             Bitmap blackImage = ImageUtilsSO.ExtractBlackImage(shapeImageBytes, width, height, stride);
             this.LoadTestFile(blackImage);
         }
 
         private void MakeTrans()
         {
-            const Byte bgRedR = 0x96;
-            const Byte bgRedG = 0x0b;
-            const Byte bgRedB = 0x08;
+            const byte bgRedR = 0x96;
+            const byte bgRedG = 0x0b;
+            const byte bgRedB = 0x08;
 
             Bitmap img1Red;
             Bitmap img2Black;
-            Int32 width;
-            Int32 height;
+            int width;
+            int height;
             SupportedFileType current = this.m_LoadedFile;
             if (current == null || !current.IsFramesContainer || current.Frames.Length < 2
                 || current.Frames[0] == null || (img1Red = current.Frames[0].GetBitmap()) == null
                 || current.Frames[1] == null || (img2Black = current.Frames[1].GetBitmap()) == null
                 || (width = img1Red.Width) != img2Black.Width || (height = img1Red.Height) != img2Black.Height)
                 return;
-            Int32 stride = ImageUtils.GetClassicStride(width, 32);
-            Byte[] img1RedBytes = ImageUtils.GetImageData(img1Red, PixelFormat.Format32bppArgb);
-            Byte[] img2BlackBytes = ImageUtils.GetImageData(img2Black, PixelFormat.Format32bppArgb);
-            Int32 lineOffset = 0;
-            const Int32 threshold = 160;
-            const Int32 thresholdBlack = 5;
-            for (Int32 y = 0; y < height; ++y)
+            int stride = ImageUtils.GetClassicStride(width, 32);
+            byte[] img1RedBytes = ImageUtils.GetImageData(img1Red, PixelFormat.Format32bppArgb);
+            byte[] img2BlackBytes = ImageUtils.GetImageData(img2Black, PixelFormat.Format32bppArgb);
+            int lineOffset = 0;
+            const int threshold = 160;
+            const int thresholdBlack = 5;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offset = lineOffset;
-                for (Int32 x = 0; x < width; ++x)
+                int offset = lineOffset;
+                for (int x = 0; x < width; ++x)
                 {
-                    Byte b1r = img1RedBytes[offset];
-                    Byte b2b = img2BlackBytes[offset];
-                    Byte g1r = img1RedBytes[offset + 1];
-                    Byte g2b = img2BlackBytes[offset + 1];
-                    Byte r1r = img1RedBytes[offset + 2];
-                    Byte r2b = img2BlackBytes[offset + 2];
-                    Int32 diffB = Math.Abs(b1r - b2b);
-                    Int32 diffG = Math.Abs(g1r - g2b);
-                    Int32 diffR = Math.Abs(r1r - r2b);
+                    byte b1r = img1RedBytes[offset];
+                    byte b2b = img2BlackBytes[offset];
+                    byte g1r = img1RedBytes[offset + 1];
+                    byte g2b = img2BlackBytes[offset + 1];
+                    byte r1r = img1RedBytes[offset + 2];
+                    byte r2b = img2BlackBytes[offset + 2];
+                    int diffB = Math.Abs(b1r - b2b);
+                    int diffG = Math.Abs(g1r - g2b);
+                    int diffR = Math.Abs(r1r - r2b);
                     if (b2b < thresholdBlack && g2b < thresholdBlack && r2b < thresholdBlack)
                     //if (diffR > threshold || diffG > threshold || diffB > threshold)
                     //if (diffR > threshold || diffG > threshold || diffB > threshold || (b2b < thresholdBlack && g2b < thresholdBlack && r2b < thresholdBlack))
                     {
                         //Int32 diffB1Red = Math.Abs(b1 - bgRedB);
                         //Int32 diffG1Red = Math.Abs(g1 - bgRedG);
-                        Int32 diffR1Red = Math.Abs(r1r - bgRedR);
+                        int diffR1Red = Math.Abs(r1r - bgRedR);
                         //img1RedBytes[offset + 0] = r1r;
                         //img1RedBytes[offset + 1] = r1r;
                         //img1RedBytes[offset + 2] = r1;
-                        img1RedBytes[offset + 3] = (Byte)diffR1Red;
+                        img1RedBytes[offset + 3] = (byte)diffR1Red;
                     }
                     offset += 4;
                 }
@@ -1175,15 +1175,15 @@ namespace EngieFileConverter.UI
 
         private void CombineVertical()
         {
-            String testFilesPath = Path.GetFullPath(Path.Combine(GeneralUtils.GetApplicationPath(), "..\\..\\..\\..\\1_testdata"));
-            String patternsFolder = Path.Combine(testFilesPath, "feet_patterns");
+            string testFilesPath = Path.GetFullPath(Path.Combine(GeneralUtils.GetApplicationPath(), "..\\..\\..\\..\\1_testdata"));
+            string patternsFolder = Path.Combine(testFilesPath, "feet_patterns");
             List<Bitmap> images = new List<Bitmap>();
-            String[] files = Directory.GetFiles(patternsFolder);
-            foreach (String imagePath in files)
+            string[] files = Directory.GetFiles(patternsFolder);
+            foreach (string imagePath in files)
                 images.Add(new Bitmap(imagePath));
-            Int32 width = images.First().Width; //all images in list have the same width so I take the first
-            Int32 height = 0;
-            for (Int32 i = 0; i < images.Count; ++i) //the list has 300 images.
+            int width = images.First().Width; //all images in list have the same width so I take the first
+            int height = 0;
+            for (int i = 0; i < images.Count; ++i) //the list has 300 images.
             {
                 height += images[i].Height;
             }
@@ -1193,7 +1193,7 @@ namespace EngieFileConverter.UI
             {
 
                 height = 0;
-                for (Int32 i = 0; i < images.Count; ++i)
+                for (int i = 0; i < images.Count; ++i)
                 {
                     Bitmap image = images[i];
                     image.SetResolution(72, 72);
@@ -1211,10 +1211,10 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || this.m_LoadedFile.Frames == null || this.m_LoadedFile.Frames.Length == 0 || this.m_LoadedFile.LoadedFile == null)
                 return;
-            List<String> originalNames = this.m_LoadedFile.Frames.Select(f => f.LoadedFile).Where(File.Exists).ToList();
+            List<string> originalNames = this.m_LoadedFile.Frames.Select(f => f.LoadedFile).Where(File.Exists).ToList();
             if (originalNames.Count == 0)
                 return;
-            String outPath = Path.GetDirectoryName(originalNames[0]);
+            string outPath = Path.GetDirectoryName(originalNames[0]);
             ImageUtilsSO.WriteImagesToIcons(originalNames, outPath);
         }
 
@@ -1227,35 +1227,35 @@ namespace EngieFileConverter.UI
 
             if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || (!(this.m_LoadedFile is FileImgStris) && !(this.m_LoadedFile is FileFrames && ((FileFrames)this.m_LoadedFile).EmbeddedType == typeof(FileImgStris))))
                 return;
-            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String palFile = Path.Combine(path, "14.sex");
-            String imgFile = Path.Combine(path, "15.sex");
+            string path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            string palFile = Path.Combine(path, "14.sex");
+            string imgFile = Path.Combine(path, "15.sex");
             if (!File.Exists(palFile) || !File.Exists(imgFile))
                 return;
-            Byte[] palB = File.ReadAllBytes(palFile);
-            for (Int32 i = 0; i < palB.Length; ++i)
+            byte[] palB = File.ReadAllBytes(palFile);
+            for (int i = 0; i < palB.Length; ++i)
                 if (palB[i] != 0x0D && palB[i] != 0x0A && palB[i] != 0x20 && (palB[i] < '0' || palB[i] > '9'))
                     return;
-            String palT = Encoding.ASCII.GetString(palB);
+            string palT = Encoding.ASCII.GetString(palB);
             Regex line = new Regex("\\s*(\\d+)\\s*(\\d\\d?)\\s*(\\d\\d?)\\s*(\\d\\d?)\\s*?\r\n");
             MatchCollection mc = line.Matches(palT);
             Color[] palette = new Color[256];
             foreach (Match m in mc)
             {
-                Int32 index = Int32.Parse(m.Groups[1].Value);
+                int index = Int32.Parse(m.Groups[1].Value);
                 if (index >= 256)
                     continue;
-                Byte[] cols = new Byte[] { Byte.Parse(m.Groups[2].Value), Byte.Parse(m.Groups[3].Value), Byte.Parse(m.Groups[4].Value) };
+                byte[] cols = new byte[] { byte.Parse(m.Groups[2].Value), byte.Parse(m.Groups[3].Value), byte.Parse(m.Groups[4].Value) };
                 palette[index] = PixelFormatter.Format6BitVgaPal.GetColor(cols, 0);
             }
-            Byte[] imgB = File.ReadAllBytes(imgFile);
+            byte[] imgB = File.ReadAllBytes(imgFile);
             Bitmap image = ImageUtils.BuildImage(imgB, 320, 200, 320, PixelFormat.Format8bppIndexed, palette, Color.Black);
             this.LoadTestFile(image);
         }
 
         private void Ikegami()
         {
-            Byte[] graphic =
+            byte[] graphic =
             {
                 0x00, 0x00, 0x41, 0x7F, 0x7F, 0x41, 0x00, 0x00,
                 0x00, 0x7F, 0x7F, 0x18, 0x3C, 0x76, 0x63, 0x41,
@@ -1266,12 +1266,12 @@ namespace EngieFileConverter.UI
                 0x00, 0x00, 0x41, 0x7F, 0x7F, 0x41, 0x00, 0x00
             };
             //Bitmap ikegami = ImageUtils.BuildImage(graphic, 8, 56, 1, PixelFormat.Format1bppIndexed, new Color[] { Color.Black, Color.White }, null);
-            Byte[] conv1 = ImageUtils.ConvertTo8Bit(graphic, 8, 56, 0, 1, false);
-            Byte[] conv2 = new Byte[conv1.Length];
+            byte[] conv1 = ImageUtils.ConvertTo8Bit(graphic, 8, 56, 0, 1, false);
+            byte[] conv2 = new byte[conv1.Length];
             for (int i = 0; i < conv1.Length; ++i)
                 conv2[(56 * (i % 8)) + i / 8] = conv1[i];
             //Bitmap ikegami = ImageUtils.BuildImage(conv2, 56, 8, 56, PixelFormat.Format8bppIndexed, new Color[] { Color.Black, Color.White }, null);
-            Byte[] conv3 = ImageUtils.ConvertFrom8Bit(conv2, 56, 8, 1, true);
+            byte[] conv3 = ImageUtils.ConvertFrom8Bit(conv2, 56, 8, 1, true);
             Bitmap ikegami = ImageUtils.BuildImage(conv3, 56, 8, 7, PixelFormat.Format1bppIndexed, new Color[] { Color.Black, Color.White }, null);
 
 
@@ -1290,7 +1290,7 @@ namespace EngieFileConverter.UI
 
         private void LoadToClip()
         {
-            Byte[] dibdata = new Byte[]
+            byte[] dibdata = new byte[]
             {
                 // header
                 0x28, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x01, 0x00, 0x04, 0x00,
@@ -1377,23 +1377,23 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || (this.m_LoadedFile.LoadedFile) == null || this.m_LoadedFile is FileFrames || this.m_LoadedFile.BitsPerPixel != 8)
                 return;
-            String filename = this.m_LoadedFile.LoadedFile;
+            string filename = this.m_LoadedFile.LoadedFile;
             if (filename == null)
                 return;
             Color[] newPalette = new Color[0x100];
             using (Bitmap bm = new Bitmap(1, 1, PixelFormat.Format8bppIndexed))
             {
-                for (Int32 i = 0; i < 0x100; ++i)
+                for (int i = 0; i < 0x100; ++i)
                 {
                     Color c = bm.Palette.Entries[i];
                     newPalette[i] = Color.FromArgb(c.R, c.G, c.B);
                 }
             }
-            Int32 stride;
-            Int32 width;
-            Int32 height;
+            int stride;
+            int width;
+            int height;
             Color[] curPalette;
-            Byte[] imageData;
+            byte[] imageData;
             // This 'using' block is kept small; extract the data and then dispose everything.
             using (Bitmap image = ImageUtils.CloneImage(this.m_LoadedFile.GetBitmap()))
             //using (Bitmap image = new Bitmap(filename))
@@ -1406,15 +1406,15 @@ namespace EngieFileConverter.UI
                 imageData = ImageUtils.GetImageData(image, out stride);
             }
             // Make remap table to translate from old palette indices to new ones.
-            Byte[] match = new Byte[curPalette.Length];
-            for (Int32 i = 0; i < curPalette.Length; ++i)
-                match[i] = (Byte)ColorUtils.GetClosestPaletteIndexMatch(curPalette[i], newPalette);
+            byte[] match = new byte[curPalette.Length];
+            for (int i = 0; i < curPalette.Length; ++i)
+                match[i] = (byte)ColorUtils.GetClosestPaletteIndexMatch(curPalette[i], newPalette);
             // Go over the actual pixels in the image data and replace the colors.
-            Int32 currentLineOffset = 0;
-            for (Int32 y = 0; y < height; ++y)
+            int currentLineOffset = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offset = currentLineOffset;
-                for (Int32 x = 0; x < width; ++x)
+                int offset = currentLineOffset;
+                for (int x = 0; x < width; ++x)
                 {
                     // Replace index with index of the closest match found before for that color.
                     imageData[offset] = match[imageData[offset]];
@@ -1449,11 +1449,11 @@ namespace EngieFileConverter.UI
                 newPalette[i] = oldPalette[inverse];
                 remap[i] = inverse;
             }
-            Int32 stride;
-            Int32 width;
-            Int32 height;
+            int stride;
+            int width;
+            int height;
             Color[] curPalette;
-            Byte[] imageData;
+            byte[] imageData;
             // This 'using' block is kept small; extract the data and then dispose everything.
             using (Bitmap image = ImageUtils.CloneImage(this.m_LoadedFile.GetBitmap()))
             {
@@ -1465,11 +1465,11 @@ namespace EngieFileConverter.UI
                 imageData = ImageUtils.GetImageData(image, out stride);
             }
             // Go over the actual pixels in the image data and replace the colors.
-            Int32 currentLineOffset = 0;
-            for (Int32 y = 0; y < height; ++y)
+            int currentLineOffset = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offset = currentLineOffset;
-                for (Int32 x = 0; x < width; ++x)
+                int offset = currentLineOffset;
+                for (int x = 0; x < width; ++x)
                 {
                     // Replace index with index of the closest match found before for that color.
                     imageData[offset] = remap[imageData[offset]];
@@ -1489,47 +1489,47 @@ namespace EngieFileConverter.UI
                 || this.m_LoadedFile.Frames.Any(f => f.BitsPerPixel != 8) || this.m_LoadedFile.Frames[0].Width != this.m_LoadedFile.Frames[1].Width
                 || this.m_LoadedFile.Frames[0].Height != this.m_LoadedFile.Frames[1].Height)
                 return;
-            Int32 width = this.m_LoadedFile.Frames[0].Width;
-            Int32 height = this.m_LoadedFile.Frames[0].Height;
-            Byte[] imgBeta = ImageUtils.GetImageData(this.m_LoadedFile.Frames[0].GetBitmap(), true);
-            Byte[] imgFinl = ImageUtils.GetImageData(this.m_LoadedFile.Frames[1].GetBitmap(), true);
-            Dictionary<Byte, List<Int32>> differentIndices = new Dictionary<Byte, List<Int32>>();
-            Dictionary<Int32, Int32> matchedIndices = new Dictionary<Int32, Int32>();
-            Int32 lineOffset = 0;
-            for (Int32 y = 0; y < height; ++y)
+            int width = this.m_LoadedFile.Frames[0].Width;
+            int height = this.m_LoadedFile.Frames[0].Height;
+            byte[] imgBeta = ImageUtils.GetImageData(this.m_LoadedFile.Frames[0].GetBitmap(), true);
+            byte[] imgFinl = ImageUtils.GetImageData(this.m_LoadedFile.Frames[1].GetBitmap(), true);
+            Dictionary<byte, List<int>> differentIndices = new Dictionary<byte, List<int>>();
+            Dictionary<int, int> matchedIndices = new Dictionary<int, int>();
+            int lineOffset = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offset = lineOffset;
-                for (Int32 x = 0; x < width; ++x)
+                int offset = lineOffset;
+                for (int x = 0; x < width; ++x)
                 {
-                    Byte indexBeta = imgBeta[offset];
-                    Byte indexFinl = imgFinl[offset];
-                    Int32 dictVal = indexBeta | (indexFinl << 16);
+                    byte indexBeta = imgBeta[offset];
+                    byte indexFinl = imgFinl[offset];
+                    int dictVal = indexBeta | (indexFinl << 16);
                     if (matchedIndices.ContainsKey(dictVal))
                         matchedIndices[dictVal]++;
                     else
                     {
                         matchedIndices[dictVal] = 1;
                         if (!differentIndices.ContainsKey(indexBeta))
-                            differentIndices[indexBeta] = new List<Int32>();
+                            differentIndices[indexBeta] = new List<int>();
                         differentIndices[indexBeta].Add(dictVal);
                     }
                     offset++;
                 }
                 lineOffset += width;
             }
-            Byte[] indices = differentIndices.Keys.OrderBy(x => x).ToArray();
-            Byte[] fullPaletteRemap = new Byte[0x100];
-            Int32[] fullPaletteRemapAmount = new Int32[0x100];
-            Boolean[] alreadyMatched = new Boolean[0x100];
-            for (Int32 i = 0; i < indices.Length; ++i)
+            byte[] indices = differentIndices.Keys.OrderBy(x => x).ToArray();
+            byte[] fullPaletteRemap = new byte[0x100];
+            int[] fullPaletteRemapAmount = new int[0x100];
+            bool[] alreadyMatched = new bool[0x100];
+            for (int i = 0; i < indices.Length; ++i)
             {
-                Byte indexBeta = indices[i];
-                List<Int32> differentMatches = differentIndices[indexBeta];
-                Int32 maxAmount = 0;
-                Int32 maxIndex = -1;
-                foreach (Int32 matchId in differentMatches)
+                byte indexBeta = indices[i];
+                List<int> differentMatches = differentIndices[indexBeta];
+                int maxAmount = 0;
+                int maxIndex = -1;
+                foreach (int matchId in differentMatches)
                 {
-                    Int32 amount = matchedIndices[matchId];
+                    int amount = matchedIndices[matchId];
                     if (amount > maxAmount)
                     {
                         maxAmount = amount;
@@ -1542,17 +1542,17 @@ namespace EngieFileConverter.UI
                 // Use only most occurring one.
                 if (fullPaletteRemapAmount[maxIndex] < maxAmount)
                 {
-                    fullPaletteRemap[indexBeta] = (Byte)maxIndex;
+                    fullPaletteRemap[indexBeta] = (byte)maxIndex;
                     fullPaletteRemapAmount[indexBeta] = maxAmount;
                     alreadyMatched[indexBeta] = true;
                 }
             }
-            for (Int32 i = 0; i < 0x100; ++i)
+            for (int i = 0; i < 0x100; ++i)
             {
                 if (!alreadyMatched[i])
                     fullPaletteRemap[i] = 0x01;
             }
-            for (Int32 i = 0; i < imgBeta.Length; ++i)
+            for (int i = 0; i < imgBeta.Length; ++i)
             {
                 imgBeta[i] = fullPaletteRemap[imgBeta[i]];
             }
@@ -1565,20 +1565,20 @@ namespace EngieFileConverter.UI
             Bitmap loadedBm;
             if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel <= 8)
                 return;
-            Int32 stride;
-            Byte[] imgData = ImageUtils.GetImageData(loadedBm, out stride);
-            Int32 skipsize = this.m_LoadedFile.BitsPerPixel / 8;
-            Int32 height = loadedBm.Height;
-            Int32 width = loadedBm.Width;
+            int stride;
+            byte[] imgData = ImageUtils.GetImageData(loadedBm, out stride);
+            int skipsize = this.m_LoadedFile.BitsPerPixel / 8;
+            int height = loadedBm.Height;
+            int width = loadedBm.Width;
             //ARGB = [BB GG RR AA]
-            Int32 linePtr = 0;
-            for (Int32 y = 0; y < height; ++y)
+            int linePtr = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 ptr = linePtr;
-                for (Int32 x = 0; x < width; ++x)
+                int ptr = linePtr;
+                for (int x = 0; x < width; ++x)
                 {
-                    Byte blue = imgData[ptr];
-                    Byte red = imgData[ptr + 2];
+                    byte blue = imgData[ptr];
+                    byte red = imgData[ptr + 2];
                     imgData[ptr] = red;
                     imgData[ptr + 2] = blue;
                     ptr += skipsize;
@@ -1595,7 +1595,7 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null)
                 return;
             SupportedFileType[] frames = this.m_LoadedFile.IsFramesContainer ? this.m_LoadedFile.Frames : new SupportedFileType[] { this.m_LoadedFile };
-            Int32 nrOfFrames = frames.Length;
+            int nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
                 return;
             Bitmap[] bm = frames.Select(fr => fr.GetBitmap()).OrderBy(b => b.Width).ToArray();
@@ -1609,7 +1609,7 @@ namespace EngieFileConverter.UI
             Bitmap source192 = bm.FirstOrDefault(b => b.Width >= 192) ?? bm.Last();
             Bitmap source256 = bm.FirstOrDefault(b => b.Width >= 256) ?? bm.Last();
 
-            String icoPath = "engie.ico";
+            string icoPath = "engie.ico";
             InterpolationMode scalingMode = InterpolationMode.HighQualityBicubic;
             using (Bitmap resize16 = source16.Resize(16, 16, scalingMode))
             using (Bitmap resize32 = source32.Resize(32, 32, scalingMode))
@@ -1622,36 +1622,36 @@ namespace EngieFileConverter.UI
             {
                 Image[] includedSizes = new Image[]
                 {resize16, resize32, resize48, resize64, resize96, resize128, resize192, resize256};
-                Byte[] icoFile = ImageUtilsSO.ConvertImagesToIco(includedSizes);
+                byte[] icoFile = ImageUtilsSO.ConvertImagesToIco(includedSizes);
                 File.WriteAllBytes(icoPath, icoFile);
             }
         }
 
         private void ExtractBitmaps()
         {
-            String fileToHandle = "PCS0396S.MVB";
+            string fileToHandle = "PCS0396S.MVB";
             if (!File.Exists(fileToHandle))
                 return;
-            String baseName = Path.GetFileNameWithoutExtension(fileToHandle);
+            string baseName = Path.GetFileNameWithoutExtension(fileToHandle);
             if (!Directory.Exists(baseName))
             {
                 Directory.CreateDirectory(baseName);
             }
             else
             {
-                String[] bmpFiles = Directory.GetFiles(baseName, "*.bmp", SearchOption.TopDirectoryOnly);
-                for (Int32 i = 0; i < bmpFiles.Length; ++i)
+                string[] bmpFiles = Directory.GetFiles(baseName, "*.bmp", SearchOption.TopDirectoryOnly);
+                for (int i = 0; i < bmpFiles.Length; ++i)
                     File.Delete(bmpFiles[i]);
             }
             using (FileStream fs = new FileStream(fileToHandle, FileMode.Open))
             using (BinaryReader br = new BinaryReader(fs))
             {
-                Int32 curBm = 0;
-                Int64 len = fs.Length;
+                int curBm = 0;
+                long len = fs.Length;
                 while (fs.Position + 0x13 < len)
                 {
-                    Int64 readStart = fs.Position;
-                    Int32 cur = br.ReadByte();
+                    long readStart = fs.Position;
+                    int cur = br.ReadByte();
                     if (cur != 0x42)
                         continue;
                     cur = br.ReadByte();
@@ -1661,23 +1661,23 @@ namespace EngieFileConverter.UI
                         continue;
                     }
                     // Possible BMP point
-                    UInt32 size = br.ReadUInt32();
-                    UInt32 reserved = br.ReadUInt32();
-                    UInt32 headerEnd = br.ReadUInt32();
+                    uint size = br.ReadUInt32();
+                    uint reserved = br.ReadUInt32();
+                    uint headerEnd = br.ReadUInt32();
                     if (reserved != 0 || headerEnd > size || size + readStart > len)
                     {
                         fs.Position = readStart + 1;
                         continue;
                     }
-                    UInt32 headerSize = br.ReadUInt32();
+                    uint headerSize = br.ReadUInt32();
                     if (headerEnd < headerSize + 14)
                     {
                         fs.Position = readStart + 1;
                         continue;
                     }
                     fs.Position = readStart;
-                    Byte[] bmArr = br.ReadBytes((Int32)size);
-                    String writeName = Path.Combine(baseName, String.Format("{0:000000}.bmp", curBm++));
+                    byte[] bmArr = br.ReadBytes((int)size);
+                    string writeName = Path.Combine(baseName, String.Format("{0:000000}.bmp", curBm++));
                     File.WriteAllBytes(writeName, bmArr);
                 }
             }
@@ -1688,13 +1688,13 @@ namespace EngieFileConverter.UI
             FileMapWwCc1Pc map;
             if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile) || (map = this.m_LoadedFile as FileMapWwCc1Pc) == null)
                 return;
-            String filename = map.LoadedFile;
+            string filename = map.LoadedFile;
             if (!filename.EndsWith(".bin", StringComparison.InvariantCultureIgnoreCase) && !filename.EndsWith(".int", StringComparison.InvariantCultureIgnoreCase))
                 return;
-            String writeName = filename.Substring(0, filename.Length - 4) + "1.ini";
+            string writeName = filename.Substring(0, filename.Length - 4) + "1.ini";
             filename = filename.Substring(0, filename.Length - 3) + "ini";
 
-            String text = File.ReadAllText(filename);
+            string text = File.ReadAllText(filename);
             Regex infRegex = new Regex("^(\\d+=[^,\\r\\n]+,[^,\\r\\n]+,\\d+,)(\\d+)(,\\d+,[^,\\r\\n]+,\\d+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
             Regex strRegex = new Regex("^(\\d+=[^,\\r\\n]+,[^,\\r\\n]+,\\d+,)(\\d+)(,\\d+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
             Regex uniRegex = new Regex("^(\\d+=[^,\\r\\n]+,[^,\\r\\n]+,\\d+,)(\\d+)(,\\d+,[^,\\r\\n]+,[^,\\r\\n]+[\\r\\n])", RegexOptions.Multiline | RegexOptions.Singleline);
@@ -1717,13 +1717,13 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null || String.IsNullOrEmpty(this.m_LoadedFile.LoadedFile) || !File.Exists(this.m_LoadedFile.LoadedFile))
                 return;
-            String curFile = Path.GetFileName(this.m_LoadedFile.LoadedFile);
-            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
-            String[] files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
+            string curFile = Path.GetFileName(this.m_LoadedFile.LoadedFile);
+            string path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile);
+            string[] files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
             files = files.OrderBy(x => x.ToUpperInvariant()).ToArray();
             StringBuilder sb = new StringBuilder("Found files:");
-            Byte[] header = new Byte[0x0A];
-            for (Int32 i = 0; i < files.Length; ++i)
+            byte[] header = new byte[0x0A];
+            for (int i = 0; i < files.Length; ++i)
             {
                 FileInfo fi = new FileInfo(files[i]);
                 if (curFile.Equals(fi.Name, StringComparison.InvariantCultureIgnoreCase))
@@ -1736,7 +1736,7 @@ namespace EngieFileConverter.UI
                     }
                     if (header[5] != 0)
                     {
-                        sb.AppendLine().Append(fi.Name).Append(new String(' ', 12 - fi.Name.Length)).Append(": v").Append(header[5]).Append(", height 0x").Append(String.Format("{0:X02}", header[4]));
+                        sb.AppendLine().Append(fi.Name).Append(new string(' ', 12 - fi.Name.Length)).Append(": v").Append(header[5]).Append(", height 0x").Append(String.Format("{0:X02}", header[4]));
                     }
                 }
             }
@@ -1748,34 +1748,34 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null)
                 return;
             SupportedFileType[] frames = this.m_LoadedFile.IsFramesContainer ? this.m_LoadedFile.Frames : new SupportedFileType[] { this.m_LoadedFile };
-            Int32 nrOfFrames = frames.Length;
+            int nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
                 return;
-            Double[] results = new Double[nrOfFrames];
-            const Int32 amountInSlice = 144;
+            double[] results = new double[nrOfFrames];
+            const int amountInSlice = 144;
             for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap bm;
                 if (frame == null || (bm = frame.GetBitmap()) == null)
                     return;
-                Int32 height = bm.Height;
-                Int32 width = bm.Width;
-                Int32 stride;
-                Byte[] dataArgb = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format32bppArgb);
-                Int32 lineOffset = 0;
-                Int32 blueCount = 0;
-                Int32 redCount = 0;
-                Int32 greenCount = 0;
-                for (Int32 y = 0; y < height; ++y)
+                int height = bm.Height;
+                int width = bm.Width;
+                int stride;
+                byte[] dataArgb = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format32bppArgb);
+                int lineOffset = 0;
+                int blueCount = 0;
+                int redCount = 0;
+                int greenCount = 0;
+                for (int y = 0; y < height; ++y)
                 {
-                    Int32 offset = lineOffset;
-                    for (Int32 x = 0; x < width; ++x)
+                    int offset = lineOffset;
+                    for (int x = 0; x < width; ++x)
                     {
-                        Int32 blu = dataArgb[offset++]; // Blue
-                        Int32 grn = dataArgb[offset++]; // Green
-                        Int32 red = dataArgb[offset++]; // Red
-                        Int32 alp = dataArgb[offset++]; // Alpha
+                        int blu = dataArgb[offset++]; // Blue
+                        int grn = dataArgb[offset++]; // Green
+                        int red = dataArgb[offset++]; // Red
+                        int alp = dataArgb[offset++]; // Alpha
                         if (blu > 192 && red < 64 && grn < 64)
                             blueCount++;
                         if (blu < 64 && red > 192 && grn < 64)
@@ -1785,9 +1785,9 @@ namespace EngieFileConverter.UI
                     }
                     lineOffset += stride;
                 }
-                Int32 total = blueCount + redCount + greenCount;
-                Double multiplier = (total * 1.0) / (blueCount * 1.0);
-                Double result = amountInSlice * multiplier;
+                int total = blueCount + redCount + greenCount;
+                double multiplier = (total * 1.0) / (blueCount * 1.0);
+                double result = amountInSlice * multiplier;
                 MessageBox.Show(this,
                     "Scan results for image " + (i + 1) + ":\n" +
                     "\nRed: " + redCount +
@@ -1799,13 +1799,13 @@ namespace EngieFileConverter.UI
                     "\nTotal amount: " + amountInSlice + " * " + multiplier + " = " + result, GetTitle());
                 results[i] = result;
             }
-            Int32 min = (Int32)results.Min();
-            Int32 max = (Int32)results.Max() + 1;
-            Int32 average = min + (max - min) / 2;
-            Int32 averageErr1 = average - amountInSlice;
-            Int32 averageErr2 = average + amountInSlice;
-            Random rnd = new Random((Int32)(DateTime.Now.Ticks & 0xFFFFFFFF));
-            Int32 randomBetween = rnd.Next(averageErr1, averageErr2);
+            int min = (int)results.Min();
+            int max = (int)results.Max() + 1;
+            int average = min + (max - min) / 2;
+            int averageErr1 = average - amountInSlice;
+            int averageErr2 = average + amountInSlice;
+            Random rnd = new Random((int)(DateTime.Now.Ticks & 0xFFFFFFFF));
+            int randomBetween = rnd.Next(averageErr1, averageErr2);
             MessageBox.Show(this,
                 "Final results:\n" +
                 "\nMinimum for given blue areas: " + min +
@@ -1819,22 +1819,22 @@ namespace EngieFileConverter.UI
         private void ExpandGif()
         {
             const int footerHeight = 30;
-            const String text = "Hello, World!";
-            const String fontFamily = "Arial";
+            const string text = "Hello, World!";
+            const string fontFamily = "Arial";
             const int fontSize = 15;
             Color fontColor = Color.Black;
 
             Bitmap img;
             if (this.m_LoadedFile == null || (img = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel != 8)
                 return;
-            Int32 width = img.Width;
-            Int32 height = img.Height;
-            Int32 newHeight = height + footerHeight;
+            int width = img.Width;
+            int height = img.Height;
+            int newHeight = height + footerHeight;
             Color[] pal = img.Palette.Entries;
-            Byte[] fullImage = new Byte[width * newHeight];
-            Byte[] origImageData = ImageUtils.GetImageData(img, true);
+            byte[] fullImage = new byte[width * newHeight];
+            byte[] origImageData = ImageUtils.GetImageData(img, true);
             Array.Copy(origImageData, fullImage, origImageData.Length);
-            Byte[] commImageData;
+            byte[] commImageData;
             using (Bitmap bitmapComment = new Bitmap(width, footerHeight))
             {
                 using (Graphics graphicImage = Graphics.FromImage(bitmapComment))
@@ -1844,8 +1844,8 @@ namespace EngieFileConverter.UI
                     graphicImage.Clear(Color.White);
                     graphicImage.DrawString(text, font, new SolidBrush(Color.Black), 0, footerHeight / 6);
                 }
-                Int32 stride;
-                Byte[] commImageData32 = ImageUtils.GetImageData(bitmapComment, out stride);
+                int stride;
+                byte[] commImageData32 = ImageUtils.GetImageData(bitmapComment, out stride);
                 commImageData = ImageUtils.Convert32BitToPaletted(commImageData32, width, footerHeight, 8, true, pal, ref stride);
             }
             Array.Copy(commImageData, 0, fullImage, origImageData.Length, commImageData.Length);
@@ -1858,18 +1858,18 @@ namespace EngieFileConverter.UI
         {
             if (this.m_LoadedFile == null)
                 return;
-            String path = this.m_LoadedFile.LoadedFile;
+            string path = this.m_LoadedFile.LoadedFile;
             if (String.IsNullOrEmpty(path) || !File.Exists(path))
                 return;
             path = Path.GetDirectoryName(path);
-            String[] files = { "OPTIONS.DAT", "OWNER.DAT", "WEAPONS.DAT" };
-            foreach (String file in files)
+            string[] files = { "OPTIONS.DAT", "OWNER.DAT", "WEAPONS.DAT" };
+            foreach (string file in files)
             {
-                String readPath = Path.Combine(path, file);
-                Byte[] fBytes = File.ReadAllBytes(readPath);
-                for (Int32 i = 0; i < fBytes.Length; ++i)
+                string readPath = Path.Combine(path, file);
+                byte[] fBytes = File.ReadAllBytes(readPath);
+                for (int i = 0; i < fBytes.Length; ++i)
                 {
-                    fBytes[i] = (Byte)(fBytes[i] - 120);
+                    fBytes[i] = (byte)(fBytes[i] - 120);
                 }
                 File.WriteAllBytes(readPath + ".txt", fBytes);
             }
@@ -1877,16 +1877,16 @@ namespace EngieFileConverter.UI
 
         private SupportedFileType ReduceRPlace()
         {
-            const String palName = "0-pal.png";
+            const string palName = "0-pal.png";
             if (this.m_LoadedFile == null)
                 return null;
-            String path = this.m_LoadedFile.LoadedFile;
+            string path = this.m_LoadedFile.LoadedFile;
             if (String.IsNullOrEmpty(path) || !File.Exists(path))
                 return null;
             path = Path.GetDirectoryName(path);
-            String addPath = Path.Combine(path, "reduced");
+            string addPath = Path.Combine(path, "reduced");
             Color[] pal;
-            String palPath = Path.Combine(path, palName);
+            string palPath = Path.Combine(path, palName);
             if (!File.Exists(palPath))
                 return null;
             if (!Directory.Exists(addPath))
@@ -1900,19 +1900,19 @@ namespace EngieFileConverter.UI
                 if (pal.Length == 0)
                     return null;
             }
-            String[] files = Directory.GetFiles(path, "*.png");
+            string[] files = Directory.GetFiles(path, "*.png");
             Regex dateFile = new Regex("\\d{10}\\.png");
-            for (Int32 i = 0; i < files.Length; ++i)
+            for (int i = 0; i < files.Length; ++i)
             {
-                String filename = files[i];
-                String name = Path.GetFileName(filename);
+                string filename = files[i];
+                string name = Path.GetFileName(filename);
                 if (palName.Equals(name, StringComparison.InvariantCultureIgnoreCase))
                     continue;
                 if (!dateFile.IsMatch(name))
                     continue;
 
-                Byte[] newImg;
-                String newName = Path.Combine(addPath, name);
+                byte[] newImg;
+                string newName = Path.Combine(addPath, name);
                 if (File.Exists(newName))
                     continue;
                 using (FileImagePng png = new FileImagePng())
@@ -1924,7 +1924,7 @@ namespace EngieFileConverter.UI
                     if (result == null || result.Length == 0)
                         continue;
                     newImg = ImageUtils.GetPngImageData(result[0], pal.Length, true);
-                    for (Int32 j = 0; j < result.Length; ++j)
+                    for (int j = 0; j < result.Length; ++j)
                     {
                         try { result[j].Dispose(); }
                         catch { /* Ignore */ }
@@ -1940,24 +1940,24 @@ namespace EngieFileConverter.UI
             Bitmap loadedBm;
             if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel <= 8)
                 return null;
-            String path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile ?? ".");
-            String filename = "image.jpg";
-            String newPath = Path.Combine(path, filename);
+            string path = Path.GetDirectoryName(this.m_LoadedFile.LoadedFile ?? ".");
+            string filename = "image.jpg";
+            string newPath = Path.Combine(path, filename);
             Color[] matchPalette = new Color[] { Color.Black, Color.White, Color.Gray };
             Bitmap[] result = ImageUtils.ImageToFrames(loadedBm, loadedBm.Width, loadedBm.Height, null, null, 8, matchPalette, 0, 0);
             if (result.Length == 0)
                 return null;
             Bitmap bwImg = result[0];
-            Byte[] imgData = ImageUtils.GetImageData(bwImg, true);
-            for (Int32 i = 0; i < result.Length; ++i)
+            byte[] imgData = ImageUtils.GetImageData(bwImg, true);
+            for (int i = 0; i < result.Length; ++i)
                 result[i].Dispose();
-            Int32 length;
+            int length;
             for (length = 0; length < imgData.Length; ++length)
                 if (imgData[length] > 1)
                     break;
-            Byte[] imgDataTrimmed = new Byte[length];
+            byte[] imgDataTrimmed = new byte[length];
             Array.Copy(imgData, imgDataTrimmed, length);
-            Byte[] byteData = ImageUtils.ConvertFrom8Bit(imgDataTrimmed, length, 1, 1, true);
+            byte[] byteData = ImageUtils.ConvertFrom8Bit(imgDataTrimmed, length, 1, 1, true);
             File.WriteAllBytes(newPath, byteData);
             FileImageJpg image = new FileImageJpg();
             image.LoadFile(byteData, filename);
@@ -1969,12 +1969,12 @@ namespace EngieFileConverter.UI
             Bitmap loadedBm;
             if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel != 8)
                 return null;
-            Byte[] imgData = ImageUtils.GetImageData(loadedBm, true);
-            for (Int32 i = 0; i < imgData.Length; i++)
-                imgData[i] = (Byte)(255 - imgData[i]);
+            byte[] imgData = ImageUtils.GetImageData(loadedBm, true);
+            for (int i = 0; i < imgData.Length; ++i)
+                imgData[i] = (byte)(255 - imgData[i]);
             Color[] palette = loadedBm.Palette.Entries.Reverse().ToArray();
 
-            Byte[] data;
+            byte[] data;
             using (Bitmap newBm = ImageUtils.BuildImage(imgData, loadedBm.Width, loadedBm.Height, loadedBm.Width, PixelFormat.Format8bppIndexed, palette, null))
             using (MemoryStream ms = new MemoryStream())
             {
@@ -1986,38 +1986,38 @@ namespace EngieFileConverter.UI
             return image;
         }
 
-        private SupportedFileType CorrectHue(SupportedFileType fileToProcess, Double targetHue, Double hueThreshold, Double satMinimum)
+        private SupportedFileType CorrectHue(SupportedFileType fileToProcess, double targetHue, double hueThreshold, double satMinimum)
         {
             if (fileToProcess == null)
                 return null;
-            Boolean container = fileToProcess.IsFramesContainer;
+            bool container = fileToProcess.IsFramesContainer;
             SupportedFileType[] frames = container ? fileToProcess.Frames : new SupportedFileType[] { fileToProcess };
             FileFrames framesContainer = new FileFrames();
             //const Double hueThreshold = 15.0;
             //const Double satThreshold = 0.2;
-            Double hueLo = targetHue - hueThreshold;
-            Double hueHi = targetHue + hueThreshold;
-            for (Int32 i = 0; i < frames.Length; ++i)
+            double hueLo = targetHue - hueThreshold;
+            double hueHi = targetHue + hueThreshold;
+            for (int i = 0; i < frames.Length; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap frImg = frame.GetBitmap();
                 Bitmap newImg = null;
                 if (frImg != null)
                 {
-                    Byte[] imageContents = ImageUtils.GetImageData(frImg, PixelFormat.Format32bppRgb);
-                    Int32 width = frImg.Width;
-                    Int32 height = frImg.Height;
-                    Int32 stride = width * 4;
-                    Int32 lineIndex = 0;
-                    for (Int32 y = 0; y < height; ++y)
+                    byte[] imageContents = ImageUtils.GetImageData(frImg, PixelFormat.Format32bppRgb);
+                    int width = frImg.Width;
+                    int height = frImg.Height;
+                    int stride = width * 4;
+                    int lineIndex = 0;
+                    for (int y = 0; y < height; ++y)
                     {
-                        Int32 lineEndIndex = lineIndex + stride;
-                        for (Int32 offs = lineIndex; offs < lineEndIndex; offs += 4)
+                        int lineEndIndex = lineIndex + stride;
+                        for (int offs = lineIndex; offs < lineEndIndex; offs += 4)
                         {
-                            Int32 curCol = ArrayUtils.ReadInt32FromByteArrayLe(imageContents, offs);
+                            int curCol = ArrayUtils.ReadInt32FromByteArrayLe(imageContents, offs);
                             ColorHSL cur = Color.FromArgb(curCol);
-                            Double hue = cur.Hue;
-                            Double sat = cur.Saturation;
+                            double hue = cur.Hue;
+                            double sat = cur.Saturation;
                             if (hue > hueLo && hue < hueHi && sat > satMinimum)
                             {
                                 ColorHSL colFixed = new ColorHSL(targetHue, sat, cur.Luminosity);
@@ -2043,35 +2043,35 @@ namespace EngieFileConverter.UI
             if (fileToProcess == null || fileToProcess.IsFramesContainer || fileToProcess.BitsPerPixel != 32)
                 return null;
             Bitmap toProcess = fileToProcess.GetBitmap();
-            Int32 stride;
-            Byte[] dataArgb = ImageUtils.GetImageData(toProcess, out stride, PixelFormat.Format32bppRgb, true);
-            Int32 width = toProcess.Width;
-            Int32 height = toProcess.Height;
-            Int32 lineOffset = 0;
-            for (Int32 y = 0; y < height; ++y)
+            int stride;
+            byte[] dataArgb = ImageUtils.GetImageData(toProcess, out stride, PixelFormat.Format32bppRgb, true);
+            int width = toProcess.Width;
+            int height = toProcess.Height;
+            int lineOffset = 0;
+            for (int y = 0; y < height; ++y)
             {
-                Int32 offset = lineOffset;
-                for (Int32 x = 0; x < width; ++x)
+                int offset = lineOffset;
+                for (int x = 0; x < width; ++x)
                 {
                     int alpInt = dataArgb[offset + 3]; // Alpha
                     if (alpInt != 0 && alpInt != 255)
                     {
-                        Double blu = dataArgb[offset + 0] / 255.0; // Blue
-                        Double grn = dataArgb[offset + 1] / 255.0; // Green
-                        Double red = dataArgb[offset + 2] / 255.0; // Red
-                        Double alp = alpInt / 255.0; // Alpha
+                        double blu = dataArgb[offset + 0] / 255.0; // Blue
+                        double grn = dataArgb[offset + 1] / 255.0; // Green
+                        double red = dataArgb[offset + 2] / 255.0; // Red
+                        double alp = alpInt / 255.0; // Alpha
                         blu = 1.0 - (1.0 - blu) / alp;
                         grn = 1.0 - (1.0 - grn) / alp;
                         red = 1.0 - (1.0 - red) / alp;
-                        dataArgb[offset + 0] = (Byte)(blu * 255); // Blue
-                        dataArgb[offset + 1] = (Byte)(grn * 255); // Green
-                        dataArgb[offset + 2] = (Byte)(red * 255); // Red
+                        dataArgb[offset + 0] = (byte)(blu * 255); // Blue
+                        dataArgb[offset + 1] = (byte)(grn * 255); // Green
+                        dataArgb[offset + 2] = (byte)(red * 255); // Red
                     }
                     offset += 4;
                 }
                 lineOffset += stride;
             }
-            Byte[] data;
+            byte[] data;
             using (Bitmap newBm = ImageUtils.BuildImage(dataArgb, width, height, stride, PixelFormat.Format32bppArgb, null, null))
             using (MemoryStream ms = new MemoryStream())
             {
@@ -2087,13 +2087,13 @@ namespace EngieFileConverter.UI
         {
             if (fileToProcess == null || fileToProcess.BitsPerPixel != 8)
                 return null;
-            Boolean container = fileToProcess.IsFramesContainer;
+            bool container = fileToProcess.IsFramesContainer;
             SupportedFileType[] frames = container ? fileToProcess.Frames : new SupportedFileType[] { fileToProcess };
             FileFrames framesContainer = new FileFrames();
-            String floor = Path.Combine(Path.GetDirectoryName(fileToProcess.LoadedFile), "floor.png");
+            string floor = Path.Combine(Path.GetDirectoryName(fileToProcess.LoadedFile), "floor.png");
             if (!File.Exists(floor))
                 return null;
-            Byte[] floorContents;
+            byte[] floorContents;
             using (Bitmap floorBm = new Bitmap(floor))
             {
                 if (floorBm.PixelFormat != PixelFormat.Format8bppIndexed)
@@ -2101,24 +2101,24 @@ namespace EngieFileConverter.UI
                 floorContents = ImageUtils.GetImageData(floorBm, PixelFormat.Format8bppIndexed, true);
             }
 
-            for (Int32 i = 0; i < frames.Length; ++i)
+            for (int i = 0; i < frames.Length; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap frImg = frame.GetBitmap();
                 Bitmap newImg = null;
                 if (frImg != null)
                 {
-                    Byte[] imageContents = ImageUtils.GetImageData(frImg, PixelFormat.Format8bppIndexed, true);
-                    Int32 width = frImg.Width;
-                    Int32 height = frImg.Height;
-                    Int32 stride = width;
+                    byte[] imageContents = ImageUtils.GetImageData(frImg, PixelFormat.Format8bppIndexed, true);
+                    int width = frImg.Width;
+                    int height = frImg.Height;
+                    int stride = width;
                     if (imageContents.Length == floorContents.Length)
                     {
-                        Int32 lineIndex = 0;
-                        for (Int32 y = 0; y < height; ++y)
+                        int lineIndex = 0;
+                        for (int y = 0; y < height; ++y)
                         {
-                            Int32 lineEndIndex = lineIndex + stride;
-                            for (Int32 offs = lineIndex; offs < lineEndIndex; offs++)
+                            int lineEndIndex = lineIndex + stride;
+                            for (int offs = lineIndex; offs < lineEndIndex; ++offs)
                             {
                                 if (imageContents[offs] == floorContents[offs])
                                 {
@@ -2146,7 +2146,7 @@ namespace EngieFileConverter.UI
             Color[] palette = fileToProcess.GetBitmap().Palette.Entries.ToArray();
             byte[] pal = new byte[0x300];
             int index = 0;
-            for (int i = 0; i < palette.Length; i++)
+            for (int i = 0; i < palette.Length; ++i)
             {
                 Color palCol = palette[i];
                 pal[index++] = (byte)(palCol.R >> 2);
@@ -2164,7 +2164,7 @@ namespace EngieFileConverter.UI
             if (this.m_LoadedFile == null || (loadedBm = this.m_LoadedFile.GetBitmap()) == null || this.m_LoadedFile.BitsPerPixel > 8)
                 return;
             Color[] pal = this.m_LoadedFile.GetColors();
-            for (Int32 c = 0; c < pal.Length; ++c)
+            for (int c = 0; c < pal.Length; ++c)
             {
                 Color col = pal[c];
                 pal[c] = Color.FromArgb(col.B, col.R, col.G);

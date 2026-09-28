@@ -15,28 +15,28 @@ namespace Nyerguds.Util.UI
 
         private void SetDropDownWidth(EventArgs e)
         {
-            Int32 widestStringInPixels = this.Width;
-            Boolean hasScrollBar = this.Items.Count * this.ItemHeight > this.DropDownHeight;
+            int widestStringInPixels = this.Width;
+            bool hasScrollBar = this.Items.Count * this.ItemHeight > this.DropDownHeight;
             if (hasScrollBar)
                 widestStringInPixels -= SystemInformation.VerticalScrollBarWidth;
-            Boolean noDisplayMember = String.IsNullOrEmpty(this.DisplayMember);
-            foreach (Object o in this.Items)
+            bool noDisplayMember = String.IsNullOrEmpty(this.DisplayMember);
+            foreach (object o in this.Items)
             {
                 if (o == null)
                     continue;
-                String toCheck;
+                string toCheck;
                 if (noDisplayMember)
                     toCheck = o.ToString();
                 else
                 {
                     PropertyInfo pi = o.GetType().GetProperty(this.DisplayMember);
-                    Object val = pi == null ? null : pi.GetValue(o, null);
+                    object val = pi == null ? null : pi.GetValue(o, null);
                     toCheck = val == null ? String.Empty : val.ToString();
                 }
                 if (toCheck.Length <= 0)
                     continue;
-                Int32 newWidth = TextRenderer.MeasureText(toCheck, this.Font).Width;
-                Int32 newWidth2;
+                int newWidth = TextRenderer.MeasureText(toCheck, this.Font).Width;
+                int newWidth2;
                 using (Graphics g = this.CreateGraphics())
                     newWidth2 = g.MeasureString(toCheck, this.Font).ToSize().Width;
                 newWidth = Math.Max(newWidth, newWidth2);

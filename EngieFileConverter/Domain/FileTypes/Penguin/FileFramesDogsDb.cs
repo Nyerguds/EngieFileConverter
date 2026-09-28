@@ -14,72 +14,72 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileFramesDogsDb : SupportedFileType
     {
-        public static readonly Byte FlagByte = 0x1B;
+        public static readonly byte FlagByte = 0x1B;
         public override FileClass FileClass { get { return FileClass.FrameSet; } }
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image4Bit | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override String IdCode { get { return "AllDogsDb"; } }
+        public override string IdCode { get { return "AllDogsDb"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "All Dogs DB"; } }
-        public override String[] FileExtensions { get { return new String[] { "db0", "db1", "db2", "db3", "db4", "db5", "db6" }; } }
-        public override String LongTypeName { get { return "All Dogs Go To Heaven DB file"; } }
-        public override Boolean NeedsPalette { get { return this.m_bpp == -2; } }
-        public override Int32 BitsPerPixel { get { return this.m_bpp; } }
-        protected Int32 m_bpp;
+        public override string ShortTypeName { get { return "All Dogs DB"; } }
+        public override string[] FileExtensions { get { return new string[] { "db0", "db1", "db2", "db3", "db4", "db5", "db6" }; } }
+        public override string LongTypeName { get { return "All Dogs Go To Heaven DB file"; } }
+        public override bool NeedsPalette { get { return this.m_bpp == -2; } }
+        public override int BitsPerPixel { get { return this.m_bpp; } }
+        protected int m_bpp;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
+        public override bool HasCompositeFrame { get { return false; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return null; } }
+        public override bool[] TransparencyMask { get { return null; } }
 
-        protected Dictionary<Int32, String> m_textEntries = new Dictionary<Int32, String>();
-        protected Dictionary<Int32, Int32> m_textLengths = new Dictionary<Int32, Int32>();
+        protected Dictionary<int, string> m_textEntries = new Dictionary<int, string>();
+        protected Dictionary<int, int> m_textLengths = new Dictionary<int, int>();
 
-        protected Dictionary<Int32, String> GetTextEntries()
+        protected Dictionary<int, string> GetTextEntries()
         {
             return this.m_textEntries;
         }
 
-        protected Dictionary<Int32, Int32> GetTextLengths()
+        protected Dictionary<int, int> GetTextLengths()
         {
             return this.m_textLengths;
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
-            Boolean cgaLoadSucceeded = this.LoadFromFileData(fileData, null, false);
+            bool cgaLoadSucceeded = this.LoadFromFileData(fileData, null, false);
             if (!cgaLoadSucceeded)
                 this.LoadFromFileData(fileData, null, true);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
-            Boolean cgaLoadSucceeded = this.LoadFromFileData(fileData, filename, false);
+            bool cgaLoadSucceeded = this.LoadFromFileData(fileData, filename, false);
             if (!cgaLoadSucceeded)
                 this.LoadFromFileData(fileData, null, true);
             this.SetFileNames(filename);
         }
 
-        protected Boolean LoadFromFileData(Byte[] fileData, String sourcePath, Boolean forceEga)
+        protected bool LoadFromFileData(byte[] fileData, string sourcePath, bool forceEga)
         {
-            Int32 datalen = fileData.Length;
+            int datalen = fileData.Length;
             if (datalen < 2)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
-            Int32 nrOfFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            int nrOfFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             if (nrOfFrames == 0)
                 throw new FileTypeLoadException(ERR_NO_FRAMES);
-            Int32 headerEnd = 2 + (nrOfFrames * 8);
+            int headerEnd = 2 + (nrOfFrames * 8);
             if (datalen < headerEnd)
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
             // No longer using filename method; it's annoying for testing.
-            Boolean isCga = !forceEga;
+            bool isCga = !forceEga;
             ColorPalette cgaPal = null;
             Color[] pal;
             if (isCga)
@@ -93,22 +93,22 @@ namespace EngieFileConverter.Domain.FileTypes
                 pal = PaletteUtils.GetEgaPalette(4);
                 this.m_bpp = 4;
             }
-            Int32 offset = 2;
+            int offset = 2;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
             this.m_textEntries.Clear();
             this.m_textLengths.Clear();
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
-                Int32 decompSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset);
-                Int32 compSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 2);
-                Int32 dataStart = (Int32)ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 4);
+                int decompSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset);
+                int compSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 2);
+                int dataStart = (int)ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 4);
                 if (dataStart < headerEnd)
                     throw new FileTypeLoadException("Frame " + i + " data starts before the header end.");
                 if (dataStart + compSize > datalen)
                     throw new FileTypeLoadException( "Frame " + i + " data exceeds file.");
                 offset += 8;
-                Byte[] frameData;
-                Byte[] frameDataCopied = new Byte[compSize];
+                byte[] frameData;
+                byte[] frameDataCopied = new byte[compSize];
                 Array.Copy(fileData, dataStart, frameDataCopied, 0, compSize);
                 try
                 {
@@ -118,17 +118,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     throw new FileTypeLoadException(String.Format(ERR_DECOMPR_ERR + " (frame {1})", GeneralUtils.RecoverArgExceptionMessage(ex, true), i), ex);
                 }
-                Int32 stride = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 0);
-                Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 2);
-                Int32 imageSize = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 4);
-                String textFrame = null;
+                int stride = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 0);
+                int height = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 2);
+                int imageSize = ArrayUtils.ReadUInt16FromByteArrayLe(frameData, 4);
+                string textFrame = null;
                 if (imageSize != decompSize - 6 || stride * height != imageSize)
                 {
-                    Int32 j = 0;
-                    Boolean validAscii = true;
+                    int j = 0;
+                    bool validAscii = true;
                     for (; j < decompSize; ++j)
                     {
-                        Byte cur = frameData[j];
+                        byte cur = frameData[j];
                         if (cur == 0)
                             break;
                         // I doubt tab is allowed, but eh.
@@ -138,7 +138,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             break;
                         }
                     }
-                    for (Int32 k = j; k < decompSize; ++k) 
+                    for (int k = j; k < decompSize; ++k) 
                     {
                         if (frameData[j] != 0)
                         {
@@ -152,7 +152,7 @@ namespace EngieFileConverter.Domain.FileTypes
                         throw new FileTypeLoadException("Decompressed size in frame " + i + " does not match.");
                 }
                 // Using List<String> and not StringBuilder because it's easier to add line breaks in between.
-                List<String> extraInfo = new List<String>();
+                List<string> extraInfo = new List<string>();
                 Bitmap frameImage = null;
                 if (textFrame != null)
                 {
@@ -163,7 +163,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    Int32 width = stride*(isCga ? 4 : 2);
+                    int width = stride*(isCga ? 4 : 2);
                     // Try again as EGA.
                     if (width > 320)
                     {
@@ -171,7 +171,7 @@ namespace EngieFileConverter.Domain.FileTypes
                             return false;
                         throw new FileTypeLoadException("Image width exceeds 320.");
                     }
-                    Byte[] frameData2 = new Byte[imageSize];
+                    byte[] frameData2 = new byte[imageSize];
                     Array.Copy(frameData, 6, frameData2, 0, imageSize);
                     if (isCga)
                     {
@@ -204,15 +204,15 @@ namespace EngieFileConverter.Domain.FileTypes
             return true;
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
-            Int32 maxCol = 0;
-            Boolean canBeCga = true;
-            List<Int32> emptyEntries = new List<Int32>();
+            int maxCol = 0;
+            bool canBeCga = true;
+            List<int> emptyEntries = new List<int>();
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
             FileFramesDogsDb native = fileToSave as FileFramesDogsDb;
-            Int32 nrOfFrames = frames.Length;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            int nrOfFrames = frames.Length;
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame;
                 Bitmap bm;
@@ -231,9 +231,9 @@ namespace EngieFileConverter.Domain.FileTypes
                     maxCol = 3;
                     continue;
                 }
-                Byte[] pixels = ImageUtils.GetImageData(bm, PixelFormat.Format8bppIndexed);
-                Int32 len = pixels.Length;
-                for (Int32 p = 0; p < len; ++p)
+                byte[] pixels = ImageUtils.GetImageData(bm, PixelFormat.Format8bppIndexed);
+                int len = pixels.Length;
+                for (int p = 0; p < len; ++p)
                 {
                     maxCol = Math.Max(maxCol, pixels[p]);
                     if (maxCol >= 16)
@@ -243,38 +243,38 @@ namespace EngieFileConverter.Domain.FileTypes
 
                 }
             }
-            String[] empty = null;
-            Int32 emptyAmount = emptyEntries.Count;
+            string[] empty = null;
+            int emptyAmount = emptyEntries.Count;
             if (emptyAmount > 0)
             {
-                Dictionary<Int32, String> textEntries = native == null ? null : native.GetTextEntries();
-                Dictionary<Int32, Int32> textLengths = native == null ? null : native.GetTextLengths();
+                Dictionary<int, string> textEntries = native == null ? null : native.GetTextEntries();
+                Dictionary<int, int> textLengths = native == null ? null : native.GetTextLengths();
                 if (textEntries == null || textEntries.Keys.Count == 0)
                 {
                     empty = emptyEntries.Select(x => x + " : 50 : ").ToArray();
                 }
                 else
                 {
-                    empty = new String[emptyAmount];
-                    for (Int32 i = 0; i < emptyAmount; ++i)
+                    empty = new string[emptyAmount];
+                    for (int i = 0; i < emptyAmount; ++i)
                     {
-                        Int32 emptyNum = emptyEntries[i];
-                        String textVal;
+                        int emptyNum = emptyEntries[i];
+                        string textVal;
                         textEntries.TryGetValue(emptyNum, out textVal);
-                        Int32 textLen;
+                        int textLen;
                         textLengths.TryGetValue(emptyNum, out textLen);
                         empty[i] = emptyNum + " : " + (textLen != 0 ? textLen.ToString() : "50") + " : " + (textVal ?? String.Empty);
                     }
                 }
 
             }
-            Int32 nrOpts = 0;
+            int nrOpts = 0;
             if (canBeCga)
                 nrOpts++;
             if (empty != null)
                 nrOpts++;
             Option[] opts = new Option[nrOpts];
-            Int32 opt = 0;
+            int opt = 0;
             if (canBeCga)
                 opts[opt++] = new Option("CGA", OptionInputType.Boolean, "Save as CGA", null, "1", true);
             if (empty != null)
@@ -283,27 +283,27 @@ namespace EngieFileConverter.Domain.FileTypes
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            Boolean isCga = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CGA"));
-            String emptyEntries = Option.GetSaveOptionValue(saveOptions, "TXT");
-            HashSet<Int32> emptyKeys = new HashSet<Int32>();
-            Dictionary<Int32, String> textEntries = new Dictionary<Int32, String>();
-            Dictionary<Int32, Int32> textLengths = new Dictionary<Int32, Int32>();
+            bool isCga = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "CGA"));
+            string emptyEntries = Option.GetSaveOptionValue(saveOptions, "TXT");
+            HashSet<int> emptyKeys = new HashSet<int>();
+            Dictionary<int, string> textEntries = new Dictionary<int, string>();
+            Dictionary<int, int> textLengths = new Dictionary<int, int>();
             if (emptyEntries != null)
             {
-                String[] empties = emptyEntries.Split(new Char[] {'\r', '\n', ',', ';'}, StringSplitOptions.RemoveEmptyEntries);
+                string[] empties = emptyEntries.Split(new char[] {'\r', '\n', ',', ';'}, StringSplitOptions.RemoveEmptyEntries);
                 Regex emptyPattern = new Regex("^\\s*(\\d+)\\s*:\\s*(\\d*)\\s*:\\s*(.*?)\\s*$");
-                for (Int32 i = 0; i < empties.Length; ++i)
+                for (int i = 0; i < empties.Length; ++i)
                 {
                     Match m = emptyPattern.Match(empties[i]);
                     if (m.Success)
                     {
-                        Int32 index = Int32.Parse(m.Groups[1].Value);
+                        int index = Int32.Parse(m.Groups[1].Value);
                         if (m.Groups[2].Value.Length == 0)
                             throw new FileTypeSaveException("Syntax for blank data is \"nr : size : text\".");
-                        Int32 length = Int32.Parse(m.Groups[2].Value);
-                        String text = m.Groups[3].Value;
+                        int length = Int32.Parse(m.Groups[2].Value);
+                        string text = m.Groups[3].Value;
                         if (length < text.Length)
                             throw new FileTypeSaveException("Text entry can't be longer than its entry length.");
                         if (emptyKeys.Contains(index))
@@ -315,46 +315,46 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] {fileToSave};
-            Int32 nrOfFrames = frames.Length;
+            int nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
                 throw new FileTypeSaveException("No frames found in source data.");
             if (nrOfFrames > 0xFFFF)
                 throw new FileTypeSaveException("Too many frames in source data.");
-            Int32 targetBpp = isCga ? 2 : 4;
-            Byte[][] frameData = new Byte[nrOfFrames][];
-            Int32 dataOffset = 2 + (nrOfFrames*8);
-            Int32 offset = 2;
-            Byte[] header = new Byte[dataOffset];
-            ArrayUtils.WriteUInt16ToByteArrayLe(header, 0, (UInt16)nrOfFrames);
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            int targetBpp = isCga ? 2 : 4;
+            byte[][] frameData = new byte[nrOfFrames][];
+            int dataOffset = 2 + (nrOfFrames*8);
+            int offset = 2;
+            byte[] header = new byte[dataOffset];
+            ArrayUtils.WriteUInt16ToByteArrayLe(header, 0, (ushort)nrOfFrames);
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 Bitmap bm;
-                Int32 uncompressedSize;
-                Byte[] curFrameCompressed;
+                int uncompressedSize;
+                byte[] curFrameCompressed;
                 if (frames[i] == null || (bm = frames[i].GetBitmap()) == null)
                 {
                     // Text entry
                     if (!emptyKeys.Contains(i))
                         throw new ArgumentException("No text information given for empty entry " + i, "fileToSave");
-                    String text = textEntries[i];
-                    Int32 textLength = textLengths[i];
-                    curFrameCompressed = new Byte[textLength];
+                    string text = textEntries[i];
+                    int textLength = textLengths[i];
+                    curFrameCompressed = new byte[textLength];
                     uncompressedSize = textLength;
-                    Byte[] textArr = Encoding.ASCII.GetBytes(text);
+                    byte[] textArr = Encoding.ASCII.GetBytes(text);
                     Array.Copy(textArr, curFrameCompressed, textArr.Length);
                 }
                 else
                 {
-                    Int32 width = bm.Width;
-                    Int32 height = bm.Height;
-                    Int32 stride;
-                    Byte[] frameDataRaw = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format8bppIndexed,true);
+                    int width = bm.Width;
+                    int height = bm.Height;
+                    int stride;
+                    byte[] frameDataRaw = ImageUtils.GetImageData(bm, out stride, PixelFormat.Format8bppIndexed,true);
                     frameDataRaw = ImageUtils.ConvertFrom8Bit(frameDataRaw, width, height, targetBpp, true, ref stride);
                     uncompressedSize = frameDataRaw.Length + 6;
-                    Byte[] frameDataFinal = new Byte[uncompressedSize];
-                    ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 0, (UInt16) stride);
-                    ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 2, (UInt16) height);
-                    ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 4, (UInt16)frameDataRaw.Length);
+                    byte[] frameDataFinal = new byte[uncompressedSize];
+                    ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 0, (ushort) stride);
+                    ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 2, (ushort) height);
+                    ArrayUtils.WriteUInt16ToByteArrayLe(frameDataFinal, 4, (ushort)frameDataRaw.Length);
                     Array.Copy(frameDataRaw, 0, frameDataFinal, 6, frameDataRaw.Length);
                     try
                     {
@@ -366,19 +366,19 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                 }
                 frameData[i] = curFrameCompressed;
-                ArrayUtils.WriteUInt16ToByteArrayLe(header, offset, (UInt16)uncompressedSize);
-                ArrayUtils.WriteUInt16ToByteArrayLe(header, offset + 2, (UInt16)curFrameCompressed.Length);
-                ArrayUtils.WriteUInt32ToByteArrayLe(header, offset + 4, (UInt32)dataOffset);
+                ArrayUtils.WriteUInt16ToByteArrayLe(header, offset, (ushort)uncompressedSize);
+                ArrayUtils.WriteUInt16ToByteArrayLe(header, offset + 2, (ushort)curFrameCompressed.Length);
+                ArrayUtils.WriteUInt32ToByteArrayLe(header, offset + 4, (uint)dataOffset);
                 dataOffset += curFrameCompressed.Length;
                 offset += 8;
             }
 
-            Byte[] fullData = new Byte[dataOffset];
+            byte[] fullData = new byte[dataOffset];
             Array.Copy(header, fullData, header.Length);
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
-                Byte[] curFrame = frameData[i];
-                Int32 curLen = curFrame.Length;
+                byte[] curFrame = frameData[i];
+                int curLen = curFrame.Length;
                 Array.Copy(frameData[i], 0, fullData, offset, curLen);
                 offset += curLen;
             }

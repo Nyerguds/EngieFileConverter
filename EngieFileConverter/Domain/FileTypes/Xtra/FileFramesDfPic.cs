@@ -22,61 +22,61 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override Int32 Width { get { return 320; } }
-        public override Int32 Height { get { return 200; } }
-        public override String IdCode { get { return "DflPic"; } }
+        public override int Width { get { return 320; } }
+        public override int Height { get { return 200; } }
+        public override string IdCode { get { return "DflPic"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "DaisyField Pictures"; } }
-        public override String[] FileExtensions { get { return new String[] { "pic" }; } }
-        public override String LongTypeName { get { return "DaisyField Pictures File"; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Boolean FramesHaveCommonPalette { get { return false; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "DaisyField Pictures"; } }
+        public override string[] FileExtensions { get { return new string[] { "pic" }; } }
+        public override string LongTypeName { get { return "DaisyField Pictures File"; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override bool FramesHaveCommonPalette { get { return false; } }
+        public override int BitsPerPixel { get { return 8; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
 
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
-            const Int32 palSize = 0x300;
-            Int32 frameSize = this.Width * this.Height;
-            Int32 frameDataSize = frameSize + palSize;
-            Int32 fileDataLength = fileData.Length;
+            const int palSize = 0x300;
+            int frameSize = this.Width * this.Height;
+            int frameDataSize = frameSize + palSize;
+            int fileDataLength = fileData.Length;
             if (fileDataLength % frameDataSize != 0)
                 throw new FileTypeLoadException("Not a DaisyField PIC file.");
-            Int32 nrOfFrames = fileDataLength / frameDataSize;
+            int nrOfFrames = fileDataLength / frameDataSize;
             this.m_FramesList = new SupportedFileType[nrOfFrames];
-            Int32 readIndex = 0;
-            for (Int32 f = 0; f < nrOfFrames; ++f)
+            int readIndex = 0;
+            for (int f = 0; f < nrOfFrames; ++f)
             {
-                Int32 palReadIndex = readIndex;
-                Int32 imgReadIndex = readIndex + palSize;
-                Byte[] framePalData = new Byte[palSize];
+                int palReadIndex = readIndex;
+                int imgReadIndex = readIndex + palSize;
+                byte[] framePalData = new byte[palSize];
                 Array.Copy(fileData, palReadIndex, framePalData, 0, palSize);
-                Byte[] frameData = new Byte[frameSize];
+                byte[] frameData = new byte[frameSize];
                 Array.Copy(fileData, imgReadIndex, frameData, 0, frameSize);
-                for (Int32 i = 0; i < palSize; ++i)
+                for (int i = 0; i < palSize; ++i)
                 {
-                    Byte curVal = framePalData[i];
+                    byte curVal = framePalData[i];
                     // All values are between 0x40 and 0x80;
                     if (curVal < 0x40 || curVal >= 0x80)
                         throw new FileTypeLoadException("Not a DaisyField PIC file.");
-                    framePalData[i] = (Byte)(curVal ^ 0x55);
+                    framePalData[i] = (byte)(curVal ^ 0x55);
                 }
                 Color[] frPalette = ColorUtils.ReadSixBitPalette(framePalData, 0);
-                for (Int32 i = 0; i < frameSize; ++i)
-                    frameData[i] = (Byte)(frameData[i] ^ 0x55);
+                for (int i = 0; i < frameSize; ++i)
+                    frameData[i] = (byte)(frameData[i] ^ 0x55);
                 Bitmap curFrImg = ImageUtils.BuildImage(frameData, this.Width, this.Height, this.Width, PixelFormat.Format8bppIndexed, frPalette, null);
                 FileImageFrame framePic = new FileImageFrame();
                 framePic.LoadFileFrame(this, this, curFrImg, sourcePath, f);
@@ -87,15 +87,15 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames;
+            int nrOfFrames;
             if (frames == null || (nrOfFrames = frames.Length) == 0)
                 throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
@@ -105,25 +105,25 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (frame.Width != 320 || frame.Height != 200)
                     throw new FileTypeSaveException(String.Format(ERR_DIMENSIONS_INPUT, 320, 200));
             }
-            const Int32 palSize = 0x300;
-            Int32 frameSize = this.Width * this.Height;
-            Int32 frameDataSize = frameSize + palSize;
-            Int32 fileDataLength = nrOfFrames * frameDataSize;
-            Byte[] outBytes = new Byte[fileDataLength];
-            Int32 writeOffset = 0;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            const int palSize = 0x300;
+            int frameSize = this.Width * this.Height;
+            int frameDataSize = frameSize + palSize;
+            int fileDataLength = nrOfFrames * frameDataSize;
+            byte[] outBytes = new byte[fileDataLength];
+            int writeOffset = 0;
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap fr = frame.GetBitmap();
-                Byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(fr.Palette.Entries);
-                for (Int32 j = 0; j < palSize; ++j)
-                    sixBitCols[j] = (Byte)(sixBitCols[j] ^ 0x55);
+                byte[] sixBitCols = ColorUtils.GetSixBitPaletteData(fr.Palette.Entries);
+                for (int j = 0; j < palSize; ++j)
+                    sixBitCols[j] = (byte)(sixBitCols[j] ^ 0x55);
                 Array.Copy(sixBitCols, 0, outBytes, writeOffset, palSize);
                 writeOffset += palSize;
-                Int32 stride;
-                Byte[] imageBytes = ImageUtils.GetImageData(fr, out stride, true);
-                for (Int32 j = 0; j < frameSize; ++j)
-                    imageBytes[j] = (Byte)(imageBytes[j] ^ 0x55);
+                int stride;
+                byte[] imageBytes = ImageUtils.GetImageData(fr, out stride, true);
+                for (int j = 0; j < frameSize; ++j)
+                    imageBytes[j] = (byte)(imageBytes[j] ^ 0x55);
                 Array.Copy(imageBytes, 0, outBytes, writeOffset, frameSize);
                 writeOffset += frameSize;
             }

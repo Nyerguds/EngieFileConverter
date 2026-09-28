@@ -6,34 +6,34 @@ namespace Nyerguds.FileData.Westwood
 {
     public class CnCMap
     {
-        public const Int32 LENGTH_TD = 0x1000;
-        public const Int32 FILELENGTH_TD = LENGTH_TD * 2;
+        public const int LENGTH_TD = 0x1000;
+        public const int FILELENGTH_TD = LENGTH_TD * 2;
 
-        public const Int32 LENGTH_RA = 0x4000;
-        public const Int32 FILELENGTH_RA = LENGTH_RA * 3;
+        public const int LENGTH_RA = 0x4000;
+        public const int FILELENGTH_RA = LENGTH_RA * 3;
 
         public CnCMapCell[] Cells;
-        public Boolean IsRaType { get; private set; }
+        public bool IsRaType { get; private set; }
 
-        public CnCMapCell this[Int32 index]
+        public CnCMapCell this[int index]
         {
             get { return this.Cells[index]; }
             set { this.Cells[index] = value; }
         }
 
-        public CnCMap(Byte[] buffer, bool raFormat)
+        public CnCMap(byte[] buffer, bool raFormat)
         {
             this.IsRaType = raFormat;
             this.FillFromBuffer(buffer, raFormat);
         }
 
-        public CnCMap(String filename)
+        public CnCMap(string filename)
         {
             this.IsRaType = false;
             this.ReadTdMapFromFile(filename);
         }
 
-        public void WriteToFile(String filename)
+        public void WriteToFile(string filename)
         {
             if (String.IsNullOrEmpty(filename))
                 throw new ArgumentNullException("filename", "No filename given.");
@@ -41,7 +41,7 @@ namespace Nyerguds.FileData.Westwood
                 this.WriteToStream(fs);
         }
 
-        public Byte[] GetAsBytes()
+        public byte[] GetAsBytes()
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -55,7 +55,7 @@ namespace Nyerguds.FileData.Westwood
         {
             if (!IsRaType)
             {
-                for (Int32 i = 0; i < LENGTH_TD; ++i)
+                for (int i = 0; i < LENGTH_TD; ++i)
                 {
                     CnCMapCell cell = this.Cells[i];
                     stream.WriteByte((byte)(cell.TemplateType & 0xFF));
@@ -64,35 +64,35 @@ namespace Nyerguds.FileData.Westwood
             }
             else
             {
-                for (Int32 i = 0; i < LENGTH_RA; ++i)
+                for (int i = 0; i < LENGTH_RA; ++i)
                 {
                     CnCMapCell cell = this.Cells[i];
                     stream.WriteByte((byte)(cell.TemplateType & 0xFF));
                     stream.WriteByte((byte)((cell.TemplateType >> 8) & 0xFF));
                 }
-                for (Int32 i = 0; i < LENGTH_RA; ++i)
+                for (int i = 0; i < LENGTH_RA; ++i)
                 {
                     stream.WriteByte(this.Cells[i].Icon);
                 }
             }
         }
 
-        private void ReadTdMapFromFile(String filename)
+        private void ReadTdMapFromFile(string filename)
         {
             if (String.IsNullOrEmpty(filename))
                 throw new ArgumentNullException("filename", "No filename given.");
-            Byte[] buffer;
+            byte[] buffer;
             using (FileStream fs = File.OpenRead(filename))
             {
                 if (fs.Length != FILELENGTH_TD)
                     throw new ArgumentException("File must be " + FILELENGTH_TD + " bytes long.");
-                buffer = new Byte[FILELENGTH_TD];
+                buffer = new byte[FILELENGTH_TD];
                 fs.Read(buffer, 0, FILELENGTH_TD);
             }
             this.FillFromBuffer(buffer, false);
         }
 
-        private void FillFromBuffer(Byte[] buffer, Boolean raFormat)
+        private void FillFromBuffer(byte[] buffer, bool raFormat)
         {
             int dataLength = raFormat ? FILELENGTH_RA : FILELENGTH_TD;
             int cells = raFormat ? LENGTH_RA : LENGTH_TD;
@@ -101,8 +101,8 @@ namespace Nyerguds.FileData.Westwood
             this.Cells = new CnCMapCell[cells];
             if (!raFormat)
             {
-                Int32 pos = 0;
-                for (Int32 i = 0; i < cells; ++i)
+                int pos = 0;
+                for (int i = 0; i < cells; ++i)
                 {
                     this.Cells[i] = new CnCMapCell(buffer[pos], buffer[pos + 1], false);
                     pos += 2;
@@ -110,9 +110,9 @@ namespace Nyerguds.FileData.Westwood
             }
             else
             {
-                Int32 pos1 = 0;
-                Int32 pos2 = LENGTH_RA * 2;
-                for (Int32 i = 0; i < cells; ++i)
+                int pos1 = 0;
+                int pos2 = LENGTH_RA * 2;
+                for (int i = 0; i < cells; ++i)
                 {
                     this.Cells[i] = new CnCMapCell(ArrayUtils.ReadUInt16FromByteArrayLe(buffer, pos1), buffer[pos2], true);
                     pos1 += 2;
@@ -124,42 +124,42 @@ namespace Nyerguds.FileData.Westwood
 
     public class CnCMapCell : IComparable<CnCMapCell>, IComparable
     {
-        public UInt16 TemplateType { get; set; }
-        public Byte Icon { get; set; }
-        public Boolean RaFormat { get; private set; }
-        public Int32 ValueTD { get { return this.TemplateType << 8 | this.Icon; } }
+        public ushort TemplateType { get; set; }
+        public byte Icon { get; set; }
+        public bool RaFormat { get; private set; }
+        public int ValueTD { get { return this.TemplateType << 8 | this.Icon; } }
 
-        public CnCMapCell(UInt16 templateType, Byte icon, bool raFormat)
+        public CnCMapCell(ushort templateType, byte icon, bool raFormat)
         {
             this.TemplateType = templateType;
             this.Icon = icon;
             this.RaFormat = raFormat;
         }
 
-        public CnCMapCell(Int32 value)
+        public CnCMapCell(int value)
         {
             if (value > 0xFFFF)
                 throw new ArgumentOutOfRangeException("value");
-            this.TemplateType = (Byte)((value >> 8) & 0xFF);
-            this.Icon = (Byte)(value & 0xFF);
+            this.TemplateType = (byte)((value >> 8) & 0xFF);
+            this.Icon = (byte)(value & 0xFF);
         }
 
-        public Boolean Equals(CnCMapCell cell)
+        public bool Equals(CnCMapCell cell)
         {
             return ((cell.TemplateType == this.TemplateType) && (cell.Icon == this.Icon));
         }
 
-        public override String ToString()
+        public override string ToString()
         {
             return this.ValueTD.ToString("X4");
         }
 
-        public Int32 CompareTo(CnCMapCell other)
+        public int CompareTo(CnCMapCell other)
         {
             return this.ValueTD.CompareTo(other.ValueTD);
         }
 
-        public Int32 CompareTo(Object obj)
+        public int CompareTo(object obj)
         {
             CnCMapCell cell = obj as CnCMapCell;
             if (cell != null)
@@ -167,7 +167,7 @@ namespace Nyerguds.FileData.Westwood
             return this.ValueTD.CompareTo(obj);
         }
 
-        public override Int32 GetHashCode()
+        public override int GetHashCode()
         {
             return this.ValueTD;
         }

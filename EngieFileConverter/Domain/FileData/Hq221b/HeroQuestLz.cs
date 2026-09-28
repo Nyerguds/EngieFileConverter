@@ -9,12 +9,12 @@ namespace Nyerguds.FileData.Hq221b
     {
 
         // int Sub_145D1(int len, byte* out, byte* inp, int inplen )
-        public static byte[] Decompress(Byte[] input)
+        public static byte[] Decompress(byte[] input)
         {
-            UInt16 readVal; // ax
+            ushort readVal; // ax
             int outPtr = 0;
             int len = 0xffff;
-            Byte[] out0 = new Byte[0x1000000];
+            byte[] out0 = new byte[0x1000000];
             int inp = 0;
             int inpend = input.Length;
 
@@ -40,15 +40,15 @@ namespace Nyerguds.FileData.Hq221b
                     //printf( "!1!\n" );
                     if ((readVal & 0x80) != 0)
                     {
-                        readVal = (UInt16)(readVal & 0x7F);
+                        readVal = (ushort)(readVal & 0x7F);
                         if ((readVal & 0x40) != 0)
                         {
-                            readVal = (UInt16)(readVal & 0xBF);                            
+                            readVal = (ushort)(readVal & 0xBF);                            
                             inp++; if (inp > inpend) break;
                             //v11 = ReplaceHighByte(v11, v4);
                             //v11 = ReplaceLowByte(v11, input[inp]);
-                            int v11 = (Int16)(((readVal & 0xFF) << 8) | input[inp]);
-                            int v12 = (Int16)((4 >> 2) + 3);
+                            int v11 = (short)(((readVal & 0xFF) << 8) | input[inp]);
+                            int v12 = (short)((4 >> 2) + 3);
                             int v13 = outPtr -1 - (v11 & 0x03FF) - v12;
                             //DBG printf( "match: %i,%i\n", (v4 >> 2) + 3 + 1, (v11 & 0x3FF) + v12 + 1 );
                             while (true)
@@ -61,8 +61,8 @@ namespace Nyerguds.FileData.Hq221b
                         }
                         else
                         {
-                            int amount = (Int16)((readVal & 0x20) == 0 ? 1 : 2);
-                            readVal = (UInt16)(readVal & 0xDF);
+                            int amount = (short)((readVal & 0x20) == 0 ? 1 : 2);
+                            readVal = (ushort)(readVal & 0xDF);
                             int start = outPtr - 1 - readVal - amount;
                             while (true)
                             {
@@ -75,14 +75,14 @@ namespace Nyerguds.FileData.Hq221b
                     }
                     else if ((readVal & 0x40) != 0)
                     {
-                        readVal = (UInt16)(readVal & 0xBF);
+                        readVal = (ushort)(readVal & 0xBF);
                         if ((readVal & 0x20) != 0)
                         {
                             inp++; if (inp > inpend) break;
                             //v6 = ReplaceHighByte(v6, v4 & 0xDF);
                             //v6 = ReplaceLowByte(v6, input[inp]);
                             //v4 = (UInt16)(v6 + 33);
-                            readVal = (UInt16)((readVal & 0xDF << 8 | input[inp]) + 33);
+                            readVal = (ushort)((readVal & 0xDF << 8 | input[inp]) + 33);
                         }
                         readVal += 2;
                         inp++; if (inp > inpend) break;
@@ -105,7 +105,7 @@ namespace Nyerguds.FileData.Hq221b
                             //v5 = ReplaceHighByte(v5, v4 & 0xDF);
                             //v5 = ReplaceLowByte(v5, input[inp]);
                             //v4 = (UInt16)(v5 + 32);
-                            readVal = (UInt16)(((readVal & 0xDF) << 8 | input[inp]) + 32);
+                            readVal = (ushort)(((readVal & 0xDF) << 8 | input[inp]) + 32);
                         }
                         --readVal;
                         while (true)
@@ -128,24 +128,24 @@ namespace Nyerguds.FileData.Hq221b
         // #define HIBYTE(x) (*(((byte*)&x)+1))
         // #define getbyte() input[inp++]; if(inp>inpend) break;
 
-        private static Int16 ReplaceLowByte(Int16 input, int replacement)
+        private static short ReplaceLowByte(short input, int replacement)
         {
-            return (Int16)((input & 0xFF00) | (replacement & 0xFF));
+            return (short)((input & 0xFF00) | (replacement & 0xFF));
         }
 
-        private static UInt16 ReplaceLowByte(UInt16 input, int replacement)
+        private static ushort ReplaceLowByte(ushort input, int replacement)
         {
-            return (UInt16)((input & 0xFF00) | (replacement & 0xFF));
+            return (ushort)((input & 0xFF00) | (replacement & 0xFF));
         }
 
-        private static Int16 ReplaceHighByte(Int16 input, int replacement)
+        private static short ReplaceHighByte(short input, int replacement)
         {
-            return (Int16)((input & 0xFF) | ((replacement & 0xFF) << 8));
+            return (short)((input & 0xFF) | ((replacement & 0xFF) << 8));
         }
 
-        private static UInt16 ReplaceHighByte(UInt16 input, int replacement)
+        private static ushort ReplaceHighByte(ushort input, int replacement)
         {
-            return (UInt16)((input & 0xFF) | ((replacement & 0xFF) << 8));
+            return (ushort)((input & 0xFF) | ((replacement & 0xFF) << 8));
         }
 
     }

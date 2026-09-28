@@ -9,24 +9,24 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FilePaletteWwCc1N64 : SupportedFileType
     {
-        public override String IdCode { get { return "WwPal64"; } }
+        public override string IdCode { get { return "WwPal64"; } }
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 Pal"; } }
+        public override string ShortTypeName { get { return "C&C64 Pal"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return "Westwood C&C N64 palette"; } }
+        public override string LongTypeName { get { return "Westwood C&C N64 palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "pa4", "pa8" }; } }
-        public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return (this.m_Palette.Length + 15) / 16; } }
-        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
-        public override Int32 BitsPerPixel { get{ return 8; } }
+        public override string[] FileExtensions { get { return new string[] { "pa4", "pa8" }; } }
+        public override int Width { get { return 16; } }
+        public override int Height { get { return (this.m_Palette.Length + 15) / 16; } }
+        public override bool[] TransparencyMask { get { return new bool[0]; } }
+        public override int BitsPerPixel { get{ return 8; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
-            Int32 len = fileData.Length;
+            int len = fileData.Length;
             if (len == 0)
                 throw new FileTypeLoadException("File is empty.");
             // Test on full 16-color lines (16 x 3 bytes)
@@ -43,19 +43,19 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
-            Byte[] imageData = Enumerable.Range(0, this.Width * this.Height).Select(x => (Byte) x).ToArray();
+            byte[] imageData = Enumerable.Range(0, this.Width * this.Height).Select(x => (byte) x).ToArray();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, this.Width, this.Height, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
             if (this.m_Palette.Length < 0x100)
                 this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFile(fileData);
             this.SetFileNames(filename);
         }
 
-        public override Boolean ColorsChanged()
+        public override bool ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made
             if (this.m_BackupPalette == null)
@@ -63,12 +63,12 @@ namespace EngieFileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new FileTypeSaveException("Use specific PA4 or PA8 type.");
         }
 
-        protected Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Boolean expandToFullSize)
+        protected byte[] SaveToBytesAsThis(SupportedFileType fileToSave, bool expandToFullSize)
         {
             Color[] cols = CheckInputForColors(fileToSave, this.BitsPerPixel, expandToFullSize);
             return ColorUtils.GetEightBitPaletteData(cols, expandToFullSize);
@@ -77,15 +77,15 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FilePaletteWwCc1N64Pa4 : FilePaletteWwCc1N64
     {
-        public override String IdCode { get { return "WwPal64b4"; } }
+        public override string IdCode { get { return "WwPal64b4"; } }
         public override FileClass InputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit | FileClass.FrameSet; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image4Bit | FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 4-bit palette"; } }
-        public override String LongTypeName { get { return "Westwood C&C N64 4-bit palettes file"; } }
-        public override String[] FileExtensions { get { return new String[] { "pa4" }; } }
+        public override string ShortTypeName { get { return "C&C64 4-bit palette"; } }
+        public override string LongTypeName { get { return "Westwood C&C N64 4-bit palettes file"; } }
+        public override string[] FileExtensions { get { return new string[] { "pa4" }; } }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, false);
         }
@@ -93,13 +93,13 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public class FilePaletteWwCc1N64Pa8 : FilePaletteWwCc1N64
     {
-        public override String IdCode { get { return "WwPal64b8"; } }
+        public override string IdCode { get { return "WwPal64b8"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 8-bit palette"; } }
-        public override String LongTypeName { get { return "Westwood C&C N64 8-bit palette file"; } }
-        public override String[] FileExtensions { get { return new String[] { "pa8" }; } }
+        public override string ShortTypeName { get { return "C&C64 8-bit palette"; } }
+        public override string LongTypeName { get { return "Westwood C&C N64 8-bit palette file"; } }
+        public override string[] FileExtensions { get { return new string[] { "pa8" }; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             // test on color triplets
             if (fileData.Length != 768)
@@ -112,11 +112,11 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Failed to load file as palette: " + GeneralUtils.RecoverArgExceptionMessage(ex, true), ex);
             }
-            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
+            byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Empty);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             return this.SaveToBytesAsThis(fileToSave, true);
         }

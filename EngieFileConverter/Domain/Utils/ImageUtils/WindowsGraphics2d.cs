@@ -6,62 +6,62 @@ namespace Windows.Graphics2d
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BITMAPINFOHEADER
     {
-        public UInt32 biSize;
-        public Int32 biWidth;
-        public Int32 biHeight;
-        public Int16 biPlanes;
-        public Int16 biBitCount;
+        public uint biSize;
+        public int biWidth;
+        public int biHeight;
+        public short biPlanes;
+        public short biBitCount;
         public BITMAPCOMPRESSION biCompression;
-        public UInt32 biSizeImage;
-        public Int32 biXPelsPerMeter;
-        public Int32 biYPelsPerMeter;
-        public UInt32 biClrUsed;
-        public UInt32 biClrImportant;
+        public uint biSizeImage;
+        public int biXPelsPerMeter;
+        public int biYPelsPerMeter;
+        public uint biClrUsed;
+        public uint biClrImportant;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BITMAPV5HEADER
     {
-        public UInt32 bV5Size;
-        public Int32 bV5Width;
-        public Int32 bV5Height;
-        public UInt16 bV5Planes;
-        public UInt16 bV5BitCount;
+        public uint bV5Size;
+        public int bV5Width;
+        public int bV5Height;
+        public ushort bV5Planes;
+        public ushort bV5BitCount;
         public BITMAPCOMPRESSION bV5Compression;
-        public UInt32 bV5SizeImage;
-        public Int32 bV5XPelsPerMeter;
-        public Int32 bV5YPelsPerMeter;
-        public UInt32 bV5ClrUsed;
-        public UInt32 bV5ClrImportant;
-        public UInt32 bV5RedMask;
-        public UInt32 bV5GreenMask;
-        public UInt32 bV5BlueMask;
-        public UInt32 bV5AlphaMask;
+        public uint bV5SizeImage;
+        public int bV5XPelsPerMeter;
+        public int bV5YPelsPerMeter;
+        public uint bV5ClrUsed;
+        public uint bV5ClrImportant;
+        public uint bV5RedMask;
+        public uint bV5GreenMask;
+        public uint bV5BlueMask;
+        public uint bV5AlphaMask;
         public LogicalColorSpace bV5CSType;
-        public UInt32 bV5EndpointsCiexyzRedX;
-        public UInt32 bV5EndpointsCiexyzRedY;
-        public UInt32 bV5EndpointsCiexyzRedZ;
-        public UInt32 bV5EndpointsCiexyzGreenX;
-        public UInt32 bV5EndpointsCiexyzGreenY;
-        public UInt32 bV5EndpointsCiexyzGreenZ;
-        public UInt32 bV5EndpointsCiexyzBlueX;
-        public UInt32 bV5EndpointsCiexyzBlueY;
-        public UInt32 bV5EndpointsCiexyzBlueZ;
-        public UInt32 bV5GammaRed;
-        public UInt32 bV5GammaGreen;
-        public UInt32 bV5GammaBlue;
+        public uint bV5EndpointsCiexyzRedX;
+        public uint bV5EndpointsCiexyzRedY;
+        public uint bV5EndpointsCiexyzRedZ;
+        public uint bV5EndpointsCiexyzGreenX;
+        public uint bV5EndpointsCiexyzGreenY;
+        public uint bV5EndpointsCiexyzGreenZ;
+        public uint bV5EndpointsCiexyzBlueX;
+        public uint bV5EndpointsCiexyzBlueY;
+        public uint bV5EndpointsCiexyzBlueZ;
+        public uint bV5GammaRed;
+        public uint bV5GammaGreen;
+        public uint bV5GammaBlue;
         public GamutMappingIntent bV5Intent;
-        public UInt32 bV5ProfileData;
-        public UInt32 bV5ProfileSize;
-        public UInt32 bV5Reserved;
+        public uint bV5ProfileData;
+        public uint bV5ProfileSize;
+        public uint bV5Reserved;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BITFIELDS
     {
-        public UInt32 bfRedMask;
-        public UInt32 bfGreenMask;
-        public UInt32 bfBlueMask;
+        public uint bfRedMask;
+        public uint bfGreenMask;
+        public uint bfBlueMask;
     }
 
     public enum LogicalColorSpace : uint
@@ -95,29 +95,29 @@ namespace Windows.Graphics2d
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ICONDIR
     {
-        public UInt16 Reserved;
-        public UInt16 Type;
-        public UInt16 NumberOfImages;
+        public ushort Reserved;
+        public ushort Type;
+        public ushort NumberOfImages;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct ICONDIRENTRY
     {
         // 0 image width
-        public Byte Width;// is 0 for "256"
+        public byte Width;// is 0 for "256"
         // 1 image height
-        public Byte Height;
+        public byte Height;
         // 2 number of colors
-        public Byte PaletteLength;
+        public byte PaletteLength;
         // 3 reserved
-        public Byte Reserved;
+        public byte Reserved;
         // 4-5 color planes
-        public UInt16 ColorPlanes;
+        public ushort ColorPlanes;
         // 6-7 bits per pixel
-        public UInt16 BitsPerPixel;
+        public ushort BitsPerPixel;
         // 8-11 size of image data
-        public UInt32 ImageLength;
+        public uint ImageLength;
         // 12-15 offset of image data
-        public UInt32 ImageOffset;
+        public uint ImageOffset;
     }
 }

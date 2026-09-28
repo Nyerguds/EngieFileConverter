@@ -5,7 +5,7 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     public partial class SaveOptionBoolean : SaveOptionControl
     {
-        private Boolean m_Loading;
+        private bool m_Loading;
 
         public SaveOptionBoolean() : this(null, null) { }
 
@@ -27,7 +27,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             this.chkOption.Select();
         }
 
-        public override void SetEnabled(Boolean enabled)
+        public override void SetEnabled(bool enabled)
         {
             try
             {
@@ -41,7 +41,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             }
         }
 
-        private void chkOption_CheckedChanged(Object sender, EventArgs e)
+        private void chkOption_CheckedChanged(object sender, EventArgs e)
         {
             if (m_Loading || this.Info == null)
                 return;

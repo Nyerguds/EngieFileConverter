@@ -23,6 +23,7 @@ namespace EngieFileConverter.Domain.FileTypes
             typeof(FileImgWwCps),
             typeof(FileImgWwCpsToon),
             typeof(FileImgWwCmp),
+            typeof(FileFramesWwCpsAmiga),
             typeof(FileFramesWwCpsAmi4),
             typeof(FileFramesWwWsa),
             typeof(FileFramesWwShpD2),
@@ -242,8 +243,8 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             // internal check for development.
             Type sft = typeof(SupportedFileType);
-            Int32 typesLength = types.Length;
-            for (Int32 i = 0; i < typesLength; ++i)
+            int typesLength = types.Length;
+            for (int i = 0; i < typesLength; ++i)
             {
                 Type t = types[i];
                 if (!t.IsSubclassOf(sft))
@@ -269,9 +270,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
         /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
         /// <returns>The detected type, or null if detection failed.</returns>
-        public static SupportedFileType LoadFileAutodetect(String path, SupportedFileType[] preferredTypes, Boolean onlyGivenTypes, out List<FileTypeLoadException> loadErrors)
+        public static SupportedFileType LoadFileAutodetect(string path, SupportedFileType[] preferredTypes, bool onlyGivenTypes, out List<FileTypeLoadException> loadErrors)
         {
-            Byte[] fileData = File.ReadAllBytes(path);
+            byte[] fileData = File.ReadAllBytes(path);
             return LoadFileAutodetect(fileData, path, preferredTypes, onlyGivenTypes, out loadErrors);
         }
 
@@ -284,7 +285,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="loadErrors">Returned list of occurred errors during autodetect.</param>
         /// <param name="onlyGivenTypes">True if only the possibleTypes list is processed to autodetect the type.</param>
         /// <returns>The detected type, or null if detection failed.</returns>
-        public static SupportedFileType LoadFileAutodetect(Byte[] fileData, String path, SupportedFileType[] preferredTypes, Boolean onlyGivenTypes, out List<FileTypeLoadException> loadErrors)
+        public static SupportedFileType LoadFileAutodetect(byte[] fileData, string path, SupportedFileType[] preferredTypes, bool onlyGivenTypes, out List<FileTypeLoadException> loadErrors)
         {
             loadErrors = new List<FileTypeLoadException>();
             // See which extensions match, and try those first.
@@ -294,8 +295,8 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 // Try extension-filtering first, then the rest.
                 SupportedFileType[] preferredTypesExt = FileDialogGenerator.IdentifyByExtension(preferredTypes, path);
-                Int32 extLength = preferredTypesExt.Length;
-                for (Int32 i = 0; i < extLength; ++i)
+                int extLength = preferredTypesExt.Length;
+                for (int i = 0; i < extLength; ++i)
                 {
                     SupportedFileType typeObj = preferredTypesExt[i];
                     try
@@ -311,8 +312,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     preferredTypes = preferredTypes.Where(tp => preferredTypesExt.All(tpe => tpe.GetType() != tp.GetType())).ToArray();
                 }
             }
-            Int32 prefTypesLength = preferredTypes.Length;
-            for (Int32 i = 0; i < prefTypesLength; ++i)
+            int prefTypesLength = preferredTypes.Length;
+            for (int i = 0; i < prefTypesLength; ++i)
             {
                 SupportedFileType typeObj = preferredTypes[i];
                 try
@@ -329,13 +330,13 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (onlyGivenTypes)
                 return null;
-            Int32 autoTypesLength = AutoDetectTypes.Length;
-            for (Int32 i = 0; i < autoTypesLength; ++i)
+            int autoTypesLength = AutoDetectTypes.Length;
+            for (int i = 0; i < autoTypesLength; ++i)
             {
                 Type type = AutoDetectTypes[i];
                 // Skip entries on the already-tried list.
-                Boolean isPreferredType = false;
-                for (Int32 j = 0; j < prefTypesLength; ++j)
+                bool isPreferredType = false;
+                for (int j = 0; j < prefTypesLength; ++j)
                 {
                     if (preferredTypes[j].GetType() != type)
                         continue;

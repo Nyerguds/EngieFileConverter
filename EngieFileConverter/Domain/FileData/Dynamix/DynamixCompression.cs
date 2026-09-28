@@ -11,28 +11,28 @@ namespace Nyerguds.FileData.Dynamix
     public class DynamixCompression
     {
 
-        public static Byte[] EnrichFourBit(Byte[] vgaData, Byte[] binData)
+        public static byte[] EnrichFourBit(byte[] vgaData, byte[] binData)
         {
-            Int32 len = vgaData.Length;
-            Byte[] fullData = new Byte[len * 2];
+            int len = vgaData.Length;
+            byte[] fullData = new byte[len * 2];
             // ENRICHED 4-BIT IMAGE LOGIC
             // Basic principle: The data in the VGA chunk is already perfectly viewable as 4-bit image. The color palettes
             // are designed so each block of 16 colors consists of different tints of the same color. The 16-color palette
             // for the VGA chunk alone can be constructed by taking a palette slice where each color is 16 entries apart.
 
             // This VGA data [AB] gets "ennobled" to 8-bit by adding detail data [ab] from the BIN chunk, to get bytes [Aa Bb].
-            for (Int32 i = 0; i < len; ++i)
+            for (int i = 0; i < len; ++i)
             {
-                Int32 offs = i * 2;
+                int offs = i * 2;
                 // This can be written much simpler, but I expanded it to clearly show each step.
-                Byte vgaPix = vgaData[i]; // 0xAB
-                Byte binPix = binData[i]; // 0xab
-                Byte vgaPixHi = (Byte)((vgaPix & 0xF0) >> 4); // 0x0A
-                Byte binPixHi = (Byte)((binPix & 0xF0) >> 4); // 0x0a
-                Byte finalPixHi = (Byte)((vgaPixHi << 4) + binPixHi); // Aa
-                Byte vgaPixLo = (Byte)(vgaPix & 0x0F); // 0x0B
-                Byte binPixLo = (Byte)(binPix & 0x0F); // 0x0b
-                Byte finalPixLo = (Byte)((vgaPixLo << 4) + binPixLo); // Bb
+                byte vgaPix = vgaData[i]; // 0xAB
+                byte binPix = binData[i]; // 0xab
+                byte vgaPixHi = (byte)((vgaPix & 0xF0) >> 4); // 0x0A
+                byte binPixHi = (byte)((binPix & 0xF0) >> 4); // 0x0a
+                byte finalPixHi = (byte)((vgaPixHi << 4) + binPixHi); // Aa
+                byte vgaPixLo = (byte)(vgaPix & 0x0F); // 0x0B
+                byte binPixLo = (byte)(binPix & 0x0F); // 0x0b
+                byte finalPixLo = (byte)((vgaPixLo << 4) + binPixLo); // Bb
                 // Final result: AB + ab == [Aa Bb]
                 fullData[offs] = finalPixHi;
                 fullData[offs + 1] = finalPixLo;
@@ -40,23 +40,23 @@ namespace Nyerguds.FileData.Dynamix
             return fullData;
         }
 
-        public static void SplitEightBit(Byte[] imageData, out Byte[] vgaData, out Byte[] binData)
+        public static void SplitEightBit(byte[] imageData, out byte[] vgaData, out byte[] binData)
         {
-            Int32 len = imageData.Length;
-            vgaData = new Byte[(len + 1) / 2];
-            binData = new Byte[(len + 1) / 2];
-            for (Int32 i = 0; i < len; ++i)
+            int len = imageData.Length;
+            vgaData = new byte[(len + 1) / 2];
+            binData = new byte[(len + 1) / 2];
+            for (int i = 0; i < len; ++i)
             {
-                Byte pixData = imageData[i];
-                Int32 pixHi = pixData & 0xF0;
-                Int32 pixLo = pixData & 0x0F;
+                byte pixData = imageData[i];
+                int pixHi = pixData & 0xF0;
+                int pixLo = pixData & 0x0F;
                 if (i % 2 == 0)
                     pixLo = pixLo << 4;
                 else
                     pixHi = pixHi >> 4;
-                Int32 pixOffs = i / 2;
-                vgaData[pixOffs] |= (Byte)pixHi;
-                binData[pixOffs] |= (Byte)pixLo;
+                int pixOffs = i / 2;
+                vgaData[pixOffs] |= (byte)pixHi;
+                binData[pixOffs] |= (byte)pixLo;
             }
         }
 
@@ -66,12 +66,12 @@ namespace Nyerguds.FileData.Dynamix
         /// </summary>
         /// <param name="chunkData">Chunk data to decompress.</param>
         /// <returns>The decompressed data.</returns>
-        public static Byte[] DecodeChunk(Byte[] chunkData)
+        public static byte[] DecodeChunk(byte[] chunkData)
         {
             if (chunkData.Length < 5)
                 throw new ArgumentException("Chunk is too short to read compression header.");
-            Byte compression = chunkData[0];
-            Int32 decompressedLength = chunkData[4] << 24 | chunkData[3] << 16 | chunkData[2] << 8 | chunkData[1];
+            byte compression = chunkData[0];
+            int decompressedLength = chunkData[4] << 24 | chunkData[3] << 16 | chunkData[2] << 8 | chunkData[1];
             return Decode(chunkData, 5, null, compression, decompressedLength);
         }
 
@@ -84,10 +84,10 @@ namespace Nyerguds.FileData.Dynamix
         /// <param name="compression">Compression type: 0 for decompressed, 1 for RLE, 2 for LZA.</param>
         /// <param name="decompressedSize">The decompressed size.</param>
         /// <returns>The decompressed data.</returns>
-        public static Byte[] Decode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 compression, Int32 decompressedSize)
+        public static byte[] Decode(byte[] buffer, int? startOffset, int? endOffset, int compression, int decompressedSize)
         {
-            Int32 start = startOffset ?? 0;
-            Int32 end = endOffset ?? buffer.Length;
+            int start = startOffset ?? 0;
+            int end = endOffset ?? buffer.Length;
             if (end < start)
                 throw new ArgumentException("End offset cannot be smaller than start offset.", "endOffset");
             if (start < 0 || start > buffer.Length)
@@ -97,12 +97,12 @@ namespace Nyerguds.FileData.Dynamix
             switch (compression)
             {
                 case 0:
-                    Byte[] outBuff = new Byte[decompressedSize];
-                    Int32 len = Math.Min(end - start, decompressedSize);
+                    byte[] outBuff = new byte[decompressedSize];
+                    int len = Math.Min(end - start, decompressedSize);
                     Array.Copy(buffer, start, outBuff, 0, len);
                     return outBuff;
                 case 1:
-                    return RleDecode(buffer, (UInt32)start, (UInt32)end, decompressedSize, true);
+                    return RleDecode(buffer, (uint)start, (uint)end, decompressedSize, true);
                 case 2:
                     return LzwDecode(buffer, start, end, decompressedSize);
                 case 3:
@@ -112,46 +112,17 @@ namespace Nyerguds.FileData.Dynamix
             }
         }
 
-        public static Byte[] LzssDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
-        {
-            return LzssHuffDecoder.LzssDecode(buffer, startOffset, endOffset, decompressedSize);
-        }
-
         /// <summary>
-        /// Applies LZW Encoding to the given data.
+        /// Decodes Run-Length Encoded (RLE) data.
         /// </summary>
-        /// <param name="buffer">Input buffer.</param>
-        /// <returns>The run-length encoded data.</returns>
-        public static Byte[] LzssEncode(Byte[] buffer)
+        /// <param name="buffer">Buffer to read from.</param>
+        /// <param name="startOffset">Start offset.</param>
+        /// <param name="endOffset">End offset.</param>
+        /// <param name="decompressedSize">Decompressed size.</param>
+        /// <returns>The decompressed data.</returns>
+        public static byte[] RleDecode(byte[] buffer, uint? startOffset, uint? endOffset, int decompressedSize, bool abortOnError)
         {
-            throw new NotSupportedException("Sierra/Dynamix LZSS compression is currently not supported.");
-            //LzssHuffDecoder enc = new LzssHuffDecoder();
-            //return null; // enc.Encode(buffer, null, null);
-        }
-
-        public static Byte[] LzwDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 decompressedSize)
-        {
-            DynamixLzwDecoder lzwDec = new DynamixLzwDecoder();
-            Byte[] outputBuffer = new Byte[decompressedSize];
-            lzwDec.LzwDecode(buffer, startOffset, endOffset, outputBuffer);
-            return outputBuffer;
-        }
-
-        /// <summary>
-        /// Applies LZW Encoding to the given data.
-        /// </summary>
-        /// <param name="buffer">Input buffer.</param>
-        /// <returns>The run-length encoded data.</returns>
-        public static Byte[] LzwEncode(Byte[] buffer)
-        {
-            throw new NotSupportedException("Sierra/Dynamix LZSS compression is currently not supported.");
-            //DynamixLzwEncoder enc= new DynamixLzwEncoder();
-            //return enc.Compress(buffer);
-        }
-
-        public static Byte[] RleDecode(Byte[] buffer, UInt32? startOffset, UInt32? endOffset, Int32 decompressedSize, Boolean abortOnError)
-        {
-            Byte[] outputBuffer = new Byte[decompressedSize];
+            byte[] outputBuffer = new byte[decompressedSize];
             // Uses standard RLE implementation.
             RleCompressionHighBitRepeat rle = new RleCompressionHighBitRepeat();
             rle.RleDecodeData(buffer, startOffset, endOffset, ref outputBuffer, abortOnError);
@@ -163,11 +134,64 @@ namespace Nyerguds.FileData.Dynamix
         /// </summary>
         /// <param name="buffer">Input buffer.</param>
         /// <returns>The run-length encoded data.</returns>
-        public static Byte[] RleEncode(Byte[] buffer)
+        public static byte[] RleEncode(byte[] buffer)
         {
             // Uses standard RLE implementation.
             RleCompressionHighBitRepeat rle = new RleCompressionHighBitRepeat();
             return rle.RleEncodeData(buffer);
+        }
+
+        /// <summary>
+        /// Decodes LZW data.
+        /// </summary>
+        /// <param name="buffer">Buffer to read from.</param>
+        /// <param name="startOffset">Start offset.</param>
+        /// <param name="endOffset">End offset.</param>
+        /// <param name="decompressedSize">Decompressed size.</param>
+        /// <returns>The decompressed data.</returns>
+        public static byte[] LzwDecode(byte[] buffer, int? startOffset, int? endOffset, int decompressedSize)
+        {
+            DynamixLzwDecoder lzwDec = new DynamixLzwDecoder();
+            byte[] outputBuffer = new byte[decompressedSize];
+            lzwDec.LzwDecode(buffer, startOffset, endOffset, outputBuffer);
+            return outputBuffer;
+        }
+
+        /// <summary>
+        /// Applies LZW Encoding to the given data.
+        /// </summary>
+        /// <param name="buffer">Input buffer.</param>
+        /// <returns>The run-length encoded data.</returns>
+        public static byte[] LzwEncode(byte[] buffer)
+        {
+            throw new NotSupportedException("Sierra/Dynamix LZSS compression is currently not supported.");
+            //DynamixLzwEncoder enc= new DynamixLzwEncoder();
+            //return enc.Compress(buffer);
+        }
+
+        /// <summary>
+        /// Decodes LZSS Huffman data.
+        /// </summary>
+        /// <param name="buffer">Buffer to read from.</param>
+        /// <param name="startOffset">Start offset.</param>
+        /// <param name="endOffset">End offset.</param>
+        /// <param name="decompressedSize">Decompressed size.</param>
+        /// <returns>The decompressed data.</returns>
+        public static byte[] LzssDecode(byte[] buffer, int? startOffset, int? endOffset, int decompressedSize)
+        {
+            return LzssHuffDecoder.LzssDecode(buffer, startOffset, endOffset, decompressedSize);
+        }
+
+        /// <summary>
+        /// Applies LZW Encoding to the given data.
+        /// </summary>
+        /// <param name="buffer">Input buffer.</param>
+        /// <returns>The run-length encoded data.</returns>
+        public static byte[] LzssEncode(byte[] buffer)
+        {
+            throw new NotSupportedException("Sierra/Dynamix LZSS compression is currently not supported.");
+            //LzssHuffDecoder enc = new LzssHuffDecoder();
+            //return null; // enc.Encode(buffer, null, null);
         }
 
         /// <summary>
@@ -180,37 +204,37 @@ namespace Nyerguds.FileData.Dynamix
         /// <param name="height">Height of the image to decompress.</param>
         /// <param name="bpp">Bits per pixel. If given as 8, the output will always return as 8-bit. Otherwide, it will be 4 unless higher-value data is detected.</param>
         /// <returns>The decompressed image.</returns>
-        public static Byte[] ScnDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Int32 width, Int32 height, ref Int32 bpp)
+        public static byte[] ScnDecode(byte[] buffer, int? startOffset, int? endOffset, int width, int height, ref int bpp)
         {
             // This function will write everything to an 8-bit buffer, and only convert it back afterwards.
-            Int32 decompressedSize = width * height;
-            Byte[] bufferOut = new Byte[decompressedSize];
-            Int32 dataStart = startOffset ?? 0;
-            Int32 inPtr = dataStart;
-            Int32 inPtrEnd = (endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length);
-            Int32 outPtr = 0;
-            Int32 bufLen = inPtrEnd - inPtr;
+            int decompressedSize = width * height;
+            byte[] bufferOut = new byte[decompressedSize];
+            int dataStart = startOffset ?? 0;
+            int inPtr = dataStart;
+            int inPtrEnd = (endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length);
+            int outPtr = 0;
+            int bufLen = inPtrEnd - inPtr;
             // Force it to 4 if it's not 8 to avoid illegal values.
             if (bpp != 8)
                 bpp = 4;
             if (bufLen == 0)
                 return bufferOut;
-            Byte addValue = buffer[inPtr++];
+            byte addValue = buffer[inPtr++];
             // If the add value is more then 0x0F, the resulting image is 8-bit. The compressed content in the image is still only 4-bit,
             // but 8-bit images can have a data range of 0-F and ALSO transparency.
             if (addValue != 0xFF && addValue > 0x0F)
                 bpp = 8;
-            Boolean endLoop = false;
-            Int32 lastCommandPtr = 0;
+            bool endLoop = false;
+            int lastCommandPtr = 0;
             while (true)
             {
                 if (inPtr >= inPtrEnd)
                     throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "No \"end of data\" marker found when decompressing SCN data."), "buffer");
-                Int32 curLine1 = outPtr / width;
+                int curLine1 = outPtr / width;
                 lastCommandPtr = inPtr;
-                Byte code = buffer[inPtr++];
-                Int32 command = code >> 6;
-                Int32 arg = code & 0x3F;
+                byte code = buffer[inPtr++];
+                int command = code >> 6;
+                int arg = code & 0x3F;
                 switch (command)
                 {
                     case 0: // Skip entire line length, minus [arg] pixels.
@@ -221,7 +245,7 @@ namespace Nyerguds.FileData.Dynamix
                             break;
                         }
                         // check for joined commands
-                        Int32 arg2 = -1;
+                        int arg2 = -1;
                         if (inPtr < inPtrEnd && buffer[inPtr] != 0 && buffer[inPtr] >> 6 == 0)
                             arg2 = (buffer[inPtr++] & 0x3F);
                         arg = (arg2 == -1) ? arg : (arg2 << 6) | arg;
@@ -240,13 +264,13 @@ namespace Nyerguds.FileData.Dynamix
                         //    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "repeat command not supported for empty images."), "buffer");
                         if (inPtr >= inPtrEnd)
                             throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "can't read pixel to repeat."), "buffer");
-                        Byte repeatByte = (Byte) (buffer[inPtr++] + addValue);
+                        byte repeatByte = (byte) (buffer[inPtr++] + addValue);
                         if (repeatByte > 0x0F && bpp == 4)
                             bpp = 8;
-                        Int32 repEnd = outPtr + arg;
+                        int repEnd = outPtr + arg;
                         if (repEnd > decompressedSize)
                             throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "repeat command attempted to write outside output buffer."), "buffer");
-                        for (; outPtr < repEnd; outPtr++)
+                        for (; outPtr < repEnd; ++outPtr)
                             bufferOut[outPtr] = repeatByte;
                         break;
                     case 3: // copy pixels
@@ -254,17 +278,17 @@ namespace Nyerguds.FileData.Dynamix
                         //    throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "copy command not supported for empty images."), "buffer");
                         if (arg == 0)
                             break;
-                        Int32 stride = ((arg * 4) + 7) / 8;
-                        Int32 skippedBytes = stride;
+                        int stride = ((arg * 4) + 7) / 8;
+                        int skippedBytes = stride;
                         if (inPtr + stride > inPtrEnd)
                             throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "input buffer too small to read full copy command."), "buffer");
-                        Byte[] toWrite = ImageUtils.ConvertTo8Bit(buffer, arg, 1, inPtr, 4, true, ref stride);
+                        byte[] toWrite = ImageUtils.ConvertTo8Bit(buffer, arg, 1, inPtr, 4, true, ref stride);
                         inPtr += skippedBytes;
                         if (outPtr + arg > decompressedSize)
                             throw new ArgumentException(BuildScnDecodeErr(dataStart, lastCommandPtr, "copy command attempted to write outside output buffer."), "buffer");
-                        for (Int32 i = 0; i < arg && outPtr < decompressedSize; ++i)
+                        for (int i = 0; i < arg && outPtr < decompressedSize; ++i)
                         {
-                            Byte copyByte = (Byte) (toWrite[i] + addValue);
+                            byte copyByte = (byte) (toWrite[i] + addValue);
                             if (copyByte > 0x0F && bpp == 4)
                                 bpp = 8;
                             bufferOut[outPtr++] = copyByte;
@@ -273,7 +297,7 @@ namespace Nyerguds.FileData.Dynamix
                 }
                 if (endLoop)
                     break;
-                Int32 curLine2 = outPtr / width;
+                int curLine2 = outPtr / width;
                 // Checking if the encoding obeys the "no line wraparound" rules. There are three criteria that need to be true before it is allowed to fail:
                 // - The line number progressed
                 // - The command is not 0
@@ -286,7 +310,7 @@ namespace Nyerguds.FileData.Dynamix
             return bpp == 8 ? bufferOut : ImageUtils.ConvertFrom8Bit(bufferOut, width, height, bpp, true);
         }
 
-        private static String BuildScnDecodeErr(Int32 dataStart, Int32 lastCommandPtr, String message)
+        private static string BuildScnDecodeErr(int dataStart, int lastCommandPtr, string message)
         {
             return "Bad data in SCN chunk [section 0x" + dataStart.ToString("X") + ", offset 0x" + lastCommandPtr.ToString("X") + "]: " + message;
         }
@@ -300,23 +324,23 @@ namespace Nyerguds.FileData.Dynamix
         /// <param name="bpp">Bits per pixel of the input image. Can be 8-bit, as long as the non-0 values in the image are a consecutive range no longer than 16 values.</param>
         /// <param name="addFinalLineWrap">True to add a final line wrap at the end of the image contents.</param>
         /// <returns></returns>
-        public static Byte[] ScnEncode(Byte[] buffer, Int32 width, Int32 height, Int32 bpp, Boolean addFinalLineWrap)
+        public static byte[] ScnEncode(byte[] buffer, int width, int height, int bpp, bool addFinalLineWrap)
         {
             // Maximum amount of identical pixels that will be stored in a non-repeat command.
             // This is 2 bytes, which would be the same length when saved as a repeat command or as part of an existing copy range.
-            const Int32 maxNonRepeat = 4;
+            const int maxNonRepeat = 4;
             // The maximum line skip that can be stored is the combined 6-bit values of two skip commands, so, 12 bits.
-            const Int32 maxWidth = (1 << 12) - 1;
+            const int maxWidth = (1 << 12) - 1;
             if (width > maxWidth)
                 throw new ArgumentException("SCN compression can't handle widths greater than " + maxWidth + ".", "width");
 
-            Byte[] buffer8Bit = bpp == 8 ? buffer : ImageUtils.ConvertTo8Bit(buffer, width, height, 0, bpp, true);
-            Byte maxVal = 0;
-            Byte minVal = 0xFF;
-            Boolean allEmpty = true;
-            for (Int32 i = 0; i < buffer8Bit.Length; ++i)
+            byte[] buffer8Bit = bpp == 8 ? buffer : ImageUtils.ConvertTo8Bit(buffer, width, height, 0, bpp, true);
+            byte maxVal = 0;
+            byte minVal = 0xFF;
+            bool allEmpty = true;
+            for (int i = 0; i < buffer8Bit.Length; ++i)
             {
-                Byte curVal = buffer8Bit[i];
+                byte curVal = buffer8Bit[i];
                 if (curVal == 0)
                     continue;
                 allEmpty = false;
@@ -331,25 +355,25 @@ namespace Nyerguds.FileData.Dynamix
                 throw new ArgumentException("The non-0 data in the given image is not limited to a range of 16 consecutive values.", "buffer");
 
             // Can't be arsed to calculate worst case. This should be fine.
-            Byte[] outbuffer = new Byte[buffer8Bit.Length * 3];
-            Int32 inPtr = 0;
-            Int32 inPtrEnd = buffer8Bit.Length;
-            Int32 outPtr = 0;
+            byte[] outbuffer = new byte[buffer8Bit.Length * 3];
+            int inPtr = 0;
+            int inPtrEnd = buffer8Bit.Length;
+            int outPtr = 0;
             outbuffer[outPtr++] = minVal;
             // Serves as maximum value for any operations
-            Int32 nextLineOffs = width;
+            int nextLineOffs = width;
             // Copy can handle a 2-repeat in just 2 bytes. Prioritise copy over repeat.
             // Need a repetition of at least 3 to make a repeat command worth it.
             while (inPtr < inPtrEnd)
             {
-                Byte curVal = buffer8Bit[inPtr++];
-                Int32 currentRepeat = 1;
+                byte curVal = buffer8Bit[inPtr++];
+                int currentRepeat = 1;
                 while (inPtr < nextLineOffs && buffer8Bit[inPtr] == curVal)
                 {
                     currentRepeat++;
                     inPtr++;
                 }
-                Byte? nextVal = inPtr < nextLineOffs ? buffer8Bit[inPtr] : (Byte?) null;
+                byte? nextVal = inPtr < nextLineOffs ? buffer8Bit[inPtr] : (byte?) null;
                 if (curVal != 0)
                 {
                     // Repeat: written in one chunk. Either if the threshold value for not saving as copy is reached,
@@ -359,9 +383,9 @@ namespace Nyerguds.FileData.Dynamix
                     {
                         while (currentRepeat >= maxNonRepeat)
                         {
-                            Int32 writeAmount = Math.Min(currentRepeat, 0x3F);
-                            outbuffer[outPtr++] = (Byte) (writeAmount | 0x80);
-                            outbuffer[outPtr++] = (Byte) (curVal - minVal);
+                            int writeAmount = Math.Min(currentRepeat, 0x3F);
+                            outbuffer[outPtr++] = (byte) (writeAmount | 0x80);
+                            outbuffer[outPtr++] = (byte) (curVal - minVal);
                             currentRepeat -= writeAmount;
                         }
                         // Leave this for the next loop.
@@ -370,20 +394,20 @@ namespace Nyerguds.FileData.Dynamix
                     }
                     else
                     {
-                        Int32 startPtr = inPtr - currentRepeat;
+                        int startPtr = inPtr - currentRepeat;
                         // Optimisation: take non-repeating bytes using an uneven amount as maximum. If this results in an even final amount of bytes,
                         // then any such uneven ranges ended up compensating for the spare dangling nibbles of the rest of the range.
-                        Int32 lookPtr = GetNonRepeatingRange(buffer8Bit, startPtr, curVal, nextLineOffs, maxNonRepeat + 1);
+                        int lookPtr = GetNonRepeatingRange(buffer8Bit, startPtr, curVal, nextLineOffs, maxNonRepeat + 1);
                         // Not even: take non-repeating normally.
                         if (lookPtr - startPtr > maxNonRepeat && (lookPtr - startPtr) % 2 != 0)
                             lookPtr = GetNonRepeatingRange(buffer8Bit, startPtr, curVal, nextLineOffs, maxNonRepeat);
-                        Int32 length = lookPtr - startPtr;
-                        Byte[] toCopy = new Byte[length];
-                        for (Int32 i = 0; i < length; ++i)
-                            toCopy[i] = (Byte) (buffer8Bit[startPtr + i] - minVal);
-                        Int32 stride = length;
+                        int length = lookPtr - startPtr;
+                        byte[] toCopy = new byte[length];
+                        for (int i = 0; i < length; ++i)
+                            toCopy[i] = (byte) (buffer8Bit[startPtr + i] - minVal);
+                        int stride = length;
                         toCopy = ImageUtils.ConvertFrom8Bit(toCopy, length, 1, 4, true, ref stride);
-                        outbuffer[outPtr++] = (Byte) (length | 0xC0);
+                        outbuffer[outPtr++] = (byte) (length | 0xC0);
                         Array.Copy(toCopy, 0, outbuffer, outPtr, stride);
                         outPtr += stride;
                         inPtr = lookPtr;
@@ -395,8 +419,8 @@ namespace Nyerguds.FileData.Dynamix
                     //Zeroes are NEVER handled with normal copy/repeat commands.
                     while (currentRepeat > 0)
                     {
-                        Int32 writeAmount = Math.Min(currentRepeat, 0x3F);
-                        outbuffer[outPtr++] = (Byte) (writeAmount | 0x40);
+                        int writeAmount = Math.Min(currentRepeat, 0x3F);
+                        outbuffer[outPtr++] = (byte) (writeAmount | 0x40);
                         currentRepeat -= writeAmount;
                     }
                 }
@@ -405,7 +429,7 @@ namespace Nyerguds.FileData.Dynamix
                 {
                     if (inPtr == inPtrEnd)
                         break;
-                    Int32 linesToAdd = 1;
+                    int linesToAdd = 1;
                     // Line skip: 00 command. In case more than one line is skipped, this needs to align itself to the point
                     // at or before where the data restarts on the next non-empty line.
 
@@ -419,9 +443,9 @@ namespace Nyerguds.FileData.Dynamix
                     //    * Normal single line skip covering the entire line length.
 
                     // Check for zeroes on the next line to include
-                    Int32 toSubtract;
+                    int toSubtract;
                     // Current line ends on non-zero, next line starts with zero.
-                    Boolean atLineEnd = false;
+                    bool atLineEnd = false;
                     if (curVal != 0 && buffer8Bit[inPtr] == 0)
                     {
                         // Reset to treat as "repeated zeroes already stored", but with a boolean indicating to treat the start differently.
@@ -442,9 +466,9 @@ namespace Nyerguds.FileData.Dynamix
                         if (inPtr >= inPtrEnd)
                             break;
                         // Get the line numbers and X-coordinates to align to the start of the next data.
-                        Int32 start = inPtr - currentRepeat;
-                        Int32 startX = start % width;
-                        Int32 startLines = start / width;
+                        int start = inPtr - currentRepeat;
+                        int startX = start % width;
+                        int startLines = start / width;
                         // Special case: if the normal data ended at the end of a line, treat this as
                         // last offset on last line, instead of offset 0 on next line.
                         if (atLineEnd)
@@ -452,10 +476,10 @@ namespace Nyerguds.FileData.Dynamix
                             startLines--;
                             startX = width;
                         }
-                        Int32 end = inPtr;
-                        Int32 endX = end % width;
-                        Int32 endLines = end / width;
-                        Int32 diffX = startX - endX;
+                        int end = inPtr;
+                        int endX = end % width;
+                        int endLines = end / width;
+                        int diffX = startX - endX;
                         linesToAdd = endLines - startLines;
                         if (diffX >= 0)
                         {
@@ -474,10 +498,10 @@ namespace Nyerguds.FileData.Dynamix
                         // Current is non-zero, next one is non-zero. Write a line skip that spans the entire image width.
                         toSubtract = width;
                     }
-                    outbuffer[outPtr++] = (Byte) (toSubtract & 0x3F);
+                    outbuffer[outPtr++] = (byte) (toSubtract & 0x3F);
                     if (toSubtract > 0x3F)
-                        outbuffer[outPtr++] = (Byte) ((toSubtract >> 6) & 0x3F);
-                    for (Int32 i = 1; i < linesToAdd; ++i)
+                        outbuffer[outPtr++] = (byte) ((toSubtract >> 6) & 0x3F);
+                    for (int i = 1; i < linesToAdd; ++i)
                         outbuffer[outPtr++] = 0x00;
                     nextLineOffs += width * linesToAdd;
                 }
@@ -486,17 +510,17 @@ namespace Nyerguds.FileData.Dynamix
                 outbuffer[outPtr++] = 0;
             // Add read end marker
             outbuffer[outPtr++] = 0x40;
-            Byte[] outbufFinal = new Byte[outPtr];
+            byte[] outbufFinal = new byte[outPtr];
             Array.Copy(outbuffer, outbufFinal, outPtr);
             return outbufFinal;
         }
 
-        private static Int32 GetNonRepeatingRange(Byte[] buffer8Bit, Int32 startPtr, Int32 curVal, Int32 nextLineOffs, Int32 maxNonRepeat)
+        private static int GetNonRepeatingRange(byte[] buffer8Bit, int startPtr, int curVal, int nextLineOffs, int maxNonRepeat)
         {
-            Int32 lookPtr = startPtr;
-            Int32 beforeAbortLoopPtr = startPtr;
-            Int32 currentRepeat = 0;
-            Int32 prevVal = curVal;
+            int lookPtr = startPtr;
+            int beforeAbortLoopPtr = startPtr;
+            int currentRepeat = 0;
+            int prevVal = curVal;
             // Since this condition is at the start of the loop, and the loop body increases lookPtr,
             // the length needs to be checked as strictly smaller than 0x3F.
             while (currentRepeat <= maxNonRepeat & curVal != 0 && lookPtr < nextLineOffs && (lookPtr - startPtr) < 0x3F)
@@ -523,10 +547,10 @@ namespace Nyerguds.FileData.Dynamix
 
         /// <summary>Switches index 00 and FF on indexed image data, to compensate for this oddity in the MA8 chunks.</summary>
         /// <param name="imageData">Image data to process.</param>
-        public static void SwitchBackground(Byte[] imageData)
+        public static void SwitchBackground(byte[] imageData)
         {
-            Int32 len = imageData.Length;
-            for (Int32 i = 0; i < len; ++i)
+            int len = imageData.Length;
+            for (int i = 0; i < len; ++i)
             {
                 if (imageData[i] == 0x00)
                     imageData[i] = 0xFF;

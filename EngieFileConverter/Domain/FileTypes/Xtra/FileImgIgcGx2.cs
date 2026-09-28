@@ -15,40 +15,40 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "IgGx2"; } }
+        public override string IdCode { get { return "IgGx2"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Interactive Girls GX2 file"; } }
-        public override String[] FileExtensions { get { return new String[] { "gx2" }; } }
-        public override String LongTypeName { get { return "Interactive Girls GX2 image file"; } }
-        public override Int32 BitsPerPixel { get { return this.m_BitPerPixel; } }
-        protected Int32 m_BitPerPixel;
+        public override string ShortTypeName { get { return "Interactive Girls GX2 file"; } }
+        public override string[] FileExtensions { get { return new string[] { "gx2" }; } }
+        public override string LongTypeName { get { return "Interactive Girls GX2 image file"; } }
+        public override int BitsPerPixel { get { return this.m_BitPerPixel; } }
+        protected int m_BitPerPixel;
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
-            Int32 dataLen = fileData.Length;
+            int dataLen = fileData.Length;
             if (dataLen < 0x1B)
                 throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + ".");
-            UInt32 magic1 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x00);
+            uint magic1 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x00);
             //UInt16 headsize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x04);
-            Byte bpp = fileData[0x06];
-            UInt16 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x07);
-            UInt16 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x09);
+            byte bpp = fileData[0x06];
+            ushort width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x07);
+            ushort height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x09);
             //UInt16 aspectX = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0B);
             //UInt16 aspectY = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x0D);
             //Byte unknown1 = fileData[0x0F];
             //UInt16 subhsize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x10);
-            UInt32 magic2 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x12);
+            uint magic2 = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 0x12);
             //UInt16 unknown2 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x16);
             //Byte unknown3 = fileData[0x18];
             //UInt16 unknown4 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x19);
@@ -56,19 +56,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Dimensions cannot be 0.");
             if (magic1 != 0x01325847 || magic2 != 0x58465053)
                 throw new FileTypeLoadException("Not an " + this.LongTypeName + ".");
-            Int32 palCols = bpp > 8 ? 0 : (1 << bpp);
-            Int32 palSize = palCols * 3;
+            int palCols = bpp > 8 ? 0 : (1 << bpp);
+            int palSize = palCols * 3;
             this.m_BitPerPixel = bpp;
             if (dataLen < 0x1B + palSize)
                 throw new FileTypeLoadException("Too short to be an " + this.LongTypeName + ".");
-            Byte[] pal = new Byte[palSize];
+            byte[] pal = new byte[palSize];
             Array.Copy(fileData, 0x1B, pal, 0, palSize);
             this.m_Palette = ColorUtils.ReadEightBitPalette(pal, 0, palCols);
-            Int32 dataOffs = 0x1B + palSize;
-            Byte[] frameDataUncompr = RleCompressionHighBitRepeat.RleDecode(fileData, (UInt32)dataOffs, null, true);
+            int dataOffs = 0x1B + palSize;
+            byte[] frameDataUncompr = RleCompressionHighBitRepeat.RleDecode(fileData, (uint)dataOffs, null, true);
             if (frameDataUncompr == null)
                 throw new FileTypeLoadException("RLE decompression failed.");
-            Byte[] frameData;
+            byte[] frameData;
             try
             {
                 frameData = IgcBitMaskCompression.BitMaskDecompress(frameDataUncompr, width, height);
@@ -80,7 +80,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(frameData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
@@ -90,11 +90,11 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave.Width > 320 || fileToSave.Height > 200)
                 throw new FileTypeSaveException(ERR_DIMENSIONS_TOO_LARGE);
 
-            UInt16 width = (UInt16)fileToSave.Width;
-            UInt16 height = (UInt16)fileToSave.Height;
-            Int32 stride;
-            Byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
-            Byte[] palette = ColorUtils.GetEightBitPaletteData(fileToSave.GetColors(), true);
+            ushort width = (ushort)fileToSave.Width;
+            ushort height = (ushort)fileToSave.Height;
+            int stride;
+            byte[] imageData = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
+            byte[] palette = ColorUtils.GetEightBitPaletteData(fileToSave.GetColors(), true);
             try
             {
                 imageData = IgcBitMaskCompression.BitMaskCompress(imageData, stride, height);
@@ -104,7 +104,7 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeSaveException(GeneralUtils.RecoverArgExceptionMessage(ex, true));
             }
-            Byte[] data = new Byte[imageData.Length + palette.Length + 0x1B];
+            byte[] data = new byte[imageData.Length + palette.Length + 0x1B];
             ArrayUtils.WriteInt32ToByteArrayLe(data, 0x00, 0x01325847); // magic
             ArrayUtils.WriteInt16ToByteArrayLe(data, 0x04, 0x19); // headsize
             data[0x06] = 0x08; // BPP

@@ -7,24 +7,24 @@ namespace Nyerguds.Util
     public class FileTypeLoadException : Exception
     {
         /// <summary>USed to store the attempted load type in the Data dictionary to allow serialization.</summary>
-        protected readonly String DataAttemptedLoadedType = "AttemptedLoadedType";
+        protected readonly string DataAttemptedLoadedType = "AttemptedLoadedType";
 
         /// <summary>File type that was attempted to be loaded and threw this exception.</summary>
-        public String AttemptedLoadedType
+        public string AttemptedLoadedType
         {
-            get { return this.Data[this.DataAttemptedLoadedType] as String; }
+            get { return this.Data[this.DataAttemptedLoadedType] as string; }
             set { this.Data[this.DataAttemptedLoadedType] = value; }
         }
 
         public FileTypeLoadException() { }
-        public FileTypeLoadException(String message) : base(message) { }
-        public FileTypeLoadException(String message, Exception innerException) : base(message, innerException) { }
-        public FileTypeLoadException(String message, String attemptedLoadedType)
+        public FileTypeLoadException(string message) : base(message) { }
+        public FileTypeLoadException(string message, Exception innerException) : base(message, innerException) { }
+        public FileTypeLoadException(string message, string attemptedLoadedType)
             : base(message)
         {
             this.AttemptedLoadedType = attemptedLoadedType;
         }
-        public FileTypeLoadException(String message, String attemptedLoadedType, Exception innerException)
+        public FileTypeLoadException(string message, string attemptedLoadedType, Exception innerException)
             : base(message, innerException)
         {
             this.AttemptedLoadedType = attemptedLoadedType;
@@ -35,9 +35,9 @@ namespace Nyerguds.Util
     public class HeaderParseException : FileTypeLoadException
     {
         public HeaderParseException() { }
-        public HeaderParseException(String message) : base(message) { }
-        public HeaderParseException(String message, Exception innerException) : base(message, innerException) { }
-        public HeaderParseException(String message, String attemptedLoadedType) : base(message, attemptedLoadedType) { }
-        public HeaderParseException(String message, String attemptedLoadedType, Exception innerException) : base(message, attemptedLoadedType, innerException) { }
+        public HeaderParseException(string message) : base(message) { }
+        public HeaderParseException(string message, Exception innerException) : base(message, innerException) { }
+        public HeaderParseException(string message, string attemptedLoadedType) : base(message, attemptedLoadedType) { }
+        public HeaderParseException(string message, string attemptedLoadedType, Exception innerException) : base(message, attemptedLoadedType, innerException) { }
     }
 }

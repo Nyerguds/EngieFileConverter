@@ -10,28 +10,28 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FilePaletteDyn : SupportedFileType
     {
-        public override String IdCode { get { return "PalDyn"; } }
+        public override string IdCode { get { return "PalDyn"; } }
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Dynamix Palette"; } }
+        public override string ShortTypeName { get { return "Dynamix Palette"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return "Dynamix palette"; } }
+        public override string LongTypeName { get { return "Dynamix palette"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "pal" }; } }
-        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
+        public override string[] FileExtensions { get { return new string[] { "pal" }; } }
+        public override bool[] TransparencyMask { get { return new bool[0]; } }
 
-        public override Int32 Width { get { return 16; } }
-        public override Int32 Height { get { return 16; } }
-        public override Boolean NeedsPalette { get { return false; } }
+        public override int Width { get { return 16; } }
+        public override int Height { get { return 16; } }
+        public override bool NeedsPalette { get { return false; } }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFile(fileData);
             this.SetFileNames(filename);
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             if (fileData.Length < 0x10)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
@@ -43,7 +43,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("File does not contain a VGA chunk.");
             if (vgaChunk.DataLength != 768)
                 throw new FileTypeLoadException(ERR_BAD_SIZE);
-            Byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (Byte)x).ToArray();
+            byte[] imageData = Enumerable.Range(0, 0x100).Select(x => (byte)x).ToArray();
             Color[] palette = null;
             try
             {
@@ -57,7 +57,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, 16, 16, 16, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
         }
 
-        public override Boolean ColorsChanged()
+        public override bool ColorsChanged()
         {
             // assume there's no palette, or no backup was ever made
             if (this.m_BackupPalette == null)
@@ -65,7 +65,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return !this.m_Palette.SequenceEqual(this.m_BackupPalette);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);
@@ -75,14 +75,14 @@ namespace EngieFileConverter.Domain.FileTypes
             if (palEntries == null || palEntries.Length == 0)
                 throw new FileTypeSaveException(ERR_COLORS_NEEDED);
             Color[] cols = new Color[256];
-            for (Int32 i = 0; i < cols.Length; ++i)
+            for (int i = 0; i < cols.Length; ++i)
             {
                 if (i < palEntries.Length)
                     cols[i] = palEntries[i];
                 else
                     cols[i] = Color.Black;
             }
-            Byte[] paletteData = ColorUtils.GetSixBitPaletteData(palEntries);
+            byte[] paletteData = ColorUtils.GetSixBitPaletteData(palEntries);
             // write as Dynamix chunks
             DynamixChunk vgaChunk = new DynamixChunk("VGA", paletteData);
             DynamixChunk palChunk = DynamixChunk.BuildChunk("PAL", vgaChunk);

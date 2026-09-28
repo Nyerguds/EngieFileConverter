@@ -6,11 +6,11 @@ namespace Nyerguds.Util.UI
 {
     public partial class FrmPalette : Form
     {
-        private readonly Int32 paletteDim;
+        private readonly int paletteDim;
 
-        public Int32[] CustomColors { get; set; }
-        public Boolean ColorsEditable { get; set; }
-        public Int32[] SelectedIndices
+        public int[] CustomColors { get; set; }
+        public bool ColorsEditable { get; set; }
+        public int[] SelectedIndices
         {
             get { return this.palettePanel.SelectedIndices; }
             set { this.palettePanel.SelectedIndices = value; }
@@ -32,11 +32,11 @@ namespace Nyerguds.Util.UI
             : this(-1, null, false, ColorSelMode.None)
         { }
 
-        public FrmPalette(Color[] palette, Boolean editable, ColorSelMode selectMode)
+        public FrmPalette(Color[] palette, bool editable, ColorSelMode selectMode)
             : this (-1, palette, editable, selectMode)
         { }
 
-        public FrmPalette(Int32 bitsPerPixel, Color[] palette, Boolean editable, ColorSelMode selectMode)
+        public FrmPalette(int bitsPerPixel, Color[] palette, bool editable, ColorSelMode selectMode)
         {
             this.InitializeComponent();
             paletteDim = Math.Max(palettePanel.Width, palettePanel.Height);
@@ -49,7 +49,7 @@ namespace Nyerguds.Util.UI
                 }
                 else
                 {
-                    Int32 palLen = palette.Length;
+                    int palLen = palette.Length;
                     bitsPerPixel = 1;
                     while ((1 << bitsPerPixel) < palLen && bitsPerPixel < 8)
                         bitsPerPixel *= 2;
@@ -63,16 +63,16 @@ namespace Nyerguds.Util.UI
 
         public Color[] GetSelectedColors()
         {
-            Int32[] selectedIndices = this.SelectedIndices;
+            int[] selectedIndices = this.SelectedIndices;
             Color[] allColors = this.palettePanel.Palette;
-            Int32 selLen = selectedIndices.Length;
+            int selLen = selectedIndices.Length;
             Color[] selCol = new Color[selLen];
-            for (Int32 i = 0; i < selLen; ++i)
+            for (int i = 0; i < selLen; ++i)
                 selCol[i] = allColors[selectedIndices[i]];
             return selCol;
         }
 
-        private void PalettePanel_LabelMouseDoubleClick(Object sender, MouseEventArgs e)
+        private void PalettePanel_LabelMouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (!this.ColorsEditable || e.Button != MouseButtons.Left)
                 return;
@@ -80,7 +80,7 @@ namespace Nyerguds.Util.UI
             PaletteClickEventArgs palEv = e as PaletteClickEventArgs;
             if (panel == null || palEv == null)
                 return;
-            Int32 colindex = palEv.Index;
+            int colindex = palEv.Index;
             using (ColorDialog cdl = new ColorDialog())
             {
                 Color[] pal = panel.Palette;

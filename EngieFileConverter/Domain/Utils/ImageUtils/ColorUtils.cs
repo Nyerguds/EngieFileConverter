@@ -78,13 +78,13 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
-        public static void WriteSixBitPaletteFile(Color[] palette, String palfilename)
+        public static void WriteSixBitPaletteFile(Color[] palette, string palfilename)
         {
             byte[] newpal = GetSixBitPaletteData(palette);
             File.WriteAllBytes(palfilename, newpal);
         }
 
-        public static void WriteEightBitPaletteFile(Color[] palette, String palfilename, bool expandTo256)
+        public static void WriteEightBitPaletteFile(Color[] palette, string palfilename, bool expandTo256)
         {
             byte[] bytes = GetEightBitPaletteData(palette, expandTo256);
             File.WriteAllBytes(palfilename, bytes);
@@ -109,7 +109,7 @@ namespace Nyerguds.ImageManipulation
             return pal;
         }
 
-        public static Color[] ReadSixBitPaletteFile(String palfilename, bool readFull)
+        public static Color[] ReadSixBitPaletteFile(string palfilename, bool readFull)
         {
             byte[] readBytes = File.ReadAllBytes(palfilename);
             return ReadSixBitPaletteFile(readBytes, readFull);
@@ -150,7 +150,7 @@ namespace Nyerguds.ImageManipulation
                 if (paletteData[i] > 0x3F)
                     throw new ArgumentException(Invalid6bit, "paletteData");
             }
-            return PixelFormatter.Format6BitVgaPal.GetColorPalette(paletteData, start, colors);
+            return PixelFormatter.Format6BitVgaPal.GetColorRange(paletteData, start, colors);
         }
 
         public static Color[] ReadEightBitPaletteFile(string palfilename, bool readFull)
@@ -188,7 +188,7 @@ namespace Nyerguds.ImageManipulation
             int fullLen = colors * 3;
             if (start + fullLen > paletteData.Length)
                 throw new ArgumentException(Invalid8bit);
-            return PixelFormatter.Format8BitVgaPal.GetColorPalette(paletteData, start, colors);
+            return PixelFormatter.Format8BitVgaPal.GetColorRange(paletteData, start, colors);
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ namespace Nyerguds.ImageManipulation
                     if (val >= 0 && val < palLength)
                         dontMatch[val] = true;
             int colorMatch = 0;
-            int leastDistance = int.MaxValue;
+            int leastDistance = Int32.MaxValue;
             int red = col.R;
             int green = col.G;
             int blue = col.B;
@@ -235,7 +235,7 @@ namespace Nyerguds.ImageManipulation
 
         public static Color ColorFromHexString(string colorStr)
         {
-            if (string.IsNullOrEmpty(colorStr))
+            if (String.IsNullOrEmpty(colorStr))
                 return Color.Empty;
             colorStr = colorStr.TrimStart('#').ToUpperInvariant();
             if (!Regex.IsMatch(colorStr, "[0-9A-F]+"))
@@ -263,7 +263,7 @@ namespace Nyerguds.ImageManipulation
             }
             else
             {
-                uint argb = UInt32.Parse(colorStr, NumberStyles.HexNumber);
+                uint argb = uint.Parse(colorStr, NumberStyles.HexNumber);
                 if (len == 6)
                     argb += 0xFF000000;
                 return Color.FromArgb((int)argb);

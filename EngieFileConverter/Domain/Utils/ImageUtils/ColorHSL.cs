@@ -10,37 +10,37 @@ namespace Nyerguds.ImageManipulation
     {
         // Private data members below are on scale 0-1
         // They are scaled for use externally based on scale
-        private Double hue = 1.0;
-        private Double saturation = 1.0;
-        private Double luminosity = 1.0;
-        private Byte alpha = 255;
+        private double hue = 1.0;
+        private double saturation = 1.0;
+        private double luminosity = 1.0;
+        private byte alpha = 255;
 
-        public static Double SCALE = 360.0;
+        public static double SCALE = 360.0;
 
-        public Double Hue
+        public double Hue
         {
             get { return this.hue * SCALE; }
             set { this.hue = this.CheckRange(value / SCALE); }
         }
 
-        public Double Saturation
+        public double Saturation
         {
             get { return this.saturation; }
             set { this.saturation = this.CheckRange(value); }
         }
 
-        public Double Luminosity
+        public double Luminosity
         {
             get { return this.luminosity; }
             set { this.luminosity = this.CheckRange(value); }
         }
-        public Byte Alpha
+        public byte Alpha
         {
             get { return this.alpha; }
             set { this.alpha = value; }
         }
 
-        private Double CheckRange(Double value)
+        private double CheckRange(double value)
         {
             if (value < 0.0)
                 value = 0.0;
@@ -49,12 +49,12 @@ namespace Nyerguds.ImageManipulation
             return value;
         }
 
-        public override String ToString()
+        public override string ToString()
         {
             return String.Format("H: {0:#0.##} S: {1:#0.##} L: {2:#0.##}", this.Hue, this.Saturation, this.Luminosity);
         }
 
-        public String ToRGBString()
+        public string ToRGBString()
         {
             Color color = (Color)this;
             return String.Format("R: {0:#0.##} G: {1:#0.##} B: {2:#0.##}", color.R, color.G, color.B);
@@ -63,25 +63,25 @@ namespace Nyerguds.ImageManipulation
         #region Casts to/from System.Drawing.Color
         public static implicit operator Color(ColorHSL hslColor)
         {
-            Double r = 0, g = 0, b = 0;
-            if ((Int32)(hslColor.luminosity * 1000) != 0)
+            double r = 0, g = 0, b = 0;
+            if ((int)(hslColor.luminosity * 1000) != 0)
             {
-                if ((Int32)(hslColor.saturation * 1000) == 0)
+                if ((int)(hslColor.saturation * 1000) == 0)
                     r = g = b = hslColor.luminosity;
                 else
                 {
-                    Double temp2 = GetTemp2(hslColor);
-                    Double temp1 = 2.0 * hslColor.luminosity - temp2;
+                    double temp2 = GetTemp2(hslColor);
+                    double temp1 = 2.0 * hslColor.luminosity - temp2;
 
                     r = GetColorComponent(temp1, temp2, hslColor.hue + 1.0 / 3.0);
                     g = GetColorComponent(temp1, temp2, hslColor.hue);
                     b = GetColorComponent(temp1, temp2, hslColor.hue - 1.0 / 3.0);
                 }
             }
-            return Color.FromArgb(hslColor.Alpha, (Int32)(255 * r), (Int32)(255 * g), (Int32)(255 * b));
+            return Color.FromArgb(hslColor.Alpha, (int)(255 * r), (int)(255 * g), (int)(255 * b));
         }
 
-        private static Double GetColorComponent(Double temp1, Double temp2, Double temp3)
+        private static double GetColorComponent(double temp1, double temp2, double temp3)
         {
             temp3 = MoveIntoRange(temp3);
             if (temp3 < 1.0 / 6.0)
@@ -93,7 +93,7 @@ namespace Nyerguds.ImageManipulation
             return temp1;
         }
 
-        private static Double MoveIntoRange(Double temp3)
+        private static double MoveIntoRange(double temp3)
         {
             if (temp3 < 0.0)
                 temp3 += 1.0;
@@ -102,9 +102,9 @@ namespace Nyerguds.ImageManipulation
             return temp3;
         }
 
-        private static Double GetTemp2(ColorHSL hslColor)
+        private static double GetTemp2(ColorHSL hslColor)
         {
-            Double temp2;
+            double temp2;
             if (hslColor.luminosity < 0.5)  //<=??
                 temp2 = hslColor.luminosity * (1.0 + hslColor.saturation);
             else
@@ -123,13 +123,13 @@ namespace Nyerguds.ImageManipulation
         }
         #endregion
 
-        public void SetARGB(Int32 alpha, Int32 red, Int32 green, Int32 blue)
+        public void SetARGB(int alpha, int red, int green, int blue)
         {
             this.SetRGB(red, green, blue);
-            this.alpha = (Byte)alpha;
+            this.alpha = (byte)alpha;
         }
 
-        public void SetRGB(Int32 red, Int32 green, Int32 blue)
+        public void SetRGB(int red, int green, int blue)
         {
             Color color = Color.FromArgb(red, green, blue);
             this.hue = color.GetHue() / SCALE;
@@ -143,29 +143,29 @@ namespace Nyerguds.ImageManipulation
             this.SetARGB(color.A, color.R, color.G, color.B);
         }
 
-        public ColorHSL(Int32 red, Int32 green, Int32 blue)
+        public ColorHSL(int red, int green, int blue)
         {
             this.SetRGB(red, green, blue);
         }
 
-        public ColorHSL(Int32 alpha, Int32 red, Int32 green, Int32 blue)
+        public ColorHSL(int alpha, int red, int green, int blue)
         {
             this.SetARGB(alpha, red, green, blue);
         }
 
-        public ColorHSL(Double hue, Double saturation, Double luminosity)
+        public ColorHSL(double hue, double saturation, double luminosity)
         {
             this.Hue = hue;
             this.Saturation = saturation;
             this.Luminosity = luminosity;
         }
 
-        public ColorHSL(Double hue, Double saturation, Double luminosity, Int32 alpha)
+        public ColorHSL(double hue, double saturation, double luminosity, int alpha)
         {
             this.Hue = hue;
             this.Saturation = saturation;
             this.Luminosity = luminosity;
-            this.Alpha = (Byte)alpha;
+            this.Alpha = (byte)alpha;
         }
 
     }

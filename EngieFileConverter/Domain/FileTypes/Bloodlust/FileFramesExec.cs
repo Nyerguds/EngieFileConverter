@@ -14,53 +14,53 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "ExSpr"; } }
+        public override string IdCode { get { return "ExSpr"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Executioner Sprite"; } }
-        public override String[] FileExtensions { get { return new String[] { "vol" }; } }
-        public override String LongTypeName { get { return "Executioner Sprite File"; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "Executioner Sprite"; } }
+        public override string[] FileExtensions { get { return new string[] { "vol" }; } }
+        public override string LongTypeName { get { return "Executioner Sprite File"; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         protected SupportedFileType[] m_FramesList;
 
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
+        public override bool HasCompositeFrame { get { return false; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask
+        public override bool[] TransparencyMask
         {
             get
             {
-                Boolean[] transMask = new Boolean[0x100];
+                bool[] transMask = new bool[0x100];
                 transMask[0xFF] = true;
                 return transMask;
             }
         }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < 2)
                 throw new FileTypeLoadException(ERR_NO_HEADER);
-            Int32 headersSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            int headersSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             if (headersSize == 0 || headersSize % 0x0D != 0)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
-            Int32 frames = headersSize / 0x0D;
-            Int32 headerEnd = headersSize + 2;
+            int frames = headersSize / 0x0D;
+            int headerEnd = headersSize + 2;
             if (fileData.Length < headerEnd)
                 throw new FileTypeLoadException(ERR_NO_HEADER);
             // Frames are always a 4 byte header, and can not be 0x0. So minimum 1x1, so, 5 bytes.
@@ -68,32 +68,32 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
             this.m_FramesList = new SupportedFileType[frames];
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
-            Int32 curDataStart = headerEnd;
-            for (Int32 i = 0; i < frames; ++i)
+            int curDataStart = headerEnd;
+            for (int i = 0; i < frames; ++i)
             {
-                Int32 curHeaderPos = 2 + (0x0D * i);
+                int curHeaderPos = 2 + (0x0D * i);
                 // Check header - derived from previous block's size
-                Int32 width;
-                Int32 height;
-                String error = this.TestHeaderData(fileData, curDataStart, out width, out height);
+                int width;
+                int height;
+                string error = this.TestHeaderData(fileData, curDataStart, out width, out height);
                 if (error != null)
                     throw new FileTypeLoadException(error);
                 // Check current header
                 //if (fileData[curHeaderPos + 0x0C] != 0)
                 //    throw new FileTypeLoadException(ERR_BADHEADERDATA);
-                Int32 curBlockSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, curHeaderPos);
-                Int32 frameNr = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, curHeaderPos + 0x02);
-                Int32 posX = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x04);
-                Int32 posY = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x06);
-                Int32 posXMirr = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x08);
-                Int32 posYMirr = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x0A);
-                Int32 zpos = fileData[curHeaderPos + 0x0C];
-                Int32 ptr = curDataStart;
+                int curBlockSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, curHeaderPos);
+                int frameNr = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, curHeaderPos + 0x02);
+                int posX = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x04);
+                int posY = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x06);
+                int posXMirr = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x08);
+                int posYMirr = ArrayUtils.ReadInt16FromByteArrayLe(fileData, curHeaderPos + 0x0A);
+                int zpos = fileData[curHeaderPos + 0x0C];
+                int ptr = curDataStart;
                 if (fileData.Length < curDataStart)
                     throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
-                Boolean success;
-                Byte[] mask = null;
-                Byte[] imageData = ExecutionersCompression.DecodeChunk(fileData, ref ptr, 0xFF, ref mask, 0x01, out success);
+                bool success;
+                byte[] mask = null;
+                byte[] imageData = ExecutionersCompression.DecodeChunk(fileData, ref ptr, 0xFF, ref mask, 0x01, out success);
                 Bitmap image = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 if (imageData == null)
                     throw new FileTypeLoadException(ERR_DECOMPR);
@@ -117,7 +117,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = null;
         }
 
-        private String TestHeaderData(Byte[] fileData, Int32 curDataStart, out Int32 width, out Int32 height)
+        private string TestHeaderData(byte[] fileData, int curDataStart, out int width, out int height)
         {
             width = 0;
             height = 0;

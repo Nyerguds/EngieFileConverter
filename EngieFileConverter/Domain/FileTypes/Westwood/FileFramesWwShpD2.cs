@@ -17,48 +17,48 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override Int32 Width { get { return this.m_Width; } }
-        public override Int32 Height { get { return this.m_Height; } }
-        protected Int32 m_Width;
-        protected Int32 m_Height;
-        public override String IdCode { get { return "WwShpD2"; } }
+        public override int Width { get { return this.m_Width; } }
+        public override int Height { get { return this.m_Height; } }
+        protected int m_Width;
+        protected int m_Height;
+        public override string IdCode { get { return "WwShpD2"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood Dune II Shape"; } }
-        public override String[] FileExtensions { get { return new String[] { "shp" }; } }
-        public override String LongTypeName { get { return "Westwood Shape File - Dune II"; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "Westwood Dune II Shape"; } }
+        public override string[] FileExtensions { get { return new string[] { "shp" }; } }
+        public override string LongTypeName { get { return "Westwood Shape File - Dune II"; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
+        public override bool HasCompositeFrame { get { return false; } }
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return new Boolean[] {true}; } }
+        public override bool[] TransparencyMask { get { return new bool[] {true}; } }
 
-        public Boolean IsVersion107 { get; set; }
-        public Int32[] RemappedIndices { get; set; }
-        public Int32[] UncompressedIndices { get; set; }
-        protected readonly String GAMENAME = "Dune II";
+        public bool IsVersion107 { get; set; }
+        public int[] RemappedIndices { get; set; }
+        public int[] UncompressedIndices { get; set; }
+        protected readonly string GAMENAME = "Dune II";
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null, this.GAMENAME);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename, this.GAMENAME);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath, String gameOverride)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath, string gameOverride)
         {
-            Boolean isVersion107;
-            Int32[] remapFrames;
-            Int32[] notCompressedFrames;
+            bool isVersion107;
+            int[] remapFrames;
+            int[] notCompressedFrames;
             this.m_FramesList = LoadFromFileData(fileData, sourcePath, this, gameOverride, out isVersion107, out remapFrames, out notCompressedFrames);
             SupportedFileType frame0 = this.m_FramesList.FirstOrDefault();
             if (frame0 != null)
@@ -85,22 +85,22 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo = extraInfoGlobal.ToString();
         }
 
-        public static SupportedFileType[] LoadFromFileData(Byte[] fileData, String sourcePath, SupportedFileType target, String gameOverride, out Boolean isVersion107, out Int32[] remapFrames, out Int32[] notCompressedFrames)
+        public static SupportedFileType[] LoadFromFileData(byte[] fileData, string sourcePath, SupportedFileType target, string gameOverride, out bool isVersion107, out int[] remapFrames, out int[] notCompressedFrames)
         {
             // OffsetInfo / ShapeFileHeader
             if (fileData.Length < 6)
                 throw new FileTypeLoadException("Not long enough for header.");
-            Int32 hdrFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+            int hdrFrames = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
             if (hdrFrames == 0)
                 throw new FileTypeLoadException("Not a " + gameOverride + " SHP file");
             if (fileData.Length < 2 + (hdrFrames + 1) * 2)
                 throw new FileTypeLoadException("Not long enough for frames index.");
             // Length. Done -2 because everything that follows is relative to the location after the header
-            UInt32 endoffset = (UInt32) fileData.Length;
+            uint endoffset = (uint) fileData.Length;
 
             // test v1.00 first, since it might accidentally be possible that the offset 2x as far happens to contain data matching the file end address.
             // However, in 32-bit addressing, it is impossible for even partial addresses halfway down the array to ever match the file end value.
-            if (endoffset < UInt16.MaxValue && (endoffset >= 2 + (hdrFrames + 1) * 2 && ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2 + hdrFrames * 2) == endoffset))
+            if (endoffset < ushort.MaxValue && (endoffset >= 2 + (hdrFrames + 1) * 2 && ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2 + hdrFrames * 2) == endoffset))
                 isVersion107 = false;
             else if (endoffset >= 2 + (hdrFrames + 1) * 4 && ArrayUtils.ReadUInt32FromByteArrayLe(fileData, 2 + hdrFrames * 4) == endoffset - 2)
                 isVersion107 = true;
@@ -111,17 +111,17 @@ namespace EngieFileConverter.Domain.FileTypes
                 endoffset -= 2;
 
             SupportedFileType[] framesList = new SupportedFileType[hdrFrames];
-            Boolean[] remapped = new Boolean[hdrFrames];
-            Boolean[] notCompressed = new Boolean[hdrFrames];
+            bool[] remapped = new bool[hdrFrames];
+            bool[] notCompressed = new bool[hdrFrames];
             // Frames
-            Int32 curOffs = 2;
-            Int32 readLen = isVersion107 ? 4 : 2;
-            Color[] palette = PaletteUtils.GenerateGrayPalette(8, new Boolean[] { true }, false);
-            Int32 nextOFfset = (Int32) ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
-            for (Int32 i = 0; i < hdrFrames; ++i)
+            int curOffs = 2;
+            int readLen = isVersion107 ? 4 : 2;
+            Color[] palette = PaletteUtils.GenerateGrayPalette(8, new bool[] { true }, false);
+            int nextOFfset = (int) ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
+            for (int i = 0; i < hdrFrames; ++i)
             {
                 // Set current read address to previously-fetched "next entry" address
-                Int32 readOffset = nextOFfset;
+                int readOffset = nextOFfset;
                 // Reached end; process completed.
                 if (endoffset == readOffset)
                     break;
@@ -132,38 +132,38 @@ namespace EngieFileConverter.Domain.FileTypes
                 // Set header ptr to next address
                 curOffs += readLen;
                 // Read next entry address, to act as end of current entry.
-                nextOFfset = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
+                nextOFfset = (int)ArrayUtils.ReadIntFromByteArray(fileData, curOffs, readLen, true);
 
                 // Compensate for header size
-                Int32 realReadOffset = readOffset;
+                int realReadOffset = readOffset;
                 if (isVersion107)
                     realReadOffset += 2;
 
                 Dune2ShpFrameFlags frameFlags = (Dune2ShpFrameFlags)ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x00);
-                Byte frmSlices = fileData[realReadOffset + 0x02];
-                UInt16 frmWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x03);
-                Byte frmHeight = fileData[realReadOffset + 0x05];
+                byte frmSlices = fileData[realReadOffset + 0x02];
+                ushort frmWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x03);
+                byte frmHeight = fileData[realReadOffset + 0x05];
                 // Size of all frame data: header, lookup table, and compressed data.
-                UInt16 frmDataSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x06);
-                UInt16 frmZeroCompressedSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x08);
+                ushort frmDataSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x06);
+                ushort frmZeroCompressedSize = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, realReadOffset + 0x08);
                 realReadOffset += 0x0A;
                 // Bit 1: Contains remap palette
                 // Bit 2: Don't decompress with LCW
                 // Bit 3: Has custom remap palette size.
-                Boolean hasRemap = (frameFlags & Dune2ShpFrameFlags.HasRemapTable) != 0;
-                Boolean noLcw = (frameFlags & Dune2ShpFrameFlags.NoLcw) != 0;
+                bool hasRemap = (frameFlags & Dune2ShpFrameFlags.HasRemapTable) != 0;
+                bool noLcw = (frameFlags & Dune2ShpFrameFlags.NoLcw) != 0;
                 notCompressed[i] = noLcw;
-                Boolean customRemap = (frameFlags & Dune2ShpFrameFlags.CustomSizeRemap) != 0;
+                bool customRemap = (frameFlags & Dune2ShpFrameFlags.CustomSizeRemap) != 0;
                 remapped[i] = hasRemap;
-                Int32 curEndOffset = readOffset + frmDataSize;
+                int curEndOffset = readOffset + frmDataSize;
                 if (curEndOffset > endoffset) // curEndOffset > nextOFfset
                     throw new FileTypeLoadException("Illegal address in frame indices.");
                 // I assume this is illegal...?
                 if (frmWidth == 0 || frmHeight == 0)
                     throw new FileTypeLoadException("Illegal values in frame header.");
 
-                Int32 remapSize;
-                Byte[] remapTable;
+                int remapSize;
+                byte[] remapTable;
                 if (hasRemap)
                 {
                     if (customRemap)
@@ -173,7 +173,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     else
                         remapSize = 16;
-                    remapTable = new Byte[remapSize];
+                    remapTable = new byte[remapSize];
                     Array.Copy(fileData, realReadOffset, remapTable, 0, remapSize);
                     realReadOffset += remapSize;
                 }
@@ -185,19 +185,19 @@ namespace EngieFileConverter.Domain.FileTypes
                     if (customRemap)
                         realReadOffset++;
                 }
-                Byte[] zeroDecompressData = new Byte[frmZeroCompressedSize];
+                byte[] zeroDecompressData = new byte[frmZeroCompressedSize];
                 if (noLcw)
                 {
                     Array.Copy(fileData, realReadOffset, zeroDecompressData, 0, frmZeroCompressedSize);
                 }
                 else
                 {
-                    Byte[] lcwDecompressData = new Byte[frmZeroCompressedSize * 3];
-                    Int32 predictedEndOff = realReadOffset + frmDataSize - remapSize;
+                    byte[] lcwDecompressData = new byte[frmZeroCompressedSize * 3];
+                    int predictedEndOff = realReadOffset + frmDataSize - remapSize;
                     if (customRemap)
                         predictedEndOff--;
-                    Int32 lcwReadOffset = realReadOffset;
-                    Int32 decompressedSize = WWCompression.LcwDecompress(fileData, ref lcwReadOffset, lcwDecompressData, 0);
+                    int lcwReadOffset = realReadOffset;
+                    int decompressedSize = WWCompression.LcwDecompress(fileData, ref lcwReadOffset, lcwDecompressData, 0);
                     if (decompressedSize != frmZeroCompressedSize)
                         throw new FileTypeLoadException("LCW decompression failed.");
                     if (lcwReadOffset > predictedEndOff)
@@ -205,8 +205,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     Array.Copy(lcwDecompressData, zeroDecompressData, frmZeroCompressedSize);
 
                 }
-                Int32 refOffs = 0;
-                Byte[] fullFrame;
+                int refOffs = 0;
+                byte[] fullFrame;
                 try
                 {
                     fullFrame = WestwoodRleZero.DecompressRleZeroD2(zeroDecompressData, ref refOffs, frmWidth, frmSlices);
@@ -217,11 +217,11 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if (remapTable != null)
                 {
-                    Byte[] remap = remapTable;
-                    Int32 remapLen = remap.Length;
-                    for(Int32 j = 0; j < fullFrame.Length; ++j)
+                    byte[] remap = remapTable;
+                    int remapLen = remap.Length;
+                    for(int j = 0; j < fullFrame.Length; ++j)
                     {
-                        Byte val = fullFrame[j];
+                        byte val = fullFrame[j];
                         if (val < remapLen)
                             fullFrame[j] = remap[val];
                         else
@@ -237,8 +237,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 framePic.SetNeedsPalette(target.NeedsPalette);
                 StringBuilder sbFrInfo = new StringBuilder();
                 sbFrInfo.Append("Flags: ");
-                sbFrInfo.Append(Convert.ToString((Int32)frameFlags & 0xFF, 2).PadLeft(8, '0')).Append(" (");
-                Boolean hasData = false;
+                sbFrInfo.Append(Convert.ToString((int)frameFlags & 0xFF, 2).PadLeft(8, '0')).Append(" (");
+                bool hasData = false;
                 if (hasRemap)
                 {
                     sbFrInfo.Append("Remap");
@@ -271,15 +271,15 @@ namespace EngieFileConverter.Domain.FileTypes
             return framesList;
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             PerformPreliminaryChecks(fileToSave);
             Dune2ShpType d2File = fileToSave as Dune2ShpType;
-            Boolean isDunev100 = d2File != null && !d2File.IsVersion107;
-            Boolean hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
-            String remapped = hasRemap ? GeneralUtils.GroupNumbers(d2File.RemappedIndices) : String.Empty;
-            Boolean hasUncompressed = d2File != null && d2File.UncompressedIndices != null && d2File.UncompressedIndices.Length > 0;
-            String uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(d2File.UncompressedIndices) : String.Empty;
+            bool isDunev100 = d2File != null && !d2File.IsVersion107;
+            bool hasRemap = d2File != null && d2File.RemappedIndices != null && d2File.RemappedIndices.Length > 0;
+            string remapped = hasRemap ? GeneralUtils.GroupNumbers(d2File.RemappedIndices) : String.Empty;
+            bool hasUncompressed = d2File != null && d2File.UncompressedIndices != null && d2File.UncompressedIndices.Length > 0;
+            string uncompressed = hasUncompressed ? GeneralUtils.GroupNumbers(d2File.UncompressedIndices) : String.Empty;
 
             return new Option[]
             {
@@ -293,88 +293,88 @@ namespace EngieFileConverter.Domain.FileTypes
             };
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = PerformPreliminaryChecks(fileToSave);
             // VErsions: 1.00, 1.07 and Lands of Lore (which is 1.07 without LCW compression)
-            Int32 version;
+            int version;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "VER"), out version);
 
-            Boolean isVersion107 = version != 0;
+            bool isVersion107 = version != 0;
             // Remap tables allow units to be remapped. Seems house remap is only applied to those tables, not the whole graphic.
-            Boolean addRemap = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMT"));
-            Boolean addRemapAuto = addRemap && GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMA"));
-            String remapSpecificStr = Option.GetSaveOptionValue(saveOptions, "RMS");
-            Boolean remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
-            Int32[] remappedFrames = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
-            Boolean compressAuto = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NCA"));
-            String uncomprSpecificStr = Option.GetSaveOptionValue(saveOptions, "NCS");
-            Int32[] uncompFrames = compressAuto ? null : GeneralUtils.GetRangedNumbers(uncomprSpecificStr);
-            Int32 nrOfFrames = frames.Length;
-            Boolean[] remapFrame = new Boolean[nrOfFrames];
+            bool addRemap = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMT"));
+            bool addRemapAuto = addRemap && GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "RMA"));
+            string remapSpecificStr = Option.GetSaveOptionValue(saveOptions, "RMS");
+            bool remapAll = addRemap && !addRemapAuto && String.IsNullOrEmpty(remapSpecificStr);
+            int[] remappedFrames = addRemap && !addRemapAuto && !remapAll ? GeneralUtils.GetRangedNumbers(remapSpecificStr) : null;
+            bool compressAuto = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "NCA"));
+            string uncomprSpecificStr = Option.GetSaveOptionValue(saveOptions, "NCS");
+            int[] uncompFrames = compressAuto ? null : GeneralUtils.GetRangedNumbers(uncomprSpecificStr);
+            int nrOfFrames = frames.Length;
+            bool[] remapFrame = new bool[nrOfFrames];
             if (addRemap)
             {
                 if (remapAll || remappedFrames.Length == 0)
                 {
-                    for (Int32 i = 0; i < nrOfFrames; ++i)
+                    for (int i = 0; i < nrOfFrames; ++i)
                         remapFrame[i] = true;
                 }
                 else
                 {
-                    Int32 remapLen = remappedFrames.Length;
-                    for (Int32 i = 0; i < remapLen; ++i)
+                    int remapLen = remappedFrames.Length;
+                    for (int i = 0; i < remapLen; ++i)
                     {
-                        Int32 remappedFrameIndex = remappedFrames[i];
+                        int remappedFrameIndex = remappedFrames[i];
                         if (remappedFrameIndex >= 0 && remappedFrameIndex < nrOfFrames)
                             remapFrame[remappedFrameIndex] = true;
                     }
                 }
             }
-            Boolean[] dontCompress = new Boolean[nrOfFrames];
+            bool[] dontCompress = new bool[nrOfFrames];
             if (!compressAuto)
             {
                 if (uncompFrames.Length == 0)
                 {
-                    for (Int32 i = 0; i < nrOfFrames; ++i)
+                    for (int i = 0; i < nrOfFrames; ++i)
                         dontCompress[i] = true;
                 }
                 else
                 {
-                    Int32 noCompLen = uncompFrames.Length;
-                    for (Int32 i = 0; i < noCompLen; ++i)
+                    int noCompLen = uncompFrames.Length;
+                    for (int i = 0; i < noCompLen; ++i)
                     {
-                        Int32 noCompFrameIndex = uncompFrames[i];
+                        int noCompFrameIndex = uncompFrames[i];
                         if (noCompFrameIndex >= 0 && noCompFrameIndex < nrOfFrames)
                             dontCompress[noCompFrameIndex] = true;
                     }
                 }
             }
-            Int32 addressSize = isVersion107 ? 4 : 2;
-            Int32 offset = addressSize * (nrOfFrames + 1);
+            int addressSize = isVersion107 ? 4 : 2;
+            int offset = addressSize * (nrOfFrames + 1);
             if (!isVersion107)
                 offset += 2;
-            Int32[] header = new Int32[nrOfFrames];
-            Byte[][] frameImage = new Byte[nrOfFrames][];
-            Boolean[] frameRemapped = new Boolean[nrOfFrames];
-            Byte[][] frameHeaders = new Byte[nrOfFrames][];
-            Byte[][] frameData = new Byte[nrOfFrames][];
+            int[] header = new int[nrOfFrames];
+            byte[][] frameImage = new byte[nrOfFrames][];
+            bool[] frameRemapped = new bool[nrOfFrames];
+            byte[][] frameHeaders = new byte[nrOfFrames][];
+            byte[][] frameData = new byte[nrOfFrames][];
             //ArrayUtils.WriteInt16ToByteArrayLe(header, 0, frames);
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 Bitmap bm = frame.GetBitmap();
-                Int32 frmWidth = bm.Width;
-                Int32 frmHeight = bm.Height;
-                Int32 stride;
-                Byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
-                Int32 imageDataLength = imageData.Length;
-                Boolean remapThis;
+                int frmWidth = bm.Width;
+                int frmHeight = bm.Height;
+                int stride;
+                byte[] imageData = ImageUtils.GetImageData(bm, out stride, true);
+                int imageDataLength = imageData.Length;
+                bool remapThis;
                 if (addRemapAuto)
                 {
                     remapThis = false;
-                    for (Int32 j = 0; j < imageDataLength; ++j)
+                    for (int j = 0; j < imageDataLength; ++j)
                     {
-                        Byte b = imageData[j];
+                        byte b = imageData[j];
                         if (b < 144 || b > 150)
                             continue;
                         remapThis = true;
@@ -385,8 +385,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     remapThis = remapFrame[i];
                 frameRemapped[i] = remapThis;
                 // Check if any of the already-handled frames equals this one.
-                Int32 dupeIndex = -1;
-                for (Int32 j = 0; j < i; ++j)
+                int dupeIndex = -1;
+                for (int j = 0; j < i; ++j)
                 {
                     SupportedFileType prevFrame = frames[j];
                     if (prevFrame.Width != frmWidth || prevFrame.Height != frmHeight || frameRemapped[j] != remapThis)
@@ -405,10 +405,10 @@ namespace EngieFileConverter.Domain.FileTypes
                     continue;
                 }
                 // Needs to be a duplicate; otherwise the remapping system messes up the reference array.
-                frameImage[i] = new Byte[imageDataLength];
+                frameImage[i] = new byte[imageDataLength];
                 Array.Copy(imageData, frameImage[i], imageDataLength);
-                Byte[] remapTable;
-                Boolean largeTable;
+                byte[] remapTable;
+                bool largeTable;
                 if (!remapThis)
                 {
                     remapTable = null;
@@ -417,33 +417,33 @@ namespace EngieFileConverter.Domain.FileTypes
                 else
                 {
                     // Remap table: get distinct values, remove zero to put it at the front.
-                    Byte[] noZeroRemapTable = imageData.Distinct().Where(b => b != 0).ToArray();
-                    Int32 tableLength = noZeroRemapTable.Length + 1;
-                    remapTable = new Byte[Math.Max(tableLength, 16)];
+                    byte[] noZeroRemapTable = imageData.Distinct().Where(b => b != 0).ToArray();
+                    int tableLength = noZeroRemapTable.Length + 1;
+                    remapTable = new byte[Math.Max(tableLength, 16)];
                     Array.Copy(noZeroRemapTable, 0, remapTable, 1, noZeroRemapTable.Length);
                     // Remap the image data
-                    Byte[] reverseTable = new Byte[0x100];
-                    for (Int32 r = 1; r < tableLength; ++r)
-                        reverseTable[remapTable[r]] = (Byte) r;
-                    for (Int32 j = 0; j < imageData.Length; ++j)
+                    byte[] reverseTable = new byte[0x100];
+                    for (int r = 1; r < tableLength; ++r)
+                        reverseTable[remapTable[r]] = (byte) r;
+                    for (int j = 0; j < imageData.Length; ++j)
                         imageData[j] = reverseTable[imageData[j]];
                     largeTable = tableLength > 16;
                 }
                 imageData = WestwoodRleZero.CompressRleZeroD2(imageData, frmWidth, frmHeight);
-                Int32 zeroDataLen = imageData.Length;
-                Byte[] lcwData = dontCompress[i] ? null : WWCompression.LcwCompress(imageData);
-                Boolean isCompressed = lcwData != null && lcwData.Length < imageData.Length;
+                int zeroDataLen = imageData.Length;
+                byte[] lcwData = dontCompress[i] ? null : WWCompression.LcwCompress(imageData);
+                bool isCompressed = lcwData != null && lcwData.Length < imageData.Length;
                 if (isCompressed)
                     imageData = lcwData;
                 // Write header. Remap table will be considered part of the header to avoid extra copies to add it to the image data.
-                Int32 frameHeaderLen = 0x0A;
+                int frameHeaderLen = 0x0A;
                 if (remapThis)
                 {
                     if (largeTable)
                         frameHeaderLen++;
                     frameHeaderLen += remapTable.Length;
                 }
-                Byte[] frameHeader = new Byte[frameHeaderLen];
+                byte[] frameHeader = new byte[frameHeaderLen];
                 Dune2ShpFrameFlags flags = Dune2ShpFrameFlags.Empty;
                 if (!isCompressed)
                     flags |= Dune2ShpFrameFlags.NoLcw;
@@ -452,19 +452,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 if (largeTable)
                     flags |= Dune2ShpFrameFlags.CustomSizeRemap;
                 // The entire data length; header plus table plus byte for table size plus compressed data.
-                Int32 frmDataSize = frameHeaderLen + imageData.Length;
-                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x00, (UInt16)flags);
-                frameHeader[0x02] = (Byte) frmHeight;
-                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x03, (UInt16)frmWidth);
-                frameHeader[0x05] = (Byte) frmHeight;
-                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x06, (UInt16)frmDataSize);
-                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x08, (UInt16)zeroDataLen);
+                int frmDataSize = frameHeaderLen + imageData.Length;
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x00, (ushort)flags);
+                frameHeader[0x02] = (byte) frmHeight;
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x03, (ushort)frmWidth);
+                frameHeader[0x05] = (byte) frmHeight;
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x06, (ushort)frmDataSize);
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameHeader, 0x08, (ushort)zeroDataLen);
                 if (remapThis)
                 {
-                    Int32 writeOffs = 0x0A;
+                    int writeOffs = 0x0A;
                     if (largeTable)
                     {
-                        frameHeader[writeOffs] = (Byte) remapTable.Length;
+                        frameHeader[writeOffs] = (byte) remapTable.Length;
                         writeOffs++;
                     }
                     Array.Copy(remapTable, 0, frameHeader, writeOffs, remapTable.Length);
@@ -474,29 +474,29 @@ namespace EngieFileConverter.Domain.FileTypes
                 header[i] = offset;
                 offset += frmDataSize;
             }
-            Int32 actualLen = offset;
+            int actualLen = offset;
             if (isVersion107)
                 actualLen += 2;
-            Byte[] finalData = new Byte[actualLen];
-            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0, (UInt16)nrOfFrames);
-            Int32 headerOffset = 2;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            byte[] finalData = new byte[actualLen];
+            ArrayUtils.WriteUInt16ToByteArrayLe(finalData, 0, (ushort)nrOfFrames);
+            int headerOffset = 2;
+            for (int i = 0; i < nrOfFrames; ++i)
             {
-                Int32 currentOffset = header[i];
-                ArrayUtils.WriteIntToByteArray(finalData, headerOffset, addressSize, true, (UInt32) currentOffset);
+                int currentOffset = header[i];
+                ArrayUtils.WriteIntToByteArray(finalData, headerOffset, addressSize, true, (uint) currentOffset);
                 if (isVersion107)
                     currentOffset += 2;
                 headerOffset += addressSize;
-                Byte[] frHeader = frameHeaders[i];
-                Int32 headerLen = frHeader.Length;
+                byte[] frHeader = frameHeaders[i];
+                int headerLen = frHeader.Length;
                 Array.Copy(frHeader, 0, finalData, currentOffset, headerLen);
                 currentOffset += headerLen;
-                Byte[] frData = frameData[i];
+                byte[] frData = frameData[i];
                 if (frData != null)
                     Array.Copy(frData, 0, finalData, currentOffset, frData.Length);
             }
             // Add final length to frame offsets list.
-            ArrayUtils.WriteIntToByteArray(finalData, headerOffset, addressSize, true, (UInt32)offset);
+            ArrayUtils.WriteIntToByteArray(finalData, headerOffset, addressSize, true, (uint)offset);
             return finalData;
         }
 
@@ -506,10 +506,10 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames = frames.Length;
+            int nrOfFrames = frames.Length;
             if (nrOfFrames == 0)
                 throw new ArgumentException(ERR_FRAMES_NEEDED, "fileToSave");
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)
@@ -535,8 +535,8 @@ namespace EngieFileConverter.Domain.FileTypes
 
     public interface Dune2ShpType
     {
-        Boolean IsVersion107 { get; set; }
-        Int32[] RemappedIndices { get; set; }
-        Int32[] UncompressedIndices { get; set; }
+        bool IsVersion107 { get; set; }
+        int[] RemappedIndices { get; set; }
+        int[] UncompressedIndices { get; set; }
     }
 }

@@ -27,7 +27,7 @@ namespace EngieFileConverter.UI
         {
             set
             {
-                txtMessage.Text = value == null ? String.Empty : string.Join(Environment.NewLine, value.ToArray());
+                txtMessage.Text = value == null ? String.Empty : String.Join(Environment.NewLine, value.ToArray());
                 txtMessage.SelectionLength = 0;
                 txtMessage.SelectionStart = 0;
             }
@@ -74,18 +74,18 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void SetWrap(Boolean wrap)
+        private void SetWrap(bool wrap)
         {
             txtMessage.WordWrap = wrap;
             lblWrap.Text = wrap ? "[ON]" : "[OFF]";
         }
 
-        private void btnWrap_Click(Object sender, EventArgs e)
+        private void btnWrap_Click(object sender, EventArgs e)
         {
             SetWrap(!txtMessage.WordWrap);
         }
 
-        private void btnCopy_Click(Object sender, EventArgs e)
+        private void btnCopy_Click(object sender, EventArgs e)
         {
             Clipboard.SetText(txtMessage.Text);
         }
@@ -129,7 +129,7 @@ namespace EngieFileConverter.UI
             }
         }
 
-        private void ScrollingMessageBox_Load(Object sender, EventArgs e)
+        private void ScrollingMessageBox_Load(object sender, EventArgs e)
         {
             txtMessage.SelectionLength = 0;
             txtMessage.SelectionStart = 0;

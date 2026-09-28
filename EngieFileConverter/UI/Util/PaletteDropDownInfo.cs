@@ -10,28 +10,28 @@ namespace Nyerguds.Util.UI
 {
     public class PaletteDropDownInfo
     {
-        public const String PALINISECTION = "Palette";
-        public const String PALINIKEY8BIT = "IsEightBit";
-        public const String PALINIKEYSINGLE = "IsSinglePalette";
+        public const string PALINISECTION = "Palette";
+        public const string PALINIKEY8BIT = "IsEightBit";
+        public const string PALINIKEYSINGLE = "IsSinglePalette";
 
-        public String Name { get; set; }
+        public string Name { get; set; }
         public Color[] Colors { get; set; }
         public Color[] ColorBackup { get; private set; }
-        public Int32 BitsPerPixel { get; private set; }
-        public String SourceFile { get; private set; }
-        public Int32 Entry { get; set; }
-        public Boolean PrefixIndex { get; set; }
-        public Boolean SuffixSource { get; set; }
+        public int BitsPerPixel { get; private set; }
+        public string SourceFile { get; private set; }
+        public int Entry { get; set; }
+        public bool PrefixIndex { get; set; }
+        public bool SuffixSource { get; set; }
 
-        public PaletteDropDownInfo(String name, Int32 bpp, Color[] colors, String sourceFile, Int32 entry, Boolean prefixIndex, Boolean suffixSource)
+        public PaletteDropDownInfo(string name, int bpp, Color[] colors, string sourceFile, int entry, bool prefixIndex, bool suffixSource)
         {
             this.Name = name;
             this.BitsPerPixel = bpp;
-            Int32 expectedcolors = bpp == -1? 0 : 1 << bpp;
+            int expectedcolors = bpp == -1? 0 : 1 << bpp;
             Color[] palette = new Color[expectedcolors];
-            Int32 copiedColors = Math.Min(colors.Length, expectedcolors);
+            int copiedColors = Math.Min(colors.Length, expectedcolors);
             Array.Copy(colors, palette, copiedColors);
-            for (Int32 i = copiedColors; i < expectedcolors; ++i)
+            for (int i = copiedColors; i < expectedcolors; ++i)
                 palette[i] = Color.Black;
             this.Colors = palette;
             this.ColorBackup = ArrayUtils.CloneArray(palette);
@@ -42,14 +42,14 @@ namespace Nyerguds.Util.UI
         }
 
 
-        public Boolean IsChanged(Boolean[] currentTypeTransMask)
+        public bool IsChanged(bool[] currentTypeTransMask)
         {
             Color[] compareArr = ArrayUtils.CloneArray(this.ColorBackup);
             PaletteUtils.ApplyPalTransparencyMask(compareArr, currentTypeTransMask);
             return !compareArr.SequenceEqual(this.Colors);
         }
 
-        public void Revert(Boolean[] currentTypeTransMask)
+        public void Revert(bool[] currentTypeTransMask)
         {
             Array.Copy(this.ColorBackup, this.Colors, this.Colors.Length);
             PaletteUtils.ApplyPalTransparencyMask(this.Colors, currentTypeTransMask);
@@ -60,9 +60,9 @@ namespace Nyerguds.Util.UI
             Array.Copy(this.Colors, this.ColorBackup, this.Colors.Length);
         }
 
-        public override String ToString()
+        public override string ToString()
         {
-            String name = String.Empty;
+            string name = String.Empty;
             if (this.PrefixIndex)
                 name += this.Entry.ToString("D2") + " ";
             name += this.Name;
@@ -71,41 +71,41 @@ namespace Nyerguds.Util.UI
             return name;
         }
 
-        public static List<PaletteDropDownInfo> LoadSubPalettesInfoFromPalette(String filename, Boolean listAll, Boolean prefixIndex, Boolean suffixSource)
+        public static List<PaletteDropDownInfo> LoadSubPalettesInfoFromPalette(string filename, bool listAll, bool prefixIndex, bool suffixSource)
         {
             FileInfo file = new FileInfo(filename);
             return LoadSubPalettesInfoFromPalette(file, listAll, prefixIndex, suffixSource);
         }
 
-        public static List<PaletteDropDownInfo> LoadSubPalettesInfoFromPalette(FileInfo file, Boolean listAll, Boolean prefixIndex, Boolean suffixSource)
+        public static List<PaletteDropDownInfo> LoadSubPalettesInfoFromPalette(FileInfo file, bool listAll, bool prefixIndex, bool suffixSource)
         {
             List<PaletteDropDownInfo> palettes = new List<PaletteDropDownInfo>();
             try
             {
                 if (!file.Exists || file.Length != 0x300)
                     return palettes;
-                String bareName = file.Name;
-                String inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
-                Boolean iniExists = File.Exists(inipath);
+                string bareName = file.Name;
+                string inipath = Path.Combine(file.DirectoryName, Path.GetFileNameWithoutExtension(bareName)) + ".ini";
+                bool iniExists = File.Exists(inipath);
                 IniFile paletteConfig = new IniFile(inipath);
                 // Eight bit: if ini exists, and data is specifically identified as 8-bit
-                Boolean ini8BitKeyExists = false;
-                Boolean isEightBit = iniExists && paletteConfig.GetBoolValue(PALINISECTION, PALINIKEY8BIT, false, out ini8BitKeyExists);
-                Byte[] palBytes = File.ReadAllBytes(file.FullName);
+                bool ini8BitKeyExists = false;
+                bool isEightBit = iniExists && paletteConfig.GetBoolValue(PALINISECTION, PALINIKEY8BIT, false, out ini8BitKeyExists);
+                byte[] palBytes = File.ReadAllBytes(file.FullName);
                 // ...or if no ini exists but the data contains values higher than 6-bit allows.
                 if ((!iniExists || !ini8BitKeyExists) && palBytes.Any(b => b > 0x3F))
                     isEightBit = true;
                 // Single palette: if there is either no ini (old 6-bit palette) or the ini specifically says it's a single palette.
-                Boolean isSinglePal = !iniExists || paletteConfig.GetBoolValue(PALINISECTION, PALINIKEYSINGLE, false);
+                bool isSinglePal = !iniExists || paletteConfig.GetBoolValue(PALINISECTION, PALINIKEYSINGLE, false);
                 // Read the palette as 8-bit or as 6-bit, as determined above.
                 Color[] fullPal = isEightBit ? ColorUtils.ReadEightBitPalette(palBytes) : ColorUtils.ReadSixBitPalette(palBytes);
                 if (!isSinglePal)
                 {
                     // Read multiple 16-color palettes
-                    for (Int32 i = 0; i < 16; ++i)
+                    for (int i = 0; i < 16; ++i)
                     {
-                        String name = paletteConfig.GetStringValue(PALINISECTION, i.ToString(), null);
-                        Boolean hasName = !String.IsNullOrEmpty(name);
+                        string name = paletteConfig.GetStringValue(PALINISECTION, i.ToString(), null);
+                        bool hasName = !String.IsNullOrEmpty(name);
                         if (!hasName)
                             name = null;
                         if (listAll && !hasName)

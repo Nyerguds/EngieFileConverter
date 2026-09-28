@@ -9,10 +9,10 @@ namespace Nyerguds.Util.UI
     [DefaultEvent("CheckStateChanged")]
     public class ImageButtonCheckBox : Label
     {
-        private Boolean m_Checked = false;
-        private Boolean m_Toggle = true;
-        private Boolean m_Clicking = false;
-        public Boolean m_TabStop = true;
+        private bool m_Checked = false;
+        private bool m_Toggle = true;
+        private bool m_Clicking = false;
+        public bool m_TabStop = true;
         public event EventHandler CheckStateChanged;
         Color m_DisabledBackColor = Color.Transparent;
 
@@ -61,7 +61,7 @@ namespace Nyerguds.Util.UI
         [DefaultValue(false)]
         [RefreshProperties(RefreshProperties.Repaint)]
         [SettingsBindable(true)]
-        public Boolean Checked
+        public bool Checked
         {
             get { return this.m_Checked; }
             set
@@ -76,7 +76,7 @@ namespace Nyerguds.Util.UI
         [Bindable(true)]
         [DefaultValue(true)]
         [SettingsBindable(true)]
-        public Boolean Toggle
+        public bool Toggle
         {
             get { return this.m_Toggle; }
             set { this.m_Toggle = value; }
@@ -84,7 +84,7 @@ namespace Nyerguds.Util.UI
 
         [Browsable(true)]
         [DefaultValue(true)]
-        public new Boolean TabStop
+        public new bool TabStop
         {
             get { return m_TabStop; }
             set
@@ -97,7 +97,7 @@ namespace Nyerguds.Util.UI
 
         [Browsable(true)]
         [DefaultValue(true)]
-        public new Boolean Enabled
+        public new bool Enabled
         {
             get { return base.Enabled; }
             set
@@ -149,7 +149,7 @@ namespace Nyerguds.Util.UI
             base.OnMouseUp(e);
         }
 
-        protected override Boolean IsInputKey(Keys keyData)
+        protected override bool IsInputKey(Keys keyData)
         {
             if (keyData == Keys.Enter || keyData == Keys.Space) return true;
             return base.IsInputKey(keyData);
@@ -157,7 +157,7 @@ namespace Nyerguds.Util.UI
 
         protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
         {
-            if (!e.Alt && !e.Control && (e.KeyValue == (Int32)System.Windows.Forms.Keys.Space || e.KeyValue == (Int32)System.Windows.Forms.Keys.Enter))
+            if (!e.Alt && !e.Control && (e.KeyValue == (int)System.Windows.Forms.Keys.Space || e.KeyValue == (int)System.Windows.Forms.Keys.Enter))
             {
                 m_Clicking = true;
                 this.Invalidate();
@@ -167,7 +167,7 @@ namespace Nyerguds.Util.UI
 
         protected override void OnKeyUp(KeyEventArgs e)
         {
-            if (!e.Alt && !e.Control && (e.KeyValue == (Int32)System.Windows.Forms.Keys.Space || e.KeyValue == (Int32)System.Windows.Forms.Keys.Enter))
+            if (!e.Alt && !e.Control && (e.KeyValue == (int)System.Windows.Forms.Keys.Space || e.KeyValue == (int)System.Windows.Forms.Keys.Enter))
             {
                 if (this.Toggle)
                     this.Checked = !this.Checked;
@@ -192,9 +192,9 @@ namespace Nyerguds.Util.UI
                 bs = ButtonBorderStyle.Inset;
             else
                 bs = ButtonBorderStyle.Outset;
-            Boolean hasImage = this.Image != null;
-            Int32 centerOffsetX = hasImage ? (this.ClientRectangle.Width - this.Image.Width) / 2 : 0;
-            Int32 centerOffsetY = hasImage? (this.ClientRectangle.Height - this.Image.Height) / 2 : 0;
+            bool hasImage = this.Image != null;
+            int centerOffsetX = hasImage ? (this.ClientRectangle.Width - this.Image.Width) / 2 : 0;
+            int centerOffsetY = hasImage? (this.ClientRectangle.Height - this.Image.Height) / 2 : 0;
             if (this.m_Clicking)
             {
                 bs = ButtonBorderStyle.Inset;

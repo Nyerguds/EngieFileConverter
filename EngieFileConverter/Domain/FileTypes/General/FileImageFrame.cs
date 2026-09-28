@@ -7,48 +7,48 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileImageFrame : FileImagePng
     {
-        protected Int32 m_BitsPerColor= -1;
-        protected Boolean? m_NeedsPalette;
-        protected Dictionary<String, Object> m_ExtraProps = new Dictionary<String, Object>();
+        protected int m_BitsPerColor = -1;
+        protected bool? m_NeedsPalette;
+        protected Dictionary<string, object> m_ExtraProps = new Dictionary<string, object>();
         //protected Boolean[] m_transparencyMask = null;
-        public override String ShortTypeName { get { return "Frame"; } }
+        public override string ShortTypeName { get { return "Frame"; } }
 
         public override FileClass InputFileClass { get { return FileClass.None; } }
-        public Dictionary<String, Object> ExtraProps { get { return this.m_ExtraProps; }}
+        public Dictionary<string, object> ExtraProps { get { return this.m_ExtraProps; }}
 
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return this.m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
-        public override Int32 BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
+        public override string LongTypeName { get { return this.m_Description ?? ((this.m_BaseType == null ? String.Empty : this.m_BaseType + " ") + "Frame"); } }
+        public override int BitsPerPixel { get { return this.m_BitsPerColor != -1   ? this.m_BitsPerColor : base.BitsPerPixel; } }
         public override FileClass FileClass  { get { return this.m_FileClass ?? base.FileClass; } }
-        public override Boolean NeedsPalette { get { return this.m_NeedsPalette ?? base.NeedsPalette; } }
+        public override bool NeedsPalette { get { return this.m_NeedsPalette ?? base.NeedsPalette; } }
         // Let the SetColor function handle this from the UI.
         //public override Boolean[] TransparencyMask { get { return this.FrameParent != null ? this.FrameParent.TransparencyMask : null; } }
 
-        public void SetBitsPerColor(Int32 bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
+        public void SetBitsPerColor(int bitsPerColor) { this.m_BitsPerColor = bitsPerColor; }
         public void SetFileClass(FileClass? fileClass) { this.m_FileClass = fileClass; }
 
-        public void SetNeedsPalette(Boolean needsPalette) { this.m_NeedsPalette = needsPalette; }
+        public void SetNeedsPalette(bool needsPalette) { this.m_NeedsPalette = needsPalette; }
         //public void SetTransparencyMask(Boolean[] transparencyMask) { this.m_transparencyMask = transparencyMask; }
 
-        protected String sourcePath;
-        protected String frameName;
-        protected String m_BaseType;
-        protected String m_Description;
+        protected string sourcePath;
+        protected string frameName;
+        protected string m_BaseType;
+        protected string m_Description;
         protected FileClass? m_FileClass;
 
-        public void SetFrameFileName(String frameName)
+        public void SetFrameFileName(string frameName)
         {
             this.frameName = frameName;
             this.UpdateNames();
         }
 
-        public override void SetFileNames(String path)
+        public override void SetFileNames(string path)
         {
             this.sourcePath = path;
             this.UpdateNames();
         }
 
-        public void SetExtraInfo(String extraInfo)
+        public void SetExtraInfo(string extraInfo)
         {
             this.ExtraInfo = extraInfo;
         }
@@ -83,7 +83,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="image">The image.</param>
         /// <param name="filename">The filename this is loaded from.</param>
         /// <param name="frameNumber">The frame number.</param>
-        public void LoadFileFrame(SupportedFileType parent, SupportedFileType typeParent, Bitmap image, String filename, Int32 frameNumber)
+        public void LoadFileFrame(SupportedFileType parent, SupportedFileType typeParent, Bitmap image, string filename, int frameNumber)
         {
             this.LoadFile(image, null);
             this.FrameParent = parent;
@@ -103,7 +103,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="image">The image.</param>
         /// <param name="filename">The filename this is loaded from.</param>
         /// <param name="frameNumber">The frame number.</param>
-        public void LoadFileFrame(SupportedFileType parent, String shortTypeDescription, Bitmap image, String filename, Int32 frameNumber)
+        public void LoadFileFrame(SupportedFileType parent, string shortTypeDescription, Bitmap image, string filename, int frameNumber)
         {
             this.LoadFile(image, null);
             this.FrameParent = parent;

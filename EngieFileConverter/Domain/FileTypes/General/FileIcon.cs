@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using Windows.Graphics2d;
 using Nyerguds.ImageManipulation;
 using Nyerguds.Util;
+using System.Text;
 
 namespace EngieFileConverter.Domain.FileTypes
 {
@@ -18,71 +19,71 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.None; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override Int32 Width { get { return this.m_MaxWidth; } }
-        public override Int32 Height { get { return this.m_MaxHeight; } }
-        protected Int32 m_MaxWidth;
-        protected Int32 m_MaxHeight;
-        public override String IdCode { get { return "Ico"; } }
+        public override int Width { get { return this.m_MaxWidth; } }
+        public override int Height { get { return this.m_MaxHeight; } }
+        protected int m_MaxWidth;
+        protected int m_MaxHeight;
+        public override string IdCode { get { return "Ico"; } }
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
-        public override Boolean FramesHaveCommonPalette { get { return false; } }
+        public override bool FramesHaveCommonPalette { get { return false; } }
 
-        public override String ShortTypeName { get { return "Icon"; } }
-        public override String LongTypeName { get { return "Icon file"; } }
-        public override String[] FileExtensions { get { return new String[] { "ico" }; } }
+        public override string ShortTypeName { get { return "Icon"; } }
+        public override string LongTypeName { get { return "Icon file"; } }
+        public override string[] FileExtensions { get { return new string[] { "ico" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] { "Windows Icon" }; } }
+        public override string[] DescriptionsForExtensions { get { return new string[] { "Windows Icon" }; } }
 
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        public override Boolean ColorsChanged()
+        public override bool ColorsChanged()
         {
             return false;
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             HeaderParseException hpe;
             try
             {
-                const Int32 hdrSize = 6;
+                const int hdrSize = 6;
                 if (fileData.Length < hdrSize)
                     throw new HeaderParseException("Not long enough for header.");
-                UInt16 hdrReserved = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
-                UInt16 hdrType = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
-                UInt16 hdrNumberOfImages = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+                ushort hdrReserved = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0);
+                ushort hdrType = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 2);
+                ushort hdrNumberOfImages = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
                 //ICONDIR hdr = ArrayUtils.StructFromByteArray<ICONDIR>(fileData);
                 if (hdrReserved != 0)
                     throw new HeaderParseException("Invalid values in header.");
                 if (hdrType != 1 && hdrType != 2)
                     throw new HeaderParseException("Invalid values in header.");
-                UInt32 nrOfImages = hdrNumberOfImages;
-                Int32 indexItemSize = 16;// Marshal.SizeOf(typeof (ICONDIRENTRY));
+                uint nrOfImages = hdrNumberOfImages;
+                int indexItemSize = 16;// Marshal.SizeOf(typeof (ICONDIRENTRY));
                 if (fileData.Length < hdrSize + nrOfImages * indexItemSize)
                     throw new HeaderParseException("Not long enough for images index.");
                 if (nrOfImages == 0)
                     throw new HeaderParseException("No images in given icon.");
-                Int32 offset = hdrSize;
+                int offset = hdrSize;
                 List<SupportedFileType> frames = new List<SupportedFileType>();
-                for (Int32 i = 0; i < nrOfImages; ++i)
+                for (int i = 0; i < nrOfImages; ++i)
                 {
                     // 0 image width (is 0 for "256")
-                    Byte dirEntryWidth = fileData[offset];
+                    byte dirEntryWidth = fileData[offset];
                     // 1 image height
-                    Byte dirEntryHeight = fileData[offset + 1];
+                    byte dirEntryHeight = fileData[offset + 1];
                     // 2 number of colors
                     //Byte dirEntryPaletteLength = fileData[offset + 2];
                     // 3 reserved
@@ -92,19 +93,19 @@ namespace EngieFileConverter.Domain.FileTypes
                     // 6-7 bits per pixel
                     //UInt16 dirEntryBitsPerPixel = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, offset + 6);
                     // 8-11 size of image data
-                    UInt32 dirEntryImageLength = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 8);
+                    uint dirEntryImageLength = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 8);
                     // 12-15 offset of image data
-                    UInt32 dirEntryImageOffset = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 12);
+                    uint dirEntryImageOffset = ArrayUtils.ReadUInt32FromByteArrayLe(fileData, offset + 12);
 
                     //ICONDIRENTRY info = ArrayUtils.ReadStructFromByteArray<ICONDIRENTRY>(fileData, offset);
-                    UInt32 imageOffset = dirEntryImageOffset;
-                    UInt32 imageLength = dirEntryImageLength;
+                    uint imageOffset = dirEntryImageOffset;
+                    uint imageLength = dirEntryImageLength;
                     if (imageOffset + imageLength > fileData.Length)
                         throw new HeaderParseException("Bad header data: offset and length for image " + i + " do not fit in file.");
-                    String type = MimeTypeDetector.GetMimeType(fileData, (Int32)imageOffset)[0];
+                    string type = MimeTypeDetector.GetMimeType(fileData, (int)imageOffset)[0];
                     Bitmap bmp;
-                    Int32 frWidth = dirEntryWidth == 0 ? 0x100 : dirEntryWidth;
-                    Int32 frHeight = dirEntryHeight == 0 ? 0x100 : dirEntryHeight;
+                    int frWidth = dirEntryWidth == 0 ? 0x100 : dirEntryWidth;
+                    int frHeight = dirEntryHeight == 0 ? 0x100 : dirEntryHeight;
                     PixelFormat originalPixelFormat = PixelFormat.Undefined;
                     if (frWidth == 0 || frHeight == 0)
                         throw new HeaderParseException("Icon dimensions cannot be zero.");
@@ -114,9 +115,8 @@ namespace EngieFileConverter.Domain.FileTypes
                         bmp = this.GetBmp<FileImageBmp>(fileData, imageOffset, imageLength);
                     else
                     {
-                        bmp = DibHandler.ImageFromDib(fileData, (Int32)imageOffset, (Int32)imageLength, 0, true, false, out originalPixelFormat);
-                        if (bmp != null)
-                            type = "dib";
+                        bmp = DibHandler.ImageFromDib(fileData, (int)imageOffset, (int)imageLength, 0, true, false, out originalPixelFormat);
+                        type = "dib";
                     }
                     if (bmp == null)
                         throw new HeaderParseException("Can't detect internal type.");
@@ -136,10 +136,12 @@ namespace EngieFileConverter.Domain.FileTypes
                         default: fc = FileClass.ImageHiCol; break;
                     }
                     framePic.SetFileClass(fc);
-                    String extraInfo = "Format: " + type.ToUpper();
+                    StringBuilder extraInfo = new StringBuilder()
+                        .AppendFormat("Format: {0}", type.ToUpper());
                     if (originalPixelFormat != PixelFormat.Undefined)
-                        extraInfo += "\nOriginal pixel format: " + Image.GetPixelFormatSize(originalPixelFormat) + " bpp";
-                    framePic.SetExtraInfo(extraInfo);
+                        extraInfo.AppendFormat("\nOriginal pixel format: {0} bpp", Image.GetPixelFormatSize(originalPixelFormat));
+                    extraInfo.AppendFormat("\nOffset: {0}, length: {1}", dirEntryImageOffset, dirEntryImageLength);
+                    framePic.SetExtraInfo(extraInfo.ToString());
                     frames.Add(framePic);
                     offset += indexItemSize;
                 }
@@ -185,9 +187,9 @@ namespace EngieFileConverter.Domain.FileTypes
 
         }
 
-        private Bitmap GetBmp<T>(Byte[] data, UInt32 offset, UInt32 length) where T : FileImage, new()
+        private Bitmap GetBmp<T>(byte[] data, uint offset, uint length) where T : FileImage, new()
         {
-            Byte[] frameData = new Byte[length];
+            byte[] frameData = new byte[length];
             Array.Copy(data, offset, frameData, 0, length);
 
             using (T frameImg = new T())
@@ -197,13 +199,13 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             Bitmap bmToSave = fileToSave.GetBitmap();
-            Int32 w = bmToSave.Width;
-            Int32 h = bmToSave.Height;
-            Boolean addSq = w != h;
-            Boolean addInc = Math.Max(w, h) < 256;
+            int w = bmToSave.Width;
+            int h = bmToSave.Height;
+            bool addSq = w != h;
+            bool addInc = Math.Max(w, h) < 256;
             List<Option> opts = new List<Option>();
             if (addSq)
                 opts.Add(new Option("SQR", OptionInputType.Boolean, "Pad image to square format", "1"));
@@ -217,17 +219,17 @@ namespace EngieFileConverter.Domain.FileTypes
             return opts.ToArray();
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
-            Boolean makeSquare = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "SQR"));
-            Boolean upscale = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "INC"));
-            Boolean pixelZoom = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PIX"));
-            String includedSizesStr = Option.GetSaveOptionValue(saveOptions, "SIZ");
+            bool makeSquare = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "SQR"));
+            bool upscale = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "INC"));
+            bool pixelZoom = GeneralUtils.IsTrueValue(Option.GetSaveOptionValue(saveOptions, "PIX"));
+            string includedSizesStr = Option.GetSaveOptionValue(saveOptions, "SIZ");
             // The character filter specifically disallows "-", so no actual ranges can be given.
-            Int32[] sizes = GeneralUtils.GetRangedNumbers(includedSizesStr);
+            int[] sizes = GeneralUtils.GetRangedNumbers(includedSizesStr);
             if (sizes.Length == 0)
                 throw new FileTypeSaveException("The icon needs to contain at least one image.");
-            for (Int32 i = 0; i < sizes.Length; ++i)
+            for (int i = 0; i < sizes.Length; ++i)
             {
                 if (sizes[i] == 0)
                     throw new FileTypeSaveException("0 is not a valid icon size.");
@@ -260,7 +262,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="pixelZoom">Use pixel scaling for resizing to sizes larger than the original image.</param>
         /// <param name="sizes">Icon sizes to be included.</param>
         /// <returns>True if the the icon was succesfully generated.</returns>
-        public static Boolean ConvertToIcon(Bitmap inputBitmap, Stream output, Boolean makeSquare, Boolean upscale, Boolean pixelZoom, Int32[] sizes)
+        public static bool ConvertToIcon(Bitmap inputBitmap, Stream output, bool makeSquare, bool upscale, bool pixelZoom, int[] sizes)
         {
             if (inputBitmap == null)
                 throw new ArgumentNullException("inputBitmap", "Input bitmap cannot be null.");
@@ -271,32 +273,32 @@ namespace EngieFileConverter.Domain.FileTypes
             if (sizes.Length == 0)
                 throw new ArgumentException("Need at least one icon size.", "sizes");
 
-            List<Byte[]> images = new List<Byte[]>();
-            List<Byte> widths = new List<Byte>();
-            List<Byte> heights = new List<Byte>();
-            Int32 maxDim = Math.Max(inputBitmap.Width, inputBitmap.Height);
+            List<byte[]> images = new List<byte[]>();
+            List<byte> widths = new List<byte>();
+            List<byte> heights = new List<byte>();
+            int maxDim = Math.Max(inputBitmap.Width, inputBitmap.Height);
             // Generate bitmaps for all the sizes and toss them in streams
-            Int32 sizesLen = sizes.Length;
-            for (Int32 i = 0; i < sizesLen; ++i)
+            int sizesLen = sizes.Length;
+            for (int i = 0; i < sizesLen; ++i)
             {
-                Int32 size = sizes[i];
+                int size = sizes[i];
                 if (size > 0x100)
                     throw new ArgumentException(String.Format(ERR_DIMENSIONS_TOO_HIGH_SIZE, 256));
 
                 if (!upscale && size > maxDim)
                     continue;
-                Int32 width = size;
-                Int32 height = size;
+                int width = size;
+                int height = size;
                 if (inputBitmap.Width <= inputBitmap.Height)
-                    width = (Int32) (((Double) inputBitmap.Width / inputBitmap.Height) * size);
+                    width = (int) (((double) inputBitmap.Width / inputBitmap.Height) * size);
                 else
-                    height = (Int32) (((Double) inputBitmap.Height / inputBitmap.Width) * size);
+                    height = (int) (((double) inputBitmap.Height / inputBitmap.Width) * size);
                 // These are 0 for "256"
-                Byte saveWidth = (Byte) (Math.Min(makeSquare ? size : width, 0x100) & 0xFF);
-                Byte saveHeight = (Byte) (Math.Min(makeSquare ? size : height, 0x100) & 0xFF);
-                Boolean skip = false;
-                Int32 imgCount = images.Count;
-                for (Int32 si = 0; si < imgCount; ++si)
+                byte saveWidth = (byte) (Math.Min(makeSquare ? size : width, 0x100) & 0xFF);
+                byte saveHeight = (byte) (Math.Min(makeSquare ? size : height, 0x100) & 0xFF);
+                bool skip = false;
+                int imgCount = images.Count;
+                for (int si = 0; si < imgCount; ++si)
                 {
                     if (widths[si] == saveWidth && heights[si] == saveHeight)
                     {
@@ -327,9 +329,9 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                Int32 nrOfImages = images.Length;
-                Byte[][] pngImages = new Byte[nrOfImages][];
-                for (Int32 i = 0; i < nrOfImages; ++i)
+                int nrOfImages = images.Length;
+                byte[][] pngImages = new byte[nrOfImages][];
+                for (int i = 0; i < nrOfImages; ++i)
                     pngImages[i] = GetPngData(images[i]);
                 ConvertImagesToIco(pngImages, ms);
                 ms.Position = 0;
@@ -337,53 +339,53 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        public static Byte[] ConvertImagesToIcoBytes(Image[] images)
+        public static byte[] ConvertImagesToIcoBytes(Image[] images)
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                Int32 nrOfImages = images.Length;
-                Byte[][] pngImages = new Byte[nrOfImages][];
-                for (Int32 i = 0; i < nrOfImages; ++i)
+                int nrOfImages = images.Length;
+                byte[][] pngImages = new byte[nrOfImages][];
+                for (int i = 0; i < nrOfImages; ++i)
                     pngImages[i] = GetPngData(images[i]);
                 ConvertImagesToIco(pngImages, ms);
                 return ms.ToArray();
             }
         }
 
-        public static void ConvertImagesToIco(Byte[][] pngImages, Stream output)
+        public static void ConvertImagesToIco(byte[][] pngImages, Stream output)
         {
             if (pngImages == null)
                 throw new ArgumentNullException("pngImages");
-            Int32 imgCount = pngImages.Length;
+            int imgCount = pngImages.Length;
             if (imgCount == 0)
                 throw new ArgumentException("No images given.", "pngImages");
             if (imgCount > 0xFFFF)
                 throw new ArgumentException("Too many images.", "pngImages");
             using (BinaryWriter iconWriter = new BinaryWriter(new NonDisposingStream(output)))
             {
-                Byte[][] frameBytes = new Byte[imgCount][];
+                byte[][] frameBytes = new byte[imgCount][];
                 // 0-1 reserved, 0
-                iconWriter.Write((Int16)0);
+                iconWriter.Write((short)0);
                 // 2-3 image type, 1 = icon, 2 = cursor
-                iconWriter.Write((Int16)1);
+                iconWriter.Write((short)1);
                 // 4-5 number of images
-                iconWriter.Write((Int16)imgCount);
+                iconWriter.Write((short)imgCount);
                 // Calculate header size for first image data offset.
-                Int32 offset = 6 + (16 * imgCount);
-                for (Int32 i = 0; i < imgCount; ++i)
+                int offset = 6 + (16 * imgCount);
+                for (int i = 0; i < imgCount; ++i)
                 {
                     // Get image data
-                    Byte[] frameData = pngImages[i];
-                    Int32 width = frameData[19] | frameData[18] << 8 | frameData[17] << 16 | frameData[16] << 24;
-                    Int32 height = frameData[23] | frameData[22] << 8 | frameData[21] << 16 | frameData[20] << 24;
+                    byte[] frameData = pngImages[i];
+                    int width = frameData[19] | frameData[18] << 8 | frameData[17] << 16 | frameData[16] << 24;
+                    int height = frameData[23] | frameData[22] << 8 | frameData[21] << 16 | frameData[20] << 24;
                     if (width > 256 || height > 256)
                         throw new ArgumentException("Image " + i + "is too large.", "pngImages");
                     // Get the color depth to save in the icon info. This needs to be
                     // fetched explicitly, since png does not support certain types
                     // like 16bpp, so it will convert to the nearest valid on save.
-                    Int32 bpp;
-                    Byte colDepth = frameData[24];
-                    Byte colType = frameData[25];
+                    int bpp;
+                    byte colDepth = frameData[24];
+                    byte colType = frameData[25];
                     // I think .Net saving only supports color types 2, 3 and 6 anyway.
                     switch (colType)
                     {
@@ -391,39 +393,39 @@ namespace EngieFileConverter.Domain.FileTypes
                         case 6: bpp = 4 * colDepth; break; // ARGB
                         default: bpp = colDepth; break; // Indexed & greyscale
                     }
-                    Byte colors;
+                    byte colors;
                     if (bpp > 8)
                         colors = 0;
                     else
                     {
-                        Int32 plteOffset = PngHandler.FindPngChunk(frameData, "PLTE");
+                        int plteOffset = PngHandler.FindPngChunk(frameData, "PLTE");
                         if (plteOffset == -1) // Should never happen...
                             throw new ArgumentException("Cannot convert image " + i + ".");
                         // Value 0 is interpreted as 256, so the cast reducing 256 to 0 is no problem.
-                        colors = (Byte)(PngHandler.GetPngChunkDataLength(frameData, plteOffset) / 3);
+                        colors = (byte)(PngHandler.GetPngChunkDataLength(frameData, plteOffset) / 3);
                     }
                     frameBytes[i] = frameData;
-                    Int32 imageLen = frameData.Length;
+                    int imageLen = frameData.Length;
                     // Write image entry
                     // 0 image width. Value 0 is interpreted as 256, so the cast reducing 256 to 0 is no problem.
-                    iconWriter.Write((Byte)width);
+                    iconWriter.Write((byte)width);
                     // 1 image height. Value 0 is interpreted as 256, so the cast reducing 256 to 0 is no problem.
-                    iconWriter.Write((Byte)height);
+                    iconWriter.Write((byte)height);
                     // 2 number of colors.
                     iconWriter.Write(colors);
                     // 3 reserved
-                    iconWriter.Write((Byte)0);
+                    iconWriter.Write((byte)0);
                     // 4-5 color planes
-                    iconWriter.Write((Int16)0);
+                    iconWriter.Write((short)0);
                     // 6-7 bits per pixel
-                    iconWriter.Write((Int16)bpp);
+                    iconWriter.Write((short)bpp);
                     // 8-11 size of image data
                     iconWriter.Write(imageLen);
                     // 12-15 offset of image data
                     iconWriter.Write(offset);
                     offset += imageLen;
                 }
-                for (Int32 i = 0; i < imgCount; ++i)
+                for (int i = 0; i < imgCount; ++i)
                 {
                     // Write image data
                     // png data must contain the whole png data file
@@ -433,9 +435,9 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        private static Byte[] GetPngData(Image bitmap)
+        private static byte[] GetPngData(Image bitmap)
         {
-            Byte[] data;
+            byte[] data;
             using (MemoryStream ms = new MemoryStream())
             {
                 bitmap.Save(ms, ImageFormat.Png);

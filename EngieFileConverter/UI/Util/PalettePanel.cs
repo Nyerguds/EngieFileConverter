@@ -21,51 +21,51 @@ namespace Nyerguds.Util.UI
         protected Point m_PadBetween = new Point(4, 4);
 
         protected Color[] m_Palette;
-        protected Int32[] m_Remap;
+        protected int[] m_Remap;
         protected ColorSelMode m_ColorSelectMode = ColorSelMode.Single;
-        protected Int32[] m_SelectedIndicesArr = new Int32[1];
-        protected List<Int32> m_SelectedIndicesList;
+        protected int[] m_SelectedIndicesArr = new int[1];
+        protected List<int> m_SelectedIndicesList;
 
         protected Color m_EmptyItemBackColor = Color.Black;
-        protected Char m_EmptyItemChar = 'X';
+        protected char m_EmptyItemChar = 'X';
         protected Color m_EmptyItemCharColor = Color.Red;
-        protected String m_EmptyItemToolTip = "No color set";
+        protected string m_EmptyItemToolTip = "No color set";
 
         protected Color m_TransItemBackColor = Color.Transparent;
-        protected Char m_TransItemChar = 'T';
+        protected char m_TransItemChar = 'T';
         protected Color m_TransItemCharColor = Color.Transparent;
-        protected String m_TransItemToolTip = "Transparent";
+        protected string m_TransItemToolTip = "Transparent";
 
-        protected Char m_AlphaItemChar = 'A';
+        protected char m_AlphaItemChar = 'A';
         protected Color m_AlphaItemCharColor = Color.Transparent;
 
-        protected Int32 m_ColorTableWidth = 16;
-        protected Int32 m_MaxColors = 256;
-        protected Boolean m_ShowColorToolTips = true;
-        protected Boolean m_ShowColorToolTipsAlpha;
-        protected Boolean m_ShowRemappedPalette;
-        protected Int32 m_LastAdjustedMaxDimension = -1;
-        protected Int32 m_LastAdjustedBpp = -1;
+        protected int m_ColorTableWidth = 16;
+        protected int m_MaxColors = 256;
+        protected bool m_ShowColorToolTips = true;
+        protected bool m_ShowColorToolTipsAlpha;
+        protected bool m_ShowRemappedPalette;
+        protected int m_LastAdjustedMaxDimension = -1;
+        protected int m_LastAdjustedBpp = -1;
 
-        public static void InitPaletteControl(Int32 bitsPerPixel, PalettePanel palPanel, Color[] palette, Int32 maxDimension)
+        public static void InitPaletteControl(int bitsPerPixel, PalettePanel palPanel, Color[] palette, int maxDimension)
         {
             if (palPanel.m_LastAdjustedMaxDimension == maxDimension && palPanel.m_LastAdjustedBpp == bitsPerPixel)
             {
                 palPanel.Palette = palette;
                 return;
             }
-            Boolean disable = bitsPerPixel <= 0 || bitsPerPixel > 8;
-            Int32 colors = disable ? 1 : 1 << bitsPerPixel;
+            bool disable = bitsPerPixel <= 0 || bitsPerPixel > 8;
+            int colors = disable ? 1 : 1 << bitsPerPixel;
             palPanel.MaxColors = disable ? 0 : colors;
-            Int32 squaresPerRow = (Int32)Math.Sqrt(colors);
-            Int32 squaresPerCol = colors == 0 ? 0 : colors / squaresPerRow + ((colors % squaresPerRow) > 0 ? 1 : 0);
+            int squaresPerRow = (int)Math.Sqrt(colors);
+            int squaresPerCol = colors == 0 ? 0 : colors / squaresPerRow + ((colors % squaresPerRow) > 0 ? 1 : 0);
             squaresPerRow = Math.Max(squaresPerRow, squaresPerCol);
-            Int32 sqrWidth = (Int32)Math.Ceiling(maxDimension * 7.5 / 8.5 / squaresPerRow);
-            Int32 padding = (Int32)Math.Max(1, Math.Round(sqrWidth / 8.5));
+            int sqrWidth = (int)Math.Ceiling(maxDimension * 7.5 / 8.5 / squaresPerRow);
+            int padding = (int)Math.Max(1, Math.Round(sqrWidth / 8.5));
             while (maxDimension < squaresPerRow * sqrWidth + (squaresPerRow - 1) * padding)
             {
                 sqrWidth--;
-                padding = (Int32)Math.Max(1, Math.Ceiling(sqrWidth / 8.5));
+                padding = (int)Math.Max(1, Math.Ceiling(sqrWidth / 8.5));
             }
             palPanel.ColorTableWidth = squaresPerRow;
             palPanel.LabelSize = new Size(sqrWidth, sqrWidth);
@@ -83,20 +83,20 @@ namespace Nyerguds.Util.UI
             set { this.ResetSize(); }
         }
 
-        public new Int32 Width
+        public new int Width
         {
             get { return this.Size.Width; }
             set { this.ResetSize(); }
         }
 
-        public new Int32 Height
+        public new int Height
         {
             get { return this.Size.Height; }
             set { this.ResetSize(); }
         }
 
         [Description("Autosize"), Category("Layout")]
-        public new Boolean AutoSize
+        public new bool AutoSize
         {
             get { return true; }
             set { }
@@ -154,7 +154,7 @@ namespace Nyerguds.Util.UI
         [Description("Maximum amount of colors that can be shown on the palette."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue(256)]
-        public Int32 MaxColors
+        public int MaxColors
         {
             get { return this.m_MaxColors; }
             set
@@ -167,7 +167,7 @@ namespace Nyerguds.Util.UI
         [Description("Amount of colors shown on each rows."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue(16)]
-        public Int32 ColorTableWidth
+        public int ColorTableWidth
         {
             get { return this.m_ColorTableWidth; }
             set
@@ -179,7 +179,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Table used to remap the color palette. Set to null for no remapping."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        public Int32[] Remap
+        public int[] Remap
         {
             get { return this.m_Remap; }
             set
@@ -193,7 +193,7 @@ namespace Nyerguds.Util.UI
                      + " None gives a 0-size array, Single gives a 1-item array, TwoMousebuttons has a 2-element array; one per mouse button, and Multi has a dynamic length depending on selected items."),
          Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
-        public Int32[] SelectedIndices
+        public int[] SelectedIndices
         {
             get
             {
@@ -202,7 +202,7 @@ namespace Nyerguds.Util.UI
             set
             {
                 if (value == null)
-                    value = new Int32[0];
+                    value = new int[0];
                 switch (this.m_ColorSelectMode)
                 {
                     case ColorSelMode.None:
@@ -241,7 +241,7 @@ namespace Nyerguds.Util.UI
         [Description("Character put on entries not filled in on the palette. Not drawn if set to U+0000 or space."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue('X')]
-        public Char EmptyItemChar
+        public char EmptyItemChar
         {
             get { return this.m_EmptyItemChar; }
             set
@@ -267,7 +267,7 @@ namespace Nyerguds.Util.UI
         [Description("Tooltip shown on an empty color entry if ShowColorToolTips is enabled. Leave empty to disable tooltips on empty entries."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue("No color set")]
-        public String EmptyItemToolTip
+        public string EmptyItemToolTip
         {
             get { return this.m_EmptyItemToolTip; }
             set
@@ -293,7 +293,7 @@ namespace Nyerguds.Util.UI
         [Description("Character put on labels to indicate entries that are transparent on the palette. Not drawn if set to U+0000 or space."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue('T')]
-        public Char TransItemChar
+        public char TransItemChar
         {
             get { return this.m_TransItemChar; }
             set
@@ -319,7 +319,7 @@ namespace Nyerguds.Util.UI
         [Description("Character put on labels to indicate entries that are translucent on the palette. Not drawn if set to \0 or space."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue('A')]
-        public Char AlphaItemChar
+        public char AlphaItemChar
         {
             get { return this.m_AlphaItemChar; }
             set
@@ -344,7 +344,7 @@ namespace Nyerguds.Util.UI
 
         [Description("Show tooltips on the labels, giving the index and color values."), Category("Palette panel")]
         [DefaultValue(true)]
-        public Boolean ShowColorToolTips
+        public bool ShowColorToolTips
         {
             get { return this.m_ShowColorToolTips; }
             set
@@ -356,7 +356,7 @@ namespace Nyerguds.Util.UI
 
         [Description("If ShowColorToolTips is enabled, add alpha to the shown color values."), Category("Palette panel")]
         [DefaultValue(false)]
-        public Boolean ShowColorToolTipsAlpha
+        public bool ShowColorToolTipsAlpha
         {
             get { return this.m_ShowColorToolTipsAlpha; }
             set
@@ -369,7 +369,7 @@ namespace Nyerguds.Util.UI
         [Description("String to show on the tooltip to indicate transparent colors if ShowColorToolTips is enabled. Leave empty to disable specific transparency indication."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue("Transparent")]
-        public String TransItemToolTip
+        public string TransItemToolTip
         {
             get { return this.m_TransItemToolTip; }
             set
@@ -387,26 +387,26 @@ namespace Nyerguds.Util.UI
             get { return this.m_ColorSelectMode; }
             set
             {
-                Int32[] selInd = this.SelectedIndices;
+                int[] selInd = this.SelectedIndices;
                 this.m_ColorSelectMode = value;
                 switch (this.ColorSelectMode)
                 {
                     case ColorSelMode.None:
-                        this.m_SelectedIndicesArr = new Int32[0];
+                        this.m_SelectedIndicesArr = new int[0];
                         this.m_SelectedIndicesList = null;
                         break;
                     case ColorSelMode.Single:
                     default:
-                        this.m_SelectedIndicesArr = new Int32[1];
+                        this.m_SelectedIndicesArr = new int[1];
                         this.m_SelectedIndicesList = null;
                         break;
                     case ColorSelMode.TwoMouseButtons:
-                        this.m_SelectedIndicesArr = new Int32[2];
+                        this.m_SelectedIndicesArr = new int[2];
                         this.m_SelectedIndicesList = null;
                         break;
                     case ColorSelMode.Multi:
                         this.m_SelectedIndicesArr = null;
-                        this.m_SelectedIndicesList = new List<Int32>();
+                        this.m_SelectedIndicesList = new List<int>();
                         break;
                 }
                 // reset this
@@ -417,7 +417,7 @@ namespace Nyerguds.Util.UI
         [Description("Show the remapped palette instead of the original palette. Note that this does not change the Palette property."), Category("Palette panel")]
         [RefreshProperties(RefreshProperties.Repaint)]
         [DefaultValue(false)]
-        public Boolean ShowRemappedPalette
+        public bool ShowRemappedPalette
         {
             get { return this.m_ShowRemappedPalette; }
             set { this.m_ShowRemappedPalette = value; }
@@ -432,12 +432,12 @@ namespace Nyerguds.Util.UI
         [Description("Occurs when the selection of the color labels has changed. Sender contains the index of the clicked label, or -1 if set through setting SelectedIndices"), Category("Palette panel")]
         public event EventHandler ColorSelectionChanged;
 
-        public void SetVisibility(Int32[] colorLabelIndices, Boolean visible)
+        public void SetVisibility(int[] colorLabelIndices, bool visible)
         {
             if (this.m_ColorLabels == null)
                 return;
-            Int32 nrOfLabels = this.m_ColorLabels.Length;
-            for (Int32 i = 0; i < nrOfLabels; ++i)
+            int nrOfLabels = this.m_ColorLabels.Length;
+            for (int i = 0; i < nrOfLabels; ++i)
                 if (colorLabelIndices.Contains(i))
                     this.m_ColorLabels[i].Visible = visible;
                 else
@@ -449,14 +449,14 @@ namespace Nyerguds.Util.UI
         {
             this.m_LastAdjustedMaxDimension = -1;
             this.m_LastAdjustedBpp = -1;
-            Int32 rows = this.m_MaxColors / this.m_ColorTableWidth + (this.m_MaxColors % this.m_ColorTableWidth > 0 ? 1 : 0);
-            Int32 sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
-            Int32 sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
+            int rows = this.m_MaxColors / this.m_ColorTableWidth + (this.m_MaxColors % this.m_ColorTableWidth > 0 ? 1 : 0);
+            int sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
+            int sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);
             this.Invalidate();
         }
 
-        public void SetVisibility(Int32 colorLabelIndex, Boolean visible)
+        public void SetVisibility(int colorLabelIndex, bool visible)
         {
             if (this.m_ColorLabels == null || colorLabelIndex < 0 || colorLabelIndex >= this.m_ColorLabels.Length)
                 return;
@@ -477,7 +477,7 @@ namespace Nyerguds.Util.UI
         /// <summary>
         /// Constructor
         /// </summary>
-        public PalettePanel(Int32 width, Int32 maxColors)
+        public PalettePanel(int width, int maxColors)
         {
             this.m_ColorTableWidth = width;
             this.m_MaxColors = maxColors;
@@ -486,7 +486,7 @@ namespace Nyerguds.Util.UI
             this.Paint += this.PalettePanel_Paint;
         }
 
-        protected void PalettePanel_Paint(Object sender, PaintEventArgs e)
+        protected void PalettePanel_Paint(object sender, PaintEventArgs e)
         {
             this.SuspendLayout();
             this.DrawPalette();
@@ -498,11 +498,11 @@ namespace Nyerguds.Util.UI
             this.toolTipColor.RemoveAll();
             if (this.m_ShowColorToolTips)
             {
-                Int32 nrOfLabels = this.m_ColorLabels.Length;
-                for (Int32 i = 0; i < nrOfLabels; ++i)
+                int nrOfLabels = this.m_ColorLabels.Length;
+                for (int i = 0; i < nrOfLabels; ++i)
                 {
                     Color col = Color.Empty;
-                    Boolean emptyCol = false;
+                    bool emptyCol = false;
                     if (this.m_Palette != null)
                     {
                         col = this.GetColor(i);
@@ -518,15 +518,15 @@ namespace Nyerguds.Util.UI
 
         protected void DrawPalette()
         {
-            Boolean hasColor = this.m_Palette != null;
-            Boolean newPalette = this.m_ColorLabels == null;
-            Int32 rows = this.m_MaxColors / this.m_ColorTableWidth + ((this.m_MaxColors % this.m_ColorTableWidth > 0) ? 1 : 0);
+            bool hasColor = this.m_Palette != null;
+            bool newPalette = this.m_ColorLabels == null;
+            int rows = this.m_MaxColors / this.m_ColorTableWidth + ((this.m_MaxColors % this.m_ColorTableWidth > 0) ? 1 : 0);
             if (newPalette)
                 this.m_ColorLabels = new LabelNoCopyOnDblClick[this.m_MaxColors];
             else
             {
-                Int32 nrOfLabels = this.m_ColorLabels.Length;
-                for (Int32 i = this.m_MaxColors; i < nrOfLabels; ++i)
+                int nrOfLabels = this.m_ColorLabels.Length;
+                for (int i = this.m_MaxColors; i < nrOfLabels; ++i)
                 {
                     LabelNoCopyOnDblClick colorLabel = this.m_ColorLabels[i];
                     this.Controls.Remove(colorLabel);
@@ -539,16 +539,16 @@ namespace Nyerguds.Util.UI
             }
             this.toolTipColor.RemoveAll();
             Color emptyCol = Color.FromArgb(this.m_EmptyItemBackColor.R, this.m_EmptyItemBackColor.G, this.m_EmptyItemBackColor.B);
-            for (Int32 y = 0; y < rows; ++y)
+            for (int y = 0; y < rows; ++y)
             {
-                for (Int32 x = 0; x < this.m_ColorTableWidth; ++x)
+                for (int x = 0; x < this.m_ColorTableWidth; ++x)
                 {
-                    Int32 index = y * this.m_ColorTableWidth + x;
+                    int index = y * this.m_ColorTableWidth + x;
                     if (index >= this.m_MaxColors)
                         break;
                     Color col;
-                    Boolean isEmptyCol = false;
-                    Int32 alpha;
+                    bool isEmptyCol = false;
+                    int alpha;
                     if (hasColor)
                     {
                         col = this.GetColor(index);
@@ -565,7 +565,7 @@ namespace Nyerguds.Util.UI
                         col = emptyCol;
                         alpha = 0;
                     }
-                    Boolean selectThis = this.m_ColorSelectMode == ColorSelMode.Multi ? this.m_SelectedIndicesList.Contains(index) : this.m_SelectedIndicesArr.Contains(index);
+                    bool selectThis = this.m_ColorSelectMode == ColorSelMode.Multi ? this.m_SelectedIndicesList.Contains(index) : this.m_SelectedIndicesArr.Contains(index);
                     if (this.m_ColorLabels[index] == null)
                     {
                         this.m_ColorLabels[index] = this.GenerateLabel(x, y, col, isEmptyCol, selectThis);
@@ -577,16 +577,16 @@ namespace Nyerguds.Util.UI
                         this.SetColorToolTip(index, isEmptyCol, alpha);
                 }
             }
-            Int32 sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
-            Int32 sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
+            int sizeX = this.Padding.Left + this.m_LabelSize.Width * this.m_ColorTableWidth + this.m_PadBetween.X * (this.m_ColorTableWidth - 1) + this.Padding.Right;
+            int sizeY = this.Padding.Top + this.m_LabelSize.Height * rows + this.m_PadBetween.Y * (rows - 1) + this.Padding.Bottom;
             base.Size = new Size(sizeX, sizeY);
         }
 
-        protected Color GetColor(Int32 index)
+        protected Color GetColor(int index)
         {
             if (this.m_Remap != null && this.m_ShowRemappedPalette)
             {
-                Int32 filterIndex;
+                int filterIndex;
                 if (index < this.m_Remap.Length && (filterIndex = this.m_Remap[index]) >= 0 && filterIndex < this.m_Palette.Length)
                     return this.m_Palette[filterIndex];
                 return Color.Empty;
@@ -596,10 +596,10 @@ namespace Nyerguds.Util.UI
             return Color.Empty;
         }
 
-        protected virtual void SetColorToolTip(Int32 index, Boolean isEmpty, Int32 alpha)
+        protected virtual void SetColorToolTip(int index, bool isEmpty, int alpha)
         {
             LabelNoCopyOnDblClick lbl = this.m_ColorLabels[index];
-            String tooltipString;
+            string tooltipString;
             if (isEmpty)
             {
                 tooltipString = String.IsNullOrEmpty(this.EmptyItemToolTip) ? null : this.EmptyItemToolTip;
@@ -622,7 +622,7 @@ namespace Nyerguds.Util.UI
             this.toolTipColor.SetToolTip(lbl, tooltipString);
         }
 
-        protected virtual LabelNoCopyOnDblClick GenerateLabel(Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean addBorder)
+        protected virtual LabelNoCopyOnDblClick GenerateLabel(int x, int y, Color color, bool isEmpty, bool addBorder)
         {
             LabelNoCopyOnDblClick lbl = new LabelNoCopyOnDblClick();
             this.SetLabelProperties(lbl, x, y, color, isEmpty, addBorder);
@@ -633,26 +633,26 @@ namespace Nyerguds.Util.UI
             return lbl;
         }
 
-        protected virtual void SetLabelProperties(LabelNoCopyOnDblClick lbl, Int32 x, Int32 y, Color color, Boolean isEmpty, Boolean addBorder)
+        protected virtual void SetLabelProperties(LabelNoCopyOnDblClick lbl, int x, int y, Color color, bool isEmpty, bool addBorder)
         {
-            Int32 index = y * this.m_ColorTableWidth + x;
-            Int32 alpha = color.A;
+            int index = y * this.m_ColorTableWidth + x;
+            int alpha = color.A;
             if (isEmpty)
             {
                 lbl.BackColor = color;
-                Boolean charIsEmpty = this.m_EmptyItemChar == '\0' || this.m_EmptyItemChar == ' ';
-                Boolean fgisEmpty = charIsEmpty || this.m_EmptyItemCharColor.A == 0;
+                bool charIsEmpty = this.m_EmptyItemChar == '\0' || this.m_EmptyItemChar == ' ';
+                bool fgisEmpty = charIsEmpty || this.m_EmptyItemCharColor.A == 0;
                 lbl.Text = charIsEmpty ? String.Empty : this.m_EmptyItemChar.ToString();
                 lbl.ForeColor = fgisEmpty ? GetVisibleColorOn(color) : Color.FromArgb(255, this.m_EmptyItemCharColor.R, this.m_EmptyItemCharColor.G, this.m_EmptyItemCharColor.B);
             }
             else if (alpha != 255)
             {
                 Color indicCharColor = alpha != 0 ? this.m_AlphaItemCharColor : this.m_TransItemCharColor;
-                Char indicChar = alpha != 0 ? this.m_AlphaItemChar : this.m_TransItemChar;
+                char indicChar = alpha != 0 ? this.m_AlphaItemChar : this.m_TransItemChar;
                 lbl.BackColor = alpha != 0 || this.m_TransItemBackColor.A == 0 ?
                     Color.FromArgb(255, color.R, color.G, color.B) : Color.FromArgb(255, this.m_TransItemBackColor.R, this.m_TransItemBackColor.G, this.m_TransItemBackColor.B);
-                Boolean charIsEmpty = indicChar == '\0' || indicChar == ' ';
-                Boolean fgIsEmpty = indicCharColor.A == 0;
+                bool charIsEmpty = indicChar == '\0' || indicChar == ' ';
+                bool fgIsEmpty = indicCharColor.A == 0;
                 lbl.Text = charIsEmpty ? String.Empty : indicChar.ToString();
                 lbl.ForeColor = charIsEmpty ? Color.Transparent : fgIsEmpty ? GetVisibleColorOn(lbl.BackColor) : indicCharColor;
             }
@@ -674,11 +674,11 @@ namespace Nyerguds.Util.UI
             // Reduce font size to fit label size if needed. Don't bother if the text is empty anyway.
             if (!String.IsNullOrEmpty(lbl.GetTextInternal()))
             {
-                Single maxHeight = (Single)(this.m_LabelSize.Height * 6.0 / 8.0);
-                Single currentFontSize;
+                float maxHeight = (float)(this.m_LabelSize.Height * 6.0 / 8.0);
+                float currentFontSize;
                 using (Graphics g = this.CreateGraphics())
                 {
-                    Single points = lbl.Font.SizeInPoints;
+                    float points = lbl.Font.SizeInPoints;
                     currentFontSize = points * g.DpiX / 72;
                 }
                 if (currentFontSize > maxHeight)
@@ -688,15 +688,15 @@ namespace Nyerguds.Util.UI
             lbl.TextAlign = ContentAlignment.MiddleCenter;
         }
 
-        protected virtual void lblColor_Paint(Object sender, PaintEventArgs e)
+        protected virtual void lblColor_Paint(object sender, PaintEventArgs e)
         {
             LabelNoCopyOnDblClick lbl = sender as LabelNoCopyOnDblClick;
-            if (lbl == null || !(lbl.Tag is Int32) || lbl.BorderStyle != BorderStyle.FixedSingle)
+            if (lbl == null || !(lbl.Tag is int) || lbl.BorderStyle != BorderStyle.FixedSingle)
                 return;
             ButtonBorderStyle bs = ButtonBorderStyle.Solid;
             if (this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
             {
-                Int32 index = (Int32)lbl.Tag;
+                int index = (int)lbl.Tag;
                 if (this.m_SelectedIndicesArr[0] == index)
                     bs = ButtonBorderStyle.Outset;
                 else if (this.m_SelectedIndicesArr[1] == index)
@@ -705,23 +705,23 @@ namespace Nyerguds.Util.UI
             ControlPaint.DrawBorder(e.Graphics, lbl.DisplayRectangle, this.Parent.BackColor, bs);
         }
 
-        protected virtual void ColorLblMouseClick(Object sender, MouseEventArgs e)
+        protected virtual void ColorLblMouseClick(object sender, MouseEventArgs e)
         {
             LabelNoCopyOnDblClick lbl = (LabelNoCopyOnDblClick)sender;
-            if (lbl == null || !(lbl.Tag is Int32))
+            if (lbl == null || !(lbl.Tag is int))
                 return;
-            Int32 index = (Int32)lbl.Tag;
-            Int32 mousebutton = -1;
+            int index = (int)lbl.Tag;
+            int mousebutton = -1;
             if ((e.Button & MouseButtons.Left) != 0)
                 mousebutton = 0;
             if ((e.Button & MouseButtons.Right) != 0)
                 mousebutton = 1;
-            Boolean changed = false;
+            bool changed = false;
             if (mousebutton != -1)
             {
                 if ((this.m_ColorSelectMode == ColorSelMode.Single && mousebutton == 0) || this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
                 {
-                    Int32 oldVal = this.m_SelectedIndicesArr[mousebutton];
+                    int oldVal = this.m_SelectedIndicesArr[mousebutton];
                     changed = index != oldVal;
                     if (this.m_ColorSelectMode == ColorSelMode.Single)
                     {
@@ -735,8 +735,8 @@ namespace Nyerguds.Util.UI
                     }
                     else if (this.m_ColorSelectMode == ColorSelMode.TwoMouseButtons)
                     {
-                        Int32 mousebuttonOther = mousebutton == 0 ? 1 : 0;
-                        Int32 oldValOther = this.m_SelectedIndicesArr[mousebuttonOther];
+                        int mousebuttonOther = mousebutton == 0 ? 1 : 0;
+                        int oldValOther = this.m_SelectedIndicesArr[mousebuttonOther];
                         if (changed)
                         {
                             if (index == oldValOther)
@@ -785,16 +785,16 @@ namespace Nyerguds.Util.UI
                 this.ColorLabelMouseClick(this, new PaletteClickEventArgs(e, lbl.Location, index, this.GetColor(index)));
         }
 
-        protected virtual void ColorLblMouseDoubleClick(Object sender, MouseEventArgs e)
+        protected virtual void ColorLblMouseDoubleClick(object sender, MouseEventArgs e)
         {
             LabelNoCopyOnDblClick lbl = sender as LabelNoCopyOnDblClick;
-            if (this.ColorLabelMouseDoubleClick == null || lbl == null || !(lbl.Tag is Int32))
+            if (this.ColorLabelMouseDoubleClick == null || lbl == null || !(lbl.Tag is int))
                 return;
-            Int32 index = (Int32)lbl.Tag;
+            int index = (int)lbl.Tag;
             this.ColorLabelMouseDoubleClick(this, new PaletteClickEventArgs(e, lbl.Location, index, this.GetColor(index)));
         }
 
-        protected virtual void BackgroundMouseDoubleClick(Object sender, MouseEventArgs e)
+        protected virtual void BackgroundMouseDoubleClick(object sender, MouseEventArgs e)
         {
             // disabled for now. Could be annoying when selecting a lot of indices,
             // if an accidental doubleclick on the background clears them all.
@@ -812,12 +812,12 @@ namespace Nyerguds.Util.UI
         /// <returns></returns>
         protected static Color GetVisibleColorOn(Color color)
         {
-            Single bri = color.GetBrightness();
+            float bri = color.GetBrightness();
             // See if color is close to grey
             if (color.GetSaturation() < .16)
                 return bri < .5 ? Color.White : Color.Black;
             // Take inverted color.
-            return Color.FromArgb((Int32)(0x00FFFFFFu ^ (UInt32)color.ToArgb()));
+            return Color.FromArgb((int)(0x00FFFFFFu ^ (uint)color.ToArgb()));
         }
 
         /// <summary>
@@ -825,15 +825,15 @@ namespace Nyerguds.Util.UI
         /// </summary>
         protected class LabelNoCopyOnDblClick : Label
         {
-            private String _text;
-            private Boolean _allowTextFetch;
+            private string _text;
+            private bool _allowTextFetch;
 
-            public String GetTextInternal()
+            public string GetTextInternal()
             {
                 return this._text;
             }
 
-            public override String Text
+            public override string Text
             {
                 get { return this._allowTextFetch ? this._text : null; }
                 set
@@ -876,14 +876,14 @@ namespace Nyerguds.Util.UI
         Multi
     }
 
-    public delegate void PaletteClickEventHandler(Object sender, PaletteClickEventArgs e);
+    public delegate void PaletteClickEventHandler(object sender, PaletteClickEventArgs e);
 
     public class PaletteClickEventArgs : MouseEventArgs
     {
-        public Int32 Index { get; private set; }
+        public int Index { get; private set; }
         public Color Color { get; private set; }
 
-        public PaletteClickEventArgs(MouseEventArgs e, Point sourceLocation, Int32 index, Color color)
+        public PaletteClickEventArgs(MouseEventArgs e, Point sourceLocation, int index, Color color)
             : base(e.Button, e.Clicks, sourceLocation.X + e.X, sourceLocation.Y + e.Y, e.Delta)
         {
             this.Index = index;

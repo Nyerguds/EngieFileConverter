@@ -20,23 +20,23 @@ namespace EngieFileConverter.Domain.FileData.Westwood
         };
         public static readonly Dictionary<byte, char> LandTypesMappingRev = LandTypesMapping.ToDictionary(x => x.Value, x => x.Key);
 
-        public static Byte[] LandTypesFromString(string types, int arrLen)
+        public static byte[] LandTypesFromString(string types, int arrLen)
         {
             types = types.Replace(" ", String.Empty);
             arrLen = Math.Min(arrLen, types.Length);
-            Byte[] arr = new Byte[arrLen];
-            Char[] input = types.ToUpperInvariant().ToCharArray();
+            byte[] arr = new byte[arrLen];
+            char[] input = types.ToUpperInvariant().ToCharArray();
             int inputLen = input.Length;
-            for (Int32 i = 0; i < input.Length; ++i)
+            for (int i = 0; i < input.Length; ++i)
             {
                 arr[i] = (byte)(i >= inputLen ? 0 : LandTypesMapping.TryGetValue(input[i], out byte t) ? t : 0);
             }
             return arr;
         }
-        public static string LandTypesToString(Byte[] types)
+        public static string LandTypesToString(byte[] types)
         {
-            Char[] output = new Char[types.Length];
-            for (Int32 i = 0; i < types.Length; ++i)
+            char[] output = new char[types.Length];
+            for (int i = 0; i < types.Length; ++i)
             {
                 output[i] = LandTypesMappingRev.TryGetValue(types[i], out char t) ? t : 'X';
             }

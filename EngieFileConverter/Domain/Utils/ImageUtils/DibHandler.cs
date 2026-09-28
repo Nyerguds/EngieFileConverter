@@ -18,26 +18,26 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="image">Image to convert to DIB.</param>
         /// <returns>The image converted to DIB, in bytes.</returns>
-        public static Byte[] ConvertToDib(Image image)
+        public static byte[] ConvertToDib(Image image)
         {
-            Byte[] bm32bData;
+            byte[] bm32bData;
             using (Bitmap bm32b = ImageUtils.PaintOn32bpp(image, null))
             {
                 // Bitmap format has its lines reversed.
                 bm32b.RotateFlip(RotateFlipType.Rotate180FlipX);
-                Int32 stride;
+                int stride;
                 bm32bData = ImageUtils.GetImageData(bm32b, out stride);
             }
             BITMAPINFOHEADER hdr = new BITMAPINFOHEADER();
-            Int32 hdrSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
-            Int32 bfSize = Marshal.SizeOf(typeof(BITFIELDS));
-            hdr.biSize = (UInt32)hdrSize;
+            int hdrSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
+            int bfSize = Marshal.SizeOf(typeof(BITFIELDS));
+            hdr.biSize = (uint)hdrSize;
             hdr.biWidth = image.Width;
             hdr.biHeight = image.Height;
             hdr.biPlanes = 1;
             hdr.biBitCount = 32;
             hdr.biCompression = BITMAPCOMPRESSION.BI_BITFIELDS;
-            hdr.biSizeImage = (UInt32)bm32bData.Length;
+            hdr.biSizeImage = (uint)bm32bData.Length;
             hdr.biXPelsPerMeter = 0;
             hdr.biYPelsPerMeter = 0;
             hdr.biClrUsed = 0;
@@ -48,8 +48,8 @@ namespace Nyerguds.ImageManipulation
             bf.bfGreenMask = 0x0000FF00;
             bf.bfBlueMask = 0x000000FF;
 
-            Byte[] fullImage = new Byte[hdrSize + 12 + bm32bData.Length];
-            Int32 writeOffs = 0;
+            byte[] fullImage = new byte[hdrSize + 12 + bm32bData.Length];
+            int writeOffs = 0;
             ArrayUtils.WriteStructToByteArray(hdr, fullImage, writeOffs, Endianness.LittleEndian);
             writeOffs += hdrSize;
             ArrayUtils.WriteStructToByteArray(bf, fullImage, writeOffs, Endianness.LittleEndian);
@@ -63,10 +63,10 @@ namespace Nyerguds.ImageManipulation
         /// </summary>
         /// <param name="image">Image to convert to DIB.</param>
         /// <returns>The image converted to DIB, in bytes.</returns>
-        public static Byte[] ConvertToDib5(Image image)
+        public static byte[] ConvertToDib5(Image image)
         {
-            Int32 stride;
-            Byte[] bm32bData;
+            int stride;
+            byte[] bm32bData;
             using (Bitmap bm32b = ImageUtils.PaintOn32bpp(image, null))
             {
                 // Bitmap format has its lines reversed.
@@ -74,15 +74,15 @@ namespace Nyerguds.ImageManipulation
                 bm32bData = ImageUtils.GetImageData(bm32b, out stride, PixelFormat.Format32bppArgb);
             }
             BITMAPV5HEADER hdr = new BITMAPV5HEADER();
-            Int32 hdrSize = Marshal.SizeOf(typeof (BITMAPV5HEADER));
-            Int32 bfSize = Marshal.SizeOf(typeof (BITFIELDS));
-            hdr.bV5Size = (UInt32) hdrSize;
+            int hdrSize = Marshal.SizeOf(typeof (BITMAPV5HEADER));
+            int bfSize = Marshal.SizeOf(typeof (BITFIELDS));
+            hdr.bV5Size = (uint) hdrSize;
             hdr.bV5Width = image.Width;
             hdr.bV5Height = image.Height;
             hdr.bV5Planes = 1;
             hdr.bV5BitCount = 32;
             hdr.bV5Compression = BITMAPCOMPRESSION.BI_BITFIELDS;
-            hdr.bV5SizeImage = (UInt32) bm32bData.Length;
+            hdr.bV5SizeImage = (uint) bm32bData.Length;
             hdr.bV5XPelsPerMeter = 0;
             hdr.bV5YPelsPerMeter = 0;
             hdr.bV5ClrUsed = 0;
@@ -93,9 +93,9 @@ namespace Nyerguds.ImageManipulation
             hdr.bV5AlphaMask = 0xFF000000;
             hdr.bV5CSType = LogicalColorSpace.LCS_sRGB;
             hdr.bV5Intent = GamutMappingIntent.LCS_GM_IMAGES;
-            Int32 fullSize = hdrSize + bm32bData.Length + bfSize;
-            Byte[] fullImage = new Byte[fullSize];
-            Int32 writeOffs = 0;
+            int fullSize = hdrSize + bm32bData.Length + bfSize;
+            byte[] fullImage = new byte[fullSize];
+            int writeOffs = 0;
             ArrayUtils.WriteStructToByteArray(hdr, fullImage, writeOffs, Endianness.LittleEndian);
             writeOffs += hdrSize;
             BITFIELDS bf = new BITFIELDS();
@@ -108,7 +108,7 @@ namespace Nyerguds.ImageManipulation
             return fullImage;
         }
 
-        public static Bitmap ImageFromDib5(Byte[] dibBytes, Int32 offset, Int32 length, Int32 dataOffset, Boolean forceAlpha)
+        public static Bitmap ImageFromDib5(byte[] dibBytes, int offset, int length, int dataOffset, bool forceAlpha)
         {
             // Specs:
             // https://docs.microsoft.com/en-us/windows/desktop/api/wingdi/ns-wingdi-bitmapv5header
@@ -118,11 +118,11 @@ namespace Nyerguds.ImageManipulation
                 return null;
             try
             {
-                Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(dibBytes, offset);
+                int headerSize = ArrayUtils.ReadInt32FromByteArrayLe(dibBytes, offset);
                 // Only supporting 124-byte DIBV5 in this.
                 // If it fails, try the other type ;)
-                Int32 dibHeaderSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
-                Int32 dib5HeaderSize = Marshal.SizeOf(typeof(BITMAPV5HEADER));
+                int dibHeaderSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
+                int dib5HeaderSize = Marshal.SizeOf(typeof(BITMAPV5HEADER));
                 if (headerSize != dib5HeaderSize)
                 {
                     if (headerSize == dibHeaderSize)
@@ -133,11 +133,11 @@ namespace Nyerguds.ImageManipulation
                 // Not dealing with non-standard formats
                 if (dibHdr.bV5Planes != 1 || (dibHdr.bV5Compression != BITMAPCOMPRESSION.BI_RGB && dibHdr.bV5Compression != BITMAPCOMPRESSION.BI_BITFIELDS))
                     return null;
-                Int32 imageIndex = dataOffset != 0 ? dataOffset : headerSize;
-                Int32 width = dibHdr.bV5Width;
-                Int32 height = dibHdr.bV5Height;
-                Int32 bitCount = dibHdr.bV5BitCount;
-                Int32 dataLen = dibBytes.Length - imageIndex;
+                int imageIndex = dataOffset != 0 ? dataOffset : headerSize;
+                int width = dibHdr.bV5Width;
+                int height = dibHdr.bV5Height;
+                int bitCount = dibHdr.bV5BitCount;
+                int dataLen = dibBytes.Length - imageIndex;
                 if (dibHdr.bV5Compression == BITMAPCOMPRESSION.BI_BITFIELDS && bitCount == 32)
                 {
                     // Dumb specs; bitfields are saved twice. I'm just skipping this useless copy.
@@ -145,13 +145,13 @@ namespace Nyerguds.ImageManipulation
                     imageIndex += 12;
                     dataLen -= 12;
                 }
-                Byte[] image = new Byte[dataLen];
+                byte[] image = new byte[dataLen];
                 Array.Copy(dibBytes, imageIndex, image, 0, image.Length);
                 PixelFormat pf;
-                UInt32 redMask = dibHdr.bV5RedMask;
-                UInt32 greenMask = dibHdr.bV5GreenMask;
-                UInt32 blueMask = dibHdr.bV5BlueMask;
-                UInt32 alphaMask = dibHdr.bV5AlphaMask;
+                uint redMask = dibHdr.bV5RedMask;
+                uint greenMask = dibHdr.bV5GreenMask;
+                uint blueMask = dibHdr.bV5BlueMask;
+                uint alphaMask = dibHdr.bV5AlphaMask;
                 if (forceAlpha)
                 {
                     if (redMask == 0 && greenMask == 0 && blueMask == 0)
@@ -169,7 +169,7 @@ namespace Nyerguds.ImageManipulation
                     }
                 }
                 image = ApplyBitMask(image, out pf, width, height, bitCount, alphaMask, redMask, greenMask, blueMask);
-                Int32 stride = ImageUtils.GetClassicStride(width, bitCount);
+                int stride = ImageUtils.GetClassicStride(width, bitCount);
                 if (pf == PixelFormat.Undefined)
                     return null;
                 Bitmap bitmap = ImageUtils.BuildImage(image, width, height, stride, pf, null, null);
@@ -183,59 +183,59 @@ namespace Nyerguds.ImageManipulation
             }
         }
 
-        public static Bitmap ImageFromDib(Byte[] dibBytes, Int32 offset, Int32 length, Boolean detectArgb)
+        public static Bitmap ImageFromDib(byte[] dibBytes, int offset, int length, bool detectArgb)
         {
             PixelFormat originalPixelFormat;
             return ImageFromDib(dibBytes, offset, length, 0, false, detectArgb, out originalPixelFormat);
         }
 
-        public static Bitmap ImageFromDib(Byte[] dibBytes, Int32 offset, Int32 length, Int32 dataOffset, Boolean detectArgb)
+        public static Bitmap ImageFromDib(byte[] dibBytes, int offset, int length, int dataOffset, bool detectArgb)
         {
             PixelFormat originalPixelFormat;
             return ImageFromDib(dibBytes, offset, length, dataOffset, false, detectArgb, out originalPixelFormat);
         }
 
-        public static Bitmap ImageFromDib(Byte[] dibBytes, Int32 offset, Int32 lengthOverride, Int32 dataOffset, Boolean detectIconFormat, Boolean detectArgb, out PixelFormat originalPixelFormat)
+        public static Bitmap ImageFromDib(byte[] dibBytes, int offset, int lengthOverride, int dataOffset, bool detectIconFormat, bool detectArgb, out PixelFormat originalPixelFormat)
         {
-            Byte[] imageData;
-            Byte[] bitMask;
+            byte[] imageData;
+            byte[] bitMask;
             Color[] palette;
             BITMAPINFOHEADER header;
             BITFIELDS bitfields;
             originalPixelFormat = PixelFormat.Undefined;
             if (!GetDataFromDib(dibBytes, offset, lengthOverride, dataOffset, detectIconFormat, out imageData, out bitfields, out bitMask, out palette, out header))
                 return null;
-            Int32 width = header.biWidth;
-            Int32 height = header.biHeight;
-            Int32 stride = ImageUtils.GetClassicStride(width, header.biBitCount);
+            int width = header.biWidth;
+            int height = header.biHeight;
+            int stride = ImageUtils.GetClassicStride(width, header.biBitCount);
 
             Bitmap bitmap = null;
             originalPixelFormat = GetPixelFormat(header.biBitCount);
             // Icon handling
-            Boolean isIcon = bitMask != null && bitMask.Length > 0;
+            bool isIcon = bitMask != null && bitMask.Length > 0;
             if (isIcon)
             {
                 height /= 2;
                 if (originalPixelFormat != PixelFormat.Format32bppRgb)
                 {
-                    Int32 maskStride = ImageUtils.GetClassicStride(width, 1);
-                    Boolean is24Bit = originalPixelFormat == PixelFormat.Format24bppRgb;
-                    Byte[] imageDataMask = is24Bit ? bitMask : ImageUtils.ConvertTo8Bit(bitMask, width, height, 0, 1, true, ref maskStride);
+                    int maskStride = ImageUtils.GetClassicStride(width, 1);
+                    bool is24Bit = originalPixelFormat == PixelFormat.Format24bppRgb;
+                    byte[] imageDataMask = is24Bit ? bitMask : ImageUtils.ConvertTo8Bit(bitMask, width, height, 0, 1, true, ref maskStride);
                     // For indexed, 0 in mask means no transparency.
                     if (!is24Bit)
-                        for (Int32 i = 0; i < imageDataMask.Length; ++i)
-                            imageDataMask[i] = (Byte)(imageDataMask[i] == 0 ? 255 : 0);
-                    Byte[] imageData32;
+                        for (int i = 0; i < imageDataMask.Length; ++i)
+                            imageDataMask[i] = (byte)(imageDataMask[i] == 0 ? 255 : 0);
+                    byte[] imageData32;
                     using (Bitmap indexedBm = ImageUtils.BuildImage(imageData, width, height, stride, originalPixelFormat, palette, Color.Black))
                         imageData32 = ImageUtils.GetImageData(indexedBm, out stride, PixelFormat.Format32bppArgb);
-                    Int32 inputOffsetLine = 0;
-                    Int32 outputOffsetLine = 0;
-                    for (Int32 y = 0; y < height; ++y)
+                    int inputOffsetLine = 0;
+                    int outputOffsetLine = 0;
+                    for (int y = 0; y < height; ++y)
                     {
-                        Int32 inputOffs = inputOffsetLine;
-                        Int32 outputOffs = outputOffsetLine;
+                        int inputOffs = inputOffsetLine;
+                        int outputOffs = outputOffsetLine;
                         // Apply alpha from mask.
-                        for (Int32 x = 0; x < width; ++x)
+                        for (int x = 0; x < width; ++x)
                         {
                             imageData32[outputOffs + 3] = imageDataMask[inputOffs];
                             inputOffs++;
@@ -258,7 +258,7 @@ namespace Nyerguds.ImageManipulation
             }
             else if (detectArgb && originalPixelFormat == PixelFormat.Format32bppRgb && header.biCompression == BITMAPCOMPRESSION.BI_BITFIELDS)
             {
-                UInt32 alphaMask = 0;
+                uint alphaMask = 0;
                 // force mask to the remainder.
                 if (bitfields.bfRedMask != 0 && bitfields.bfGreenMask != 0 && bitfields.bfBlueMask != 0)
                     alphaMask = ~(bitfields.bfRedMask | bitfields.bfGreenMask | bitfields.bfBlueMask);
@@ -270,7 +270,7 @@ namespace Nyerguds.ImageManipulation
             return bitmap;
         }
 
-        private static PixelFormat GetPixelFormat(Int32 bitcount)
+        private static PixelFormat GetPixelFormat(int bitcount)
         {
             PixelFormat fmt;
             switch (bitcount)
@@ -299,9 +299,9 @@ namespace Nyerguds.ImageManipulation
             return fmt;
         }
 
-        private static Byte[] ApplyBitMask(Byte[] image, out PixelFormat pf, Int32 width, Int32 height, Int32 bitCount, UInt32 alphaMask, UInt32 redMask, UInt32 greenMask, UInt32 blueMask)
+        private static byte[] ApplyBitMask(byte[] image, out PixelFormat pf, int width, int height, int bitCount, uint alphaMask, uint redMask, uint greenMask, uint blueMask)
         {
-            Int32 stride = ImageUtils.GetClassicStride(width, bitCount);
+            int stride = ImageUtils.GetClassicStride(width, bitCount);
             switch (bitCount)
             {
                 case 32:
@@ -352,7 +352,7 @@ namespace Nyerguds.ImageManipulation
                             // Any kind of custom format can be handled here.
                             //UInt32 alphaMask = 0xFFFF & ~(redMask | greenMask | blueMask);
                             PixelFormatter pixFormatter = new PixelFormatter(2, alphaMask, redMask, greenMask, blueMask, true);
-                            ReadOnlyCollection<Byte> bits = pixFormatter.BitsAmounts;
+                            ReadOnlyCollection<byte> bits = pixFormatter.BitsAmounts;
                             if (bits[PixelFormatter.ColA] == 1 && bits[PixelFormatter.ColR] == 5 && bits[PixelFormatter.ColG] == 5 && bits[PixelFormatter.ColB] == 5)
                             {
                                 PixelFormatter.ReorderBits(image, width, height, stride, PixelFormatter.Format16BitArgb1555Le, pixFormatter);
@@ -381,13 +381,13 @@ namespace Nyerguds.ImageManipulation
         }
 
 
-        public static Boolean GetDataFromDib(Byte[] dibBytes, Int32 offset, Int32 length, Int32 dataOffsetOverride, Boolean detectIconFormat, out Byte[] imageData, out BITFIELDS bitFields, out Byte[] bitMask, out Color[] palette, out BITMAPINFOHEADER header)
+        public static bool GetDataFromDib(byte[] dibBytes, int offset, int length, int dataOffsetOverride, bool detectIconFormat, out byte[] imageData, out BITFIELDS bitFields, out byte[] bitMask, out Color[] palette, out BITMAPINFOHEADER header)
         {
             if (length == 0)
             {
                 length = dibBytes.Length - offset;
             }
-            UInt32 readEnd = (UInt32)(length + offset);
+            uint readEnd = (uint)(length + offset);
             imageData = null;
             bitMask = null;
             palette = null;
@@ -397,20 +397,20 @@ namespace Nyerguds.ImageManipulation
                 return false;
             try
             {
-                Int32 headerSize = ArrayUtils.ReadInt32FromByteArrayLe(dibBytes, offset);
-                Int32 dibHeaderSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
-                Int32 bitFieldsSize = Marshal.SizeOf(typeof(BITFIELDS));
+                int headerSize = ArrayUtils.ReadInt32FromByteArrayLe(dibBytes, offset);
+                int dibHeaderSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
+                int bitFieldsSize = Marshal.SizeOf(typeof(BITFIELDS));
                 if (dibHeaderSize != headerSize)
                     return false;
                 header = ArrayUtils.ReadStructFromByteArray<BITMAPINFOHEADER>(dibBytes, offset, Endianness.LittleEndian);
                 // No support for dealing with multiplanar or compressed formats yet.
                 if (header.biPlanes != 1 || (header.biCompression != BITMAPCOMPRESSION.BI_RGB && header.biCompression != BITMAPCOMPRESSION.BI_BITFIELDS))
                     return false;
-                Int32 readIndex = headerSize + offset;
-                Int32 width = header.biWidth;
-                Int32 height = header.biHeight;
-                Int32 bitCount = header.biBitCount;
-                UInt32 imageSize = header.biSizeImage;
+                int readIndex = headerSize + offset;
+                int width = header.biWidth;
+                int height = header.biHeight;
+                int bitCount = header.biBitCount;
+                uint imageSize = header.biSizeImage;
                 if (dibBytes.Length < readIndex || readEnd < readIndex)
                     return false;
                 if (header.biCompression == BITMAPCOMPRESSION.BI_BITFIELDS)
@@ -420,7 +420,7 @@ namespace Nyerguds.ImageManipulation
                     if (dibBytes.Length < readIndex || readEnd < readIndex)
                         return false;
                 }
-                Int32 paletteLength = bitCount > 8 ? 0 : (Int32)header.biClrUsed;
+                int paletteLength = bitCount > 8 ? 0 : (int)header.biClrUsed;
                 if (paletteLength == 0 && bitCount <= 8)
                     paletteLength = 1 << bitCount;
                 palette = new Color[paletteLength];
@@ -429,7 +429,7 @@ namespace Nyerguds.ImageManipulation
                     return false;
                 if (paletteLength > 0)
                 {
-                    for (Int32 i = 0; i < paletteLength; ++i)
+                    for (int i = 0; i < paletteLength; ++i)
                     {
                         palette[i] = Color.FromArgb(dibBytes[readIndex + 2], dibBytes[readIndex + 1], dibBytes[readIndex]);
                         readIndex += 4;
@@ -438,17 +438,17 @@ namespace Nyerguds.ImageManipulation
                 if (imageSize == 0)
                 {
                     // This seems to happen? Just take the length minus the current read offset; that should match.
-                    imageSize = (UInt32)Math.Max(0, readEnd - readIndex);
+                    imageSize = (uint)Math.Max(0, readEnd - readIndex);
                 }
-                Int32 stride = ImageUtils.GetClassicStride(width, bitCount);
-                Int32 maskSize = 0;
+                int stride = ImageUtils.GetClassicStride(width, bitCount);
+                int maskSize = 0;
                 if (height % 2 == 0 && detectIconFormat)
                 {
                     int actualReadSize = (int)readEnd - readIndex;
-                    Int32 halfHeight = height / 2;
+                    int halfHeight = height / 2;
                     // I think mask is always just single-bit OR.
-                    Int32 maskStride = ImageUtils.GetClassicStride(width, 1);
-                    Int32 maskSizeCheck = maskStride * halfHeight;
+                    int maskStride = ImageUtils.GetClassicStride(width, 1);
+                    int maskSizeCheck = maskStride * halfHeight;
                     int imgSizeDiff = (int)imageSize - stride * halfHeight;
                     int sizeWithMask = (int)imageSize + maskSizeCheck;
                     if (imgSizeDiff == maskSizeCheck || (imgSizeDiff == 0 && actualReadSize == sizeWithMask))
@@ -470,17 +470,17 @@ namespace Nyerguds.ImageManipulation
                 }
                 if (dataOffsetOverride != 0)
                     readIndex = dataOffsetOverride;
-                Int32 dataLen = stride * height;
+                int dataLen = stride * height;
                 int fullLen = dataLen + maskSize;
                 if (dibBytes.Length - readIndex < fullLen || readEnd - readIndex < fullLen)
                     return false;
-                imageData = new Byte[dataLen];
+                imageData = new byte[dataLen];
                 Array.Copy(dibBytes, readIndex, imageData, 0, dataLen);
                 readIndex += dataLen;
                 // Icon stuff only.
                 if (maskSize == 0)
                     return true;
-                bitMask = new Byte[maskSize];
+                bitMask = new byte[maskSize];
                 Array.Copy(dibBytes, readIndex, bitMask, 0, maskSize);
             }
             catch

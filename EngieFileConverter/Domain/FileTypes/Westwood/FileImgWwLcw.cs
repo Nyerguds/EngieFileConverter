@@ -13,55 +13,55 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         public override FileClass FileClass { get { return FileClass.ImageHiCol; } }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
-        protected const Int32 DATAOFFSET = 11;
+        protected const int DATAOFFSET = 11;
 
-        public override String IdCode { get { return "WwLcw"; } }
+        public override string IdCode { get { return "WwLcw"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood LCW IMG"; } }
-        public override String[] FileExtensions { get { return new String[] { "img" }; } }
-        public override String LongTypeName { get { return "Blade Runner LCW image"; } }
-        public override Int32 BitsPerPixel { get{ return 16; } }
+        public override string ShortTypeName { get { return "Westwood LCW IMG"; } }
+        public override string[] FileExtensions { get { return new string[] { "img" }; } }
+        public override string LongTypeName { get { return "Blade Runner LCW image"; } }
+        public override int BitsPerPixel { get{ return 16; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData);
             this.SetFileNames(filename);
         }
 
-        public override Boolean ColorsChanged()
+        public override bool ColorsChanged()
         {
             return false;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             return this.SaveImg(fileToSave.GetBitmap());
         }
 
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(byte[] fileData)
         {
             if (fileData.Length < DATAOFFSET)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
 
-            Byte[] hdrId = new Byte[3];
+            byte[] hdrId = new byte[3];
             Array.Copy(fileData, hdrId, 3);
-            Int32 hdrWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 3);
-            Int32 hdrHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 7);
+            int hdrWidth = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 3);
+            int hdrHeight = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 7);
             if (!Encoding.ASCII.GetBytes("LCW").SequenceEqual(hdrId))
                 throw new FileTypeLoadException(ERR_BAD_HEADER);
-            Int32 stride = ImageUtils.GetMinimumStride(hdrWidth, this.BitsPerPixel);
-            Int32 imageDataSize = stride * hdrHeight;
-            Byte[] imageData = new Byte[imageDataSize];
+            int stride = ImageUtils.GetMinimumStride(hdrWidth, this.BitsPerPixel);
+            int imageDataSize = stride * hdrHeight;
+            byte[] imageData = new byte[imageDataSize];
             try
             {
-                Int32 offset = DATAOFFSET;
+                int offset = DATAOFFSET;
                 WWCompression.LcwDecompress(fileData, ref offset, imageData, 0);
             }
             catch (Exception e)
@@ -78,14 +78,14 @@ namespace EngieFileConverter.Domain.FileTypes
             }
         }
 
-        protected Byte[] SaveImg(Bitmap image)
+        protected byte[] SaveImg(Bitmap image)
         {
-            Byte[] imageData = ImageUtils.GetImageData(image, PixelFormat.Format16bppRgb555, true);
-            Byte[] compressedData = WWCompression.LcwCompress(imageData);
-            Byte[] fullData = new Byte[compressedData.Length + DATAOFFSET];
-            fullData[0] = (Byte)'L';
-            fullData[1] = (Byte)'C';
-            fullData[2] = (Byte)'W';
+            byte[] imageData = ImageUtils.GetImageData(image, PixelFormat.Format16bppRgb555, true);
+            byte[] compressedData = WWCompression.LcwCompress(imageData);
+            byte[] fullData = new byte[compressedData.Length + DATAOFFSET];
+            fullData[0] = (byte)'L';
+            fullData[1] = (byte)'C';
+            fullData[2] = (byte)'W';
             ArrayUtils.WriteInt32ToByteArrayLe(fullData, 3, image.Width);
             ArrayUtils.WriteInt32ToByteArrayLe(fullData, 7, image.Height);
             compressedData.CopyTo(fullData, DATAOFFSET);

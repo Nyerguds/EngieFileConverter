@@ -11,14 +11,14 @@ namespace Nyerguds.Util.Ui
     /// <typeparam name="TU">Type of the information objects that contain all information to create/manage a listed control.</typeparam>
     public abstract class CustomControlInfo<T, TU> where T : Control
     {
-        public String Name { get; set; }
-        public String ClassName { get; set; }
+        public string Name { get; set; }
+        public string ClassName { get; set; }
         public TU[] Properties { get; set; }
 
         public abstract T MakeControl(TU property, ListedControlController<TU> controller);
         public abstract T GetControlByProperty(TU property, IEnumerable<T> controls);
 
-        public override String ToString()
+        public override string ToString()
         {
             return this.Name;
         }

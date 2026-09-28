@@ -11,27 +11,27 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.CcMap; } }
         public override FileClass InputFileClass { get { return FileClass.CcMap; } }
 
-        public override String IdCode { get { return "WwCc1MapN64"; } }
+        public override string IdCode { get { return "WwCc1MapN64"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 Map"; } }
-        public override String LongTypeName { get { return "C&C map file - N64"; } }
-        public override String[] FileExtensions { get { return new String[] { "map" }; } }
+        public override string ShortTypeName { get { return "C&C64 Map"; } }
+        public override string LongTypeName { get { return "C&C map file - N64"; } }
+        public override string[] FileExtensions { get { return new string[] { "map" }; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] {this.LongTypeName }; } }
+        public override string[] DescriptionsForExtensions { get { return new string[] {this.LongTypeName }; } }
 
         public FileMapWwCc1N64() { }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFile(fileData, false);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFile(fileData, filename, null, null, false);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             FileMapWwCc1Pc mapPc = fileToSave as FileMapWwCc1Pc;
             if (mapPc == null)
@@ -43,23 +43,23 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileMapWwCc1N64FromIni : FileMapWwCc1N64
     {
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "ini" }; } }
+        public override string[] FileExtensions { get { return new string[] { "ini" }; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "C&C64 Map ini"; } }
+        public override string ShortTypeName { get { return "C&C64 Map ini"; } }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             IniInfo iniInfo = this.GetIniInfo(filename, (Theater)0xFF, fileData);
             if (iniInfo == null || !String.Equals(Path.GetFileName(iniInfo.File), Path.GetFileName(filename), StringComparison.InvariantCultureIgnoreCase))
                 throw new FileTypeLoadException("Not an ini file.");
-            String mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".map";
+            string mapFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename)) + ".map";
             if (!File.Exists(mapFilename))
                 throw new FileTypeLoadException("No .map file found for this ini file.");
             DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(filename));
             FileInfo[] fi2 = di.GetFiles((Path.GetFileNameWithoutExtension(filename)) + ".map");
             if (fi2.Length == 1)
                 mapFilename = fi2[0].FullName;
-            Byte[] mapFileData = File.ReadAllBytes(mapFilename);
+            byte[] mapFileData = File.ReadAllBytes(mapFilename);
             base.LoadFile(mapFileData, mapFilename, fileData, filename, false);
         }
     }

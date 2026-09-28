@@ -15,19 +15,19 @@ namespace Nyerguds.Util
         /// </summary>
         /// <param name="degrees">Converts degrees to a 24-bit integer.</param>
         /// <returns>The converted value.</returns>
-        public static Int32 DegreesToInt24(Double degrees)
+        public static int DegreesToInt24(double degrees)
         {
             if (degrees > 180.0 || degrees < -180.0)
                 throw new ArgumentOutOfRangeException("degrees");
-            const Int32 bottom = 0x058730;
-            const Int32 range = 0x4F1A0;
-            return (Int32)((degrees + 180.0) / 360.0 * range) + bottom;
+            const int bottom = 0x058730;
+            const int range = 0x4F1A0;
+            return (int)((degrees + 180.0) / 360.0 * range) + bottom;
         }
 
-        public static List<Int32> ExtractInts(String filePath)
+        public static List<int> ExtractInts(string filePath)
         {
-            String input = File.ReadAllText(filePath);
-            List<Int32> ints = new List<Int32>();
+            string input = File.ReadAllText(filePath);
+            List<int> ints = new List<int>();
             Regex r = new Regex(" = (\\d+)");
             MatchCollection mc = r.Matches(input);
             foreach(Match m in mc)
@@ -59,7 +59,7 @@ namespace Nyerguds.Util
             MemberExpression memberExpression = expression.Body as MemberExpression;
             if (memberExpression == null)
                 throw new ArgumentNullException();
-            Object[] attrs = memberExpression.Member.GetCustomAttributes(typeof(TAttr), true);
+            object[] attrs = memberExpression.Member.GetCustomAttributes(typeof(TAttr), true);
             if (attrs.Length == 0)
                 return default(TRes);
             return attrExpression((TAttr)attrs[0]);

@@ -9,25 +9,25 @@ namespace Nyerguds.FileData.Westwood
     public class WestwoodRleZero
     {
 
-        public static Byte[] DecompressRleZeroTs(Byte[] fileData, ref Int32 offset, Int32 frameWidth, Int32 frameHeight)
+        public static byte[] DecompressRleZeroTs(byte[] fileData, ref int offset, int frameWidth, int frameHeight)
         {
-            Byte[] finalImage = new Byte[frameWidth * frameHeight];
-            Int32 datalen = fileData.Length;
-            Int32 outLineOffset = 0;
-            for (Int32 y = 0; y < frameHeight; ++y)
+            byte[] finalImage = new byte[frameWidth * frameHeight];
+            int datalen = fileData.Length;
+            int outLineOffset = 0;
+            for (int y = 0; y < frameHeight; ++y)
             {
-                Int32 outOffset = outLineOffset;
-                Int32 nextLineOffset = outLineOffset + frameWidth;
+                int outOffset = outLineOffset;
+                int nextLineOffset = outLineOffset + frameWidth;
                 if (offset + 2 >= datalen)
                     throw new ArgumentException("Not enough lines in RLE-Zero data.", "fileData");
                 // Compose little-endian UInt16 from 2 bytes
-                Int32 lineLen = fileData[offset] | (fileData[offset + 1] << 8);
-                Int32 end = offset + lineLen;
+                int lineLen = fileData[offset] | (fileData[offset + 1] << 8);
+                int end = offset + lineLen;
                 if (lineLen < 2 || end > datalen)
                     throw new ArgumentException("Bad value in RLE-Zero line header.", "fileData");
                 // Skip header
                 offset += 2;
-                Boolean readZero = false;
+                bool readZero = false;
                 for (; offset < end; ++offset)
                 {
                     if (outOffset >= nextLineOffset)
@@ -36,7 +36,7 @@ namespace Nyerguds.FileData.Westwood
                     {
                         // Zero has been read. Process 0-repeat.
                         readZero = false;
-                        Int32 zeroes = fileData[offset];
+                        int zeroes = fileData[offset];
                         for (; zeroes > 0 && outOffset < nextLineOffset; zeroes--)
                             finalImage[outOffset++] = 0;
                     }
@@ -60,28 +60,28 @@ namespace Nyerguds.FileData.Westwood
             return finalImage;
         }
 
-        public static Byte[] CompressRleZeroTs(Byte[] imageData, Int32 frameWidth, Int32 frameHeight)
+        public static byte[] CompressRleZeroTs(byte[] imageData, int frameWidth, int frameHeight)
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                Int32 inputLineOffset = 0;
-                for (Int32 y = 0; y < frameHeight; ++y)
+                int inputLineOffset = 0;
+                for (int y = 0; y < frameHeight; ++y)
                 {
-                    Int64 lineStartOffs = ms.Position;
+                    long lineStartOffs = ms.Position;
                     ms.Position = lineStartOffs + 2;
-                    Int32 inputOffset = inputLineOffset;
-                    Int32 nextLineOffset = inputOffset + frameWidth;
+                    int inputOffset = inputLineOffset;
+                    int nextLineOffset = inputOffset + frameWidth;
                     while (inputOffset < nextLineOffset)
                     {
-                        Byte b = imageData[inputOffset];
+                        byte b = imageData[inputOffset];
                         if (b == 0)
                         {
-                            Int32 startOffs = inputOffset;
-                            Int32 max = Math.Min(startOffs + 256, nextLineOffset);
+                            int startOffs = inputOffset;
+                            int max = Math.Min(startOffs + 256, nextLineOffset);
                             for (; inputOffset < max && imageData[inputOffset] == 0; ++inputOffset) { }
                             ms.WriteByte(0);
-                            Int32 skip = inputOffset - startOffs;
-                            ms.WriteByte((Byte)(skip));
+                            int skip = inputOffset - startOffs;
+                            ms.WriteByte((byte)(skip));
                         }
                         else
                         {
@@ -90,13 +90,13 @@ namespace Nyerguds.FileData.Westwood
                         }
                     }
                     // Go back to start of the line data and fill in the length.
-                    Int64 lineEndOffs = ms.Position;
-                    Int64 len = lineEndOffs - lineStartOffs;
-                    if (len > UInt16.MaxValue)
+                    long lineEndOffs = ms.Position;
+                    long len = lineEndOffs - lineStartOffs;
+                    if (len > ushort.MaxValue)
                         throw new ArgumentException("Compressed line width is too large to store.", "imageData");
                     ms.Position = lineStartOffs;
-                    ms.WriteByte((Byte)(len & 0xFF));
-                    ms.WriteByte((Byte) ((len >> 8) & 0xFF));
+                    ms.WriteByte((byte)(len & 0xFF));
+                    ms.WriteByte((byte) ((len >> 8) & 0xFF));
                     ms.Position = lineEndOffs;
                     inputLineOffset = nextLineOffset;
                 }
@@ -104,17 +104,17 @@ namespace Nyerguds.FileData.Westwood
             }
         }
 
-        public static Byte[] DecompressRleZeroD2(Byte[] fileData, ref Int32 offset, Int32 frameWidth, Int32 frameHeight)
+        public static byte[] DecompressRleZeroD2(byte[] fileData, ref int offset, int frameWidth, int frameHeight)
         {
-            Int32 fullLength = frameWidth * frameHeight;
-            Byte[] finalImage = new Byte[fullLength];
-            Int32 datalen = fileData.Length;
-            Int32 outLineOffset = 0;
-            for (Int32 y = 0; y < frameHeight; ++y)
+            int fullLength = frameWidth * frameHeight;
+            byte[] finalImage = new byte[fullLength];
+            int datalen = fileData.Length;
+            int outLineOffset = 0;
+            for (int y = 0; y < frameHeight; ++y)
             {
-                Int32 outOffset = outLineOffset;
-                Int32 nextLineOffset = outLineOffset + frameWidth;
-                Boolean readZero = false;
+                int outOffset = outLineOffset;
+                int nextLineOffset = outLineOffset + frameWidth;
+                bool readZero = false;
                 for (; offset < datalen; ++offset)
                 {
                     if (outOffset >= nextLineOffset)
@@ -122,7 +122,7 @@ namespace Nyerguds.FileData.Westwood
                     if (readZero)
                     {
                         readZero = false;
-                        Int32 zeroes = fileData[offset];
+                        int zeroes = fileData[offset];
                         for (; zeroes > 0 && outOffset < nextLineOffset; zeroes--)
                             finalImage[outOffset++] = 0;
                     }
@@ -140,26 +140,26 @@ namespace Nyerguds.FileData.Westwood
             return finalImage;
         }
 
-        public static Byte[] CompressRleZeroD2(Byte[] imageData, Int32 frameWidth, Int32 frameHeight)
+        public static byte[] CompressRleZeroD2(byte[] imageData, int frameWidth, int frameHeight)
         {
             using (MemoryStream ms = new MemoryStream())
             {
-                Int32 inputLineOffset = 0;
-                for (Int32 y = 0; y < frameHeight; ++y)
+                int inputLineOffset = 0;
+                for (int y = 0; y < frameHeight; ++y)
                 {
-                    Int32 inputOffset = inputLineOffset;
-                    Int32 nextLineOffset = inputOffset + frameWidth;
+                    int inputOffset = inputLineOffset;
+                    int nextLineOffset = inputOffset + frameWidth;
                     while (inputOffset < nextLineOffset)
                     {
-                        Byte b = imageData[inputOffset];
+                        byte b = imageData[inputOffset];
                         if (b == 0)
                         {
-                            Int32 startOffs = inputOffset;
-                            Int32 max = Math.Min(startOffs + 256, nextLineOffset);
+                            int startOffs = inputOffset;
+                            int max = Math.Min(startOffs + 256, nextLineOffset);
                             for (; inputOffset < max && imageData[inputOffset] == 0; ++inputOffset) { }
                             ms.WriteByte(0);
-                            Int32 skip = inputOffset - startOffs;
-                            ms.WriteByte((Byte)(skip));
+                            int skip = inputOffset - startOffs;
+                            ms.WriteByte((byte)(skip));
                         }
                         else
                         {

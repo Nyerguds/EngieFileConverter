@@ -123,7 +123,7 @@ namespace EngieFileConverter.Domain.FileTypes
             m_Width = fullWidth;
             m_Height = fullHeight;
             m_LoadedImage = ImageUtils.BuildImage(imageData, fullWidth, fullHeight, fullWidth, PixelFormat.Format8bppIndexed, m_Palette, null);
-            ExtraInfo = string.Format("Image built up from {0} {1}×{2} chunks.", nrOfTiles, tileWidth, tileHeight);
+            ExtraInfo = String.Format("Image built up from {0} {1}×{2} chunks.", nrOfTiles, tileWidth, tileHeight);
         }
 
         public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
@@ -132,7 +132,7 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
-                throw new FileTypeSaveException(string.Format(ERR_BPP_INPUT_EXACT, 8));
+                throw new FileTypeSaveException(String.Format(ERR_BPP_INPUT_EXACT, 8));
             Color[] palette = fileToSave.GetColors();
             int width = image.Width;
             int height = image.Height;

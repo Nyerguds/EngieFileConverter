@@ -13,22 +13,22 @@ namespace EngieFileConverter.UI
     public partial class FrmFramesToPal : Form
     {
 
-        public Int32 MatchBpp  { get; private set; }
+        public int MatchBpp  { get; private set; }
         public Color[] MatchPalette { get; private set; }
 
         private PaletteDropDownInfo[] m_allPalettes;
 
-        public Int32[] CustomColors
+        public int[] CustomColors
         {
             get { return this.pzpFramePreview.CustomColors; }
             set { this.pzpFramePreview.CustomColors = value; }
         }
 
         private SupportedFileType m_File;
-        private Boolean m_Loading;
-        private Boolean m_DontMatch;
+        private bool m_Loading;
+        private bool m_DontMatch;
 
-        public FrmFramesToPal(SupportedFileType origFile, PaletteDropDownInfo[] palettes, Boolean nomatch)
+        public FrmFramesToPal(SupportedFileType origFile, PaletteDropDownInfo[] palettes, bool nomatch)
         {
             this.m_Loading = true;
             this.m_File = origFile;
@@ -43,10 +43,10 @@ namespace EngieFileConverter.UI
                 this.lblMatchPalette.Text = "Palette:";
                 this.btnConvert.Text = "Set palette";
             }
-            Boolean hasFrames = origFile.IsFramesContainer;
+            bool hasFrames = origFile.IsFramesContainer;
             this.numCurFrame.Maximum = hasFrames ? origFile.Frames.Length - 1 : 0;
-            this.cmbPalType.DataSource = new String[] {"1-bit", "4-bit", "8-bit"};
-            Int32 selectedIndex;
+            this.cmbPalType.DataSource = new string[] {"1-bit", "4-bit", "8-bit"};
+            int selectedIndex;
             if (origFile.BitsPerPixel > 4)
                 selectedIndex = 2;
             else if (origFile.BitsPerPixel > 1)
@@ -60,7 +60,7 @@ namespace EngieFileConverter.UI
             this.pzpFramePreview.AutoSetZoom(GetListToAutoSetZoom(m_File));
         }
 
-        private void FrameChanged(Object sender, EventArgs e)
+        private void FrameChanged(object sender, EventArgs e)
         {
             UpdateUiInfo();
         }
@@ -70,7 +70,7 @@ namespace EngieFileConverter.UI
             try
             {
                 this.m_Loading = true;
-                SupportedFileType curFrame = m_File.IsFramesContainer ? m_File.Frames[(Int32)numCurFrame.Value] : m_File;
+                SupportedFileType curFrame = m_File.IsFramesContainer ? m_File.Frames[(int)numCurFrame.Value] : m_File;
 
                 PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
                 if (pdd == null)
@@ -88,14 +88,14 @@ namespace EngieFileConverter.UI
                     return;
                 }
                 // Update palette control. First checks if the preview needs to be updated, to avoid unnecessary UI refreshes.
-                Int32 matchBpp = pdd.BitsPerPixel;
+                int matchBpp = pdd.BitsPerPixel;
                 Color[] matchPalette = pdd.Colors;
                 Color[] loadedColors = this.palPreviewPal.Palette;
-                Boolean match = matchPalette != null && loadedColors != null && matchPalette.Length == loadedColors.Length;
+                bool match = matchPalette != null && loadedColors != null && matchPalette.Length == loadedColors.Length;
                 if (match)
                 {
-                    Int32 amount = loadedColors.Length;
-                    for (Int32 i = 0; i < amount; ++i)
+                    int amount = loadedColors.Length;
+                    for (int i = 0; i < amount; ++i)
                     {
                         match = loadedColors[i].ToArgb() == matchPalette[i].ToArgb();
                         if (match == false)
@@ -137,10 +137,10 @@ namespace EngieFileConverter.UI
                 return new Bitmap[] {file.GetBitmap()};
             List<Bitmap> framesToCheck = new List<Bitmap>();
             SupportedFileType[] frames = file.Frames;
-            Int32 nrOfFrames;
+            int nrOfFrames;
             if (frames != null && (nrOfFrames = frames.Length) > 0)
             {
-                for (Int32 i = 0; i < nrOfFrames; ++i)
+                for (int i = 0; i < nrOfFrames; ++i)
                 {
                     Bitmap img;
                     if (frames[i] != null && (img = frames[i].GetBitmap()) != null)
@@ -151,10 +151,10 @@ namespace EngieFileConverter.UI
         }
 
 
-        private void CmbPalTypeSelectedIndexChanged(Object sender, EventArgs e)
+        private void CmbPalTypeSelectedIndexChanged(object sender, EventArgs e)
         {
-            Int32 bpp = 0;
-            String selText = this.cmbPalType.Text;
+            int bpp = 0;
+            string selText = this.cmbPalType.Text;
             if (!String.IsNullOrEmpty(selText))
                 bpp = selText[0] - '0';
             PaletteDropDownInfo[] filteredPalettes = this.m_allPalettes.Where(p => p.BitsPerPixel == bpp).ToArray();
@@ -162,19 +162,19 @@ namespace EngieFileConverter.UI
             this.cmbPalettes.SelectedIndex = filteredPalettes.Length > 0 ? 0 : -1;
         }
 
-        private void cmbPalettes_SelectedIndexChanged(Object sender, EventArgs e)
+        private void cmbPalettes_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (this.m_Loading)
                 return;
             this.UpdateUiInfo();
         }
 
-        private void BtnCancelClick(Object sender, EventArgs e)
+        private void BtnCancelClick(object sender, EventArgs e)
         {
             this.Close();
         }
 
-        private void BtnConvertClick(Object sender, EventArgs e)
+        private void BtnConvertClick(object sender, EventArgs e)
         {
             PaletteDropDownInfo pdd = this.cmbPalettes.SelectedItem as PaletteDropDownInfo;
             this.MatchBpp = pdd != null ? pdd.BitsPerPixel : 0;
@@ -187,7 +187,7 @@ namespace EngieFileConverter.UI
         /// Clean up any resources being used.
         /// </summary>
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(Boolean disposing)
+        protected override void Dispose(bool disposing)
         {
             if (disposing)
             {

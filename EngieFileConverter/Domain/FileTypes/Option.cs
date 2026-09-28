@@ -12,7 +12,7 @@ namespace Nyerguds.Util
         /// <param name="inputType">Input data type</param>
         /// <param name="UiString">String to show on the UI for this option</param>
         /// <param name="data">The value of this option. Fill this in in advance to give a default value.</param>
-        public Option(String code, OptionInputType inputType, String UiString, String data)
+        public Option(string code, OptionInputType inputType, string UiString, string data)
             : this(code, inputType, UiString, null, data) { }
 
         /// <summary>
@@ -23,7 +23,7 @@ namespace Nyerguds.Util
         /// <param name="UiString">String to show on the UI for this option</param>
         /// <param name="initValue">Initialisation value. Used differently by all types.</param>
         /// <param name="data">The value of this option. Fill this in in advance to give a default value.</param>
-        public Option(String code, OptionInputType inputType, String UiString, String initValue, String data)
+        public Option(string code, OptionInputType inputType, string UiString, string initValue, string data)
             : this(code, inputType, UiString, initValue, data, false) { }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Nyerguds.Util
         /// <param name="initValue">Initialisation value. Used differently by all types.</param>
         /// <param name="data">The value of this option. Fill this in in advance to give a default value.</param>
         /// <param name="filters">Filters. At least one of these filters needs to match to enable an option.</param>
-        public Option(String code, OptionInputType inputType, String UiString, String initValue, String data, params EnableFilter[] filters)
+        public Option(string code, OptionInputType inputType, string UiString, string initValue, string data, params EnableFilter[] filters)
             : this(code, inputType, UiString, initValue, data, false, filters) { }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Nyerguds.Util
         /// <param name="data">The value of this option. Fill this in in advance to give a default value.</param>
         /// <param name="filterAnd">True if all filters need to apply to enable or disable a control.</param>
         /// <param name="filters">Filters. Unless filterAnd is enabled, at least one of these filters needs to match to enable an option.</param>
-        public Option(String code, OptionInputType inputType, String UiString, String initValue, String data, Boolean filterAnd, params EnableFilter[] filters)
+        public Option(string code, OptionInputType inputType, string UiString, string initValue, string data, bool filterAnd, params EnableFilter[] filters)
         {
             this.Code = code;
             this.InputType = inputType;
@@ -61,33 +61,33 @@ namespace Nyerguds.Util
         }
 
         /// <summary>Code to easily retrieve this option.</summary>
-        public String Code { get; private set; }
+        public string Code { get; private set; }
         /// <summary>Input data type</summary>
         public OptionInputType InputType { get; private set; }
         /// <summary>String to show on the UI for this option</summary>
-        public String UiString { get; private set; }
+        public string UiString { get; private set; }
         /// <summary>Initialisation value. Used differently by all types.</summary>
-        public String InitValue { get; private set; }
+        public string InitValue { get; private set; }
         /// <summary>The value of this option. Fill this in in advance to give a default value.</summary>
-        public String Data { get; set; }
+        public string Data { get; set; }
         /// <summary>True if all filters need to apply to enable or disable a control.</summary>
-        public Boolean FilterAnd { get; set; }
+        public bool FilterAnd { get; set; }
         /// <summary>Filters. Unless FilterAnd is enabled, at least one of these filters needs to match to enable an option.</summary>
         public EnableFilter[] Filters { get; set; }
 
 
-        public static String GetSaveOptionValue(Option[] list, String code)
+        public static string GetSaveOptionValue(Option[] list, string code)
         {
             Option option = GetSaveOption(list, code);
             return option == null ? null : option.Data;
         }
 
-        public static Option GetSaveOption(Option[] list, String code)
+        public static Option GetSaveOption(Option[] list, string code)
         {
             if (list == null)
                 return null;
-            Int32 listLength = list.Length;
-            for (Int32 i = 0; i < listLength; ++i)
+            int listLength = list.Length;
+            for (int i = 0; i < listLength; ++i)
             {
                 Option option = list[i];
                 if (option == null)
@@ -98,7 +98,7 @@ namespace Nyerguds.Util
             return null;
         }
 
-        public override String ToString()
+        public override string ToString()
         {
             return this.Code + "=" + this.Data;
         }
@@ -128,9 +128,9 @@ namespace Nyerguds.Util
 
     public class EnableFilter
     {
-        public String CheckOption { get; set; }
-        public String[] CheckMatchValues { get; set; }
-        public Boolean WhenCheckMatches { get; set; }
+        public string CheckOption { get; set; }
+        public string[] CheckMatchValues { get; set; }
+        public bool WhenCheckMatches { get; set; }
 
         /// <summary>
         /// Creates a new instance of EnableFilter. This class can help disable options that are not relevant depending on the values set in other options.
@@ -138,7 +138,7 @@ namespace Nyerguds.Util
         /// <param name="checkOption">Option to check.</param>
         /// <param name="whenCheckMatches">True if the filter enables if the check matches. If false, the filter enables when it does not match.</param>
         /// <param name="checkMatchValues">All possible values for checkOption that count as valid match.</param>
-        public EnableFilter(String checkOption, Boolean whenCheckMatches, params String[] checkMatchValues)
+        public EnableFilter(string checkOption, bool whenCheckMatches, params string[] checkMatchValues)
         {
             this.CheckOption = checkOption;
             this.WhenCheckMatches = whenCheckMatches;

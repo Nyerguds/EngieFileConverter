@@ -20,41 +20,41 @@ namespace Nyerguds.FileData.IGC
         /// <param name="stride">Amount of bytes in one pixel row in the image.</param>
         /// <param name="height">Height of the image.</param>
         /// <returns>The compressed image data with added bit masks.</returns>
-        public static Byte[] BitMaskCompress(Byte[] imageData, Int32 stride, Int32 height)
+        public static byte[] BitMaskCompress(byte[] imageData, int stride, int height)
         {
-            Int32 inputLen = stride * height;
+            int inputLen = stride * height;
             if (inputLen > imageData.Length)
                 throw new ArgumentException("Error compressing image: array too small to contain an image of the given dimensions.", "imageData");
-            Int32 maskLength = (stride + 7) / 8;
+            int maskLength = (stride + 7) / 8;
             // Worst case: no duplicate pixels at all, means original size plus (height - 1) masks.
-            Int32 outputLen = inputLen + maskLength * (height - 1);
-            Byte[] imageDataCompr = new Byte[outputLen];
+            int outputLen = inputLen + maskLength * (height - 1);
+            byte[] imageDataCompr = new byte[outputLen];
             // Copy first row to imageData
             Array.Copy(imageData, 0, imageDataCompr, 0, stride);
             // Set pointers to initial values after the first row.
-            Int32 prevRowPtr = 0;
-            Int32 inPtr = stride;
-            Int32 writePtr = stride;
-            for (Int32 y = 1; y < height; ++y)
+            int prevRowPtr = 0;
+            int inPtr = stride;
+            int writePtr = stride;
+            for (int y = 1; y < height; ++y)
             {
                 // Set start of mask.
-                Int32 bitmaskPtr = writePtr;
+                int bitmaskPtr = writePtr;
                 // Set start of data.
                 writePtr += maskLength;
-                for (Int32 x = 0; x < stride; ++x)
+                for (int x = 0; x < stride; ++x)
                 {
-                    Byte val = imageData[inPtr + x];
+                    byte val = imageData[inPtr + x];
                     // If identical, do nothing; mask is left on 0, data is not added.
                     if (imageData[prevRowPtr + x] == val)
                         continue;
                     // If new data, set mask bit, and write value. Downshift 0x80 because the bits are in big-endian order.
-                    imageDataCompr[bitmaskPtr + x / 8] |= (Byte) (0x80 >> (x & 7));
+                    imageDataCompr[bitmaskPtr + x / 8] |= (byte) (0x80 >> (x & 7));
                     imageDataCompr[writePtr++] = val;
                 }
                 prevRowPtr += stride;
                 inPtr += stride;
             }
-            Byte[] finalData = new Byte[writePtr];
+            byte[] finalData = new byte[writePtr];
             Array.Copy(imageDataCompr, 0, finalData, 0, writePtr);
             return finalData;
         }
@@ -66,29 +66,29 @@ namespace Nyerguds.FileData.IGC
         /// <param name="stride">Amount of bytes in one pixel row in the image.</param>
         /// <param name="height">Height of the image.</param>
         /// <returns>The decompressed stride*height image data.</returns>
-        public static Byte[] BitMaskDecompress(Byte[] bitMaskData, Int32 stride, Int32 height)
+        public static byte[] BitMaskDecompress(byte[] bitMaskData, int stride, int height)
         {
-            Int32 inputLen = bitMaskData.Length;
+            int inputLen = bitMaskData.Length;
             if (inputLen < stride)
                 throw new ArgumentException("Not enough data to decompress image.", "bitMaskData");
-            Int32 outputLen = stride * height;
-            Byte[] imageData = new Byte[outputLen];
-            Int32 maskLength = (stride + 7) / 8;
+            int outputLen = stride * height;
+            byte[] imageData = new byte[outputLen];
+            int maskLength = (stride + 7) / 8;
             // Copy first row to imageData
             Array.Copy(bitMaskData, 0, imageData, 0, stride);
             // Set pointers to initial values after the first row.
-            Int32 prevRowPtr = 0;
-            Int32 writePtr = stride;
-            Int32 inPtr = stride;
-            for (Int32 y = 1; y < height; ++y)
+            int prevRowPtr = 0;
+            int writePtr = stride;
+            int inPtr = stride;
+            for (int y = 1; y < height; ++y)
             {
                 if (inputLen < inPtr + maskLength)
                     throw new ArgumentException("Error decompressing image.", "bitMaskData");
                 // Set start of mask.
-                Int32 bitmaskPtr = inPtr;
+                int bitmaskPtr = inPtr;
                 // Set start of data.
                 inPtr += maskLength;
-                for (Int32 x = 0; x < stride; ++x)
+                for (int x = 0; x < stride; ++x)
                 {
                     // Check bit in bit mask. Upshift and check 0x80 because the bits are in big-endian order.
                     if (((bitMaskData[bitmaskPtr + x / 8] << (x & 7)) & 0x80) != 0)

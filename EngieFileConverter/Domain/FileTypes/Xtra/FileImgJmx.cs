@@ -15,31 +15,31 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "ImlJmx"; } }
+        public override string IdCode { get { return "ImlJmx"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "ImageLine JMX image"; } }
-        public override String[] FileExtensions { get { return new String[] { "jmx" }; } }
-        public override String LongTypeName { get { return "ImageLine JMX image file"; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "ImageLine JMX image"; } }
+        public override string[] FileExtensions { get { return new string[] { "jmx" }; } }
+        public override string LongTypeName { get { return "ImageLine JMX image file"; } }
+        public override int BitsPerPixel { get { return 8; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
-            Int32 dataLength = fileData.Length;
+            int dataLength = fileData.Length;
             if (dataLength < 0x304)
                 throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
-            Int32 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x300);
-            Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x302);
-            Int32 imgLength = width * height;
+            int width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x300);
+            int height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 0x302);
+            int imgLength = width * height;
             if (dataLength != 0x304 + imgLength)
                 throw new FileTypeLoadException("File size does not match header information.");
             try
@@ -50,30 +50,30 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 throw new FileTypeLoadException("Palette data is not 6-bit.");
             }
-            Byte[] imageData = new Byte[imgLength];
+            byte[] imageData = new byte[imgLength];
             Array.Copy(fileData, 0x304, imageData, 0, imgLength);
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, width, height, width, PixelFormat.Format8bppIndexed, this.m_Palette, null);
             this.SetFileNames(sourcePath);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             // Preliminary checks
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
             if (fileToSave.BitsPerPixel != 8)
                 throw new ArgumentException(String.Format(ERR_BPP_INPUT_EXACT, 8), "fileToSave");
-            Int32 width = fileToSave.Width;
-            Int32 height = fileToSave.Height;
+            int width = fileToSave.Width;
+            int height = fileToSave.Height;
             if (width > 0xFFFF || height > 0xFFFF)
                 throw new ArgumentException(ERR_DIMENSIONS_TOO_LARGE, "fileToSave");
-            Int32 stride;
-            Byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
-            Byte[] jmxData = new Byte[imageBytes.Length + 0x304];
-            Byte[] palette = ColorUtils.GetSixBitPaletteData(fileToSave.GetColors());
+            int stride;
+            byte[] imageBytes = ImageUtils.GetImageData(fileToSave.GetBitmap(), out stride, true);
+            byte[] jmxData = new byte[imageBytes.Length + 0x304];
+            byte[] palette = ColorUtils.GetSixBitPaletteData(fileToSave.GetColors());
             Array.Copy(palette, 0, jmxData, 0, palette.Length);
-            ArrayUtils.WriteUInt16ToByteArrayLe(jmxData, 0x300, (UInt16)width);
-            ArrayUtils.WriteUInt16ToByteArrayLe(jmxData, 0x302, (UInt16)height);
+            ArrayUtils.WriteUInt16ToByteArrayLe(jmxData, 0x300, (ushort)width);
+            ArrayUtils.WriteUInt16ToByteArrayLe(jmxData, 0x302, (ushort)height);
             Array.Copy(imageBytes, 0, jmxData, 0x304, imageBytes.Length);
             return jmxData;
         }

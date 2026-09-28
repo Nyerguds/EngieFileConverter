@@ -8,14 +8,14 @@ namespace Nyerguds.Util.UI.SaveOptions
 {
     public partial class SaveOptionString : SaveOptionControl
     {
-        private Int32 initialWidthLbl;
-        private Int32 initialWidthTxt;
-        private Int32 initialWidthToScale;
-        private Int32 m_PadLeft;
-        private Int32 m_PadMiddle;
-        private Int32 m_PadRight;
-        private Boolean m_Loading;
-        private Char[] m_AllowedMask;
+        private int initialWidthLbl;
+        private int initialWidthTxt;
+        private int initialWidthToScale;
+        private int m_PadLeft;
+        private int m_PadMiddle;
+        private int m_PadRight;
+        private bool m_Loading;
+        private char[] m_AllowedMask;
         private bool m_AllowLineBreak;
 
         public SaveOptionString() : this(null, null) { }
@@ -29,10 +29,10 @@ namespace Nyerguds.Util.UI.SaveOptions
 
         private void InitResize()
         {
-            Int32 initialPosTxt = txtValue.Location.X;
+            int initialPosTxt = txtValue.Location.X;
             initialWidthLbl = lblDescription.Width;
             initialWidthTxt = txtValue.Width;
-            Int32 initialWidthFrm = DisplayRectangle.Width;
+            int initialWidthFrm = DisplayRectangle.Width;
             m_PadLeft = lblDescription.Location.X;
             m_PadRight = initialWidthFrm - initialPosTxt - initialWidthTxt;
             m_PadMiddle = initialPosTxt - initialWidthLbl - m_PadLeft;
@@ -56,7 +56,7 @@ namespace Nyerguds.Util.UI.SaveOptions
             txtValue.Select();
         }
 
-        public override void SetEnabled(Boolean enabled)
+        public override void SetEnabled(bool enabled)
         {
             try
             {
@@ -73,11 +73,11 @@ namespace Nyerguds.Util.UI.SaveOptions
             }
         }
 
-        private void TextBoxCheckLines(Object sender, EventArgs e)
+        private void TextBoxCheckLines(object sender, EventArgs e)
         {
             if (m_Loading)
                 return;
-            const String editing = "editing";
+            const string editing = "editing";
             TextBox textbox = sender as TextBox;
             if (textbox == null)
                 return;
@@ -89,11 +89,11 @@ namespace Nyerguds.Util.UI.SaveOptions
                 {
                     // Remove any line breaks.
                     textbox.Tag = editing;
-                    Int32 caret = textbox.SelectionStart;
-                    Char[] text = textbox.Text.ToCharArray();
-                    Int32 txtLen = text.Length;
-                    Int32 caretSubtract = 0;
-                    for (Int32 i = 0; i < txtLen; ++i)
+                    int caret = textbox.SelectionStart;
+                    char[] text = textbox.Text.ToCharArray();
+                    int txtLen = text.Length;
+                    int caretSubtract = 0;
+                    for (int i = 0; i < txtLen; ++i)
                     {
                         if (!m_AllowedMask.Contains(text[i]))
                         {
@@ -102,7 +102,7 @@ namespace Nyerguds.Util.UI.SaveOptions
                                 caretSubtract++;
                         }
                     }
-                    textbox.Text = new String(text).Replace("\0", String.Empty);
+                    textbox.Text = new string(text).Replace("\0", String.Empty);
                     textbox.SelectionStart = Math.Min(Math.Max(0, caret - caretSubtract), textbox.Text.Length);
                 }
                 // Update controller
@@ -118,13 +118,13 @@ namespace Nyerguds.Util.UI.SaveOptions
             }
         }
 
-        private void TextBoxCheckKeyPress(Object sender, KeyPressEventArgs e)
+        private void TextBoxCheckKeyPress(object sender, KeyPressEventArgs e)
         {
             if (!m_AllowLineBreak && (e.KeyChar == '\r' || e.KeyChar == '\n'))
                 e.Handled = true;
         }
 
-        private void TextBoxSelectAll(Object sender, KeyEventArgs e)
+        private void TextBoxSelectAll(object sender, KeyEventArgs e)
         {
             if (e.Control && (e.KeyCode == Keys.A))
             {
@@ -137,13 +137,13 @@ namespace Nyerguds.Util.UI.SaveOptions
             }
         }
 
-        private void SaveOptionString_Resize(Object sender, EventArgs e)
+        private void SaveOptionString_Resize(object sender, EventArgs e)
         {
             // What a mess just to make the center size...
 
-            Double scaleFactor = (Double)this.DisplayRectangle.Width / this.initialWidthToScale;
-            Int32 newWidthLbl = (Int32)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
-            Int32 newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
+            double scaleFactor = (double)this.DisplayRectangle.Width / this.initialWidthToScale;
+            int newWidthLbl = (int)Math.Round(this.initialWidthLbl * scaleFactor, MidpointRounding.AwayFromZero);
+            int newWidthTxt = this.DisplayRectangle.Width - (this.m_PadLeft + newWidthLbl + this.m_PadMiddle + this.m_PadRight);
 
             this.lblDescription.Width = newWidthLbl;
             this.txtValue.Location = new Point(this.m_PadLeft + newWidthLbl + this.m_PadMiddle, this.txtValue.Location.Y);

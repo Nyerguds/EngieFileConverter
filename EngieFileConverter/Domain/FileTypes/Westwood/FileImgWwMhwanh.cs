@@ -14,26 +14,26 @@ namespace EngieFileConverter.Domain.FileTypes
     /// </summary>
     class FileImgWwMhwanh: SupportedFileType
     {
-        public override String IdCode { get { return "HsiRaw"; } }
+        public override string IdCode { get { return "HsiRaw"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "HSI Raw"; } }
-        public override String[] FileExtensions { get { return new String[] { "raw", "jap" }; } }
-        public override String LongTypeName { get { return "ImageAlchemy HSI Raw Format"; } }
+        public override string ShortTypeName { get { return "HSI Raw"; } }
+        public override string[] FileExtensions { get { return new string[] { "raw", "jap" }; } }
+        public override string LongTypeName { get { return "ImageAlchemy HSI Raw Format"; } }
         public override FileClass FileClass { get { return this._IsHighCol ? FileClass.ImageHiCol : FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.ImageHiCol; } }
-        public override Int32 Width { get { return this._Width; } }
-        public override Int32 Height { get { return this._Height; } }
+        public override int Width { get { return this._Width; } }
+        public override int Height { get { return this._Height; } }
 
-        public override Boolean CanSave { get { return false; } }
+        public override bool CanSave { get { return false; } }
 
-        protected Int32 _Version;
-        protected Int32 _Width;
-        protected Int32 _Height;
-        protected Boolean _IsHighCol;
+        protected int _Version;
+        protected int _Width;
+        protected int _Height;
+        protected bool _IsHighCol;
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
-            const Int32 headerSize = 0x20;
+            const int headerSize = 0x20;
             if (fileData.Length < headerSize)
                 throw new FileTypeLoadException("File is not long enough.");
             if (!fileData.Take(6).SequenceEqual(Encoding.ASCII.GetBytes("mhwanh")))
@@ -41,17 +41,17 @@ namespace EngieFileConverter.Domain.FileTypes
             this._Version = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x06);
             this._Width = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x08);
             this._Height = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x0A);
-            Int32 paletteSize = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x0C);
+            int paletteSize = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x0C);
             if (paletteSize < 0)
                 paletteSize = 0;
             this._IsHighCol = paletteSize == 0;
-            Int32 horizonalDpi = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x0E);
-            Int32 verticalDpi = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x10);
-            Int32 gamma = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x12);
-            Int32 compression = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x14);
+            int horizonalDpi = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x0E);
+            int verticalDpi = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x10);
+            int gamma = ArrayUtils.ReadInt16FromByteArrayBe(fileData, 0x12);
+            int compression = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x14);
             if (compression != 0)
                 throw new FileTypeLoadException("HSI Raw format with compression is not supported.");
-            Boolean hasAlpha = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x16) != 0;
+            bool hasAlpha = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x16) != 0;
             if (hasAlpha)
                 throw new FileTypeLoadException("HSI Raw format with alpha channel is not supported.");
             /*/
@@ -60,24 +60,24 @@ namespace EngieFileConverter.Domain.FileTypes
             Int32 Reserved3 = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x1C);
             Int32 Reserved4 = ArrayUtils.ReadUInt16FromByteArrayBe(fileData, 0x1E);
             //*/
-            Int32 palDataLen = paletteSize * 3;
-            Int32 imgDataLen = this._Width * this._Height;
+            int palDataLen = paletteSize * 3;
+            int imgDataLen = this._Width * this._Height;
             if (this._IsHighCol)
                 imgDataLen *= 3;
             if (fileData.Length != headerSize + palDataLen + imgDataLen)
                 throw new FileTypeLoadException("File length does not match.");
             this.m_Palette = null;;
-            Int32 readOffs = headerSize;
+            int readOffs = headerSize;
             if (!this._IsHighCol)
             {
                 this.m_Palette = new Color[paletteSize];
-                for (Int32 i = 0; i < paletteSize; ++i)
+                for (int i = 0; i < paletteSize; ++i)
                 {
                     this.m_Palette[i] = Color.FromArgb(fileData[readOffs], fileData[readOffs + 1], fileData[readOffs + 2]);
                     readOffs += 3;
                 }
             }
-            Byte[] imageData = new Byte[imgDataLen];
+            byte[] imageData = new byte[imgDataLen];
             Array.Copy(fileData, headerSize + palDataLen, imageData, 0, imgDataLen);
             PixelFormat pf = this._IsHighCol ? PixelFormat.Format24bppRgb : PixelFormat.Format8bppIndexed;
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, this._Width, this._Height, this._Width, pf, this.m_Palette, Color.Empty);
@@ -90,7 +90,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.ExtraInfo += Environment.NewLine + "Gamma: " + gamma;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotSupportedException();
         }

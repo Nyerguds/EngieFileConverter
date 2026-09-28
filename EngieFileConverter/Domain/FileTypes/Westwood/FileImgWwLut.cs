@@ -17,30 +17,30 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.ImageHiCol; } }
         public override FileClass InputFileClass { get { return FileClass.Image; } }
 
-        public override String IdCode { get { return "WwLut"; } }
+        public override string IdCode { get { return "WwLut"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Westwood Chrono LUT"; } }
-        public override String[] FileExtensions { get { return new String[] { "lut" }; } }
-        public override String LongTypeName { get { return "Westwood Chrono Vortex Lookup Table"; } }
-        public override Int32 BitsPerPixel { get { return 32; } }
+        public override string ShortTypeName { get { return "Westwood Chrono LUT"; } }
+        public override string[] FileExtensions { get { return new string[] { "lut" }; } }
+        public override string LongTypeName { get { return "Westwood Chrono Vortex Lookup Table"; } }
+        public override int BitsPerPixel { get { return 32; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData);
             this.SetFileNames(filename);
         }
 
-        public override Boolean ColorsChanged()
+        public override bool ColorsChanged()
         {
             return false;
         }
 
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(byte[] fileData)
         {
             if (fileData.Length != LutSize)
             {
@@ -77,7 +77,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = ImageUtils.BuildImage(imageData, LutDimensions, LutDimensions, writeStride, PixelFormat.Format24bppRgb, null, null);
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave.IsFramesContainer && !fileToSave.HasCompositeFrame)
             {
@@ -116,12 +116,12 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     else
                     {
-                        byte[] src = new byte[] { Byte.MaxValue, r, g, b };
+                        byte[] src = new byte[] { byte.MaxValue, r, g, b };
                         components = new byte[3];
                         // Abusing the Format6BitVgaPal formatter since it stretches 0-63 values to 0-255
                         PixelFormatter.Format6BitVgaPal.WriteColorComponents(components, 0, src);
                         // Invert green factor; brighter green = added darkness.
-                        bri = LutMaxBrightness - (g * LutMaxBrightness / Byte.MaxValue);
+                        bri = LutMaxBrightness - (g * LutMaxBrightness / byte.MaxValue);
                     }
                     saveData[outIndex++] = components[0]; // Red component in 6-bit 'palette'
                     saveData[outIndex++] = components[2]; // Blue component in 6-bit 'palette'

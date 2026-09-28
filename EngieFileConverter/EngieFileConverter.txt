@@ -69,7 +69,9 @@ https://www.vogons.org/viewtopic.php?p=273448#p273448
 
 The Dynamix LZSHuff decompression was identified thanks to NewRisingSun in that same thread:
 https://www.vogons.org/viewtopic.php?p=306003#p306003
-https://web.archive.org/web/20200611023054/people.cs.umu.se/isak/snippets/lzhuf.c
+https://github.com/pzgnss/snippets/blob/master/lzhuf.c
+Although the original authors are known, the original source file contains no explicit license
+or copyright notice. The licensing status of this particular version is therefore unclear.
 
 The K.O.R.T. image format was decoded thanks to documentation included in the K.O.R.T. savegame
 editor written by David Eriksson, aka "Σdison of 2GooD":

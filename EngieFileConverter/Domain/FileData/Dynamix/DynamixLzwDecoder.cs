@@ -1,4 +1,13 @@
-﻿using System;
+﻿// The Dynamix LZW decompression code was converted from the C++ code of
+// VOGONS.org user tikalat's "midi tools v4". It contains no license, but I
+// assume the fact he included the code implies that he doesn't mind it being
+// useful to more people. The license on the attachment on the forum says
+// "Fair use/fair dealing exception"; not really a license meant for posting
+// your own code under.
+// 
+// https://www.vogons.org/viewtopic.php?p=273448#p273448
+
+using System;
 using Nyerguds.Util;
 
 namespace Nyerguds.FileData.Dynamix
@@ -10,34 +19,34 @@ namespace Nyerguds.FileData.Dynamix
     public class DynamixLzwDecoder
     {
         // Current code's string
-        private Byte[] codeCur = new Byte[256];
+        private byte[] codeCur = new byte[256];
         // Length of the current code
-        private Int32 codeLen;
+        private int codeLen;
         // Amount of bits in the current code
-        private Int32 codeSize;
+        private int codeSize;
         // cache chunks; 8 times the code size. Unsure what uses this except the reset.
-        private Int32 cacheBits;
+        private int cacheBits;
 
         // The "strings" of the dictionary table
-        private Byte[][] dictTableStr;
+        private byte[][] dictTableStr;
         // lengths of the "strings" in the dictionary table
-        private Byte[] dictTableLen;
+        private byte[] dictTableLen;
 
         // Current dictionary size
-        private Int32 dictSize;
+        private int dictSize;
         // Current dictionary maximum before the codeSize needs to be increased.
-        private Int32 dictMax;
+        private int dictMax;
         // True if no more codes can be added.
-        private Boolean dictFull;
+        private bool dictFull;
 
         private void LzwReset()
         {
-            this.dictTableStr = new Byte[0x4000][];
-            this.dictTableLen = new Byte[0x4000];
-            for (Int32 lcv = 0; lcv < 256; ++lcv)
+            this.dictTableStr = new byte[0x4000][];
+            this.dictTableLen = new byte[0x4000];
+            for (int lcv = 0; lcv < 256; ++lcv)
             {
                 this.dictTableLen[lcv] = 1;
-                this.dictTableStr[lcv] = new Byte[] {(Byte)lcv};
+                this.dictTableStr[lcv] = new byte[] {(byte)lcv};
             }
             // 00-FF = ASCII
             // 100 = reset
@@ -51,18 +60,18 @@ namespace Nyerguds.FileData.Dynamix
             this.cacheBits = 0;
         }
 
-        public void LzwDecode(Byte[] buffer, Int32? startOffset, Int32? endOffset, Byte[] bufferOut)
+        public void LzwDecode(byte[] buffer, int? startOffset, int? endOffset, byte[] bufferOut)
         {
-            Int32 inPtr = startOffset ?? 0;
-            Int32 bitIndex = inPtr * 8;
-            Int32 inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
-            Int32 outPtr = 0;
+            int inPtr = startOffset ?? 0;
+            int bitIndex = inPtr * 8;
+            int inPtrEnd = endOffset.HasValue ? Math.Min(endOffset.Value, buffer.Length) : buffer.Length;
+            int outPtr = 0;
             this.LzwReset();
             this.cacheBits = 0;
             while (outPtr < bufferOut.Length)
             {
                 // get next code
-                Int32 code = ArrayUtils.ReadBitsFromByteArray(buffer, ref bitIndex, this.codeSize, inPtrEnd);
+                int code = ArrayUtils.ReadBitsFromByteArray(buffer, ref bitIndex, this.codeSize, inPtrEnd);
 
                 if (code == -1)
                     return;
@@ -76,7 +85,7 @@ namespace Nyerguds.FileData.Dynamix
                     // Dynamix: dump data cache
                     if (this.cacheBits > 0)
                     {
-                        Int32 ignoreBits = this.codeSize * 8 - this.cacheBits;
+                        int ignoreBits = this.codeSize * 8 - this.cacheBits;
                         ArrayUtils.ReadBitsFromByteArray(buffer, ref bitIndex, ignoreBits, inPtrEnd);
                     }
                     this.LzwReset();
@@ -87,15 +96,15 @@ namespace Nyerguds.FileData.Dynamix
                 {
                     this.codeCur[this.codeLen++] = this.codeCur[0];
                     // write output - future expanded string
-                    for (UInt32 codelen = 0; codelen < this.codeLen; ++codelen)
+                    for (uint codelen = 0; codelen < this.codeLen; ++codelen)
                     //for (lastCodeValue = 0; lastCodeValue < this.codeLen; ++lastCodeValue)
                         bufferOut[outPtr++] = this.codeCur[codelen];
                 }
                 else
                 {
                     // write output
-                    Int32 len = this.dictTableLen[code];
-                    for (UInt32 codelen = 0; codelen < len; ++codelen)
+                    int len = this.dictTableLen[code];
+                    for (uint codelen = 0; codelen < len; ++codelen)
                     //for (lastCodeValue = 0; lastCodeValue < len; ++lastCodeValue)
                         bufferOut[outPtr++] = this.dictTableStr[code][codelen];
                     // expand current string
@@ -106,7 +115,7 @@ namespace Nyerguds.FileData.Dynamix
                 // add to dictionary (2+ bytes only)
                 if (!this.dictFull)
                 {
-                    Int32 lastCodeValue;
+                    int lastCodeValue;
                     // check full condition
                     if (this.dictSize == this.dictMax && this.codeSize == 12)
                     {
@@ -125,13 +134,13 @@ namespace Nyerguds.FileData.Dynamix
                         this.codeSize++;
                     }
                     // add new entry
-                    this.dictTableStr[lastCodeValue]= new Byte[this.codeLen];
-                    for (UInt32 codelen = 0; codelen < this.codeLen; ++codelen)
+                    this.dictTableStr[lastCodeValue]= new byte[this.codeLen];
+                    for (uint codelen = 0; codelen < this.codeLen; ++codelen)
                         this.dictTableStr[lastCodeValue][codelen] = this.codeCur[codelen];
-                    this.dictTableLen[lastCodeValue] = (Byte)this.codeLen;
+                    this.dictTableLen[lastCodeValue] = (byte)this.codeLen;
                 }
                 // reset to current code.
-                for (UInt32 codelen = 0; codelen < this.dictTableLen[code]; ++codelen)
+                for (uint codelen = 0; codelen < this.dictTableLen[code]; ++codelen)
                 //for (lastCodeValue = 0; lastCodeValue < this.dictTableLen[code]; ++lastCodeValue)
                     this.codeCur[codelen] = this.dictTableStr[code][codelen];
                 this.codeLen = this.dictTableLen[code];

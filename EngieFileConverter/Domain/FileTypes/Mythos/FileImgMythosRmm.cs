@@ -21,39 +21,39 @@ namespace EngieFileConverter.Domain.FileTypes
 
         private const int _width = 320;
         private const int _height = 138;
-        public override Int32 Width { get { return _width; } }
-        public override Int32 Height { get { return _height; } }
+        public override int Width { get { return _width; } }
+        public override int Height { get { return _height; } }
 
-        public override String IdCode { get { return "MythRmm"; } }
+        public override string IdCode { get { return "MythRmm"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Mythos RMM Image"; } }
-        public override String[] FileExtensions { get { return new String[] { "rmm" }; } }
-        public override String LongTypeName { get { return "Mythos RMM Scene Image"; } }
-        public override Boolean NeedsPalette { get { return false; } }
-        public override Int32 BitsPerPixel { get{ return 8; } }
+        public override string ShortTypeName { get { return "Mythos RMM Image"; } }
+        public override string[] FileExtensions { get { return new string[] { "rmm" }; } }
+        public override string LongTypeName { get { return "Mythos RMM Scene Image"; } }
+        public override bool NeedsPalette { get { return false; } }
+        public override int BitsPerPixel { get{ return 8; } }
         public override bool CanSave { get { return false; } }
 
         const int imageLen = _width * _height;
         const int palLen = 0x300;
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData);
             this.SetFileNames(filename);
         }
 
-        protected void LoadFromFileData(Byte[] fileData)
+        protected void LoadFromFileData(byte[] fileData)
         {
-            Int32 datalen = fileData.Length;
-            Int32 fullLen = imageLen + palLen;
+            int datalen = fileData.Length;
+            int fullLen = imageLen + palLen;
             if (datalen < imageLen + palLen)
                 throw new FileTypeLoadException(ERR_BAD_SIZE);
-            Byte[] imageData = new Byte[imageLen];
+            byte[] imageData = new byte[imageLen];
             Array.Copy(fileData, datalen - imageLen, imageData, 0, imageLen);
             try
             {
@@ -67,7 +67,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.m_LoadedImage = image;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotSupportedException();
         }

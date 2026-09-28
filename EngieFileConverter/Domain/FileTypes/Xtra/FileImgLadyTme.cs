@@ -13,38 +13,38 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "LadyTme"; } }
+        public override string IdCode { get { return "LadyTme"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "LadyLove TME Image"; } }
-        public override String[] FileExtensions { get { return new String[] { "tme" }; } }
-        public override String LongTypeName { get { return "LadyLove TME Image file"; } }
-        public override Boolean NeedsPalette { get { return this.m_Palette == null; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "LadyLove TME Image"; } }
+        public override string[] FileExtensions { get { return new string[] { "tme" }; } }
+        public override string LongTypeName { get { return "LadyLove TME Image file"; } }
+        public override bool NeedsPalette { get { return this.m_Palette == null; } }
+        public override int BitsPerPixel { get { return 8; } }
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public override Boolean CanSave { get { return false; } }
+        public override bool CanSave { get { return false; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null, 0, fileData == null ? 0 : fileData.Length);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename, 0, fileData == null ? 0 : fileData.Length);
         }
 
-        public void LoadFromFileData(Byte[] fileData, String sourcePath, Int32 frameStart, Int32 frameLength)
+        public void LoadFromFileData(byte[] fileData, string sourcePath, int frameStart, int frameLength)
         {
             if (frameStart < 0 || frameLength < 6 || frameStart + frameLength > fileData.Length)
                 throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
-            Int32 width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 0);
-            Int32 height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 2);
-            Int32 colors = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 4);
-            Int32 imgLength = width * height;
-            Int32 dataStart = 6 + 3 * colors;
-            Int32 frameDataLength = dataStart + imgLength;
+            int width = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 0);
+            int height = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 2);
+            int colors = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, frameStart + 4);
+            int imgLength = width * height;
+            int dataStart = 6 + 3 * colors;
+            int frameDataLength = dataStart + imgLength;
             if (frameLength < frameDataLength)
                 throw new FileTypeLoadException("Too short to be a " + this.ShortTypeName + ".");
             if (width == 0)
@@ -53,10 +53,10 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("Height cannot be 0");
             if (width % 4 != 0)
                 throw new FileTypeLoadException("Width must be divisible by 4.");
-            Int32 imgChunkLength = imgLength / 4;
-            Int32 imgChunkLength2 = imgChunkLength * 2;
-            Int32 imgChunkLength3 = imgChunkLength * 3;
-            Boolean noCol = false;
+            int imgChunkLength = imgLength / 4;
+            int imgChunkLength2 = imgChunkLength * 2;
+            int imgChunkLength3 = imgChunkLength * 3;
+            bool noCol = false;
             Color[] pal;
             if (colors > 0)
             {
@@ -74,12 +74,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 pal = PaletteUtils.GenerateGrayPalette(8, null, false);
                 noCol = true;
             }
-            Byte[] imageData = new Byte[imgLength];
-            Int32 dataPtr = frameStart + dataStart;
-            Int32 outPtr = 0;
-            for (Int32 y = 0; y < height; ++y)
+            byte[] imageData = new byte[imgLength];
+            int dataPtr = frameStart + dataStart;
+            int outPtr = 0;
+            for (int y = 0; y < height; ++y)
             {
-                for (Int32 x = 0; x < width; x += 4)
+                for (int x = 0; x < width; x += 4)
                 {
                     imageData[outPtr++] = fileData[dataPtr];
                     imageData[outPtr++] = fileData[dataPtr + imgChunkLength];
@@ -100,7 +100,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetFileNames(sourcePath);
         }
 
-        public void OverridePalette(Color[] pal, String source)
+        public void OverridePalette(Color[] pal, string source)
         {
             this.m_Palette = pal;
             this.m_LoadedImage.Palette = ImageUtils.GetPalette(this.m_Palette, pal.Length);
@@ -110,7 +110,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 this.ExtraInfo += '\n' + source;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
         }

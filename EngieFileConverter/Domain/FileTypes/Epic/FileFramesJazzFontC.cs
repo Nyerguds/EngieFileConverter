@@ -19,62 +19,62 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
         protected SupportedFileType[] m_FramesList;
 
-        public override String IdCode { get { return "JazzFontC"; } }
+        public override string IdCode { get { return "JazzFontC"; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "Jazz Compressed Font"; } }
-        public override String[] FileExtensions { get { return new String[] { "0fn" }; } }
-        public override String LongTypeName { get { return "Jazz Compressed Font "; } }
-        public override Boolean NeedsPalette { get { return true; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string ShortTypeName { get { return "Jazz Compressed Font"; } }
+        public override string[] FileExtensions { get { return new string[] { "0fn" }; } }
+        public override string LongTypeName { get { return "Jazz Compressed Font "; } }
+        public override bool NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 8; } }
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false wil not get an index -1 in the frames list.</summary>
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return false; } }
+        public override bool HasCompositeFrame { get { return false; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
+        public override bool[] TransparencyMask { get { return new bool[] { true }; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
         }
 
-        protected const String header = "Digital Dimensions";
-        protected Int32 SpaceWidth = -1;
-        protected Int32 LineHeight = -1;
+        protected const string header = "Digital Dimensions";
+        protected int SpaceWidth = -1;
+        protected int LineHeight = -1;
 
-        protected void LoadFromFileData(Byte[] fileData, String sourcePath)
+        protected void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             if (fileData.Length < 0x17)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
-            Byte[] hdrBytesCheck = Encoding.ASCII.GetBytes(header);
-            for (Int32 i = 0; i < hdrBytesCheck.Length; ++i)
+            byte[] hdrBytesCheck = Encoding.ASCII.GetBytes(header);
+            for (int i = 0; i < hdrBytesCheck.Length; ++i)
                 if (fileData[i] != hdrBytesCheck[i])
                     throw new FileTypeLoadException(ERR_BAD_HEADER);
             if (fileData[0x12] != 0x1A || fileData[0x15] != 0x00 || fileData[0x16] != 0x00)
                 throw new FileTypeLoadException(ERR_BAD_HEADER);
             this.SpaceWidth = fileData[0x13];
             this. LineHeight = fileData[0x14];
-            Int32 offset = 0x17;
+            int offset = 0x17;
             this.m_Palette = PaletteUtils.GenerateGrayPalette(8, this.TransparencyMask, false);
             List<SupportedFileType> imageDataList = new List<SupportedFileType>();
-            List<String> foundHidden = new List<String>();
-            Int32 index = 0;
+            List<string> foundHidden = new List<string>();
+            int index = 0;
             while (offset < fileData.Length)
             {
-                Int32 frameOffset = offset;
-                Int32 comprLen;
-                Int32 actualComprLen = -1;
-                UInt32 decompSize = (UInt32)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
+                int frameOffset = offset;
+                int comprLen;
+                int actualComprLen = -1;
+                uint decompSize = (uint)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
                 offset += 2;
                 Bitmap symb;
                 if (decompSize == 0)
@@ -84,19 +84,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 else
                 {
-                    comprLen = (Int32)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
+                    comprLen = (int)ArrayUtils.ReadIntFromByteArray(fileData, offset, 2, true);
                     if (offset + 2 + comprLen > fileData.Length)
                         throw new FileTypeLoadException(ERR_SIZE_TOO_SMALL_IMAGE);
-                    Byte[] decompressedData = JazzRleCompression.RleDecodeJazz(fileData, (UInt32)offset, true, decompSize, false, out actualComprLen);
+                    byte[] decompressedData = JazzRleCompression.RleDecodeJazz(fileData, (uint)offset, true, decompSize, false, out actualComprLen);
                     offset += comprLen + 2;
                     if (decompressedData == null || decompressedData.Length < 4)
                         throw new FileTypeLoadException(ERR_DECOMPR);
-                    Int32 symbWidth = (Int32)ArrayUtils.ReadIntFromByteArray(decompressedData, 0, 2, true);
-                    Int32 symbHeight = (Int32)ArrayUtils.ReadIntFromByteArray(decompressedData, 2, 2, true);
-                    Int32 imgSize = symbWidth * symbHeight;
+                    int symbWidth = (int)ArrayUtils.ReadIntFromByteArray(decompressedData, 0, 2, true);
+                    int symbHeight = (int)ArrayUtils.ReadIntFromByteArray(decompressedData, 2, 2, true);
+                    int imgSize = symbWidth * symbHeight;
                     if (imgSize != decompSize - 4)
                         throw new FileTypeLoadException(ERR_DECOMPR_LEN);
-                    Byte[] symbol = new Byte[imgSize];
+                    byte[] symbol = new byte[imgSize];
                     Array.Copy(decompressedData, 4, symbol, 0, imgSize);
                     symb = imgSize == 0 ? null : ImageUtils.BuildImage(symbol, symbWidth, symbHeight, symbWidth, PixelFormat.Format8bppIndexed, this.m_Palette, Color.Black);
                 }
@@ -121,7 +121,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             this.ExtraInfo = "Space width in header: " + this.SpaceWidth
                            + "\nLine height in header: " + this.LineHeight;
-            Int32 hiddenFound = foundHidden.Count;
+            int hiddenFound = foundHidden.Count;
             if (hiddenFound > 0)
             {
                 this.ExtraInfo += "\nHidden data found on ind" + (hiddenFound == 1 ? "ex " : "ices:\n")
@@ -132,11 +132,11 @@ namespace EngieFileConverter.Domain.FileTypes
 
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             FileFramesJazzFontC toSave = fileToSave as FileFramesJazzFontC;
-            Int32 spaceWidth = -1;
-            Int32 lineHeight = -1;
+            int spaceWidth = -1;
+            int lineHeight = -1;
             if (toSave != null)
             {
                 // Space width. As baseline, take the maximum width * 2 / 3
@@ -146,17 +146,17 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             if (spaceWidth == -1 || lineHeight == -1)
             {
-                Int32 maxWidth = 0;
-                Dictionary<Int32, Int32> lastRowFreq = new Dictionary<Int32, Int32>();
-                Dictionary<Int32, Int32> widthFreq = new Dictionary<Int32, Int32>();
+                int maxWidth = 0;
+                Dictionary<int, int> lastRowFreq = new Dictionary<int, int>();
+                Dictionary<int, int> widthFreq = new Dictionary<int, int>();
                 SupportedFileType[] frames = fileToSave.Frames;
-                for (Int32 i = 0; i < frames.Length; ++i)
+                for (int i = 0; i < frames.Length; ++i)
                 {
                     SupportedFileType frame = frames[i];
                     if (frame == null || frame.Width == 0 || frame.Height == 0 || frame.GetBitmap() == null)
                         continue;
-                    Int32 w = frame.Width;
-                    Int32 curAmount;
+                    int w = frame.Width;
+                    int curAmount;
                     if (spaceWidth == -1)
                     {
                         maxWidth = Math.Max(maxWidth, w);
@@ -166,8 +166,8 @@ namespace EngieFileConverter.Domain.FileTypes
                     }
                     if (lineHeight == -1)
                     {
-                        Byte[] imageData = ImageUtils.GetImageData(frame.GetBitmap(), PixelFormat.Format8bppIndexed);
-                        Int32 height = imageData.Length - 1;
+                        byte[] imageData = ImageUtils.GetImageData(frame.GetBitmap(), PixelFormat.Format8bppIndexed);
+                        int height = imageData.Length - 1;
                         while (height >= 0 && imageData[height] == 0)
                             height--;
                         // Last found Y, from 0 to full height.
@@ -179,14 +179,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if (lineHeight == -1)
                 {
-                    Int32 maxFound = 0;
-                    Int32 maxFoundAt = -1;
-                    Int32[] rows = lastRowFreq.Keys.ToArray();
+                    int maxFound = 0;
+                    int maxFoundAt = -1;
+                    int[] rows = lastRowFreq.Keys.ToArray();
                     Array.Sort(rows);
-                    for (Int32 i = rows.Length-1; i >= 0; --i)
+                    for (int i = rows.Length-1; i >= 0; --i)
                     {
-                        Int32 row = rows[i];
-                        Int32 rowAmount = lastRowFreq[row];
+                        int row = rows[i];
+                        int rowAmount = lastRowFreq[row];
                         if (rowAmount > maxFound)
                         {
                             maxFound = rowAmount;
@@ -197,14 +197,14 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 if (spaceWidth == -1)
                 {
-                    Int32 maxFound = 0;
-                    Int32 maxFoundAt = -1;
-                    Int32[] widths = widthFreq.Keys.ToArray();
+                    int maxFound = 0;
+                    int maxFoundAt = -1;
+                    int[] widths = widthFreq.Keys.ToArray();
                     Array.Sort(widths);
-                    for (Int32 i = widths.Length - 1; i >= 0; --i)
+                    for (int i = widths.Length - 1; i >= 0; --i)
                     {
-                        Int32 width = widths[i];
-                        Int32 widthAmount = widthFreq[width];
+                        int width = widths[i];
+                        int widthAmount = widthFreq[width];
                         if (widthAmount > maxFound)
                         {
                             maxFound = widthAmount;
@@ -220,51 +220,51 @@ namespace EngieFileConverter.Domain.FileTypes
                 new Option("LNH", OptionInputType.Number, "Line height", "0,255", spaceWidth.ToString())
             };
         }
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             SupportedFileType[] frames = this.PerformPreliminaryChecks(fileToSave);
-            Int32 spaceWidth;
+            int spaceWidth;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "SPW"), out spaceWidth);
-            Int32 lineHeight;
+            int lineHeight;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "LNH"), out lineHeight);
-            Int32 nrOfSymbols = frames.Length;
-            Byte[][] imageData = new Byte[nrOfSymbols][];
-            for (Int32 i = 0; i < nrOfSymbols; ++i)
+            int nrOfSymbols = frames.Length;
+            byte[][] imageData = new byte[nrOfSymbols][];
+            for (int i = 0; i < nrOfSymbols; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.Width == 0 || frame.Height == 0 || frame.GetBitmap() == null)
                 {
                     // Write dummy entry
-                    imageData[i] = new Byte[2];
+                    imageData[i] = new byte[2];
                     continue;
                 }
-                Byte[] byteData = ImageUtils.GetImageData(frame.GetBitmap(), true);
+                byte[] byteData = ImageUtils.GetImageData(frame.GetBitmap(), true);
                 // Trim off zeroes
-                Byte[] writeData = new Byte[byteData.Length + 4];
-                ArrayUtils.WriteIntToByteArray(writeData, 0, 2, true, (UInt64)frame.Width);
-                ArrayUtils.WriteIntToByteArray(writeData, 2, 2, true, (UInt64)frame.Height);
+                byte[] writeData = new byte[byteData.Length + 4];
+                ArrayUtils.WriteIntToByteArray(writeData, 0, 2, true, (ulong)frame.Width);
+                ArrayUtils.WriteIntToByteArray(writeData, 2, 2, true, (ulong)frame.Height);
                 Array.Copy(byteData, 0, writeData, 4, byteData.Length);
-                Byte[] comprData = JazzRleCompression.RleEncodeJazz(writeData);
+                byte[] comprData = JazzRleCompression.RleEncodeJazz(writeData);
                 // Add uncompressed size in front
-                Byte[] comprWriteData = new Byte[comprData.Length + 2];
-                ArrayUtils.WriteIntToByteArray(comprWriteData, 0, 2, true, (UInt64)byteData.Length + 4);
+                byte[] comprWriteData = new byte[comprData.Length + 2];
+                ArrayUtils.WriteIntToByteArray(comprWriteData, 0, 2, true, (ulong)byteData.Length + 4);
                 Array.Copy(comprData, 0, comprWriteData, 2, comprData.Length);
                 imageData[i] = comprWriteData;
             }
-            Int32 bufLen = 0x17;
-            for (Int32 i = 0; i < nrOfSymbols; ++i)
+            int bufLen = 0x17;
+            for (int i = 0; i < nrOfSymbols; ++i)
                 bufLen += imageData[i].Length;
-            Byte[] fontData = new Byte[bufLen];
+            byte[] fontData = new byte[bufLen];
             Encoding.ASCII.GetBytes(header, 0, header.Length, fontData, 0);
             fontData[0x12] = 0x1A;
-            fontData[0x13] = (Byte)Math.Min(255, lineHeight);
-            fontData[0x14] = (Byte)Math.Min(255, spaceWidth);
+            fontData[0x13] = (byte)Math.Min(255, lineHeight);
+            fontData[0x14] = (byte)Math.Min(255, spaceWidth);
             // 0x15 & 0x16 are both 00.
-            Int32 writeOffs = 0x17;
-            for (Int32 i = 0; i < nrOfSymbols; ++i)
+            int writeOffs = 0x17;
+            for (int i = 0; i < nrOfSymbols; ++i)
             {
-                Byte[] curData = imageData[i];
-                Int32 curLength = curData.Length;
+                byte[] curData = imageData[i];
+                int curLength = curData.Length;
                 Array.Copy(curData, 0, fontData, writeOffs, curLength);
                 writeOffs += curLength;
             }
@@ -277,10 +277,10 @@ namespace EngieFileConverter.Domain.FileTypes
             if (fileToSave == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);
             SupportedFileType[] frames = fileToSave.IsFramesContainer ? fileToSave.Frames : new SupportedFileType[] { fileToSave };
-            Int32 nrOfFrames = frames == null ? 0 : frames.Length;
+            int nrOfFrames = frames == null ? 0 : frames.Length;
             if (nrOfFrames == 0)
                 throw new FileTypeSaveException(ERR_FRAMES_NEEDED);
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || frame.GetBitmap() == null)

@@ -14,57 +14,57 @@ namespace EngieFileConverter.Domain.FileTypes
     {
         #region Generic error messages
         // Input
-        protected const String ERR_FILE_TOO_SMALL = "File is not long enough to be of this type.";
-        protected const String ERR_NO_HEADER = "File data too short to contain header.";
-        protected const String ERR_BAD_HEADER = "Identifying bytes in header do not match.";
-        protected const String ERR_BAD_HEADER_DATA = "Bad values in header.";
-        protected const String ERR_BAD_SIZE = "Incorrect file size.";
-        protected const String ERR_BAD_HEADER_SIZE = "File size in header does not match.";
-        protected const String ERR_BAD_HEADER_PAL_SIZE = "Invalid palette length in header.";
-        protected const String ERR_BAD_IMAGE_DATA = "Bad values in image data.";
-        protected const String ERR_NO_IMAGE = "No image data found in file.";
-        protected const String ERR_NO_FRAMES = "No frames found in file.";
-        protected const String ERR_SIZE_TOO_SMALL = "File is too small.";
-        protected const String ERR_SIZE_TOO_SMALL_IMAGE = "File is too small to contain the image data.";
-        protected const String ERR_DECOMPR_ = "Error decompressing file";
-        protected const String ERR_DECOMPR = ERR_DECOMPR_ + ".";
-        protected const String ERR_DECOMPR_ERR = ERR_DECOMPR_ + ": {0}";
-        protected const String ERR_DECOMPR_LEN = "Decompressed size does not match.";
-        protected const String ERR_DIM_ZERO = "Image dimensions can't be 0.";
-        protected const String ERR_MAKING_IMG_ = "Cannot construct image from read data";
-        protected const String ERR_MAKING_IMG = ERR_MAKING_IMG_ + ".";
-        protected const String ERR_MAKING_IMG_ERR = ERR_MAKING_IMG_ + ": {0}";
+        protected const string ERR_FILE_TOO_SMALL = "File is not long enough to be of this type.";
+        protected const string ERR_NO_HEADER = "File data too short to contain header.";
+        protected const string ERR_BAD_HEADER = "Identifying bytes in header do not match.";
+        protected const string ERR_BAD_HEADER_DATA = "Bad values in header.";
+        protected const string ERR_BAD_SIZE = "Incorrect file size.";
+        protected const string ERR_BAD_HEADER_SIZE = "File size in header does not match.";
+        protected const string ERR_BAD_HEADER_PAL_SIZE = "Invalid palette length in header.";
+        protected const string ERR_BAD_IMAGE_DATA = "Bad values in image data.";
+        protected const string ERR_NO_IMAGE = "No image data found in file.";
+        protected const string ERR_NO_FRAMES = "No frames found in file.";
+        protected const string ERR_SIZE_TOO_SMALL = "File is too small.";
+        protected const string ERR_SIZE_TOO_SMALL_IMAGE = "File is too small to contain the image data.";
+        protected const string ERR_DECOMPR_ = "Error decompressing file";
+        protected const string ERR_DECOMPR = ERR_DECOMPR_ + ".";
+        protected const string ERR_DECOMPR_ERR = ERR_DECOMPR_ + ": {0}";
+        protected const string ERR_DECOMPR_LEN = "Decompressed size does not match.";
+        protected const string ERR_DIM_ZERO = "Image dimensions can't be 0.";
+        protected const string ERR_MAKING_IMG_ = "Cannot construct image from read data";
+        protected const string ERR_MAKING_IMG = ERR_MAKING_IMG_ + ".";
+        protected const string ERR_MAKING_IMG_ERR = ERR_MAKING_IMG_ + ": {0}";
         // Output
-        protected const String ERR_EMPTY_FILE = "File to save is empty.";
-        protected const String ERR_DIMENSIONS_INPUT = "This format needs {0}×{1} input.";
-        protected const String ERR_DIMENSIONS_TOO_WIDE = "Image width is too large to be saved into this format.";
-        protected const String ERR_DIMENSIONS_TOO_HIGH = "Image height is too large to be saved into this format.";
-        protected const String ERR_DIMENSIONS_TOO_LARGE = "Image is too large to be saved into this format.";
-        protected const String ERR_DIMENSIONS_TOO_LARGE_MAX_DIM = " The maximum is {0} pixels.";
-        protected const String ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE = " The maximum is {0}×{1} pixels.";
-        protected const String ERR_DIMENSIONS_TOO_WIDE_DIM = ERR_DIMENSIONS_TOO_WIDE + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
-        protected const String ERR_DIMENSIONS_TOO_HIGH_DIM = ERR_DIMENSIONS_TOO_HIGH + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
-        protected const String ERR_DIMENSIONS_TOO_HIGH_SIZE = ERR_DIMENSIONS_TOO_LARGE + ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE;
-        protected const String ERR_ONLY_FRAMES = "This format has no single main image to use.";
-        protected const String ERR_FRAMES_NEEDED = "This format needs at least one frame.";
-        protected const String ERR_FRAMES_OVERFLOW = "This format can't handle more than {0} frames.";
-        protected const String ERR_FRAMES_EMPTY = "This format can't handle empty frames.";
-        protected const String ERR_FRAMES_SIZE_DIFF = "This format needs all its frames to be the same size.";
-        protected const String ERR_FRAMES_BPP_DIFF = "All frames must have the same color depth.";
-        protected const String ERR_BPP_INPUT_EXACT = "This format needs {0}bpp input.";
-        protected const String ERR_BPP_INPUT_INDEXED = "This format needs indexed color input.";
-        protected const String ERR_BPP_INPUT_4_8 = "This format needs 4bpp or 8bpp input.";
-        protected const String ERR_BPP_LOW_INPUT = "This is a {0}bpp format. For higher bpp input, the values can only go from 0 to {1}.";
-        protected const String ERR_COLORS_NEEDED = "The given input contains no colors.";
-        protected const String ERR_UNKN_COMPR = "Unknown compression type.";
-        protected const String ERR_UNKN_COMPR_X = "Unknown compression type \"{0}\".";
-        protected const String ERR_BPP_DIMENSIONS = "Only {0}-bit {1}×{2} images can be saved as {3}.";
-        protected const String ERR_BPP = "{0}-bit";
-        protected const String ERR_MUL_BPP_DIMENSIONS = "Only {0} {1}×{2} images can be saved as {3}.";
-        protected const String ERR_COMPR_TOO_LARGE = "The content after compression exceeds {0} bytes; it is too large to be saved in this type.";
-        protected String ErrFixedBppAndSize { get { return String.Format(ERR_BPP_DIMENSIONS, this.BitsPerPixel, this.Width, this.Height, ShortTypeName); } }
+        protected const string ERR_EMPTY_FILE = "File to save is empty.";
+        protected const string ERR_DIMENSIONS_INPUT = "This format needs {0}×{1} input.";
+        protected const string ERR_DIMENSIONS_TOO_WIDE = "Image width is too large to be saved into this format.";
+        protected const string ERR_DIMENSIONS_TOO_HIGH = "Image height is too large to be saved into this format.";
+        protected const string ERR_DIMENSIONS_TOO_LARGE = "Image is too large to be saved into this format.";
+        protected const string ERR_DIMENSIONS_TOO_LARGE_MAX_DIM = " The maximum is {0} pixels.";
+        protected const string ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE = " The maximum is {0}×{1} pixels.";
+        protected const string ERR_DIMENSIONS_TOO_WIDE_DIM = ERR_DIMENSIONS_TOO_WIDE + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
+        protected const string ERR_DIMENSIONS_TOO_HIGH_DIM = ERR_DIMENSIONS_TOO_HIGH + ERR_DIMENSIONS_TOO_LARGE_MAX_DIM;
+        protected const string ERR_DIMENSIONS_TOO_HIGH_SIZE = ERR_DIMENSIONS_TOO_LARGE + ERR_DIMENSIONS_TOO_LARGE_MAX_SIZE;
+        protected const string ERR_ONLY_FRAMES = "This format has no single main image to use.";
+        protected const string ERR_FRAMES_NEEDED = "This format needs at least one frame.";
+        protected const string ERR_FRAMES_OVERFLOW = "This format can't handle more than {0} frames.";
+        protected const string ERR_FRAMES_EMPTY = "This format can't handle empty frames.";
+        protected const string ERR_FRAMES_SIZE_DIFF = "This format needs all its frames to be the same size.";
+        protected const string ERR_FRAMES_BPP_DIFF = "All frames must have the same color depth.";
+        protected const string ERR_BPP_INPUT_EXACT = "This format needs {0}bpp input.";
+        protected const string ERR_BPP_INPUT_INDEXED = "This format needs indexed color input.";
+        protected const string ERR_BPP_INPUT_4_8 = "This format needs 4bpp or 8bpp input.";
+        protected const string ERR_BPP_LOW_INPUT = "This is a {0}bpp format. For higher bpp input, the values can only go from 0 to {1}.";
+        protected const string ERR_COLORS_NEEDED = "The given input contains no colors.";
+        protected const string ERR_UNKN_COMPR = "Unknown compression type.";
+        protected const string ERR_UNKN_COMPR_X = "Unknown compression type \"{0}\".";
+        protected const string ERR_BPP_DIMENSIONS = "Only {0}-bit {1}×{2} images can be saved as {3}.";
+        protected const string ERR_BPP = "{0}-bit";
+        protected const string ERR_MUL_BPP_DIMENSIONS = "Only {0} {1}×{2} images can be saved as {3}.";
+        protected const string ERR_COMPR_TOO_LARGE = "The content after compression exceeds {0} bytes; it is too large to be saved in this type.";
+        protected string ErrFixedBppAndSize { get { return String.Format(ERR_BPP_DIMENSIONS, this.BitsPerPixel, this.Width, this.Height, ShortTypeName); } }
         
-        protected String ErrFixedBppsAndSize(int width, int height, string type, params int[] bpp) 
+        protected string ErrFixedBppsAndSize(int width, int height, string type, params int[] bpp) 
         {
             StringBuilder sb = new StringBuilder();
             int len = bpp.Length;
@@ -95,57 +95,57 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <summary>Type to be accepted as frames. Override this for frame types.</summary>
         public virtual FileClass FrameInputFileClass { get { return FileClass.None; } }
         /// <summary>Short unique identifier code for this type. Use null for types that do not represent actual specific file types.</summary>
-        public abstract String IdCode { get; }
+        public abstract string IdCode { get; }
         /// <summary>Short name for this type.</summary>
-        public virtual String ShortTypeName { get { return this.FileExtensions.Length > 0 ? this.FileExtensions[0].ToUpper() : this.GetType().Name; } }
+        public virtual string ShortTypeName { get { return this.FileExtensions.Length > 0 ? this.FileExtensions[0].ToUpper() : this.GetType().Name; } }
         /// <summary>Longer name and description of the file type, for the UI and for the types dropdown in the "open file" dialog.</summary>
-        public abstract String LongTypeName { get; }
+        public abstract string LongTypeName { get; }
         /// <summary>Possible file extensions for this file type.</summary>
-        public abstract String[] FileExtensions { get; }
+        public abstract string[] FileExtensions { get; }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public virtual String[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.LongTypeName, this.FileExtensions.Length).ToArray(); } }
+        public virtual string[] DescriptionsForExtensions { get { return Enumerable.Repeat(this.LongTypeName, this.FileExtensions.Length).ToArray(); } }
         /// <summary>True if this type can save. Defaults to true.</summary>
-        public virtual Boolean CanSave { get { return true; } }
+        public virtual bool CanSave { get { return true; } }
         /// <summary>Width of the file (if applicable). Normally the same as GetBitmap().Width</summary>
-        public virtual Int32 Width { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Width; } }
+        public virtual int Width { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Width; } }
         /// <summary>Height of the file (if applicable). Normally the same as GetBitmap().Height</summary>
-        public virtual Int32 Height { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Height; } }
+        public virtual int Height { get { return this.m_LoadedImage == null ? 0 : this.m_LoadedImage.Height; } }
         /// <summary>True if the type contains no colors of its own, and needs an external palette to display its data. Only needs to be overridden if it return true.</summary>
-        public virtual Boolean NeedsPalette { get { return false; } }
+        public virtual bool NeedsPalette { get { return false; } }
         /// <summary>Full path of the loaded file.</summary>
-        public String LoadedFile { get; protected set; }
+        public string LoadedFile { get; protected set; }
         /// <summary>Display string to show on the UI which file was loaded (no path).</summary>
-        public String LoadedFileName { get; protected set; }
+        public string LoadedFileName { get; protected set; }
         /// <summary>Color depth of the file. Note: "-2" switches the program to specific CGA-support 2-bit.</summary>
-        public virtual Int32 BitsPerPixel { get { return this.m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat); } }
+        public virtual int BitsPerPixel { get { return this.m_LoadedImage == null ? 0 : Image.GetPixelFormatSize(this.m_LoadedImage.PixelFormat); } }
         /// <summary>Retrieves the sub-frames inside this file. This works even if the type is not set as frames container.</summary>
         public virtual SupportedFileType[] Frames { get { return null; } }
         /// <summary>See this as nothing but a container for frames, as opposed to a file that just has the ability to visualize its data as frames. Types with frames where this is set to false will not get an index -1 in the frames list.</summary>
-        public virtual Boolean IsFramesContainer { get { return this.Frames != null; } }
+        public virtual bool IsFramesContainer { get { return this.Frames != null; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
-        public virtual Boolean FramesHaveCommonPalette { get { return this.IsFramesContainer; } }
+        public virtual bool FramesHaveCommonPalette { get { return this.IsFramesContainer; } }
 
         /// <summary>
         /// This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source, and can normally also be saved from a single-image source.
         /// This setting should be ignored for types that are not set to IsFramesContainer.
         /// </summary>
-        public virtual Boolean HasCompositeFrame { get { return this.IsFramesContainer && m_LoadedImage != null; } }
+        public virtual bool HasCompositeFrame { get { return this.IsFramesContainer && m_LoadedImage != null; } }
         /// <summary>Extra info to be shown on the UI, like detected internal compression type in a loaded file.</summary>
-        public virtual String ExtraInfo { get; set; }
+        public virtual string ExtraInfo { get; set; }
         /// <summary>
         /// Array of Booleans which defines for the palette which indices are transparent. Null for no forced transparency.
         /// Note that this is only applied when a palette is loaded into the file from the UI; the class itself is responsible for the loaded file's initial color palette and transparency.
         /// </summary>
-        public virtual Boolean[] TransparencyMask { get { return null; } }
+        public virtual bool[] TransparencyMask { get { return null; } }
 
         /// <summary>
         /// Load a file from file name.
         /// </summary>
         /// <param name="filename">Original path the file was loaded from.</param>
-        public virtual void LoadFile(String filename)
+        public virtual void LoadFile(string filename)
         {
 
-            Byte[] fileData = File.ReadAllBytes(filename);
+            byte[] fileData = File.ReadAllBytes(filename);
             this.LoadFile(fileData, filename);
         }
         /// <summary>
@@ -154,7 +154,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// a file path.
         /// </summary>
         /// <param name="fileData">The data read from the file.</param>
-        public abstract void LoadFile(Byte[] fileData);
+        public abstract void LoadFile(byte[] fileData);
 
         /// <summary>
         /// Load a file from byte array. The accompanying path is used to name the file on the UI, and to give the
@@ -162,7 +162,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// </summary>
         /// <param name="fileData">The data read from the file.</param>
         /// <param name="filename">Original path the file was loaded from.</param>
-        public virtual void LoadFile(Byte[] fileData, String filename)
+        public virtual void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFile(fileData);
             this.SetFileNames(filename);
@@ -178,7 +178,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// </summary>
         /// <param name="originalPath">Original path the file was loaded from.</param>
         /// <returns>The filenames in the required load chain, or null if there is no missing initial data.</returns>
-        public virtual List<String> GetFilesToLoadMissingData(String originalPath) { return null; }
+        public virtual List<string> GetFilesToLoadMissingData(string originalPath) { return null; }
 
         /// <summary>
         /// Some animation types are split into separate files, and this sometimes means the later files in the
@@ -188,7 +188,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileData">Data of the original file </param>
         /// <param name="originalPath">Original path the file was loaded from.</param>
         /// <param name="loadChain">The sequence of files to load to get to the current file's initial state.</param>
-        public virtual void ReloadFromMissingData(Byte[] fileData, String originalPath, List<String> loadChain) { }
+        public virtual void ReloadFromMissingData(byte[] fileData, string originalPath, List<string> loadChain) { }
 
         /// <summary>
         /// Get specific options for saving a file to this format. Can be made to depend on the input file and the output path.
@@ -196,7 +196,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The opened file that is being saved.</param>
         /// <param name="targetFileName">The target file path.</param>
         /// <returns>The list of options. Leave empty if no options are needed. Returning null will give a general "cannot save as this type" message.</returns>
-        public virtual Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName) { return new Option[0]; }
+        public virtual Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName) { return new Option[0]; }
 
         /// <summary>
         /// Saves the given file as this type.
@@ -204,9 +204,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The input file to convert.</param>
         /// <param name="savePath">The path to save to.</param>
         /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
-        public virtual void SaveAsThis(SupportedFileType fileToSave, String savePath, Option[] saveOptions)
+        public virtual void SaveAsThis(SupportedFileType fileToSave, string savePath, Option[] saveOptions)
         {
-            Byte[] data = this.SaveToBytesAsThis(fileToSave, saveOptions);
+            byte[] data = this.SaveToBytesAsThis(fileToSave, saveOptions);
             File.WriteAllBytes(savePath, data);
         }
 
@@ -216,9 +216,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="fileToSave">The input file to convert.</param>
         /// <param name="saveOptions">Extra options for customising the save process. Request the list from GetSaveOptions.</param>
         /// <returns>The bytes of the file converted to this type.</returns>
-        public abstract Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions);
+        public abstract byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions);
 
-        public virtual void SetFileNames(String path)
+        public virtual void SetFileNames(string path)
         {
             this.LoadedFile = path;
             this.LoadedFileName = Path.GetFileName(path);
@@ -244,9 +244,9 @@ namespace EngieFileConverter.Domain.FileTypes
             return null;
         }
 
-        protected Boolean IsIndexed()
+        protected bool IsIndexed()
         {
-            Int32 bpp = Math.Abs(this.BitsPerPixel);
+            int bpp = Math.Abs(this.BitsPerPixel);
             return bpp > 0 && bpp <= 8;
 
         }
@@ -262,18 +262,18 @@ namespace EngieFileConverter.Domain.FileTypes
                 return;
             if (palette == null)
                 return;
-            Int32 paletteLength = palette.Length;
+            int paletteLength = palette.Length;
             if (paletteLength == 0)
                 return;
             if (this.IsIndexed())
             {
-                Int32 maxLen = 1 << Math.Abs(this.BitsPerPixel);
+                int maxLen = 1 << Math.Abs(this.BitsPerPixel);
                 // Palette length: never more than maxlen, in case of null it equals maxlen, if customised in image, take from image.
                 Color[] origPal = GetColorsInternal();
-                Int32 origPalLength = origPal == null ? maxLen : Math.Min(origPal.Length, maxLen);
+                int origPalLength = origPal == null ? maxLen : Math.Min(origPal.Length, maxLen);
                 Color[] newPalette = new Color[origPalLength];
                 // Do not apply transparency mask; that should be applied by the file itself, otherwise it can't be changed on the UI.
-                for (Int32 i = 0; i < origPalLength; ++i)
+                for (int i = 0; i < origPalLength; ++i)
                 {
                     if (i < paletteLength)
                         newPalette[i] = palette[i];
@@ -304,8 +304,8 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = this.Frames;
             if (frames == null)
                 return;
-            Int32 nrOfFrames = frames.Length;
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            int nrOfFrames = frames.Length;
+            for (int i = 0; i < nrOfFrames; ++i)
             {
                 SupportedFileType frame = frames[i];
                 if (frame == null || ReferenceEquals(frame, updateSource))
@@ -322,7 +322,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.SetColors(this.m_BackupPalette, null);
         }
 
-        public virtual Boolean ColorsChanged()
+        public virtual bool ColorsChanged()
         {
             if (!this.IsIndexed())
                 return false;
@@ -346,7 +346,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="targetBpp">Targeted bits per pixel.</param>
         /// <param name="expandToFullSize">Expand to full size.</param>
         /// <returns>The found colors in the input frames.</returns>
-        public static Color[] CheckInputForColors(SupportedFileType fileToSave, Int32 targetBpp, Boolean expandToFullSize)
+        public static Color[] CheckInputForColors(SupportedFileType fileToSave, int targetBpp, bool expandToFullSize)
         {
             if (fileToSave == null)
                 throw new ArgumentException(ERR_EMPTY_FILE, "fileToSave");
@@ -356,24 +356,24 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 SupportedFileType[] frames = fileToSave.Frames;
                 // Find first palette in the frames.
-                Int32 frLen = frames.Length;
-                for (Int32 i = 0; i < frLen; ++i)
+                int frLen = frames.Length;
+                for (int i = 0; i < frLen; ++i)
                 {
                     palEntries = frames[i].GetColors();
                     if (palEntries != null && palEntries.Length > 0)
                         break;
                 }
             }
-            Int32 palLength;
+            int palLength;
             if (palEntries == null || (palLength = palEntries.Length) == 0)
                 throw new ArgumentException("File to save has no color palette.", "fileToSave");
             // Relies on the current type's BPP setting.
-            Int32 palSize = 1 << targetBpp;
+            int palSize = 1 << targetBpp;
             if (palEntries.Length == palSize || (!expandToFullSize && palLength < palSize))
                 return palEntries;
             Color[] cols = new Color[palSize];
             Array.Copy(palEntries, cols, Math.Min(palLength, palSize));
-            for (Int32 i = palLength; i < palSize; ++i)
+            for (int i = palLength; i < palSize; ++i)
                 cols[i] = Color.Black;
             return cols;
         }
@@ -384,20 +384,20 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <typeparam name="T">Type of the file to load for the palette.</typeparam>
         /// <param name="inputPath">Input path of the file</param>
         /// <returns>The palette, or null if none was found.</returns>
-        protected T CheckForPalette<T>(String inputPath) where T : SupportedFileType, new()
+        protected T CheckForPalette<T>(string inputPath) where T : SupportedFileType, new()
         {
             T palette = null;
 
-            String outputPath = Path.GetDirectoryName(inputPath);
-            String palName = Path.GetFileNameWithoutExtension(inputPath) + ".pal";
-            String[] files = Directory.GetFiles(outputPath, palName);
+            string outputPath = Path.GetDirectoryName(inputPath);
+            string palName = Path.GetFileNameWithoutExtension(inputPath) + ".pal";
+            string[] files = Directory.GetFiles(outputPath, palName);
             if (files.Length > 0)
             {
                 try
                 {
-                    String palFile = files[0];
+                    string palFile = files[0];
                     palette = new T();
-                    Byte[] palData = File.ReadAllBytes(palFile);
+                    byte[] palData = File.ReadAllBytes(palFile);
                     palette.LoadFile(palData, palFile);
                     this.m_Palette = palette.GetColors();
                     this.LoadedFileName += "/" + (Path.GetExtension(palFile) ?? String.Empty).TrimStart('.');
@@ -451,9 +451,9 @@ namespace EngieFileConverter.Domain.FileTypes
         /// but will return -1 if all frames are null frames.
         /// </summary>
         /// <returns></returns>
-        public Int32 GetGlobalBpp()
+        public int GetGlobalBpp()
         {
-            Int32 bpp;
+            int bpp;
             if (!this.IsFramesContainer)
             {
                 bpp = Math.Abs(this.BitsPerPixel);
@@ -461,14 +461,14 @@ namespace EngieFileConverter.Domain.FileTypes
             else
             {
                 SupportedFileType[] frames = this.Frames;
-                Int32 len = frames.Length;
+                int len = frames.Length;
                 bpp = -1;
-                for (Int32 i = 0; i < len; ++i)
+                for (int i = 0; i < len; ++i)
                 {
                     SupportedFileType frame = frames[i];
                     if (frame == null)
                         continue;
-                    Int32 frameBpp = Math.Abs(frame.BitsPerPixel);
+                    int frameBpp = Math.Abs(frame.BitsPerPixel);
                     if (bpp == -1)
                         bpp = Math.Abs(frameBpp);
                     else if (bpp != frameBpp)
@@ -486,8 +486,8 @@ namespace EngieFileConverter.Domain.FileTypes
             SupportedFileType[] frames = this.Frames;
             if (this.IsFramesContainer && frames != null)
             {
-                Int32 nrOfFrames = frames.Length;
-                for (Int32 i = 0; i < nrOfFrames; ++i)
+                int nrOfFrames = frames.Length;
+                for (int i = 0; i < nrOfFrames; ++i)
                 {
                     SupportedFileType frame = frames[i];
                     if (frame != null)

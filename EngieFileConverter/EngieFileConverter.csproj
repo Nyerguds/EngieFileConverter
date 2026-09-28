@@ -126,6 +126,7 @@
     <Compile Include="Domain\FileTypes\Westwood\FileImageWwCelSaturn.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileFramesWwShpBr.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwCmp.cs" />
+    <Compile Include="Domain\FileTypes\Westwood\FileFramesWwCpsAmiga.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileImgWwLut.cs" />
     <Compile Include="Domain\FileTypes\Westwood\FileTilesetWwRA1.cs" />
     <Compile Include="Domain\FileTypes\Xtra\FileImgIgcGx2.cs" />
@@ -214,6 +215,7 @@
     <Compile Include="Domain\Utils\ImageUtils\PngHandler.cs" />
     <Compile Include="Domain\Utils\ImageUtils\WindowsGraphics2d.cs" />
     <Compile Include="Domain\Utils\MimeTypeDetector.cs" />
+    <Compile Include="Domain\Utils\SimpleMultiThreading.cs" />
     <Compile Include="Domain\Utils\UtilsSO.cs" />
     <Compile Include="Domain\Utils\NonDisposingStream.cs" />
     <Compile Include="HeightMap\HeightMapGenerator.cs" />

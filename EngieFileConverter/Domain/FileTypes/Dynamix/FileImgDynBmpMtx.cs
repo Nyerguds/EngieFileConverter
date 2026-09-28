@@ -14,29 +14,29 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass FileClass { get { return FileClass.FrameSet | (this.m_bpp == 8 ? FileClass.Image8Bit : FileClass.Image4Bit); } }
         public override FileClass InputFileClass { get { return FileClass.Image8Bit | FileClass.Image4Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.None; } }
-        public override String ShortTypeName { get { return "Dynamix BMP MTX"; } }
-        public override String[] FileExtensions { get { return new String[] { "bmp" }; } }
-        public override String LongTypeName { get { return "Dynamix BMP Matrix image"; } }
-        public override Boolean[] TransparencyMask { get { return new Boolean[0]; } }
+        public override string ShortTypeName { get { return "Dynamix BMP MTX"; } }
+        public override string[] FileExtensions { get { return new string[] { "bmp" }; } }
+        public override string LongTypeName { get { return "Dynamix BMP Matrix image"; } }
+        public override bool[] TransparencyMask { get { return new bool[0]; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData, null, true);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename, true);
             this.SetFileNames(filename);
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
-            Int32 fullWidth = fileToSave.Width;
-            Int32 fullHeight = fileToSave.Height;
-            Int32 bpp = fileToSave.BitsPerPixel;
-            Int32 blockWidth;
-            Int32 blockHeight;
+            int fullWidth = fileToSave.Width;
+            int fullHeight = fileToSave.Height;
+            int bpp = fileToSave.BitsPerPixel;
+            int blockWidth;
+            int blockHeight;
             if (fileToSave is FileImgDynBmpMtx && fileToSave.Frames != null && fileToSave.Frames.Length > 0)
             {
                 blockWidth = fileToSave.Frames[0].Width;
@@ -44,7 +44,7 @@ namespace EngieFileConverter.Domain.FileTypes
             }
             else
             {
-                List<Int32> matchingWidths = new List<Int32>();
+                List<int> matchingWidths = new List<int>();
                 blockWidth = (fullWidth + 7 / 8) * 8;
                 while (blockWidth > 7)
                 {
@@ -53,7 +53,7 @@ namespace EngieFileConverter.Domain.FileTypes
                     blockWidth -= 8;
                 }
                 blockWidth = matchingWidths.Count == 0 ? 8 : matchingWidths.Min();
-                List<Int32> matchingHeights = new List<Int32>();
+                List<int> matchingHeights = new List<int>();
                 blockHeight = fullHeight;
                 while (blockHeight > 5)
                 {
@@ -63,9 +63,9 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
                 blockHeight = matchingHeights.Count == 0 ? 5 : matchingHeights.Min();
             }
-            Boolean is4bpp = bpp == 4;
+            bool is4bpp = bpp == 4;
             Option[] opts = new Option[is4bpp ? 3 : 4];
-            Int32 opt = 0;
+            int opt = 0;
             if (!is4bpp)
                 opts[opt++] = new Option("TYP", OptionInputType.ChoicesList, "Save type:", "BIN / VGA,MA8", "0");
             opts[opt++] = new Option("BLW", OptionInputType.Number, "Block width", "0,", blockWidth.ToString());
@@ -74,24 +74,24 @@ namespace EngieFileConverter.Domain.FileTypes
             return opts;
         }
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             Bitmap image;
             if (fileToSave == null || (image = fileToSave.GetBitmap()) == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE, "fileToSave");
-            Int32 bpp = fileToSave.BitsPerPixel;
+            int bpp = fileToSave.BitsPerPixel;
             PixelFormat pf = image.PixelFormat;
             Color[] palette = fileToSave.GetColors();
-            Int32 width = image.Width;
-            Int32 height = image.Height;
-            Int32 saveTypeInt;
+            int width = image.Width;
+            int height = image.Height;
+            int saveTypeInt;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "TYP"), out saveTypeInt);
             DynBmpInternalType saveType = saveTypeInt == 0 ? DynBmpInternalType.BinVga : DynBmpInternalType.Ma8;
-            Int32 compression;
+            int compression;
             Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "CMP"), out compression);
             DynBmpInternalCompression compressionType = (DynBmpInternalCompression)compression;
-            Int32 blockWidth;
-            Int32 blockHeight;
+            int blockWidth;
+            int blockHeight;
             if (!Int32.TryParse(Option.GetSaveOptionValue(saveOptions, "BLW"), out blockWidth))
                 throw new FileTypeSaveException("Could not parse block width.");
             if (blockWidth <= 0)
@@ -106,59 +106,59 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeSaveException("Bad block height: needs to be more than 0.");
             if (height % blockHeight != 0)
                 throw new FileTypeSaveException("Bad block height: not an exact part of the full image height.");
-            Int32 blockStride = ImageUtils.GetMinimumStride(blockWidth, bpp);
+            int blockStride = ImageUtils.GetMinimumStride(blockWidth, bpp);
             // Cut into frames (from SaveOptions)
-            Int32 matrixWidth = width / blockWidth;
-            Int32 matrixHeight = height / blockHeight;
-            Int32 nrOfFrames = matrixWidth * matrixHeight;
-            if (nrOfFrames > Int16.MaxValue)
-                throw new FileTypeSaveException("Blocks too small or image too large; cannot address more than " + Int16.MaxValue + " tiles.");
-            Int32 stride;
-            Byte[] fullImageData = ImageUtils.GetImageData(image, out stride);
-            Byte[][] allFrames = new Byte[nrOfFrames][];
-            Int32[] frameMatrix = new Int32[nrOfFrames];
-            UInt32[] frameHashes = new UInt32[nrOfFrames];
+            int matrixWidth = width / blockWidth;
+            int matrixHeight = height / blockHeight;
+            int nrOfFrames = matrixWidth * matrixHeight;
+            if (nrOfFrames > short.MaxValue)
+                throw new FileTypeSaveException("Blocks too small or image too large; cannot address more than " + short.MaxValue + " tiles.");
+            int stride;
+            byte[] fullImageData = ImageUtils.GetImageData(image, out stride);
+            byte[][] allFrames = new byte[nrOfFrames][];
+            int[] frameMatrix = new int[nrOfFrames];
+            uint[] frameHashes = new uint[nrOfFrames];
             // The Dictionary is used for a preliminary sorting of chunks into those with the same hash.
             // A secondary operation then checks which of these are actually equal.
-            Dictionary<UInt32, List<Int32>> hashmap = new Dictionary<UInt32, List<Int32>>();
-            for (Int32 y = 0; y < matrixHeight; ++y)
+            Dictionary<uint, List<int>> hashmap = new Dictionary<uint, List<int>>();
+            for (int y = 0; y < matrixHeight; ++y)
             {
-                for (Int32 x = 0; x < matrixWidth; ++x)
+                for (int x = 0; x < matrixWidth; ++x)
                 {
-                    Int32 i = x * matrixHeight + y;
-                    Byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, new Rectangle(x * blockStride, y * blockHeight, blockStride, blockHeight));
+                    int i = x * matrixHeight + y;
+                    byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, width, height, stride, new Rectangle(x * blockStride, y * blockHeight, blockStride, blockHeight));
                     allFrames[i] = frameData;
                     frameMatrix[i] = i;
-                    UInt32 hash = Crc32.ComputeChecksum(frameData);
+                    uint hash = Crc32.ComputeChecksum(frameData);
                     frameHashes[i] = hash;
                     if (!hashmap.ContainsKey(hash))
-                        hashmap.Add(hash, new List<Int32>(new Int32[] {i}));
+                        hashmap.Add(hash, new List<int>(new int[] {i}));
                     else
                         hashmap[hash].Add(i);
                 }
             }
             // Detect and replace duplicates.
-            Int32 currentActual = 0;
-            Byte[][] allFramesActual = new Byte[nrOfFrames][];
-            Int32[] translationTable = new Int32[nrOfFrames];
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            int currentActual = 0;
+            byte[][] allFramesActual = new byte[nrOfFrames][];
+            int[] translationTable = new int[nrOfFrames];
+            for (int i = 0; i < nrOfFrames; ++i)
             {
-                Byte[] curData = allFrames[i];
+                byte[] curData = allFrames[i];
                 if (curData == null)
                     continue;
                 allFramesActual[currentActual] = curData;
                 translationTable[i] = currentActual;
                 currentActual++;
-                List<Int32> duplicates = hashmap[frameHashes[i]];
+                List<int> duplicates = hashmap[frameHashes[i]];
                 if (duplicates.Count < 2)
                     continue;
-                Int32 dupCount = duplicates.Count;
-                for (Int32 j = 0; j < dupCount; ++j)
+                int dupCount = duplicates.Count;
+                for (int j = 0; j < dupCount; ++j)
                 {
-                    Int32 dupIndex = duplicates[j];
+                    int dupIndex = duplicates[j];
                     if (dupIndex == i)
                         continue;
-                    Byte[] dupData = allFrames[dupIndex];
+                    byte[] dupData = allFrames[dupIndex];
                     // double-check if crc-equal data is actually equal.
                     if (!ArrayUtils.ArraysAreEqual(curData, dupData))
                         continue;
@@ -167,19 +167,19 @@ namespace EngieFileConverter.Domain.FileTypes
                 }
             }
             // Fix frame references to collapsed indices.
-            for (Int32 i = 0; i < nrOfFrames; ++i)
+            for (int i = 0; i < nrOfFrames; ++i)
                 frameMatrix[i] = translationTable[frameMatrix[i]];
             // Post-processing: Exchange rows and columns.
-            Byte[] frameMatrixFinal = new Byte[4 + nrOfFrames * 2];
-            ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 0, (UInt16)matrixWidth);
-            ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 2, (UInt16)matrixHeight);
+            byte[] frameMatrixFinal = new byte[4 + nrOfFrames * 2];
+            ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 0, (ushort)matrixWidth);
+            ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 2, (ushort)matrixHeight);
 
-            for (Int32 i = 0; i < nrOfFrames; ++i)
-                ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 4 + i * 2, (UInt16)frameMatrix[i]);
+            for (int i = 0; i < nrOfFrames; ++i)
+                ArrayUtils.WriteUInt16ToByteArrayLe(frameMatrixFinal, 4 + i * 2, (ushort)frameMatrix[i]);
 
             // Make FileImageFrames object filled with frames
             FileFrames frs = new FileFrames();
-            for (Int32 i = 0; i < currentActual; ++i)
+            for (int i = 0; i < currentActual; ++i)
             {
                 FileImageFrame fr = new FileImageFrame();
                 Bitmap frImage = ImageUtils.BuildImage(allFramesActual[i], blockWidth, blockHeight, blockStride, pf, palette, null);

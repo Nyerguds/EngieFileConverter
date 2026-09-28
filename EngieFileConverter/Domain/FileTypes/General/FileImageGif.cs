@@ -9,59 +9,59 @@ namespace EngieFileConverter.Domain.FileTypes
     public class FileImageGif : FileImage
     {
         public override FileClass InputFileClass { get { return FileClass.ImageIndexed; } }
-        public override String ShortTypeName { get { return "GIF"; } }
+        public override string ShortTypeName { get { return "GIF"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return "CompuServe GIF image"; } }
+        public override string LongTypeName { get { return "CompuServe GIF image"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "gif" }; } }
-        protected override String MimeType { get { return "gif"; } }
+        public override string[] FileExtensions { get { return new string[] { "gif" }; } }
+        protected override string MimeType { get { return "gif"; } }
         /// <summary>Brief name and description of the specific types for all extensions, for the types dropdown in the save file dialog.</summary>
-        public override String[] DescriptionsForExtensions { get { return new String[] {this.LongTypeName }; } }
+        public override string[] DescriptionsForExtensions { get { return new string[] {this.LongTypeName }; } }
 
 
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
             this.LoadFromFileData(fileData);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData);
             this.SetFileNames(filename);
         }
 
-        public void LoadFromFileData(Byte[] fileData)
+        public void LoadFromFileData(byte[] fileData)
         {
             // Quick header identifying check
-            Int32 dataLen = fileData.Length;
+            int dataLen = fileData.Length;
             
             // == Header ==
             if (dataLen < 0x0D)
                 throw new FileTypeLoadException(ERR_NO_HEADER);
             if (fileData[0] != 'G' || fileData[1] != 'I' || fileData[3] != 'F' || fileData[4] != '8' || (fileData[5] != '7' && fileData[5] != '9') || fileData[6] != 'a')
                 throw new FileTypeLoadException(ERR_BAD_HEADER);
-            Boolean isVer87 = fileData[5] == '7';
-            String version = isVer87 ? "87a" : "89a";
+            bool isVer87 = fileData[5] == '7';
+            string version = isVer87 ? "87a" : "89a";
 
             // == Logical Screen Descriptor ==
-            Int32 imageWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
-            Int32 imageHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
-            Byte colInfo = fileData[0x0A];
-            Boolean hasPalette = (colInfo & 0x80) != 0;
+            int imageWidth = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
+            int imageHeight = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 8);
+            byte colInfo = fileData[0x0A];
+            bool hasPalette = (colInfo & 0x80) != 0;
             // Might indicate the original image came from a 6-bit color palette. OTherwise, useless.
             //Int32 colBpp = ((colInfo >> 8) & 7) + 1;
             // Indicates that the palette is sorted in order of importance. Seems useless; leave off when writing I guess.
             //Boolean sort = (colInfo & 8) != 0;
             // Defines both bit depth and palette length. Maximum is 8.
-            Int32 palBpp = (colInfo & 7) + 1;
+            int palBpp = (colInfo & 7) + 1;
             // Background color. Fills full frame if the image data does not. (This is NOT the transparent color index)
-            Byte bgcol = fileData[0x0B];
+            byte bgcol = fileData[0x0B];
             // Pixel Aspect Ratio, as W/H, stored as [(PAR + 15) / 64 = W/H], so [W/H * 64 - 15 = PAR]. The value for 1:1 would technically be 49, but storing 0 will also default to that.
             // Specs define the range as 1:4 to 4:1, which would only be the range of 1 to 241. Value for 255 would be [270 / 64 = 4.21875].
-            Int32 pixAspectRatio = fileData[0x0C];
-            Int32 pixAspectX;
-            Int32 pixAspectY;
+            int pixAspectRatio = fileData[0x0C];
+            int pixAspectX;
+            int pixAspectY;
             if (pixAspectRatio == 0)
             {
                 pixAspectX = 1;
@@ -78,20 +78,20 @@ namespace EngieFileConverter.Domain.FileTypes
             {
                 pixAspectX = pixAspectRatio + 15;
                 pixAspectY = 64;
-                Int32 pixAspectDiv = GeneralUtils.HighestCommonDenominator(pixAspectX, pixAspectY);
+                int pixAspectDiv = GeneralUtils.HighestCommonDenominator(pixAspectX, pixAspectY);
                 pixAspectX /= pixAspectDiv;
                 pixAspectY /= pixAspectDiv;
             }
             // Double pixelAspectRatio = pixAspectRatio == 0 ? 0.0 : (pixAspectRatio + 15) / 64.0;
-            String pixAspect = "Pixel aspect ratio: " + pixAspectX + ":" + pixAspectY;
+            string pixAspect = "Pixel aspect ratio: " + pixAspectX + ":" + pixAspectY;
 
-            Int32 readIndex = 0x0D;
-            
+            int readIndex = 0x0D;
+
             // == Palette ==
-            Int32 palLength = hasPalette ? 0 : (Int32)Math.Pow(2, palBpp);
+            int palLength = hasPalette ? 0 : (int)Math.Pow(2, palBpp);
             if (palLength > 0)
             {
-                Int32 palReadLength = palLength * 3;
+                int palReadLength = palLength * 3;
                 if (dataLen < readIndex + palReadLength)
                     throw new FileTypeLoadException(ERR_NO_HEADER);
                 ColorUtils.ReadEightBitPalette(fileData, readIndex, palReadLength);
@@ -177,7 +177,7 @@ namespace EngieFileConverter.Domain.FileTypes
         }
         //*/
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             if (fileToSave == null || fileToSave.GetBitmap() == null)
                 throw new FileTypeSaveException(ERR_EMPTY_FILE);

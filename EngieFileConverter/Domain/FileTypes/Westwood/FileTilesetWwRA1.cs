@@ -15,32 +15,32 @@ namespace EngieFileConverter.Domain.FileTypes
         public override FileClass InputFileClass { get { return FileClass.FrameSet | FileClass.Image8Bit; } }
         public override FileClass FrameInputFileClass { get { return FileClass.Image8Bit; } }
 
-        public override String IdCode { get { return "WwTmpRa"; } }
-        public override String[] FileExtensions { get { return new String[] { "icn", "tem", "int", "sno" }; } }
-        public override String ShortTypeName { get { return "RA1 Tileset"; } }
-        public override String LongTypeName { get { return "Westwood Tileset File - RA1"; } }
+        public override string IdCode { get { return "WwTmpRa"; } }
+        public override string[] FileExtensions { get { return new string[] { "icn", "tem", "int", "sno" }; } }
+        public override string ShortTypeName { get { return "RA1 Tileset"; } }
+        public override string LongTypeName { get { return "Westwood Tileset File - RA1"; } }
 
-        public override Int32 BitsPerPixel { get { return 8; } }
-        public override Boolean NeedsPalette { get { return true; } }
+        public override int BitsPerPixel { get { return 8; } }
+        public override bool NeedsPalette { get { return true; } }
 
         protected SupportedFileType[] m_FramesList;
 
         /// <summary>Retrieves the sub-frames inside this file.</summary>
         public override SupportedFileType[] Frames { get { return this.m_FramesList; } }
-        public override Boolean IsFramesContainer { get { return true; } }
+        public override bool IsFramesContainer { get { return true; } }
         /// <summary> This is a container-type that builds a full image from its frames to show on the UI, which means this type can be used as single-image source.</summary>
-        public override Boolean HasCompositeFrame { get { return true; } }
+        public override bool HasCompositeFrame { get { return true; } }
         /// <summary>True if all frames in this frames container have a common palette. Defaults to True if the type is a frames container.</summary>
-        public override Boolean FramesHaveCommonPalette { get { return true; } }
+        public override bool FramesHaveCommonPalette { get { return true; } }
 
         /// <summary>Array of Booleans which defines for the palette which indices are transparent.</summary>
-        public override Boolean[] TransparencyMask { get { return new Boolean[] { true }; } }
-        protected Boolean[] m_TileUseList;
+        public override bool[] TransparencyMask { get { return new bool[] { true }; } }
+        protected bool[] m_TileUseList;
         private byte[] m_typesInfo;
         private int m_tilesWidth;
         private bool m_is1x1Multiple;
 
-        public override void LoadFile(byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
             this.LoadFromFileData(fileData, filename);
             this.SetFileNames(filename);
@@ -51,7 +51,7 @@ namespace EngieFileConverter.Domain.FileTypes
             this.LoadFromFileData(fileData, null);
         }
 
-        private void LoadFromFileData(byte[] fileData, String sourcePath)
+        private void LoadFromFileData(byte[] fileData, string sourcePath)
         {
             int[] widths;
             int[] heights;
@@ -77,11 +77,11 @@ namespace EngieFileConverter.Domain.FileTypes
             int widthX = tilesX;
             if (m_is1x1Multiple)
             {
-                Double sqrt = Math.Sqrt(numIcons);
+                double sqrt = Math.Sqrt(numIcons);
                 widthX = (sqrt - Math.Floor(sqrt)) < 0.0001 ? (int)sqrt : (int)(sqrt + 1);
             }
             m_FramesList = new SupportedFileType[numIcons];
-            String landTypes = LandTypesToString(typesInfo, 0);
+            string landTypes = LandTypesToString(typesInfo, 0);
             for (int i = 0; i < numIcons; ++i)
             {
                 Bitmap frameImg = ImageUtils.BuildImage(raTmpData[i], tileX, tileY, tileX, PixelFormat.Format8bppIndexed, this.m_Palette, null);
@@ -96,21 +96,21 @@ namespace EngieFileConverter.Domain.FileTypes
             StringBuilder extraInfo = new StringBuilder();
             extraInfo.Append("Size in header:").Append(hdrSize).Append('\n');
             extraInfo.Append("Land types: ").Append(landTypes).Append('\n');
-            extraInfo.Append("Used tiles: ").Append(new String(tileUseList.Select(b => b ? '1' : '0').ToArray()));
+            extraInfo.Append("Used tiles: ").Append(new string(tileUseList.Select(b => b ? '1' : '0').ToArray()));
             this.ExtraInfo = extraInfo.ToString();
         }
 
-        public static byte[][] GetRaTmpData(byte[] fileData, out int[] widths, out int[] heights, out byte[] landTypesInfo, out Boolean[] tileUseList, out int headerWidth, out int headerHeight)
+        public static byte[][] GetRaTmpData(byte[] fileData, out int[] widths, out int[] heights, out byte[] landTypesInfo, out bool[] tileUseList, out int headerWidth, out int headerHeight)
         {
             int fileLen = fileData.Length;
             if (fileLen < 0x28)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
-            Int16 hdrWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x00);
-            Int16 hdrHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x02);
+            short hdrWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x00);
+            short hdrHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x02);
             // Amount of icons to form the full icon set. Not necessarily the same as the amount of actual icons.
-            Int16 hdrCount = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x04);
+            short hdrCount = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x04);
             // Always 0
-            Int16 hdrAllocated = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x06);
+            short hdrAllocated = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x06);
             // New in RA
             headerWidth = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x08); // hdrMapWidth
             headerHeight = ArrayUtils.ReadInt16FromByteArrayLe(fileData, 0x0A); // hdrMapHeight
@@ -182,7 +182,7 @@ namespace EngieFileConverter.Domain.FileTypes
             return tiles;
         }
 
-        public override Option[] GetSaveOptions(SupportedFileType fileToSave, String targetFileName)
+        public override Option[] GetSaveOptions(SupportedFileType fileToSave, string targetFileName)
         {
             PerformPreliminaryChecks(fileToSave, out int tiles, out int tileWidth, out bool hasFixedWidth, out byte[] landTypesArr);
             bool is1x1Multiple = tileWidth == -1;
@@ -205,8 +205,8 @@ namespace EngieFileConverter.Domain.FileTypes
             foreach (byte key in LandTypeChars.Keys.OrderBy(b => b))
             {
                 char ch = LandTypeChars[key];
-                allowedChars.Add(Char.ToUpper(ch));
-                allowedChars.Add(Char.ToLower(ch));
+                allowedChars.Add(char.ToUpper(ch));
+                allowedChars.Add(char.ToLower(ch));
                 landTypesList.Add(String.Format("{0}:\u00A0{1}", LandTypeChars[key], LandTypeDescriptions[key]));
             }
             allowedChars.Add('\r');
@@ -365,7 +365,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 hasWidth = true;
                 landTypesArr = tilesetRa.m_typesInfo;
             }
-            Byte[][] framesData;
+            byte[][] framesData;
             if (!fileToSave.IsFramesContainer)
             {
                 if (fileToSave.BitsPerPixel != 8)
@@ -373,8 +373,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 Bitmap bitmap = fileToSave.GetBitmap();
                 if (bitmap == null || bitmap.Width % 24 != 0 || bitmap.Height % 24 != 0)
                     throw new ArgumentException("The file dimensions are not a multiple of 24×24.", "fileToSave");
-                Int32 nrOfFramesX = bitmap.Width / 24;
-                Int32 nrOfFramesY = bitmap.Height / 24;
+                int nrOfFramesX = bitmap.Width / 24;
+                int nrOfFramesY = bitmap.Height / 24;
                 if (tilesetRa == null)
                 {
                     nrOfTiles = nrOfFramesX * nrOfFramesY;
@@ -385,16 +385,16 @@ namespace EngieFileConverter.Domain.FileTypes
                 {
                     landTypesArr = Enumerable.Repeat(03, nrOfTiles).Select(b => (byte)b).ToArray();
                 }
-                framesData = new Byte[nrOfTiles][];
+                framesData = new byte[nrOfTiles][];
                 if (nrOfTiles > 255)
                     throw new ArgumentException("Too many tiles in file.", "fileToSave");
-                Int32 stride;
-                Byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
-                for (Int32 y = 0; y < nrOfFramesY; ++y)
+                int stride;
+                byte[] fullImageData = ImageUtils.GetImageData(bitmap, out stride);
+                for (int y = 0; y < nrOfFramesY; ++y)
                 {
-                    for (Int32 x = 0; x < nrOfFramesX; ++x)
+                    for (int x = 0; x < nrOfFramesX; ++x)
                     {
-                        Int32 index = y * nrOfFramesX + x;
+                        int index = y * nrOfFramesX + x;
                         byte[] frameData = ImageUtils.CopyFrom8bpp(fullImageData, bitmap.Width, bitmap.Height, stride, new Rectangle(x * 24, y * 24, 24, 24));
                         if (ArrayUtils.IsEmpty(frameData))
                         {
@@ -411,12 +411,12 @@ namespace EngieFileConverter.Domain.FileTypes
                 nrOfTiles = frames.Length;
                 if (nrOfTiles > 255)
                     throw new ArgumentException("Too many tiles in file.", "fileToSave");
-                framesData = new Byte[nrOfTiles][];
+                framesData = new byte[nrOfTiles][];
                 if (landTypesArr == null)
                 {
                     landTypesArr = Enumerable.Repeat(03, nrOfTiles).Select(b => (byte)b).ToArray();
                 }
-                for (Int32 i = 0; i < nrOfTiles; ++i)
+                for (int i = 0; i < nrOfTiles; ++i)
                 {
                     Bitmap bitmap;
                     SupportedFileType frame = frames[i];
@@ -530,7 +530,7 @@ namespace EngieFileConverter.Domain.FileTypes
             char[] output;
             if (!hasWidth)
             {
-                output = new Char[len];
+                output = new char[len];
                 for (int i = 0; i < len; ++i)
                 {
                     output[i] = LandTypeChars.TryGetValue(types[i], out char t) ? t : 'X';
@@ -543,7 +543,7 @@ namespace EngieFileConverter.Domain.FileTypes
                 int actualWidth = width + 1;
                 // Full length minus the final line break
                 len = actualWidth * height - 1;
-                output = new Char[len];
+                output = new char[len];
                 int index = 0;
                 for (int i = 0; i < len; ++i)
                 {

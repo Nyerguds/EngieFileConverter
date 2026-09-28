@@ -16,40 +16,40 @@ namespace EngieFileConverter.Domain.FileTypes
 {
     public class FileMapWwRa1Pc : SupportedFileType
     {
-        public override String IdCode { get { return "WwRa1Map"; } }
+        public override string IdCode { get { return "WwRa1Map"; } }
         public override FileClass FileClass { get { return FileClass.RaMap | FileClass.Image8Bit; } }
         public override FileClass InputFileClass { get { return FileClass.RaMap; } }
         /// <summary>Very short code name for this type.</summary>
-        public override String ShortTypeName { get { return "RA1 Map"; } }
+        public override string ShortTypeName { get { return "RA1 Map"; } }
         /// <summary>Brief name and description of the overall file type, for the types dropdown in the open file dialog.</summary>
-        public override String LongTypeName { get { return "Red Alert map file"; } }
+        public override string LongTypeName { get { return "Red Alert map file"; } }
         /// <summary>Possible file extensions for this file type.</summary>
-        public override String[] FileExtensions { get { return new String[] { "mpr", "ini" }; } }
-        public override Int32 Width { get { return 128; } }
-        public override Int32 Height { get { return 128; } }
-        public override Int32 BitsPerPixel { get { return 8; } }
+        public override string[] FileExtensions { get { return new string[] { "mpr", "ini" }; } }
+        public override int Width { get { return 128; } }
+        public override int Height { get { return 128; } }
+        public override int BitsPerPixel { get { return 8; } }
 
         // TODO remove when implemented.
         /// <summary>True if this type can save.</summary>
-        public override Boolean CanSave { get { return false; } }
+        public override bool CanSave { get { return false; } }
 
-        public override void LoadFile(Byte[] fileData)
+        public override void LoadFile(byte[] fileData)
         {
-            String fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
+            string fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
             IniFile mapini = new IniFile(fileDataText, IniFile.ENCODING_DOS_US);
             this.ReadRAMap(mapini, null);
         }
 
-        public override void LoadFile(Byte[] fileData, String filename)
+        public override void LoadFile(byte[] fileData, string filename)
         {
-            String fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
+            string fileDataText = IniFile.ENCODING_DOS_US.GetString(fileData);
             IniFile mapini = new IniFile(filename, fileDataText, IniFile.ENCODING_DOS_US);
             this.ReadRAMap(mapini, filename);
         }
 
-        private void ReadRAMap(IniFile mapini, String path)
+        private void ReadRAMap(IniFile mapini, string path)
         {
-            List<String> sectionNames = mapini.GetSectionNames();
+            List<string> sectionNames = mapini.GetSectionNames();
             if (mapini.GetStringValue("Basic", "NewINIFormat", null) != "3")
                 throw new FileTypeLoadException("Not a Red Alert Map file.");
             if (!sectionNames.Contains("MapPack"))
@@ -58,8 +58,8 @@ namespace EngieFileConverter.Domain.FileTypes
                 throw new FileTypeLoadException("No [Map] section found in file.");
             IniInfo iniInfo = GetIniInfo(mapini, Theater.Temperate);
             Rectangle usableArea = iniInfo == null ? Rectangle.Empty : new Rectangle(iniInfo.X, iniInfo.Y, iniInfo.Width, iniInfo.Height);
-            List<String> errors = new List<String>();
-            Byte[] mapTerrain = this.DecompressLCWSection(mapini, "MapPack", 3, errors);
+            List<string> errors = new List<string>();
+            byte[] mapTerrain = this.DecompressLCWSection(mapini, "MapPack", 3, errors);
             if (errors.Count > 0)
                 throw new FileTypeLoadException(String.Join("\n", errors.ToArray()));
             //Byte[] mapOverlay = this.DecompressLCWSection(mapini, "OverlayPack", 1, errors);
@@ -132,7 +132,7 @@ namespace EngieFileConverter.Domain.FileTypes
             info.Theater = defaultTheater;
             if (inifile == null || (!inifile.ContainsSection("Basic") && !inifile.ContainsSection("Map")))
                 return null;
-            String th = inifile.GetStringValue("Map", "Theater", null);
+            string th = inifile.GetStringValue("Map", "Theater", null);
             info.Theater = GeneralUtils.TryParseEnum(th, defaultTheater, true);
             info.Name = inifile.GetStringValue("Basic", "Name", null);
             info.Width = inifile.GetIntValue("Map", "Width", 64);
@@ -153,7 +153,7 @@ namespace EngieFileConverter.Domain.FileTypes
         /// <param name="usableArea">USable area of the map.</param>
         /// <param name="addedPixels">Added data to populate the map.</param>
         /// <returns></returns>
-        protected Bitmap ReadMapAsImage(Byte[] fileData, Theater theater, Rectangle usableArea, Dictionary<Int32, Int32> addedPixels, out bool containsOldClear)
+        protected Bitmap ReadMapAsImage(byte[] fileData, Theater theater, Rectangle usableArea, Dictionary<int, int> addedPixels, out bool containsOldClear)
         {
             if (fileData.Length != CnCMap.FILELENGTH_RA)
                 throw new FileTypeLoadException("Incorrect file size.");
@@ -233,48 +233,48 @@ namespace EngieFileConverter.Domain.FileTypes
         extracol = new Dictionary<byte, Color>() { { 0x1E, clearOld }, { 0x1F, Color.FromArgb(0xFF, 0x00, 0x80) } };
 #endif
             Color[] palette = FileMapWwCc1Pc.GetTheaterPalette(theater, extracol);
-            Byte[] imageData = new Byte[CnCMap.LENGTH_RA];
+            byte[] imageData = new byte[CnCMap.LENGTH_RA];
             if (usableArea == Rectangle.Empty)
             {
-                for (Int32 i = 0; i < simplifiedMap.Length; ++i)
-                    imageData[i] = (Byte)simplifiedMap[i];
+                for (int i = 0; i < simplifiedMap.Length; ++i)
+                    imageData[i] = (byte)simplifiedMap[i];
             }
             else
             {
                 // paint blue-tinted outside border
                 if (usableArea != Rectangle.Empty)
                 {
-                    for (Int32 i = 0; i < simplifiedMap.Length; ++i)
-                        imageData[i] = (Byte)(simplifiedMap[i] + 0x20);
+                    for (int i = 0; i < simplifiedMap.Length; ++i)
+                        imageData[i] = (byte)(simplifiedMap[i] + 0x20);
                 }
                 // paint normal-colored area
-                Int32 minY = usableArea != Rectangle.Empty ? usableArea.Y : 0;
-                Int32 maxY = usableArea != Rectangle.Empty ? usableArea.Y + usableArea.Height : 128;
-                Int32 minX = usableArea != Rectangle.Empty ? usableArea.X : 0;
-                Int32 maxX = usableArea != Rectangle.Empty ? usableArea.X + usableArea.Width : 128;
-                for (Int32 y = minY; y < maxY; ++y)
+                int minY = usableArea != Rectangle.Empty ? usableArea.Y : 0;
+                int maxY = usableArea != Rectangle.Empty ? usableArea.Y + usableArea.Height : 128;
+                int minX = usableArea != Rectangle.Empty ? usableArea.X : 0;
+                int maxX = usableArea != Rectangle.Empty ? usableArea.X + usableArea.Width : 128;
+                for (int y = minY; y < maxY; ++y)
                 {
-                    for (Int32 x = minX; x < maxX; ++x)
+                    for (int x = minX; x < maxX; ++x)
                     {
-                        Int32 cell = (y << 7) | x;
-                        imageData[cell] = (Byte)simplifiedMap[cell];
+                        int cell = (y << 7) | x;
+                        imageData[cell] = (byte)simplifiedMap[cell];
                     }
                 }
             }
             if (addedPixels != null)
             {
-                Int32[] cells = addedPixels.Keys.ToArray();
-                for (Int32 i = 0; i < cells.Length; ++i)
+                int[] cells = addedPixels.Keys.ToArray();
+                for (int i = 0; i < cells.Length; ++i)
                 {
-                    Int32 cell = cells[i];
-                    imageData[cell] = (Byte)addedPixels[cell];
+                    int cell = cells[i];
+                    imageData[cell] = (byte)addedPixels[cell];
                 }
             }
             return ImageUtils.BuildImage(imageData, 128, 128, 128, PixelFormat.Format8bppIndexed, palette, Color.Black);
         }
 
 
-        public override Byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
+        public override byte[] SaveToBytesAsThis(SupportedFileType fileToSave, Option[] saveOptions)
         {
             throw new NotImplementedException();
         }

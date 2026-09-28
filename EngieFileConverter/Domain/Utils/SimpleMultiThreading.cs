@@ -1,0 +1,227 @@
+﻿using System;
+using System.Drawing;
+using System.Threading;
+using System.Windows.Forms;
+
+namespace Nyerguds.Util
+{
+    /// <summary>
+    /// Exposes a variable that can be used to store the reference to a status label shown while the form is busy.
+    /// This should not be an initialised object; the actual label will be created and disposed as needed.
+    /// </summary>
+    public interface IHasStatusLabel
+    {
+        Label StatusLabel { get; set; }
+    }
+
+    /// <summary>
+    /// Simple multithreading for heavy operations to not freeze the UI. This just needs a form with a public
+    /// property to get/set a "busy" state label, and the type that is produced by the heavy operation.
+    /// The order of operations is: controls are disabled and busy label is set, heavy operation is executed,
+    /// controls are enabled and busy label is removed, an optional extra function runs to process the returned result.
+    /// In case an error occurred, the UI is re-enabled as usual, a message box is shown with the stack trace, and the
+    /// result processing function is not called.
+    /// </summary>
+    public class SimpleMultiThreading
+    {
+        public string DefaultProcessingLabel { get; set; } = "Processing";
+        public BorderStyle ProcessingLabelBorder { get; set; } = BorderStyle.FixedSingle;
+        public int ProcessingLabelWidth { get; set; } = 300;
+        public int ProcessingLabelHeight { get; set; } = 100;
+        private Thread processingThread;
+        private readonly Form attachForm;
+
+        public SimpleMultiThreading(Form attachForm)
+        {
+            this.attachForm = attachForm;
+        }
+
+        public SimpleMultiThreading(Form attachForm, BorderStyle processingLabelBorder)
+            : this(attachForm)
+        {
+            this.ProcessingLabelBorder = processingLabelBorder;
+        }
+
+        public bool AbortThreadedOperation(int timeout)
+        {
+            if (this.processingThread == null || !this.processingThread.IsAlive)
+            {
+                return true;
+            }
+            this.processingThread.Abort();
+            return this.processingThread.Join(timeout);
+        }
+
+        public bool IsExecuting
+        {
+            get { return this.processingThread != null && this.processingThread.IsAlive; }
+        }
+
+        /// <summary>
+        /// Executes a threaded operation while locking the UI.
+        /// </summary>
+        /// <param name="function">The heavy processing function to run on a different thread.</param>
+        /// <param name="resultFunction">Optional function to call after <paramref name="function"/> returns a non-null result.</param>
+        /// <param name="resultFuncIsInvoked">true if <paramref name="resultFunction"/> is Invoked on the main form.</param>
+        /// <param name="enableFunction">Function to enable/disable UI controls, with a message to show on the UI while disabled. This is given a reference to the current <see cref="SimpleMultiThreading"/> object so it can do a call to <see cref="CreateBusyLabel"/>. This function is Invoked on the main form.</param>
+        /// <param name="operationType">Label to show while the operation is busy. This will be passed on as arg to <paramref name="enableFunction"/>.</param>
+        /// <typeparam name="T">Type returned by <paramref name="function"/>, and passed on to <paramref name="resultFunction"/>.</typeparam>
+        public void ExecuteThreaded<T>(Func<T> function, Action<T> resultFunction, bool resultFuncIsInvoked, Action<bool, string, SimpleMultiThreading> enableFunction, string operationType)
+        {
+            if (this.processingThread != null && this.processingThread.IsAlive)
+                return;
+            object[] arrParams = { function, resultFunction, resultFuncIsInvoked, enableFunction, operationType };
+            this.processingThread = new Thread(this.ExecuteThreadedActual<T>);
+            this.processingThread.Start(arrParams);
+        }
+
+        /// <summary>
+        /// Executes a threaded operation while locking the UI. "parameters" must be an array of Object containing 5 items:
+        ///     a <see cref="Func{TResult}"/> to execute, returning an object of type <typeparamref name="T"/>;
+        ///     an <see cref="Action"/> taking a parameter of type <typeparamref name="T"/> to execute after successful processing (optional, can be null);
+        ///     a <see cref="bool"/> indicating whether the result-processing function is Invoked on the main form;
+        ///     an <see cref="Action"/> to enable/disable form controls, taking a <see cref="bool"/> (enable or disable), a <see cref="string"/> (message to show on disabled UI), and the current <see cref="SimpleMultiThreading"/> object to allow calling <see cref="CreateBusyLabel"/>;
+        ///     a <see cref="string"/> to indicate the process type being executed (eg. "Saving").
+        /// </summary>
+        /// <param name="parameters">
+        ///     Array of Object, containing 5 items:
+        ///     a <see cref="Func{TResult}"/> to execute, returning an object of type <typeparamref name="T"/>;
+        ///     an <see cref="Action"/> taking a parameter of type <typeparamref name="T"/> to execute after successful processing (optional, can be null);
+        ///     a <see cref="bool"/> indicating whether the result-processing function is Invoked on the main form;
+        ///     an <see cref="Action"/> to enable/disable form controls, taking a <see cref="bool"/> (enable or disable), a <see cref="string"/> (message to show on disabled UI), and the current <see cref="SimpleMultiThreading"/> object to allow calling <see cref="CreateBusyLabel"/>;
+        ///     a <see cref="string"/> to indicate the process type being executed (eg. "Saving").
+        /// </param>
+        /// <typeparam name="T">Type returned by the processing function, and passed on to the result-processing function.</typeparam>
+        private void ExecuteThreadedActual<T>(object parameters)
+        {
+            object[] arrParams = parameters as object[];
+            Func<T> func;
+            Action<T> resAct;
+            Action<bool, string, SimpleMultiThreading> enableControls;
+            if (arrParams == null || arrParams.Length < 5
+                || ((func = arrParams[0] as Func<T>) == null)
+                || ((resAct = arrParams[1] as Action<T>) == null && arrParams[1] != null)
+                || !(arrParams[2] is bool))
+            {
+                return;
+            }
+            enableControls = arrParams[3] as Action<bool, string, SimpleMultiThreading>;
+            bool resActIsInvoked = (bool)arrParams[2];
+            string operationType = (arrParams[4] as string ?? String.Empty).Trim();
+            if (enableControls != null)
+            {
+                try { this.attachForm.Invoke(new Action(() => enableControls(false, operationType, this))); }
+                catch (InvalidOperationException) { /* ignore */ }
+            }
+            T result = default(T);
+            try
+            {
+                // Processing code.
+                result = func();
+            }
+            catch (ThreadAbortException)
+            {
+                // Ignore. Thread is aborted.
+            }
+            catch (Exception ex)
+            {
+                string message = operationType + " failed:\n" + ex.Message + "\n" + ex.StackTrace;
+                ShowMessageBoxThreadSafe(attachForm, message, null, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (enableControls != null)
+                {
+                    try { this.attachForm.Invoke(new Action(() => enableControls(true, null, this))); }
+                    catch (InvalidOperationException) { /* ignore */ }
+                }
+                return;
+            }
+            try
+            {
+                if (enableControls != null)
+                {
+                    try { this.attachForm.Invoke(new Action(() => enableControls(true, null, this))); }
+                    catch (InvalidOperationException) { /* ignore */ }
+                }
+                if (resAct != null)
+                {
+                    if (resActIsInvoked)
+                    {
+                        this.attachForm.Invoke(new Action(() => resAct(result)));
+                    }
+                    else
+                    {
+                        resAct(result);
+                    }
+                }
+            }
+            catch (InvalidOperationException) { /* ignore */ }
+        }
+
+        public static DialogResult ShowMessageBoxThreadSafe(Form attachForm, string message, string title, MessageBoxButtons buttons, MessageBoxIcon icon)
+        {
+            return (DialogResult)attachForm.Invoke(new Func<DialogResult>(() => ShowMessageBox(attachForm, message, title, buttons, icon, MessageBoxDefaultButton.Button1)));
+        }
+
+        public static DialogResult ShowMessageBoxThreadSafe(Form attachForm, string message, string title, MessageBoxButtons buttons, MessageBoxIcon icon, MessageBoxDefaultButton def)
+        {
+            return (DialogResult)attachForm.Invoke(new Func<DialogResult>(() => ShowMessageBox(attachForm, message, title, buttons, icon, def)));
+        }
+
+        public static DialogResult ShowMessageBox(Form attachForm, string message, string title, MessageBoxButtons buttons, MessageBoxIcon icon, MessageBoxDefaultButton def)
+        {
+            if (message == null)
+                return DialogResult.Cancel;
+            bool allowedDrop = attachForm.AllowDrop;
+            attachForm.AllowDrop = false;
+            if (title == null)
+            {
+                title = attachForm.Text;
+            }
+            DialogResult result = MessageBox.Show(attachForm, message, title, buttons, icon, def);
+            attachForm.AllowDrop = allowedDrop;
+            return result;
+        }
+
+        /// <summary>
+        /// Can be used to create a "busy" label on the UI while a heavy operation is running in a different thread.
+        /// This should be called from the "enableFunction" when calling <see cref="ExecuteThreaded"/>.
+        /// </summary>
+        /// <param name="processingLabel">Processing label. Set to null to remove the label.</param>
+        public void CreateBusyLabel<T>(T form, string processingLabel) where T : Form, IHasStatusLabel
+        {
+            // Remove old busy status label if it exists.
+            RemoveBusyLabel(form);
+            if (processingLabel == null)
+            {
+                return;
+            }
+            // Create busy status label.
+            Label busyStatusLabel = new Label();
+            busyStatusLabel.Text = (String.IsNullOrEmpty(processingLabel) ? (DefaultProcessingLabel ?? String.Empty) : processingLabel) + "...";
+            busyStatusLabel.TextAlign = ContentAlignment.MiddleCenter;
+            busyStatusLabel.Font = new Font(busyStatusLabel.Font.FontFamily, 15F, FontStyle.Regular, GraphicsUnit.Pixel, 0);
+            busyStatusLabel.AutoSize = false;
+            busyStatusLabel.Size = new Size(ProcessingLabelWidth, ProcessingLabelHeight);
+            busyStatusLabel.Anchor = AnchorStyles.None; // Always floating in the middle, even on resize.
+            busyStatusLabel.BorderStyle = ProcessingLabelBorder;
+            int x = (form.ClientRectangle.Width - ProcessingLabelWidth) / 2;
+            int y = (form.ClientRectangle.Height - ProcessingLabelHeight) / 2;
+            busyStatusLabel.Location = new Point(x, y);
+            form.Controls.Add(busyStatusLabel);
+            form.StatusLabel = busyStatusLabel;
+            busyStatusLabel.Visible = true;
+            busyStatusLabel.BringToFront();
+        }
+
+        public static void RemoveBusyLabel<T>(T form) where T : Form, IHasStatusLabel
+        {
+            Label busyStatusLabel = form.StatusLabel;
+            if (busyStatusLabel == null)
+                return;
+            form.Controls.Remove(busyStatusLabel);
+            try { busyStatusLabel.Dispose(); }
+            catch { /* ignore */ }
+            form.StatusLabel = null;
+        }
+
+    }
+}

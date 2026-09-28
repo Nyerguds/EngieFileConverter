@@ -56,13 +56,13 @@ namespace EngieFileConverter.Domain.FileTypes
         {
             if (fileData.Length < 12)
                 throw new FileTypeLoadException(ERR_FILE_TOO_SMALL);
-            Int32 imageCount = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0);
+            int imageCount = ArrayUtils.ReadInt32FromByteArrayLe(fileData, 0);
             if (imageCount == 0)
                 throw new FileTypeLoadException(ERR_NO_FRAMES);
             if (imageCount < 0)
                 throw new FileTypeLoadException(ERR_BAD_HEADER_DATA);
-            UInt16 magic1 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
-            UInt16 magic2 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
+            ushort magic1 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 4);
+            ushort magic2 = ArrayUtils.ReadUInt16FromByteArrayLe(fileData, 6);
             if (magic1 != 0x3E || magic2 != 0x3A)
                 throw new FileTypeLoadException(ERR_BAD_HEADER);
             int indexEnd = 8 + imageCount * 2;
@@ -221,33 +221,33 @@ namespace EngieFileConverter.Domain.FileTypes
                     int frame = Int32.Parse(match.Groups[1].Value);
                     if (frameOptions.ContainsKey(frame))
                         throw new FileTypeSaveException("Duplicate key \"" + frame + "\" in frame options.");
-                    if (!string.IsNullOrEmpty(match.Groups[3].Value))
+                    if (!String.IsNullOrEmpty(match.Groups[3].Value))
                     {
                         // x and y offset
                         info[0] = Int32.Parse(match.Groups[4].Value);
                         info[1] = Int32.Parse(match.Groups[5].Value);
                     }
-                    else if (!string.IsNullOrEmpty(match.Groups[6].Value))
+                    else if (!String.IsNullOrEmpty(match.Groups[6].Value))
                     {
                         info[0] = Int32.Parse(match.Groups[6].Value);
                         info[1] = info[0];
                     }
                     // bit flags
                     info[2] = Int32.Parse(match.Groups[7].Value);
-                    if (!string.IsNullOrEmpty(match.Groups[9].Value))
+                    if (!String.IsNullOrEmpty(match.Groups[9].Value))
                     {
                         // Unknown
                         info[3] = Int32.Parse(match.Groups[10].Value);
                         info[4] = Int32.Parse(match.Groups[11].Value);
                     }
-                    else if (!string.IsNullOrEmpty(match.Groups[12].Value))
+                    else if (!String.IsNullOrEmpty(match.Groups[12].Value))
                     {
                         info[3] = Int32.Parse(match.Groups[12].Value);
                         info[4] = info[3];
                     }
-                    if (info.Any(nr => nr > Int16.MaxValue))
+                    if (info.Any(nr => nr > short.MaxValue))
                         throw new FileTypeSaveException("Value too large in frame options for frame \"" + frame + "\".");
-                    if (info.Any(nr => nr < Int16.MinValue))
+                    if (info.Any(nr => nr < short.MinValue))
                         throw new FileTypeSaveException("Value too small in frame options for frame \"" + frame + "\".");
                     frameOptions.Add(frame, info);
                 }
@@ -274,25 +274,25 @@ namespace EngieFileConverter.Domain.FileTypes
                 byte[] frameBytes = GetFourBitData(bm, i, true, true, out int frStride);
                 List<byte> curFrameData = new List<byte>();
                 int frHeight = bm.Height;
-                for (int y = 0; y < frHeight; y++) {
+                for (int y = 0; y < frHeight; ++y) {
                     byte[] line = TryCompress(frameBytes, y, frStride);
                     curFrameData.AddRange(line);
                 }
                 byte[] curFrame = new byte[16 + curFrameData.Count];
                 // because this saves the stride, not the image width, the width of the image will always become even.
-                ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x2, (Int16)frStride);
-                ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x4, (Int16)frHeight);
+                ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x2, (short)frStride);
+                ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x4, (short)frHeight);
                 if (frameOptions.TryGetValue(i, out int[] extraVals))
                 {
-                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x06, (Int16)extraVals[0]);
-                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x08, (Int16)extraVals[1]);
-                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x0A, (Int16)extraVals[2]);
-                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x0C, (Int16)extraVals[3]);
-                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x0E, (Int16)extraVals[4]);
+                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x06, (short)extraVals[0]);
+                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x08, (short)extraVals[1]);
+                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x0A, (short)extraVals[2]);
+                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x0C, (short)extraVals[3]);
+                    ArrayUtils.WriteInt16ToByteArrayLe(curFrame, 0x0E, (short)extraVals[4]);
                 }
                 Array.Copy(curFrameData.ToArray(), 0, curFrame, 16, curFrameData.Count);
                 frameData[i] = curFrame;
-                ArrayUtils.WriteUInt16ToByteArrayLe(header, headerFramesOffs, (UInt16)(currentFramePos >> 4));
+                ArrayUtils.WriteUInt16ToByteArrayLe(header, headerFramesOffs, (ushort)(currentFramePos >> 4));
                 headerFramesOffs += 2;
                 currentFramePos = (currentFramePos + curFrame.Length + 15) / 16 * 16;
             }
